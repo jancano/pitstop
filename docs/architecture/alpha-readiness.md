@@ -20,6 +20,8 @@ python -I tools/test-run.py --processes 6
 dotnet test tests/Passenger.Tests --no-build --filter 'FullyQualifiedName~CppNativeLanguageTests|FullyQualifiedName~ModuleIntelligenceTests|FullyQualifiedName~XmakeNativeBuildRunTests|FullyQualifiedName~XmakeNativeExplorerTests|FullyQualifiedName~McpModuleWorkspaceTests'
 ```
 
+Locked restore succeeded, and the complete solution built with zero warnings and errors. The UI and unit reruns used the source revision packaged below.
+
 The full unfiltered run discovers unit and headless tests and writes per-process logs and TRX reports in `artifacts/test-results/local/`. The Phase 5 baseline run discovered 1,639 test entries in a detached checkout. The first attempt stopped during discovery because it was looking for the English VSTest heading on a Spanish installation. The rerun reached the tests, then the coordinator terminated while printing a Unicode failure message through a Windows legacy code page. The runner now fixes VSTest's diagnostic language and uses UTF-8 for redirected diagnostics. Source fixes keep assertions independent of localized MSBuild wording, make debugger fixtures format decimals invariantly, and address the Explorer view toggle by its control. NuGet and GPG tests use the package IDs and key identities carried by their fixtures. The MCP action inventory accounts for whether release notes are carried by the build.
 
 | Run | Passed | Failed | Skipped | Timed out | Scope |
@@ -28,13 +30,16 @@ The full unfiltered run discovers unit and headless tests and writes per-process
 | Native reference suites | 10 | 0 | 0 | 0 | All four existing Xmake Explorer, clangd, Build and Run, and module intelligence classes with the reference tools |
 | Real MCP client | 3 | 0 | 0 | 0 | Attached client through the actual MCP transport, including distinct ambiguous and unresolved edges |
 | Focused managed and Explorer checks | 11 | 0 | 1 | 0 | Debugger rules, MCP action discovery, project loading and editing, logs, Compose, and Solution views. The filesystem case-sensitivity check skipped on this volume |
+| UI and docking regression rerun | 8 | 0 | 0 | 0 | Minimum-width layout, distinct tool-window icons, Xmake availability and saved layout, dialog widths, shared context menus and typography |
 | NuGet and GPG fixture rerun | 2 | 0 | 0 | 2 | Both NuGet tests passed. VSTest reported both 90-second Git for Windows GPG prompts as failures |
 | Scale probes | 8 | 0 | 0 | 0 | Four headless editor runs and four captured-graph runs. The 500- and 1,000-module runs used warm Xmake caches |
-| Unfiltered Phase 5 baseline before coordinator interruption | 1,220 | 29 | 105 | 1 | Matched results by test method. 1,355 of 1,612 distinct methods recorded. 257 methods were missing at the recovery checkpoint |
+| Unfiltered Phase 5 baseline through test-host cleanup | 1,233 | 30 | 108 | 1 | Matched results by test method. 1,372 of 1,612 distinct methods recorded. 240 methods were missing at the recovery checkpoint |
 
 The unfiltered baseline, its recovery run and the native-class run are tracked separately. The baseline's logs are retained under `artifacts/alpha-regression-checkout/artifacts/test-results/` in `baseline-partial` and `local`. Two orphaned test hosts kept assemblies locked after the interruption. Their owned process trees were stopped before retrying. The test runner now stops the full owned process tree on Windows, writes diagnostics as UTF-8 and flushes each serial output line. Separate probes verified the diagnostic encoding, process-tree cleanup and log visibility before a child exited. Recovery targets classes with unreached methods and writes to `resume`. The native-class run took 19 minutes beside the full suite. The focused stabilization run passed 14 tests and initially failed the debugger watchdog source rule. The corrected rule passed in the managed rerun above. Some rows overlap across runs. The scale tool's 500- and 1,000-module export timeouts are command timeouts and are recorded below.
 
-Restoring the bundled GPG key identities moved both signing tests past key lookup. They timed out later waiting for Pitstop to display the passphrase dialog. An SSH signing test also observed `Enter passphrase:` from this machine's Git, which the application treated as a generic Git prompt. The EF migrations failure involved the existing global `dotnet-ef` 10.0.10 and a fixture expecting a missing tool for EF Core 10.0.15. These issues remain open in the regression report.
+The module graph now wraps its controls at the minimum window width and uses the dock's shared action registration. The focused UI and docking checks passed after the fixes. The release screenshots show the example's module interface, partition, implementation source and cross-target consumer in both themes. [Dark](../screenshots/module-graph-dark.png) · [Light](../screenshots/module-graph-light.png)
+
+Restoring the bundled GPG key identities moved both signing tests past key lookup. They timed out later waiting for Pitstop to display the passphrase dialog. An SSH signing test also observed `Enter passphrase:` from this machine's Git, which the application treated as a generic Git prompt. The EF migrations failure involved the existing global `dotnet-ef` 10.0.10 and a fixture expecting a missing tool for EF Core 10.0.15. The baseline also reported paths denied while moving fixture directories in the folder watcher and language-server watcher tests, and an allocation threshold in the Git branch menu. These issues remain open in the regression report.
 
 ## Real MCP connection
 
@@ -87,7 +92,7 @@ Metadata timing covers sequential Xmake `show` calls. The real IDE's opening tim
 
 The memory figures above are per-process snapshots and peaks up to first diagnostics, excluding other tools. The editor timings use prepared Xmake caches.
 
-The packaged IDE also measured background indexing with a real MCP client, a new state directory and the prepared workspace. Opening `main.cpp` starts the timer. Clangd's log records its initialization and each generated workspace source it indexed. The memory readings capture the working set at the last indexed project source and process peaks up to that point.
+The packaged IDE at `045f81a01` also measured background indexing with a real MCP client, a new state directory and the prepared workspace. Opening `main.cpp` starts the timer. Clangd's log records its initialization and each generated workspace source it indexed. The memory readings capture the working set at the last indexed project source and process peaks up to that point.
 
 ```powershell
 python -I tools/alpha-package-smoke.py $exe artifacts/scale-1000 artifacts/alpha-index-1000 `
@@ -111,7 +116,7 @@ just package-win win-x64
 Get-FileHash artifacts/package/Pitstop-windows-x64.exe,artifacts/package/Pitstop-windows-x64-portable.zip -Algorithm SHA256
 ```
 
-The package script produced both unsigned artifacts from `045f81a01` and ran its portable-state verification. The MCP packaging probe ran the installer and portable app against separate disposable [Hello Modules](../../examples/hello-modules) copies with fresh settings directories. It verified the reported application version, module scan, Explorer and graph actions, provider navigation, editor saves, native build, run output and exit, and termination after the client closed. The installed test used PATH discovery. The portable test used explicit tool overrides. A portable launch without Xmake on PATH returned the missing-tool guidance.
+The package script produced both unsigned artifacts from `c786c232f` and ran its portable-state verification. The MCP packaging probe ran the installer and portable app against separate disposable [Hello Modules](../../examples/hello-modules) copies with fresh settings directories. It verified the reported application version, module scan, Explorer and graph actions, provider navigation, editor saves, native build, run output and exit, and termination after the client closed. The installed test used PATH discovery. The portable test used explicit tool overrides. A portable launch without Xmake on PATH returned the missing-tool guidance.
 
 ```powershell
 python -I tools/alpha-package-smoke.py $exe $configuredExampleCopy $newStateDirectory --version 0.2.0-alpha.1
