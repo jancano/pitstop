@@ -164,6 +164,14 @@ def stop(processes):
     """Ends the run's processes still going (Ctrl+C reaches them too, from the terminal), each with all it started."""
     for process in processes:
         if process.process.poll() is None:
+            if SYSTEM == "Windows":
+                try:
+                    killed = subprocess.run(["taskkill.exe", "/PID", str(process.process.pid), "/T", "/F"],
+                                            capture_output=True, timeout=30, check=False)
+                    if killed.returncode == 0:
+                        continue
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
             process.process.terminate()
     for process in processes:
         try:
