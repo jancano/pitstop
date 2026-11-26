@@ -31,6 +31,7 @@ public enum FolderHolds
 
     /// <summary>An app Passenger's inspector looks into (an Avalonia, WPF or .NET MAUI app), or one it looks into now.</summary>
     InspectedApp = 64,
+    XmakeProject = 128,
 }
 
 /// <summary>What a tool window serves, declared as each is made (<see cref="Docking.ToolWindow.Serves"/>): every folder, or
@@ -52,6 +53,8 @@ public sealed class ToolWindowServes
 
     /// <summary>Every folder: the Explorer, Find, the Terminal, Problems, Git and the like.</summary>
     public static ToolWindowServes EveryFolder { get; } = new(FolderHolds.None, null);
+
+    public static ToolWindowServes XmakeProjects { get; } = new(FolderHolds.XmakeProject, "Open an Xmake workspace.");
 
     /// <summary>A Godot project, whose game the Game window draws.</summary>
     public static ToolWindowServes GodotProjects { get; } = new(FolderHolds.GodotProject, Refusals.NoGodotProject);

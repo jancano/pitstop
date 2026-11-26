@@ -643,6 +643,7 @@
           "Passenger.Workspace": "[0.1.0, )",
           "Passenger.Xaml": "[0.1.0, )",
           "Pitstop.Cpp": "[0.1.0, )",
+          "Pitstop.Modules": "[0.1.0, )",
           "Pitstop.Xmake": "[0.1.0, )",
           "SkiaSharp": "[4.157.0, )",
           "SkiaSharp.NativeAssets.Linux": "[4.157.0, )",
@@ -655,6 +656,13 @@
         "dependencies": {
           "Passenger.Core": "[0.1.0, )",
           "Passenger.Lsp": "[0.1.0, )",
+          "Pitstop.Xmake": "[0.1.0, )"
+        }
+      },
+      "pitstop.modules": {
+        "type": "Project",
+        "dependencies": {
+          "Passenger.Core": "[0.1.0, )",
           "Pitstop.Xmake": "[0.1.0, )"
         }
       },

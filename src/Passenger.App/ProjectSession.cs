@@ -262,12 +262,14 @@ public sealed class ProjectSession : IAsyncDisposable
             Trusted = trusted,
         };
         session.Cpp = new(folder, setup.StateFolder, session.Xmake!, setup.StartClangd);
+        session.Modules = new(session.Xmake!);
         session.Configurations.Xmake = session.Xmake;
         if (session.Xmake is { } native)
         {
             XmakeWorkspace? configured = null;
             native.Changed += (_, _) =>
             {
+                session.FollowHolds(projects: false);
                 if (!session.IsEnded && configured != native.Snapshot)
                 {
                     configured = native.Snapshot;
@@ -328,6 +330,7 @@ public sealed class ProjectSession : IAsyncDisposable
     public string? Folder { get; }
 
     public XmakeWorkspaceSession? Xmake { get; private init; }
+    public ModuleWorkspaceSession? Modules { get; private set; }
 
     public CppLanguageService? Cpp { get; private set; }
 
@@ -869,7 +872,8 @@ public sealed class ProjectSession : IAsyncDisposable
             projectsHold = FolderHolding.Of(Projects, Workspace?.GodotGames ?? [], Configurations.SingleFileAppHosts.Count > 0, holdsRequests,
                 EfProjects.ReachedByRestore);
         }
-        FolderHolds now = projectsHold | (LiveSource is not null || Inspecting.Count > 0 ? FolderHolds.InspectedApp : FolderHolds.None);
+        FolderHolds now = projectsHold | (LiveSource is not null || Inspecting.Count > 0 ? FolderHolds.InspectedApp : FolderHolds.None)
+            | (Xmake is { IsXmake: true } ? FolderHolds.XmakeProject : FolderHolds.None);
         if (now != Holds)
         {
             Holds = now;
@@ -2055,6 +2059,7 @@ public sealed class ProjectSession : IAsyncDisposable
     {
         Cpp?.FilesChanged(changes);
         Xmake?.FilesChanged(changes);
+        Modules?.FilesChanged(changes);
         programArrivals?.Heard(changes.Paths);
         if (CSharp is { } csharp)
         {
@@ -2214,6 +2219,10 @@ public sealed class ProjectSession : IAsyncDisposable
         Models.Close();
         DesignTimeBuilds.Close();
         Watcher?.Dispose();
+        if (Modules is { } modules)
+        {
+            parts.Add(("the C++ module scanner", modules.CloseAsync()));
+        }
         if (Cpp is { } cpp)
         {
             parts.Add(("clangd", cpp.DisposeAsync().AsTask()));

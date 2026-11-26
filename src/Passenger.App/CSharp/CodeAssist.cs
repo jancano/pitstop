@@ -442,6 +442,12 @@ public sealed class CodeAssist
         set => context.Cpp = value;
     }
 
+    public Func<ModuleWorkspaceSession?>? Modules
+    {
+        get => context.Modules;
+        set => context.Modules = value;
+    }
+
     internal void CppContextChanged()
     {
         completion.Close();

@@ -32,6 +32,7 @@ public static class McpTools
     public const string DebugStep = "debug_step";
     public const string Definition = "definition";
     public const string Diagnostics = "diagnostics";
+    public const string ModuleWorkspace = "module_workspace";
     public const string Edit = "edit";
     public const string EditorText = "editor_text";
     public const string FindInFiles = "find_in_files";

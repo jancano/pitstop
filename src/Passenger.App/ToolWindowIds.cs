@@ -22,6 +22,7 @@ public static class ToolWindowIds
     public const string Containers = "containers";
     public const string Profiler = "profiler";
     public const string Hierarchy = "hierarchy";
+    public const string ModuleGraph = "moduleGraph";
     public const string Endpoints = "endpoints";
     public const string Requests = "requests";
     public const string LiveTree = "liveTree";

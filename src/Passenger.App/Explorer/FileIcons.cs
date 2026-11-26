@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Passenger.Workspace;
+using Pitstop.Modules;
 
 namespace Passenger.App.Explorer;
 
@@ -11,7 +12,8 @@ namespace Passenger.App.Explorer;
 /// in its project file's tint, wherever it is listed (<see cref="ForProject"/>).</summary>
 public static class FileIcons
 {
-    public static Geometry For(ExplorerNode node) => KindIcon(node.ProjectKind) is { } kind
+    public static Geometry For(ExplorerNode node) => ModuleIcon(node.ModuleKind) is { } module ? Find<Geometry>(module)
+        : KindIcon(node.ProjectKind) is { } kind
         ? Find<Geometry>(kind)
         : Look(node) is { } look
         ? Find<Geometry>(Shaped(look))
@@ -21,6 +23,8 @@ public static class FileIcons
             NodeKind.Framework => IconKeys.Reference,
             NodeKind.XmakeWorkspace => node.IsExpanded ? IconKeys.FolderOpen : IconKeys.Explorer,
             NodeKind.XmakeTarget => IconKeys.ClassLibrary,
+            NodeKind.ModuleGroup => IconKeys.Hierarchy,
+            NodeKind.NamedModule => IconKeys.ClassLibrary,
             NodeKind.XmakeConfiguration or NodeKind.XmakeDependency or NodeKind.XmakeStatus => IconKeys.Reference,
             _ => node.SdkFolder switch
             {
@@ -29,6 +33,14 @@ public static class FileIcons
                 _ => node.IsExpanded ? IconKeys.FolderOpen : IconKeys.Explorer,
             },
         });
+
+    private static string? ModuleIcon(ModuleUnitKind? kind) => kind switch
+    {
+        ModuleUnitKind.PrimaryInterface => IconKeys.ClassLibrary,
+        ModuleUnitKind.InterfacePartition => IconKeys.Reference,
+        ModuleUnitKind.InternalPartition => IconKeys.Lock,
+        _ => null,
+    };
 
     /// <summary>The icon each kind of project is drawn with, the one place a kind gets its look: the icon of the IDE's
     /// window for it where it has one, a file's of its kind where one is, else its own; null for a project drawn as its
@@ -90,7 +102,7 @@ public static class FileIcons
     {
         NodeKind.Folder => FileIconSet.ForFolder(node.Name),
         NodeKind.SolutionFolder or NodeKind.Framework or NodeKind.XmakeWorkspace or NodeKind.XmakeTarget
-            or NodeKind.XmakeConfiguration or NodeKind.XmakeDependency or NodeKind.XmakeStatus => null,
+            or NodeKind.XmakeConfiguration or NodeKind.XmakeDependency or NodeKind.XmakeStatus or NodeKind.ModuleGroup or NodeKind.NamedModule => null,
         NodeKind.Dependencies or NodeKind.Package => FileIconSet.Packages,
         NodeKind.ProjectReference or NodeKind.SharedProject => FileIconSet.ForFile(Path.GetFileName(node.Referenced ?? node.Name)),
         _ => FileIconSet.ForFile(Path.GetFileName(node.Path ?? node.Name)),

@@ -127,6 +127,7 @@ public partial class MainWindow : IdeWindow
         AddPlaces();
         AddSwitcher();
         AddHierarchy();
+        AddModules();
         AddFileOperations();
         AcceptDrops(this);
         AddFileProperties();
@@ -294,7 +295,7 @@ public partial class MainWindow : IdeWindow
         });
         assist = new CodeAssist(Editors, Editors.AssistLayer, () => session.CSharp)
         {
-            Xaml = () => session.Xaml, MSBuild = () => session.MSBuild, Web = () => session.Web, Cpp = () => session.Cpp, GodotScenes = () => session.GodotScenes,
+            Xaml = () => session.Xaml, MSBuild = () => session.MSBuild, Web = () => session.Web, Cpp = () => session.Cpp, Modules = () => session.Modules, GodotScenes = () => session.GodotScenes,
             GodotShaders = () => session.GodotShaders,
             GodotScriptTypes = () => session.GodotScriptTypes,
             Stylesheets = () => session.Stylesheets,

@@ -554,14 +554,6 @@
           "Passenger.Text": "[0.1.0, )"
         }
       },
-      "passenger.lsp": {
-        "type": "Project",
-        "dependencies": {
-          "Passenger.Core": "[0.1.0, )",
-          "Passenger.Text": "[0.1.0, )",
-          "StreamJsonRpc": "[2.26.150, )"
-        }
-      },
       "passenger.nodepackages": {
         "type": "Project"
       },
@@ -622,11 +614,10 @@
           "Passenger.Text": "[0.1.0, )"
         }
       },
-      "pitstop.cpp": {
+      "pitstop.modules": {
         "type": "Project",
         "dependencies": {
           "Passenger.Core": "[0.1.0, )",
-          "Passenger.Lsp": "[0.1.0, )",
           "Pitstop.Xmake": "[0.1.0, )"
         }
       },

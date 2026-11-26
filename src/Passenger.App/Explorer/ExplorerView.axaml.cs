@@ -25,6 +25,7 @@ public enum ExplorerViewKind
     Solution,
     Files,
     Xmake,
+    Modules,
 }
 
 public partial class ExplorerView : UserControl
@@ -336,6 +337,16 @@ public partial class ExplorerView : UserControl
 
     internal void BindXmake(XmakeWorkspaceSession? workspace) => xmake = workspace;
 
+    internal ModuleWorkspaceSession? Modules { get; set; }
+
+    internal void FollowModules()
+    {
+        if (viewAsked == ExplorerViewKind.Modules)
+        {
+            Refresh();
+        }
+    }
+
     internal void FollowXmake()
     {
         ViewSwitch.IsVisible = HasProjectView;
@@ -352,6 +363,12 @@ public partial class ExplorerView : UserControl
 
     private void ShowRequested()
     {
+        if (viewAsked == ExplorerViewKind.Modules && xmake is { IsXmake: true } && folder is not null && Modules is { } modules)
+        {
+            Tree.LoadModules(folder, modules);
+            ViewName.Text = "Modules";
+            return;
+        }
         if (xmake is { IsXmake: true } && folder is not null
             && (viewAsked == ExplorerViewKind.Xmake || viewAsked == ExplorerViewKind.Solution && !HasSolutionView))
         {
@@ -408,7 +425,8 @@ public partial class ExplorerView : UserControl
     };
 
     /// <summary>The view it shows; the Files view with nothing open.</summary>
-    public ExplorerViewKind ViewShown => Tree.IsXmakeView ? ExplorerViewKind.Xmake : Tree.IsSolutionView ? ExplorerViewKind.Solution : ExplorerViewKind.Files;
+    public ExplorerViewKind ViewShown => Tree.IsModuleView ? ExplorerViewKind.Modules : Tree.IsXmakeView ? ExplorerViewKind.Xmake
+        : Tree.IsSolutionView ? ExplorerViewKind.Solution : ExplorerViewKind.Files;
 
     /// <summary>Shows a view, its rows made anew and narrowed to the filter's files, the keys kept on the rows if they had
     /// them; nothing while it shows already, or with no Solution view to switch to, the view asked for kept even

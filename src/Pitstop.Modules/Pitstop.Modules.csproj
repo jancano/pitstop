@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Passenger.Core/Passenger.Core.csproj" />
+    <ProjectReference Include="../Pitstop.Xmake/Pitstop.Xmake.csproj" />
+    <InternalsVisibleTo Include="Passenger.UnitTests" />
+  </ItemGroup>
+</Project>

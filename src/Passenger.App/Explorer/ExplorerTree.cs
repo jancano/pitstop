@@ -28,6 +28,8 @@ public enum NodeKind
     XmakeTarget,
     XmakeDependency,
     XmakeStatus,
+    ModuleGroup,
+    NamedModule,
 }
 
 /// <summary>A folder at a project's top that the .NET SDK reads by its name, in the order the Explorer lists them before
@@ -112,7 +114,7 @@ public sealed partial class ExplorerTree
     /// <summary>A folder's files, the projects among them telling which of its folders the SDK reads (<see cref="SdkFolder"/>).</summary>
     public void LoadFileSystem(string folder, IReadOnlyList<ProjectModel> within)
     {
-        xmakeView = false;
+        xmakeView = moduleView = false;
         IsSolutionView = false;
         solution = null;
         programs = [];
@@ -123,7 +125,7 @@ public sealed partial class ExplorerTree
     /// <summary>A solution: its folders, projects and items, then the programs beside it, each by name.</summary>
     public void LoadSolution(SolutionModel solution, IReadOnlyList<ProjectModel> beside)
     {
-        xmakeView = false;
+        xmakeView = moduleView = false;
         IsSolutionView = true;
         this.solution = solution;
         programs = beside;
@@ -139,7 +141,7 @@ public sealed partial class ExplorerTree
     /// <summary>A project opened alone: the project at the top, its dependencies and files under it.</summary>
     public void LoadProject(ProjectModel project)
     {
-        xmakeView = false;
+        xmakeView = moduleView = false;
         IsSolutionView = true;
         solution = null;
         Take([project]);
@@ -466,6 +468,10 @@ public sealed partial class ExplorerTree
         {
             return PathNames.Same(full, Root.Path!) ? Root : FindXmakeFiles(full, through).FirstOrDefault();
         }
+        if (moduleView)
+        {
+            return FindModuleFile(full, through);
+        }
         string? owner = solution is null ? null : ProjectModel.Owning([.. solution.Projects, .. programs], full)?.Path;
         // A file a project takes from elsewhere shows where its Link puts it, in the project that holds it.
         string? linked = null;
@@ -623,7 +629,7 @@ public sealed partial class ExplorerTree
         solution = null;
         programs = [];
         IsSolutionView = false;
-        xmakeView = false;
+        xmakeView = moduleView = false;
     }
 
     /// <summary>The projects unloaded, by path: shown dimmed, with nothing under them. The open folder's own set, which
@@ -1038,6 +1044,7 @@ public sealed class ExplorerNode : Observable, ITreeRow
 
     internal string? ViewKey { get; init; }
     internal XmakeTarget? NativeTarget { get; init; }
+    internal Pitstop.Modules.ModuleUnitKind? ModuleKind { get; init; }
 
     /// <summary>A quieter word beside the name: a package's version, a project's frameworks (which an evaluation changes).</summary>
     public string? Detail

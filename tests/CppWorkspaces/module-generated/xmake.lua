@@ -1,0 +1,10 @@
+set_project("pitstop-module-generated")
+set_languages("cxx23")
+set_policy("build.c++.modules", true)
+
+target("generated")
+    set_kind("binary")
+    add_files("consumer.cpp", "generated.cppm", {always_added = true})
+    before_build(function ()
+        io.writefile("generated.cppm", "export module composed.generated;\nexport int answer() { return 42; }\n")
+    end)

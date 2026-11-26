@@ -13,6 +13,7 @@ public sealed partial class ExplorerTree
     internal void LoadXmake(string root, XmakeWorkspaceSession native)
     {
         xmakeView = true;
+        moduleView = false;
         IsSolutionView = false;
         solution = null;
         programs = [];

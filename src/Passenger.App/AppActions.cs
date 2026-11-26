@@ -304,6 +304,12 @@ public static class AppActions
     public const string OpenInBrowser = "app.explorer.openInBrowser";
 
     public const string Build = "app.build";
+    public const string ShowModules = "app.modules.explorer";
+    public const string ModuleGraph = "app.modules.graph";
+    public const string GoToModule = "app.modules.navigate";
+    public const string RevealModule = "app.modules.reveal";
+    public const string ModuleConsumers = "app.modules.consumers";
+    public const string NewModule = "app.modules.new";
     public const string RebuildSolution = "app.build.rebuildSolution";
     public const string CleanSolution = "app.build.cleanSolution";
     public const string BuildSelected = "app.build.selected";

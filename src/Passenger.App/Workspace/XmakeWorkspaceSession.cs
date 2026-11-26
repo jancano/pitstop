@@ -158,7 +158,7 @@ public sealed class XmakeWorkspaceSession
     private bool ChangesMembership(string path)
     {
         string build = Snapshot?.Configuration.BuildDirectory ?? Path.Combine(root, "build");
-        return !PathNames.Same(path, root) && !PathNames.Within(path, Path.Combine(root, ".xmake"))
+        return PathNames.IsUnder(path, root) && !PathNames.Within(path, Path.Combine(root, ".xmake"))
             && (PathNames.Same(root, build) || !PathNames.Within(path, build));
     }
 

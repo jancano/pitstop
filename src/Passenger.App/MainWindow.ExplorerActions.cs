@@ -347,7 +347,7 @@ public partial class MainWindow
     {
         if (node.Kind == NodeKind.XmakeWorkspace)
         {
-            return Made([Item(A.Build), Item(A.RebuildSolution), Item(A.CleanSolution)]);
+            return Made([Item(A.Build), Item(A.RebuildSolution), Item(A.CleanSolution), new MenuEntry(null), Item(A.ShowModules), Item(A.ModuleGraph), Item(A.NewModule)]);
         }
         if (node.NativeTarget is { } native)
         {

@@ -296,6 +296,23 @@ public partial class MainWindow
     {
         session = next;
         Explorer.BindXmake(next.Xmake);
+        Explorer.Modules = next.Modules;
+        if (next.Modules is { } modules)
+        {
+            modules.Changed += (_, _) =>
+            {
+                if (session == next)
+                {
+                    Explorer.FollowModules();
+                    FollowModuleGraph();
+                    if (Editors.Active?.Language.Service == Languages.LanguageService.Clangd)
+                    {
+                        assist.CppContextChanged();
+                    }
+                }
+            };
+        }
+        FollowModuleGraph();
         if (next.Cpp is { } cpp)
         {
             cpp.Changed += (_, _) =>
@@ -329,6 +346,14 @@ public partial class MainWindow
         };
         ForgetRunMarks();
         buildRun = new BuildRunController(next, BuildRunParts());
+        buildRun.BuildFinished += (_, built) =>
+        {
+            if (session == next && built.Succeeded && next.Modules?.Snapshot is { } index
+                && index.Missing.Any(path => Path.IsPathFullyQualified(path) && File.Exists(path)))
+            {
+                next.Xmake?.Refresh();
+            }
+        };
         BuildRunController runs = buildRun;
         // Detach acts on the container run under way: whole from the Run window or with nothing chosen, else the chosen service alone.
         next.Debug.RunDetach = new(runs.DetachesContainers, runs.WhyNotDetachContainers, runs.DetachContainersAsync);

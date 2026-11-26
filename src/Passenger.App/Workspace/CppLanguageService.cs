@@ -48,6 +48,8 @@ public sealed class CppLanguageService : IAsyncDisposable
 
     public CppEditorDocument? For(OpenDocument document) => documents.GetValueOrDefault(document);
 
+    internal string? TargetFor(string path) => compilation?.CommandsFor(path).FirstOrDefault()?.Target;
+
     public string? Label(OpenDocument document)
     {
         if (!xmake.IsXmake)

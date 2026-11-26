@@ -70,7 +70,10 @@ internal sealed partial class CSharpAssist(AssistContext context, PopupPlacement
         {
             if (lsp.Supports("completionProvider"))
             {
-                await completion.ServerListAsync(lsp, trigger, incomplete, null);
+                string? path = context.Editors.Active?.Path;
+                await completion.ServerListAsync(lsp, trigger, incomplete, null, (text, caret, cancel) =>
+                    Task.FromResult(path is null || cancel.IsCancellationRequested ? null : ModuleEditor.Complete(context.Modules?.Invoke()?.Snapshot,
+                        path, context.Cpp?.Invoke()?.TargetFor(path), text, caret)));
             }
             return true;
         }
@@ -88,6 +91,11 @@ internal sealed partial class CSharpAssist(AssistContext context, PopupPlacement
     {
         if (context.ServerOf(document) is CppEditorDocument native)
         {
+            if (context.Modules?.Invoke()?.Snapshot is { } index && ModuleEditor.ProviderAt(index, document.Path,
+                context.Cpp?.Invoke()?.TargetFor(document.Path), document.Text.Snapshot, offset) is { } module)
+            {
+                card.AddText($"C++ module {module.Name} · {module.Unit.Context.Target ?? module.Origin.ToString()}");
+            }
             if (native.Lsp is { } cpp && cpp.Supports("hoverProvider"))
             {
                 await QuickInfo.ServerHoverAsync(cpp, card, offset, cancel);

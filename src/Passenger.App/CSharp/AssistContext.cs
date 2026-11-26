@@ -23,6 +23,7 @@ internal sealed class AssistContext(EditorArea editors, Func<CSharpService?> ser
     /// <summary>The window's JavaScript, TypeScript, HTML, CSS and JSON, for a web file shown.</summary>
     public Func<WebLanguages?>? Web { get; set; }
     public Func<CppLanguageService?>? Cpp { get; set; }
+    public Func<ModuleWorkspaceSession?>? Modules { get; set; }
 
     /// <summary>The window's XAML, for a XAML file shown.</summary>
     public Func<XamlService?>? Xaml { get; set; }

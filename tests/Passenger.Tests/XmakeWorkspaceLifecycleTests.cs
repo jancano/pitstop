@@ -33,6 +33,11 @@ public sealed class XmakeWorkspaceLifecycleTests
             Ui.WaitFor(() => window.Session.Xmake?.Snapshot is not null, () => window.Session.Xmake?.Problem ?? "the trusted Xmake targets");
             Assert.Contains(window.ExplorerView.Tree.Rows, row => row.Name == "Trusted target");
             Assert.Equal(1, Volatile.Read(ref calls));
+            string outside = Path.Combine(Path.GetDirectoryName(folder)!, "removed-build-artifact");
+            HashSet<string> paths = [outside];
+            window.Session.FilesChanged(new FolderChanges(paths, true, false, false) { ComeOrGone = paths });
+            Ui.Settle();
+            Assert.Equal(1, Volatile.Read(ref calls));
             WorkspaceTrust.TakeBack(folder);
             // The test host's default trust is suppressed by the outstanding Ask.
             Ui.WaitFor(() => window.Session.Xmake?.Snapshot is null, () => "Xmake metadata to clear when trust is revoked");
