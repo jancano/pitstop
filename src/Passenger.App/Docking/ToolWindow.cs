@@ -166,6 +166,8 @@ public sealed class ToolWindow([IdentifierOf(typeof(ToolWindowIds))] string id, 
     /// it again from inside.</summary>
     public Action? Activate { get; init; }
 
+    public Func<string?>? ActionRefusal { get; init; }
+
     /// <summary>Whether a show the person asks for (its stripe's button, its tab, a move) gives it the keys as its action
     /// does: the terminal's, shown to be typed into. A layout showing it, or an attached agent's call, never does.</summary>
     public bool TakesKeysAsShown { get; init; }
@@ -211,7 +213,7 @@ public sealed class ToolWindow([IdentifierOf(typeof(ToolWindowIds))] string id, 
         {
             Menus = Menus,
             FromTerminal = true,
-            WhyNot = _ => Unserved,
+            WhyNot = _ => Unserved ?? ActionRefusal?.Invoke(),
         }
         : null;
 

@@ -403,6 +403,8 @@ public static class Refusals
     /// <summary>An action on a Godot project asked for in a folder that holds none.</summary>
     public const string NoGodotProject = "The open folder holds no Godot project (project.godot)";
 
+    public const string NoXmakeProject = "Open an Xmake workspace.";
+
     /// <summary>The Aspire window, in a folder holding no AppHost: no project Aspire's SDK makes one, no single-file AppHost.</summary>
     public const string NoAppHost = "The open folder holds no Aspire AppHost";
 

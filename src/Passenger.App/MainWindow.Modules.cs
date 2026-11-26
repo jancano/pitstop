@@ -13,21 +13,24 @@ public partial class MainWindow
 
     private void AddModules()
     {
-        Dock.Add(new Docking.ToolWindow(ToolWindowIds.ModuleGraph, "Module Dependencies", IconKeys.Hierarchy, () =>
+        Dock.Add(new Docking.ToolWindow(ToolWindowIds.ModuleGraph, "Module Dependencies", IconKeys.Reference, () =>
         {
             ModuleGraphView graph = new();
             graph.GoTo += (_, path) => NavigateTo(path, default(TextPosition));
             moduleGraph = graph;
             FollowModuleGraph();
             return graph;
-        }, Docking.ToolAnchor.BottomLeft) { Serves = ToolWindowServes.XmakeProjects });
+        }, Docking.ToolAnchor.BottomLeft)
+        {
+            Serves = ToolWindowServes.XmakeProjects,
+            Action = AppActions.ModuleGraph,
+            Activate = () => ShowModuleGraph(),
+            ActionRefusal = NeedsModuleWorkspace,
+            Menus = [new MenuPlace("View", 1, 4)],
+        });
         actions!.Add(new IdeAction(AppActions.ShowModules, "Show Modules in Explorer", "Explorer", _ => ShowModules())
         {
             WhyNot = _ => NeedsModuleWorkspace(), Menus = [new MenuPlace("View", 1, 3)],
-        });
-        actions.Add(new IdeAction(AppActions.ModuleGraph, "Module Dependencies", "C++ Modules", _ => ShowModuleGraph())
-        {
-            WhyNot = _ => NeedsModuleWorkspace(), Menus = [new MenuPlace("View", 1, 4)],
         });
         actions.Add(new IdeAction(AppActions.GoToModule, "Go to Module", "C++ Modules", _ =>
         {
@@ -46,7 +49,7 @@ public partial class MainWindow
         string? MissingProvider() => ModuleAtCaret() is null ? "Place the caret on a module with a confirmed provider." : null;
     }
 
-    private string? NeedsModuleWorkspace() => session.Xmake is not { IsXmake: true } ? "Open an Xmake workspace."
+    private string? NeedsModuleWorkspace() => session.Xmake is not { IsXmake: true } ? Refusals.NoXmakeProject
         : !session.Trusted ? Refusals.Untrusted : null;
 
     public void ShowModules(string? source = null)

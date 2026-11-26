@@ -34,6 +34,7 @@ public sealed class ToolWindowServesTests
         [ToolWindowIds.Containers] = ToolWindowServes.EveryFolder,
         [ToolWindowIds.Profiler] = ToolWindowServes.EveryFolder,
         [ToolWindowIds.Hierarchy] = ToolWindowServes.EveryFolder,
+        [ToolWindowIds.ModuleGraph] = ToolWindowServes.XmakeProjects,
         [ToolWindowIds.Endpoints] = ToolWindowServes.WebRequests,
         [ToolWindowIds.Requests] = ToolWindowServes.WebApps,
         [ToolWindowIds.LiveTree] = ToolWindowServes.InspectedApps,
@@ -47,6 +48,7 @@ public sealed class ToolWindowServesTests
     private static readonly (string Id, string Why)[] OfAKind =
     [
         (ToolWindowIds.Game, Refusals.NoGodotProject),
+        (ToolWindowIds.ModuleGraph, Refusals.NoXmakeProject),
         (ToolWindowIds.Aspire, Refusals.NoAppHost),
         (ToolWindowIds.StepLibrary, Refusals.NoStepDefinitions),
         (ToolWindowIds.Endpoints, Refusals.NoWebRequests),
@@ -104,12 +106,13 @@ public sealed class ToolWindowServesTests
             DockHost dock = window.DockHost;
             Ui.WaitFor(() => window.Projects is [{ IsEvaluated: true }], () => $"the console project evaluated, where {string.Join(", ", window.Projects.Select(p => $"{p.Name} {p.Problem}"))}");
             // A layout opening one in each of their places (a theme's, or one kept from a folder that had them) shows none.
-            string[] opened = [ToolWindowIds.Game, ToolWindowIds.Aspire, ToolWindowIds.Requests];
+            string[] opened = [ToolWindowIds.Game, ToolWindowIds.Aspire, ToolWindowIds.Requests, ToolWindowIds.ModuleGraph];
             DockLayout opening = dock.Capture();
             foreach (string id in opened)
             {
                 opening.Windows[id] = opening.Windows[id] with { Shown = true };
             }
+            opening.Windows[ToolWindowIds.ModuleGraph] = opening.Windows[ToolWindowIds.ModuleGraph] with { Mode = ToolMode.Editor };
             dock.Apply(opening);
             Ui.Settle();
             NativeMenu tools = Ui.Submenu(Ui.Submenu(window.MenuBar, "View"), MainMenu.ToolWindows);
