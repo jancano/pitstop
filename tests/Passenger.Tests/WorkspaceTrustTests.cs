@@ -319,8 +319,8 @@ public sealed class WorkspaceTrustTests
         {
             Ui.ClickButton(Asked(window), WorkspaceTrustDialog.Untrusted);
             window.OpenFile(Path.Combine(folder, "main.ts"));
-            Ui.WaitFor(() => window.LanguageShown?.Contains("(Passenger's)", StringComparison.Ordinal) == true,
-                () => $"the status bar to name Passenger's TypeScript in the folder not trusted ({window.LanguageShown})");
+            Ui.WaitFor(() => window.LanguageShown?.Contains("(Pitstop's)", StringComparison.Ordinal) == true,
+                () => $"the status bar to name Pitstop's TypeScript in the folder not trusted ({window.LanguageShown})");
             Assert.False(File.Exists(ran), "The folder's own tsserver ran before the folder was trusted");
 
             Ui.ClickButton(window, window.Actions[AppActions.TrustFolder]!.Title);

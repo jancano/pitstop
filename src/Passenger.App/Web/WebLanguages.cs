@@ -574,7 +574,7 @@ public sealed class WebLanguages : IAsyncDisposable
     /// the project's own or, marked so, the one Passenger carries; null otherwise.</summary>
     public string? DetailOf(OpenDocument document) =>
         LanguageOf(document.Path) is { Kind: WebServerKind.TypeScript } && ServerOf(document)?.Session?.Server.TypeScript is { } typescript
-            ? $"TypeScript {typescript.Version}{(typescript.Source == "bundled" || !trusted || !ownTypeScript ? " (Passenger's)" : string.Empty)}"
+            ? $"TypeScript {typescript.Version}{(typescript.Source == "bundled" || !trusted || !ownTypeScript ? " (Pitstop's)" : string.Empty)}"
             : null;
 
     /// <summary>Whether a file's server cannot start (no Node.js, one too old, a server missing), so none will answer for it.</summary>
