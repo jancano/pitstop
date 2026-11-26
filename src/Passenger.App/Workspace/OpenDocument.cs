@@ -683,18 +683,14 @@ public sealed class OpenDocument : Observable
     public IFoldFinder? FoldFinder => finder;
 
     /// <summary>The bookmarked lines.</summary>
-    public IReadOnlyList<int> Bookmarks
+    public IReadOnlyList<int> Bookmarks => bookmarks;
+
+    /// <summary>The bookmarked lines and the digits of the numbered ones, by line.</summary>
+    public void ShowBookmarks(IReadOnlyList<int> lines, IReadOnlyDictionary<int, char> mnemonics)
     {
-        get => bookmarks;
-        set
-        {
-            if (!ReferenceEquals(bookmarks, value))
-            {
-                bookmarks = value;
-                Decorations.SetBookmarks(value);
-                Raise();
-            }
-        }
+        bookmarks = lines;
+        Decorations.SetBookmarks(lines, mnemonics);
+        Raise();
     }
 
     /// <summary>Text per line at the gutter's left (Git blame's), empty for none.</summary>
@@ -1408,7 +1404,7 @@ public sealed class OpenDocument : Observable
     public Avalonia.Media.Geometry Icon => Tool is { } tool && Avalonia.Application.Current is { } app
         && app.TryGetResource(tool.Window.Icon, app.ActualThemeVariant, out object? found) && found is Avalonia.Media.Geometry glyph ? glyph
         : Diff is not null ? Explorer.FileIcons.ForDiff : Explorer.FileIcons.ForFile(Path);
-    public Avalonia.Media.IBrush IconBrush => Explorer.FileIcons.BrushForFile(Path);
+    public string IconTint => Explorer.FileIcons.TintForFile(Path);
 
     /// <summary>The carets: the editor's while the file is shown there, as left otherwise, moved by every change to the text.</summary>
     public SelectionSet Selections { get; set; } = SelectionSet.Single(0);

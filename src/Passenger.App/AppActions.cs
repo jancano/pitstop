@@ -91,6 +91,37 @@ public static class AppActions
     public const string NextBookmark = "app.bookmarks.next";
     public const string PreviousBookmark = "app.bookmarks.previous";
     public const string ShowBookmarks = "app.bookmarks.show";
+
+    // The numbered bookmarks: Rider's ToggleBookmark0 to 9 on Ctrl+Shift and the digit (but 5 in its VS Code keymaps), and
+    // GotoBookmark0 to 9 on Ctrl and the digit, in every keymap, the Mac's too.
+    public const string ToggleBookmark0 = "app.bookmarks.toggle0";
+    public const string ToggleBookmark1 = "app.bookmarks.toggle1";
+    public const string ToggleBookmark2 = "app.bookmarks.toggle2";
+    public const string ToggleBookmark3 = "app.bookmarks.toggle3";
+    public const string ToggleBookmark4 = "app.bookmarks.toggle4";
+    public const string ToggleBookmark5 = "app.bookmarks.toggle5";
+    public const string ToggleBookmark6 = "app.bookmarks.toggle6";
+    public const string ToggleBookmark7 = "app.bookmarks.toggle7";
+    public const string ToggleBookmark8 = "app.bookmarks.toggle8";
+    public const string ToggleBookmark9 = "app.bookmarks.toggle9";
+    public const string GoToBookmark0 = "app.bookmarks.goTo0";
+    public const string GoToBookmark1 = "app.bookmarks.goTo1";
+    public const string GoToBookmark2 = "app.bookmarks.goTo2";
+    public const string GoToBookmark3 = "app.bookmarks.goTo3";
+    public const string GoToBookmark4 = "app.bookmarks.goTo4";
+    public const string GoToBookmark5 = "app.bookmarks.goTo5";
+    public const string GoToBookmark6 = "app.bookmarks.goTo6";
+    public const string GoToBookmark7 = "app.bookmarks.goTo7";
+    public const string GoToBookmark8 = "app.bookmarks.goTo8";
+    public const string GoToBookmark9 = "app.bookmarks.goTo9";
+
+    /// <summary>Each digit's Toggle Bookmark and Go to Bookmark, at the digit's place.</summary>
+    public static IReadOnlyList<(string Toggle, string GoTo)> NumberedBookmarks { get; } =
+    [
+        (ToggleBookmark0, GoToBookmark0), (ToggleBookmark1, GoToBookmark1), (ToggleBookmark2, GoToBookmark2), (ToggleBookmark3, GoToBookmark3),
+        (ToggleBookmark4, GoToBookmark4), (ToggleBookmark5, GoToBookmark5), (ToggleBookmark6, GoToBookmark6), (ToggleBookmark7, GoToBookmark7),
+        (ToggleBookmark8, GoToBookmark8), (ToggleBookmark9, GoToBookmark9),
+    ];
     public const string ReplaceInFiles = "app.replaceInFiles";
     public const string ShowSettings = "app.settings";
     public const string ShowLog = "app.showLog";
@@ -253,6 +284,14 @@ public static class AppActions
     public const string Replace = "app.replace";
     public const string FindNext = "app.findNext";
     public const string FindPrevious = "app.findPrevious";
+
+    // Rider's FindWordAtCaret and FindPrevWordAtCaret, the word at the caret looked for again forward and back (Ctrl+F3 and
+    // Ctrl+Shift+F3, Cmd on the Mac's Visual Studio keymap); ToggleFindInSelection, the find bar's In Selection (Ctrl+Alt+E
+    // outside the Visual Studio keymaps); and IncrementalSearch, the find bar opened empty (Ctrl+I, Cmd+I, in them).
+    public const string FindWordAtCaret = "app.findWordAtCaret";
+    public const string FindPreviousWordAtCaret = "app.findPreviousWordAtCaret";
+    public const string FindInSelection = "app.findInSelection";
+    public const string IncrementalSearch = "app.incrementalSearch";
     public const string FocusExplorer = "app.focusExplorer";
 
     // The file shown chosen in the Explorer: Rider's LocateInSolutionView in its Visual Studio keymaps (its own descriptor's
@@ -592,6 +631,29 @@ public static class AppActions
     // The tool windows' frame, and a tree's Expand All and Collapse All in its header: no keys of Rider's there.
     public const string MaximizeToolWindow = "app.window.maximize";
     public const string HideAllToolWindows = "app.window.hideAll";
+
+    // Rider's HideSideWindows, the left and right tool windows hidden and brought back: Ctrl+B (Cmd+B on the Mac) in its VS
+    // Code keymaps alone. Its JumpToLastWindow, the tool window that last had the keys given them again: Ctrl+Alt+Backspace
+    // and Alt+Shift+F6 in its Visual Studio keymap, Alt+Shift+F6 in its macOS one, F12 in IntelliJ IDEA's, none in VS
+    // Code's. Its CloseActiveTab, the open tab of the tool window with the keys closed: Ctrl+Shift+F4 in every keymap but VS
+    // Code's macOS one.
+    public const string HideSideWindows = "app.window.hideSides";
+    public const string LastToolWindow = "app.window.last";
+    public const string CloseToolTab = "app.window.closeTab";
+
+    // Rider's ZoomInIdeAction, ZoomOutIdeAction and ResetIdeScaleAction, the whole window's scale stepped through Settings'
+    // Display scale: Alt+Shift+=, - and 0 in IntelliJ IDEA's and VS Code's keymaps, Ctrl+Alt on the Mac; its Visual
+    // Studio keymap gives Reset alone its keys, as Alt+Shift+= and - are Extend and Shrink Selection's there. Its
+    // ToggleFullScreen: Alt+Shift+Enter in its Visual Studio keymaps, Ctrl+Cmd+F in its other Mac ones.
+    public const string ZoomIn = "app.window.zoomIn";
+    public const string ZoomOut = "app.window.zoomOut";
+    public const string ResetZoom = "app.window.resetZoom";
+    public const string FullScreen = "app.window.fullScreen";
+
+    // Rider's NextSplitter and PrevSplitter, the keys to the next and previous split of the window's editors: Alt+Tab and
+    // Alt+Shift+Tab in its Mac keymaps, Ctrl+K and Ctrl+Right or Left in its VS Code keymap, none in its other ones.
+    public const string NextSplit = "app.editor.nextSplit";
+    public const string PreviousSplit = "app.editor.previousSplit";
     public const string ExpandAll = "app.window.expandAll";
     public const string CollapseAll = "app.window.collapseAll";
 
@@ -749,6 +811,15 @@ public static class AppActions
             .Bind(CompletionExtensionMethods, "alt X")
             .Bind(CompletionFields, "alt F")
             .Bind(CompletionEvents, "alt E");
+        for (int digit = 0; digit < NumberedBookmarks.Count; digit++)
+        {
+            keymap.Bind(NumberedBookmarks[digit].GoTo, $"control {digit}");
+            // Rider's VS Code keymaps give Toggle Bookmark 5 no keys.
+            if (preset != KeymapPreset.VSCode || digit != 5)
+            {
+                keymap.Bind(NumberedBookmarks[digit].Toggle, $"control shift {digit}");
+            }
+        }
         foreach ((string action, string[] shortcuts) in overrides)
         {
             List<Shortcut> keys = [];
@@ -821,6 +892,9 @@ public static class AppActions
                 .Bind(Replace, "control H")
                 .Bind(FindNext, "F3", "meta alt PAGE_DOWN")
                 .Bind(FindPrevious, "shift F3", "meta alt PAGE_UP")
+                .Bind(FindWordAtCaret, "meta F3")
+                .Bind(FindPreviousWordAtCaret, "meta shift F3")
+                .Bind(IncrementalSearch, "meta I")
                 .Bind(FocusExplorer, "meta 1", "meta alt L")
                 .Bind(SelectOpenedFile, "alt shift L")
                 // CopyPaths: $default's Ctrl+Shift+C as Mac OS X 10.5+ takes it; RevealIn has none.
@@ -872,6 +946,14 @@ public static class AppActions
                 .Bind(ShowTests, "meta 8", "meta shift 8")
                 .Bind(ShowStructure, "control alt F")
                 .Bind(MaximizeToolWindow, "meta shift QUOTE")
+                .Bind(ZoomIn, "control alt EQUALS")
+                .Bind(ZoomOut, "control alt MINUS")
+                .Bind(ResetZoom, "control alt 0")
+                .Bind(FullScreen, "alt shift ENTER")
+                .Bind(NextSplit, "alt TAB")
+                .Bind(PreviousSplit, "alt shift TAB")
+                .Bind(LastToolWindow, "alt shift F6")
+                .Bind(CloseToolTab, "control shift F4")
                 .Bind(HideAllToolWindows, "meta shift F12")
                 .Bind(HideToolWindow, "shift ESCAPE")
                 .Bind(Commit, "meta alt shift K")
@@ -963,6 +1045,9 @@ public static class AppActions
             .Bind(Replace, "control H")
             .Bind(FindNext, "F3", "control alt PAGE_DOWN", "alt shift SLASH")
             .Bind(FindPrevious, "shift F3", "control alt PAGE_UP")
+            .Bind(FindWordAtCaret, "control F3")
+            .Bind(FindPreviousWordAtCaret, "control shift F3")
+            .Bind(IncrementalSearch, "control I")
             .Bind(FocusExplorer, "alt 1", "control alt L")
             .Bind(SelectOpenedFile, "alt shift L")
             .Bind(CopyPath, "control shift C")
@@ -1013,6 +1098,10 @@ public static class AppActions
             .Bind(ShowTests, "alt 8", "alt shift 8")
             .Bind(ShowStructure, "control alt F")
             .Bind(MaximizeToolWindow, "control shift QUOTE")
+            .Bind(ResetZoom, "alt shift 0")
+            .Bind(FullScreen, "alt shift ENTER")
+            .Bind(LastToolWindow, "control alt BACK_SPACE", "alt shift F6")
+            .Bind(CloseToolTab, "control shift F4")
             .Bind(HideAllToolWindows, "control shift F12")
             .Bind(HideToolWindow, "shift ESCAPE")
             .Bind(Commit, "control alt K")
@@ -1107,6 +1196,7 @@ public static class AppActions
                 .Bind(FindNext, "meta G", "F3", "meta K , meta D")
                 // Its third, Cmd+Shift+F5, is VS Code's Restart, Rerun here.
                 .Bind(FindPrevious, "meta shift G", "shift F3")
+                .Bind(FindInSelection, "control alt E")
                 .Bind(FocusExplorer, "meta shift E")
                 .Bind(SelectOpenedFile, "meta K , E")
                 .Bind(NewFile, "meta N")
@@ -1191,6 +1281,13 @@ public static class AppActions
                 .Bind(CloseSolution, "meta K , F", "meta shift W")
                 .Bind(ShowTerminal, "control BACK_QUOTE")
                 .Bind(MaximizeToolWindow, "meta shift QUOTE")
+                .Bind(ZoomIn, "control alt EQUALS")
+                .Bind(ZoomOut, "control alt MINUS")
+                .Bind(ResetZoom, "control alt 0")
+                .Bind(FullScreen, "control meta F")
+                .Bind(NextSplit, "alt TAB")
+                .Bind(PreviousSplit, "alt shift TAB")
+                .Bind(HideSideWindows, "meta B")
                 .Bind(ViewBreakpoints, "meta shift F8")
                 .Bind(ShowCommit, "meta 0")
                 .Bind(NextChange, "alt F3", "alt F5")
@@ -1227,6 +1324,7 @@ public static class AppActions
             .Bind(Replace, "control H")
             .Bind(FindNext, "F3", "control K , control D")
             .Bind(FindPrevious, "shift F3", "control shift F3")
+            .Bind(FindInSelection, "control alt E")
             .Bind(FocusExplorer, "control shift E")
             .Bind(SelectOpenedFile, "control K , E")
             .Bind(CopyPath, "shift alt C", "control K , P")
@@ -1311,6 +1409,13 @@ public static class AppActions
             .Bind(CloseSolution, "control K , F", "control shift W")
             .Bind(ShowTerminal, "control BACK_QUOTE")
             .Bind(MaximizeToolWindow, "control shift QUOTE")
+            .Bind(ZoomIn, "alt shift EQUALS")
+            .Bind(ZoomOut, "alt shift MINUS")
+            .Bind(ResetZoom, "alt shift 0")
+            .Bind(NextSplit, "control K , control RIGHT")
+            .Bind(PreviousSplit, "control K , control LEFT")
+            .Bind(HideSideWindows, "control B")
+            .Bind(CloseToolTab, "control shift F4")
             .Bind(ViewBreakpoints, "control shift F8")
             .Bind(ShowCommit, "alt 0")
             .Bind(Branches, "control shift BACK_QUOTE")
@@ -1360,6 +1465,7 @@ public static class AppActions
                 .Bind(Replace, "meta R")
                 .Bind(FindNext, "meta G")
                 .Bind(FindPrevious, "meta shift G")
+                .Bind(FindInSelection, "control alt E")
                 .Bind(FocusExplorer, "meta 1")
                 .Bind(CopyPath, "meta shift C")
                 .Bind(OpenInBrowser, "alt F2")
@@ -1380,6 +1486,14 @@ public static class AppActions
                 .Bind(HideToolWindow, "shift ESCAPE")
                 .Bind(HideAllToolWindows, "meta shift F12")
                 .Bind(MaximizeToolWindow, "meta shift QUOTE")
+                .Bind(ZoomIn, "control alt EQUALS")
+                .Bind(ZoomOut, "control alt MINUS")
+                .Bind(ResetZoom, "control alt 0")
+                .Bind(FullScreen, "control meta F")
+                .Bind(NextSplit, "alt TAB")
+                .Bind(PreviousSplit, "alt shift TAB")
+                .Bind(LastToolWindow, "F12")
+                .Bind(CloseToolTab, "control shift F4")
                 .Bind(Back, "meta OPEN_BRACKET", "meta alt LEFT", "button4")
                 .Bind(Forward, "meta CLOSE_BRACKET", "meta alt RIGHT", "button5")
                 .Bind(Complete, "control SPACE")
@@ -1480,6 +1594,9 @@ public static class AppActions
             .Bind(Replace, "control R")
             .Bind(FindNext, "F3", "control L")
             .Bind(FindPrevious, "shift F3", "control shift L")
+            .Bind(FindWordAtCaret, "control F3")
+            .Bind(FindPreviousWordAtCaret, "control shift F3")
+            .Bind(FindInSelection, "control alt E")
             .Bind(FocusExplorer, "alt 1")
             .Bind(CopyPath, "control shift C")
             .Bind(OpenInBrowser, "alt F2")
@@ -1501,6 +1618,11 @@ public static class AppActions
             .Bind(HideToolWindow, "shift ESCAPE")
             .Bind(HideAllToolWindows, "control shift F12")
             .Bind(MaximizeToolWindow, "control shift QUOTE")
+            .Bind(ZoomIn, "alt shift EQUALS")
+            .Bind(ZoomOut, "alt shift MINUS")
+            .Bind(ResetZoom, "alt shift 0")
+            .Bind(LastToolWindow, "F12")
+            .Bind(CloseToolTab, "control shift F4")
             .Bind(Back, "control alt LEFT", "button4")
             .Bind(Forward, "control alt RIGHT", "button5")
             .Bind(Complete, "control SPACE")

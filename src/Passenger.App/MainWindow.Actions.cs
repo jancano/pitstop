@@ -225,6 +225,11 @@ public partial class MainWindow
             c => ConsoleFind(c) is not null || DiffWindowOf(c) is not null ? null : Refusals.NeedsFile(c), ("Edit/Find", 0, 2));
         Add(A.FindPrevious, "Find Previous", "IDE", c => (ConsoleFind(c) ?? DiffWindowOf(c)?.Find ?? Editors.FindBar).Previous(),
             c => ConsoleFind(c) is not null || DiffWindowOf(c) is not null ? null : Refusals.NeedsFile(c), ("Edit/Find", 0, 3));
+        Add(A.FindWordAtCaret, "Find Word at Caret", "IDE", _ => Editors.FindBar.FindAtCaret(forward: true), Refusals.NeedsFile, ("Edit/Find", 0, 4));
+        Add(A.FindPreviousWordAtCaret, "Find Previous Word at Caret", "IDE", _ => Editors.FindBar.FindAtCaret(forward: false), Refusals.NeedsFile,
+            ("Edit/Find", 0, 5));
+        Add(A.FindInSelection, "Find in Selection", "IDE", _ => Editors.FindBar.ToggleInSelection(), Refusals.NeedsFile, ("Edit/Find", 0, 6));
+        Add(A.IncrementalSearch, "Incremental Search", "IDE", _ => Editors.FindBar.OpenEmpty(), Refusals.NeedsFile, ("Edit/Find", 0, 7));
         Add(A.FindInFiles, "Find in Files…", "IDE", c => ShowFindInFiles(replace: false, ExplorerScope(c)), NeedsFolder, ("Edit/Find", 1, 0));
         Add(A.ReplaceInFiles, "Replace in Files…", "IDE", c => ShowFindInFiles(replace: true, ExplorerScope(c)), NeedsFolder, ("Edit/Find", 1, 1));
         Add(A.ExtendSelection, "Extend Selection", "Editor", _ => ExtendSelection(), Refusals.NeedsFile, ("Edit", 2, 1));
@@ -253,6 +258,7 @@ public partial class MainWindow
         AddNavigationBar();
         AddReadAsText();
         AddSoundCues();
+        AddFrameActions();
 
         // The tool windows' frame, run from the terminal too.
         actions.Add(new IdeAction(A.MaximizeToolWindow, "Maximize Tool Window", "Tool Windows", _ => Dock.ToggleMaximize()) { Menus = [new("View", 3, 0)], FromTerminal = true });
@@ -338,7 +344,14 @@ public partial class MainWindow
             [E.UnfoldDocComments] = [new("Code/Folding", 2, 0)],
             [E.FoldDocComments] = [new("Code/Folding", 2, 1)],
             [E.ToggleFold] = [new("Code/Folding", 3, 0)],
+            [E.UnfoldRecursively] = [new("Code/Folding", 0, 2)],
+            [E.FoldRecursively] = [new("Code/Folding", 1, 3)],
         };
+        for (int level = 0; level < E.UnfoldToLevels.Count; level++)
+        {
+            menus[E.UnfoldToLevels[level]] = [new("Code/Folding/Expand to Level", 0, level)];
+            menus[E.UnfoldAllToLevels[level]] = [new("Code/Folding/Expand All to Level", 0, level)];
+        }
         foreach ((string id, string title) in E.All)
         {
             actions!.Add(new IdeAction(id, title, "Editor", context => Edit(id, context))
