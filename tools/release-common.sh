@@ -14,13 +14,14 @@ checkout_root() {
     cd "$(dirname "$0")/.." && pwd
 }
 
-# Prints the version, taken as version=$(release_version ROOT): a vX.Y.Z tag on the commit, else Directory.Build.props'
-# Version; anything but X.Y.Z in numbers fails.
+# Prints the version from PITSTOP_RELEASE_VERSION, a version tag on the commit, or Directory.Build.props.
+# An explicit version lets a local prerelease package be verified before any tag is created.
 release_version() {
-    version=$(git -C "$1" describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null | sed 's/^v//' || true)
+    version=${PITSTOP_RELEASE_VERSION:-}
+    [ -n "$version" ] || version=$(git -C "$1" describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null | sed 's/^v//' || true)
     [ -n "$version" ] || version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$1/Directory.Build.props" | head -n 1)
-    if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-        fail "the version '$version' is not X.Y.Z in numbers (a vX.Y.Z tag on the commit, or Version in Directory.Build.props)"
+    if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*)?$'; then
+        fail "the version '$version' must be X.Y.Z or X.Y.Z-prerelease"
     fi
     echo "$version"
 }

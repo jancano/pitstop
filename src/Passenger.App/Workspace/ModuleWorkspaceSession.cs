@@ -78,6 +78,15 @@ public sealed class ModuleWorkspaceSession
         active = current;
         try
         {
+            // A replacement waits for the canceled scanner to return its process and temporary files.
+            if (worker is Task previous)
+            {
+                await previous.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.SuppressThrowing);
+            }
+            if (closed || active != current || current.IsCancellationRequested || !ReferenceEquals(desired, workspace))
+            {
+                return;
+            }
             worker = BackgroundWork.Run(() => scanner.ScanAsync(workspace, current.Token), current.Token);
             ModuleWorkspace snapshot = await worker;
             if (!closed && active == current && !current.IsCancellationRequested && ReferenceEquals(desired, workspace) && WorkspaceTrust.Trusts(workspace.Root))

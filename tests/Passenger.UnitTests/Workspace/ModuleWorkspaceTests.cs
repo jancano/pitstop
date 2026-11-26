@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Text.Json;
 using Passenger.Core;
 using Pitstop.Modules;
@@ -9,6 +10,33 @@ namespace Passenger.UnitTests.Workspace;
 
 public sealed class ModuleWorkspaceTests
 {
+    [Fact]
+    public void Measures_graph_construction_from_a_scale_capture()
+    {
+        string? directory = Environment.GetEnvironmentVariable("PITSTOP_TEST_MODULE_SCALE_RESULTS");
+        Assert.SkipWhen(string.IsNullOrWhiteSpace(directory), "Set PITSTOP_TEST_MODULE_SCALE_RESULTS to a module-scale.py results directory with a successful P1689 scan.");
+        string results = Path.GetFullPath(directory!);
+        using JsonDocument database = JsonDocument.Parse(File.ReadAllText(Path.Combine(results, "scan-commands.json")));
+        string root = PathNames.Canonical(database.RootElement[0].GetProperty("directory").GetString()!);
+        string script = Path.Combine(root, "xmake.lua");
+        XmakeTargetGraph targets = XmakeJson.Graph(XmakeJson.ReadCommand<XmakeJson.GraphInfo>(File.ReadAllText(Path.Combine(results, "target-graph.out"))));
+        XmakeWorkspace workspace = new(root, new("xmake", new(3, 1, 2), "3.1.2"),
+            new("scale", "debug", "mingw", "x86_64", Path.Combine(root, "build"), script, "llvm"),
+            [.. targets.Edges.Keys.Select(name => new XmakeTarget(name, "", script, null, [], [], [], new([], [], null)))],
+            targets, [], [script], null, null);
+        (List<ScanCommand> commands, List<string> omitted) = ModuleScanner.Commands(workspace, database.RootElement, CancellationToken.None);
+        ImmutableArray<P1689.Rule> rules = P1689.Read(File.ReadAllText(Path.Combine(results, "p1689.out")));
+        Assert.NotEmpty(commands);
+        long started = Stopwatch.GetTimestamp();
+        ModuleWorkspace graph = P1689.Resolve(workspace, commands, rules, omitted, null, CancellationToken.None);
+        double graphSeconds = Stopwatch.GetElapsedTime(started).TotalSeconds;
+        Assert.NotEmpty(graph.Providers);
+        File.WriteAllText(Path.Combine(results, "graph-measurements.json"), JsonSerializer.Serialize(new
+        {
+            graphSeconds, providers = graph.Providers.Length, resolved = graph.Dependencies.Count(edge => edge.Provider is not null),
+        }) + "\n");
+    }
+
     [Fact]
     public void Reads_the_captured_compiler_and_Xmake_scans_and_distinguishes_partitions()
     {
