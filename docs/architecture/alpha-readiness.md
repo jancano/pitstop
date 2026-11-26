@@ -1,6 +1,6 @@
 # Pitstop 0.2.0-alpha.1 release readiness
 
-The alpha candidate targets Windows x64 with Xmake and Xrepo 3.1.2, LLVM-MinGW 23.1.6 with libc++, clangd and clang-scan-deps 23.1.6. The candidate is held for full regression results and release approval. The [release notes](../release-notes/0.2.0-alpha.1.md) describe the candidate packages and limitations.
+The alpha candidate targets Windows x64 with Xmake and Xrepo 3.1.2, LLVM-MinGW 23.1.6 with libc++, clangd and clang-scan-deps 23.1.6. Publication remains blocked by unresolved regressions and candidate-wide headless verification. The [release notes](../release-notes/0.2.0-alpha.1.md) describe the candidate packages and limitations.
 
 ## Repository audit
 
@@ -27,15 +27,17 @@ The full unfiltered run discovers unit and headless tests and writes per-process
 | Run | Passed | Failed | Skipped | Timed out | Scope |
 | --- | ---: | ---: | ---: | ---: | --- |
 | Unit tests | 618 | 0 | 4 | 0 | Complete unit project. Three environment-related omissions and one opt-in benchmark |
-| Native reference suites | 10 | 0 | 0 | 0 | All four existing Xmake Explorer, clangd, Build and Run, and module intelligence classes with the reference tools |
-| Real MCP client | 3 | 0 | 0 | 0 | Attached client through the actual MCP transport, including distinct ambiguous and unresolved edges |
+| Native reference suites | 10 | 0 | 0 | 0 | All four existing Xmake Explorer, clangd, Build and Run, and module intelligence classes with the reference tools on the packaged source |
+| Real MCP client | 3 | 0 | 0 | 0 | Attached client through the actual MCP transport on the packaged source, including distinct ambiguous and unresolved edges |
 | Focused managed and Explorer checks | 11 | 0 | 1 | 0 | Debugger rules, MCP action discovery, project loading and editing, logs, Compose, and Solution views. The filesystem case-sensitivity check skipped on this volume |
 | UI and docking regression rerun | 8 | 0 | 0 | 0 | Minimum-width layout, distinct tool-window icons, Xmake availability and saved layout, dialog widths, shared context menus and typography |
 | NuGet and GPG fixture rerun | 2 | 0 | 0 | 2 | Both NuGet tests passed. VSTest reported both 90-second Git for Windows GPG prompts as failures |
 | Scale probes | 8 | 0 | 0 | 0 | Four headless editor runs and four captured-graph runs. The 500- and 1,000-module runs used warm Xmake caches |
 | Unfiltered Phase 5 baseline through test-host cleanup | 1,233 | 30 | 108 | 1 | Matched results by test method. 1,372 of 1,612 distinct methods recorded. 240 methods were missing at the recovery checkpoint |
+| Recovery on the same Phase 5 revision | 141 | 0 | 105 | 0 | Targeted 246 methods, including the 240 lacking a result and six repeated methods |
+| Phase 5 baseline and recovery combined | 1,371 | 30 | 210 | 1 | 1,612 of 1,612 distinct methods, retaining the baseline outcome for repeats |
 
-The unfiltered baseline, its recovery run and the native-class run are tracked separately. The baseline's logs are retained under `artifacts/alpha-regression-checkout/artifacts/test-results/` in `baseline-partial` and `local`. Two orphaned test hosts kept assemblies locked after the interruption. Their owned process trees were stopped before retrying. The test runner now stops the full owned process tree on Windows, writes diagnostics as UTF-8 and flushes each serial output line. Separate probes verified the diagnostic encoding, process-tree cleanup and log visibility before a child exited. Recovery targets classes with unreached methods and writes to `resume`. The native-class run took 19 minutes beside the full suite. The focused stabilization run passed 14 tests and initially failed the debugger watchdog source rule. The corrected rule passed in the managed rerun above. Some rows overlap across runs. The scale tool's 500- and 1,000-module export timeouts are command timeouts and are recorded below.
+The baseline's logs and TRX reports are retained under `artifacts/alpha-regression-checkout/artifacts/test-results/` in `baseline-partial` and `local`. Two orphaned test hosts kept assemblies locked after the coordinator stopped. Their owned process trees were stopped before retrying. The test runner now stops the full owned process tree on Windows, writes diagnostics as UTF-8 and flushes each serial output line. Separate probes verified the encoding, process-tree cleanup and visibility of redirected output before a child exited. Recovery completed in 80.8 minutes, including 72.7 minutes from classes that run serially, and wrote to `resume`. The merged report is `artifacts/alpha-baseline-report.json`. It counts distinct methods with parameters normalized and therefore does not give per-theory-case coverage of all 1,639 discovery entries. The stabilized candidate has focused headless results. The full baseline and recovery ran on `869090ee0`. Some rows overlap across runs. The scale tool's 500- and 1,000-module export timeouts are command timeouts and are recorded below.
 
 The module graph now wraps its controls at the minimum window width and uses the dock's shared action registration. The focused UI and docking checks passed after the fixes. The release screenshots show the example's module interface, partition, implementation source and cross-target consumer in both themes. [Dark](../screenshots/module-graph-dark.png) · [Light](../screenshots/module-graph-light.png)
 
@@ -122,4 +124,4 @@ The package script produced both unsigned artifacts from `c786c232f` and ran its
 python -I tools/alpha-package-smoke.py $exe $configuredExampleCopy $newStateDirectory --version 0.2.0-alpha.1
 ```
 
-The Windows installed-apps listing reports the numeric `0.2.0` version. The application reports `0.2.0-alpha.1`. The install/uninstall test checked the license, notices, Start menu entry and removal of installation registrations. The existing Passenger state directory and user PATH were preserved in the round trip. A clean Windows VM, simultaneous operation with an installed Passenger process, packet-level update capture and non-Windows toolchains remain unverified.
+The Windows installed-apps listing reports the numeric `0.2.0` version. The application reports `0.2.0-alpha.1`. The install/uninstall test checked the license, notices, Start menu entry and removal of installation registrations. The existing Passenger state directory and user PATH were preserved in the round trip. Both package probes recorded clangd initializing, opening the sample files and shutting down with status zero. Clangd rejected a folding-range request carrying a non-file URI in each package session. A clean Windows VM, simultaneous operation with an installed Passenger process, packet-level update capture and non-Windows toolchains remain unverified.
