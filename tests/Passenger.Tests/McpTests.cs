@@ -1130,7 +1130,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         Dictionary<string, object?> versions = new() { ["path"] = "Directory.Packages.props" };
         Assert.DoesNotContain("Passenger.Sample", (await Call(client, McpTools.EditorText, project)).GetString(), StringComparison.Ordinal);
         Assert.DoesNotContain("Passenger.Sample", (await Call(client, McpTools.EditorText, versions)).GetString(), StringComparison.Ordinal);
-        JsonElement found = Assert.Single((await Call(client, McpTools.NugetSearch, new() { ["query"] = "Pitstop" })).EnumerateArray());
+        JsonElement found = Assert.Single((await Call(client, McpTools.NugetSearch, new() { ["query"] = "Passenger" })).EnumerateArray());
         Assert.Equal(("Passenger.Sample", "1.0.0"), (found.GetProperty("id").GetString(), found.GetProperty("version").GetString()));
 
         JsonElement install = await Call(client, McpTools.NugetInstall, new() { ["project"] = "Lib", ["id"] = "Passenger.Sample" });
@@ -1184,7 +1184,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             TestProjects.Library().With("  <ItemGroup>\n    <PackageReference Include=\"Passenger.Legacy\" Version=\"1.0.0\" />\n  </ItemGroup>\n"));
         await using McpClient client = await Start(["--mcp", folder], languageServer: false);
 
-        JsonElement[] found = [.. (await Call(client, McpTools.NugetSearch, new() { ["query"] = "Pitstop" })).EnumerateArray()];
+        JsonElement[] found = [.. (await Call(client, McpTools.NugetSearch, new() { ["query"] = "Passenger" })).EnumerateArray()];
         JsonElement legacy = Assert.Single(found, p => p.GetProperty("id").GetString() == "Passenger.Legacy");
         Assert.Equal([$"1.0.0 (Lib): high severity, {Advisory}"], Texts(legacy, "vulnerable"));
         Assert.Equal(["2.0.0: critical bugs; Broken past repair.", "1.0.0 (Lib): legacy, no longer maintained; use Passenger.Modern 2.0.0 or later instead; Kept no more."],
@@ -2937,8 +2937,11 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             }
         }
         HashSet<string> ids = [.. listed.Select(Id)];
+        bool notesCarried = Passenger.App.Updates.ReleaseNotes.Carried.Exists;
+        Assert.Equal(notesCarried, ids.Contains(AppActions.WhatsNew));
         string[] declared = [.. typeof(AppActions).GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Where(f => f.IsLiteral && f.FieldType == typeof(string)).Select(f => (string)f.GetRawConstantValue()!)];
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string)).Select(f => (string)f.GetRawConstantValue()!)
+            .Where(id => notesCarried || id != AppActions.WhatsNew)];
         string[] missing = [.. declared.Where(id => !ids.Contains(id))];
         Assert.True(missing.Length == 0, $"ide_actions leaves out {string.Join(", ", missing)}, read on through the groups it named: {Text(all).Length:N0} characters, its last words {Text(all)[^Math.Min(300, Text(all).Length)..]}");
 

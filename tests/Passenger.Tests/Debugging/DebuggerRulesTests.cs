@@ -69,7 +69,7 @@ public sealed class DebuggerRulesTests
         static bool OnceFailed(InvocationExpressionSyntax call, string[] describing) => call.Ancestors().Any(around => around is ThrowStatementSyntax or ThrowExpressionSyntax
             || around is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Assert" }, Name.Identifier.ValueText: "Fail" } }
             || around is MethodDeclarationSyntax method && (describing.Contains(method.Identifier.ValueText)
-                || method is { Identifier.ValueText: "Write", Parent: ClassDeclarationSyntax { Identifier.ValueText: "HangReports" } }));
+                || method is { Identifier.ValueText: "Write", Parent: ClassDeclarationSyntax { Identifier.ValueText: nameof(HangReportsAttribute) } }));
     }
 
     /// <summary>Each C# node under the folder (from the repository's root) that <paramref name="written"/> names, by file

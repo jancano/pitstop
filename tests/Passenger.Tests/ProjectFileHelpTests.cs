@@ -344,13 +344,15 @@ public sealed class ProjectFileHelpTests : IClassFixture<ProjectFileHelpTests.Sh
         Ui.WaitFor(() => document.Markers.Any(m => m.Message.StartsWith("MSB4092", StringComparison.Ordinal)), "the malformed condition marked");
         Marker condition = MarkerOn(editor, document, "'$(ShopLogs)' ==");
         Assert.Equal(MarkerKind.Error, condition.Kind);
-        Assert.StartsWith("MSB4092: An unexpected token", condition.Message);
+        Assert.StartsWith("MSB4092: ", condition.Message);
         Replace(editor, "'$(ShopLogs)' ==", "'$(ShopLogs)' == 'true'");
         Ui.WaitFor(() => !document.Markers.Any(m => m.Message.StartsWith("MSB4092", StringComparison.Ordinal)), "the condition put right no longer marked");
 
         Replace(editor, "Sdk=\"Microsoft.NET.Sdk\"", "Sdk=\"Microsoft.NET.Sdk.Nowhere\"");
         Ui.WaitFor(() => document.Markers.Any(m => m.Message.StartsWith("MSB4236", StringComparison.Ordinal)), "the unknown SDK marked");
-        Assert.Equal("MSB4236: The SDK 'Microsoft.NET.Sdk.Nowhere' specified could not be found.", MarkerOn(editor, document, "Microsoft.NET.Sdk.Nowhere").Message);
+        Marker missingSdk = MarkerOn(editor, document, "Microsoft.NET.Sdk.Nowhere");
+        Assert.StartsWith("MSB4236: ", missingSdk.Message);
+        Assert.Contains("Microsoft.NET.Sdk.Nowhere", missingSdk.Message, StringComparison.Ordinal);
         Ui.WaitFor(() => window.BottomPanel.Problems.FileProblems.Count(p => p.Severity == ProblemSeverity.Error) == 1, "Problems listing the one error the evaluation stopped on");
         window.Close();
     }

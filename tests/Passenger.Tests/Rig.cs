@@ -3114,7 +3114,7 @@ public static class TestGpgKeys
     /// <summary>The carried key of <paramref name="user"/> (tests@passenger.invalid's where none is given) guarded by
     /// <paramref name="passphrase"/>, put in the run's keyring and trusted there as gpg trusts a key it makes; its id, the
     /// agent ended after, so the passphrase is asked for as a person's first signature asks it.</summary>
-    public static async Task<string> PutAsync(string passphrase, string? gpg = null, string user = "Pitstop Tests <tests@passenger.invalid>")
+    public static async Task<string> PutAsync(string passphrase, string? gpg = null, string user = "Passenger Tests <tests@passenger.invalid>")
     {
         gpg ??= Gpg!;
         string log = AgentLogged(gpg);
