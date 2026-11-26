@@ -3240,7 +3240,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         Regex attribute = new(@"(?<![\w.])FontSize=""([^""{][^""]*)""");
         Regex setter = new(@"Property=""(?:TextElement\.)?FontSize""\s+Value=""([^""{][^""]*)""");
         Regex selector = new(@"<Style Selector=""([^""]*)""");
-        Regex body = new(@"<x:Double x:Key=""Pitstop\.BodySize"">([^<]*)</x:Double>");
+        Regex body = new(@"<x:Double x:Key=""Passenger\.BodySize"">([^<]*)</x:Double>");
         double[] steps = [.. typeof(TypeRamp).GetFields().Where(f => f.IsLiteral).Select(f => (double)f.GetRawConstantValue()!).Distinct().Order()];
         bool HasNumber(string written) => number.IsMatch(written);
         List<string> found = [];

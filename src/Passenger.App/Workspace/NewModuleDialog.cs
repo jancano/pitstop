@@ -36,7 +36,7 @@ public sealed class NewModuleDialog : IdeWindow
         this.workspace = workspace;
         this.open = open;
         Title = "New C++ Module";
-        Width = 640;
+        Width = DialogWidths.Form;
         Height = 570;
         FormRows.Scope(this);
         targets.ItemsSource = workspace.Targets.Select(item => item.Name).ToArray();

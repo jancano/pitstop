@@ -26,7 +26,7 @@ public sealed class ModuleGraphView : DockPanel
 
     public ModuleGraphView()
     {
-        StackPanel tools = new() { Orientation = Orientation.Horizontal, Spacing = Gaps.Normal, Margin = new Thickness(Gaps.Normal) };
+        ToolFlow tools = new() { Spacing = Gaps.Normal, Margin = new Thickness(Gaps.Normal) };
         Button smaller = new() { Content = "−" };
         Button larger = new() { Content = "+" };
         smaller.Click += (_, _) => Scale(0.8);

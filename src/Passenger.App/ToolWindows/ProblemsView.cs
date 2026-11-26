@@ -99,12 +99,8 @@ public sealed class ProblemsView : DockPanel
     {
         if (problem.Related.Count > 0)
         {
-            MenuItem related = new() { Header = "Related Locations" };
-            foreach (Problem note in problem.Related)
-            {
-                related.Items.Add(ListMenus.Item($"{note.Where} · {note.Message.Split('\n')[0]}", () => model.GoTo(note)));
-            }
-            yield return related;
+            yield return ListMenus.Sub("Related Locations", problem.Related.Select(note =>
+                ListMenus.Item($"{note.Where} · {note.Message.Split('\n')[0]}", () => model.GoTo(note))));
         }
     }
 
