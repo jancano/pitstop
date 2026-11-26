@@ -348,6 +348,9 @@ def keep_awake():
 
 
 def main():
+    # Failure details can contain Unicode even when the runner's redirected console uses a legacy code page.
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("filter", nargs="?", default="", help="dotnet test's --filter, as `just test Editing` gives it")
     parser.add_argument("count", nargs="?", default="", help="how many processes, as `just test Editing 2` gives it")
