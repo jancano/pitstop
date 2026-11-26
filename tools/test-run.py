@@ -364,6 +364,8 @@ def main():
         keep_awake()
     # As CI runs: the SDK's telemetry holds each dotnet the tests start up to 2 s at its exit to send.
     os.environ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "true"
+    # Discovery and hang reporting read VSTest's English output even on localized Windows installations.
+    os.environ["DOTNET_CLI_UI_LANGUAGE"] = "en-US"
     # As just's recipes run, with no MSBuild server; every build under the run's salt, ended with it (end_builds).
     os.environ["DOTNET_CLI_USE_MSBUILD_SERVER"] = "0"
     os.environ["MSBUILDUSESERVER"] = "0"

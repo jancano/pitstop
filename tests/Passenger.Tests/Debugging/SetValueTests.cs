@@ -138,7 +138,7 @@ public class SetValueTests(ITestOutputHelper testOutputHelper)
             .InitializeAsync()
             .LaunchAsync(Debuggees.Program("PassengerCases"), stopAtEntry: false, justMyCode: true, arguments: ["generic"])
             .WaitForInitializedEvent();
-        int wrapped = Debuggees.Line("PassengerCases", "return $\"{list.Count} {list[0]} {maybe}\";");
+        int wrapped = Debuggees.Line("PassengerCases", "return FormattableString.Invariant($\"{list.Count} {list[0]} {maybe}\");");
         await host.BreakpointsAsync([wrapped], Debuggees.Source("PassengerCases", "Program.cs")).ConfigurationDoneAsync();
         StoppedEvent stop = await host.WaitForStoppedEvent();
         Assert.True(stop.ReadStopInfo().line == wrapped, $"The program was to stop in Typed.Wrap at line {wrapped}, but stopped at the {stop.Reason} at line {stop.Line}");

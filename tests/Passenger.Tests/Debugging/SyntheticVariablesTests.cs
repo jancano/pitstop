@@ -161,7 +161,7 @@ public class SyntheticVariablesTests(ITestOutputHelper testOutputHelper)
             TestContext.Current.CancellationToken, TimeSpan.FromMilliseconds(100)), $"The box of what Locate() returned was never left running partway through the step:\n{host.EngineLog()}");
         await host.RequestAsync(DapCommands.Input, new InputArguments("x", Close: true));
         stop = await stepped;
-        int next = Line("Console.WriteLine($\"{described} {ratio} {spot}\");");
+        int next = Line("Console.WriteLine(FormattableString.Invariant($\"{described} {ratio} {spot}\"));");
         Assert.True((stop.Reason, stop.ReadStopInfo().line) == (StopReasons.Step, next), $"Once the box's evaluation returned, the step stopped for {stop.Reason} at line {stop.ReadStopInfo().line}, not at the next line, {next}");
         DapVariable returned = (await host.LocalsAsync(stop))[0];
         Assert.True(returned.Name == "Locate() returned" && returned.Value.StartsWith("Not kept: ", StringComparison.Ordinal),

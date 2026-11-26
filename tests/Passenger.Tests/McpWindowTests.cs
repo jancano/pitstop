@@ -847,8 +847,9 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
             CallToolResult answer = Ui.AwaitPumped(Waiting.Apart(() => Result(client, McpTools.Outline, new() { ["path"] = "Bad/Welcome.cs" })),
                 "the agent's outline of Welcome.cs", AgentLimit);
             string said = Text(answer);
-            Assert.True(answer.IsError == true && said.Contains("Bad did not load into the C# language server, which holds none of its code to answer from: The project file could not be loaded.",
-                StringComparison.Ordinal), $"outline of a file come into a project that did not load, while the project loads again, answered: {said}");
+            Assert.True(answer.IsError == true && said.Contains("Bad did not load into the C# language server, which holds none of its code to answer from:", StringComparison.Ordinal)
+                && said.Contains("Mend that and it loads again", StringComparison.Ordinal),
+                $"outline of a file come into a project that did not load, while the project loads again, answered: {said}");
         }
         finally
         {

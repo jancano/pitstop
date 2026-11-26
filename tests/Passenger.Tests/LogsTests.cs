@@ -47,13 +47,13 @@ public sealed class LogsTests : IDisposable
         Ui.WaitFor(() => window.CSharpService is { IsReady: true }, $"the language server to finish loading ({window.CSharpService?.State})");
         Ui.Settle();
 
-        const string Reason = "The SDK 'Missing.Sdk' specified could not be found.";
-        Assert.True(window.Status?.Contains(Reason, StringComparison.Ordinal) == true,
+        const string Sdk = "Missing.Sdk";
+        Assert.True(window.Status?.Contains(Sdk, StringComparison.Ordinal) == true,
             $"The status bar says \"{window.Status}\" once the language server has loaded, not why Bad.csproj did not load");
         Assert.StartsWith("Error while loading Bad.csproj: ", window.Status, StringComparison.Ordinal);
         int server = window.CSharpService!.Session!.Server.ProcessId;
         string[] log = Ui.IdeLog().Split('\n');
-        Assert.True(log.Any(line => line.Contains($"C# language server (process {server}) error: ", StringComparison.Ordinal) && line.Contains(Reason, StringComparison.Ordinal)),
+        Assert.True(log.Any(line => line.Contains($"C# language server (process {server}) error: ", StringComparison.Ordinal) && line.Contains(Sdk, StringComparison.Ordinal)),
             $"The IDE's log does not say why Bad.csproj did not load:\n{string.Join('\n', log.Where(line => line.Contains($"(process {server})", StringComparison.Ordinal)))}");
         Assert.Contains(log, line => line.Contains($"C# language server (process {server}) says: There were problems loading project Bad.csproj", StringComparison.Ordinal));
         Assert.True(languageShown.Any(t => t.Contains("Loading 1 project(s)…", StringComparison.Ordinal)),

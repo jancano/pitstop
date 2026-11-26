@@ -72,7 +72,7 @@ internal static class Returns
         string described = Describe(Count());
         double ratio = Ratio(3, 4);
         Spot spot = Locate(2, 3);
-        Console.WriteLine($"{described} {ratio} {spot}");
+        Console.WriteLine(FormattableString.Invariant($"{described} {ratio} {spot}"));
     }
 
     private static int Count() => 42;

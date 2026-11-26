@@ -224,9 +224,10 @@ public sealed class ProjectLoadTests : IDisposable
         File.WriteAllText(bad, "<Project Sdk=\"Missing.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net11.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
         File.Delete(project);
         MainWindow window = Open();
-        const string Reason = "The SDK 'Missing.Sdk' specified could not be found.";
-        Assert.True(window.Status == $"Error while loading {Path.Combine("Bad", "Bad.csproj")}: {Reason}",
+        string prefix = $"Error while loading {Path.Combine("Bad", "Bad.csproj")}: ";
+        Assert.True(window.Status?.StartsWith(prefix, StringComparison.Ordinal) == true && window.Status.Contains("Missing.Sdk", StringComparison.Ordinal),
             $"The status bar says \"{window.Status}\" once the projects loaded, not that Bad.csproj did not load and why");
+        string reason = window.Status![prefix.Length..];
         Assert.True(window.StatusSeverity == ProblemSeverity.Error, $"The status bar's load error is marked as {window.StatusSeverity?.ToString() ?? "nothing"}, not an error");
 
         ProblemsModel problems = window.BottomPanel.Problems;
@@ -236,9 +237,9 @@ public sealed class ProjectLoadTests : IDisposable
         Assert.True(window.DockHost.IsShown(ToolWindowIds.Problems) && problems.Shown == ProblemsTab.Toolset,
             $"A click on the status bar's load error showed {(window.DockHost.IsShown(ToolWindowIds.Problems) ? $"Problems' {problems.Shown} tab" : "nothing")}, not Problems' Toolset, Environment");
         Problem error = Assert.Single(problems.ToolsetProblems);
-        Assert.True(error is { Severity: ProblemSeverity.Error, Project: "Bad", Message: Reason, Link: null },
+        Assert.True(error is { Severity: ProblemSeverity.Error, Project: "Bad", Link: null } && error.Message == reason,
             $"Problems lists the load's error as {error.Severity} \"{error.Message}\" under {error.Project}");
-        Assert.Equal(["Bad", Reason], problems.Rows.Select(r => r.Label));
+        Assert.Equal(["Bad", reason], problems.Rows.Select(r => r.Label));
         Assert.True(problems.Selected == error, $"A click on the status bar's load error chose {problems.Selected?.Message ?? "nothing"} in Problems, not the error");
 
         window.DockHost.Hide(ToolWindowIds.Problems);

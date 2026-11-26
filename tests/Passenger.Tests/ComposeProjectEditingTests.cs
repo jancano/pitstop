@@ -165,8 +165,7 @@ public sealed class ComposeProjectEditingTests
             Ui.WaitFor(() => Held().Contains("launchSettings.json") && !Held().Contains("README.md"),
                 () => $"launchSettings.json in place of README.md once the .dcproj saved in the editor named it: [{string.Join(", ", Held())}]");
 
-            Ui.Click(window.GetVisualDescendants().OfType<Avalonia.Controls.Button>().First(b => Avalonia.Controls.ToolTip.GetTip(b) is string tip
-                && tip.StartsWith("Switch between the solution", StringComparison.Ordinal)));
+            Ui.Click(window.ExplorerView.ViewSwitchButton);
             Assert.False(tree.IsSolutionView, "The view switch left the Solution view shown");
             List<string> files = [.. tree.Rows.Where(r => r.Depth == 1).Select(r => r.Name)];
             Assert.True(((string[])["Foo.WebApi", "Legacy", "Tests", "README.md"]).All(files.Contains), $"The Files view shows [{string.Join(", ", files)}]");

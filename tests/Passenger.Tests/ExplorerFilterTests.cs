@@ -82,7 +82,7 @@ public sealed class ExplorerFilterTests : IDisposable
     {
         MainWindow window = Open();
         ExplorerView explorer = window.ExplorerView;
-        Ui.Click(window.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Switch between the solution", StringComparison.Ordinal)));
+        Ui.Click(explorer.ViewSwitchButton);
         Assert.False(explorer.Tree.IsSolutionView, "The view switch left the Solution view shown");
         string root = Path.GetFileName(folder);
 

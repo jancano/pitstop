@@ -1085,7 +1085,7 @@ public sealed class SolutionViewTests : IDisposable
         Assert.True(File.Exists(Path.Combine(webRoot, "theme.css")) && !File.Exists(Path.Combine(webRoot, "site.css")),
             $"site.css in wwwroot was not renamed theme.css: {window.Status}");
 
-        Ui.Click(window.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Switch between the solution", StringComparison.Ordinal)));
+        Ui.Click(window.ExplorerView.ViewSwitchButton);
         Assert.False(window.ExplorerView.Tree.IsSolutionView, "The view switch left the Solution view shown");
         foreach ((string path, string icon) in drawn)
         {
@@ -1686,7 +1686,7 @@ public sealed class SolutionViewTests : IDisposable
             Assert.True((File.ReadAllText(shared), File.ReadAllText(own)) == (Shared, Own),
                 $"Undo of the rename left the launch profiles naming Shop.Domain:\n{File.ReadAllText(shared)}\n{File.ReadAllText(own)}");
 
-            Button views = window.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Switch between the solution", StringComparison.Ordinal));
+            Button views = window.ExplorerView.ViewSwitchButton;
             Ui.Click(views);
             Ui.ClickRow(window, Show(window, Path.Combine(folder, "Shop.App")));
             Ui.Run(window, EditorActions.Cut);
@@ -1787,7 +1787,7 @@ public sealed class SolutionViewTests : IDisposable
         // Cut and pasted in the File System view, where a project's folder is a row of its own.
         void CutAndPaste(string into)
         {
-            Button views = window.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Switch between the solution", StringComparison.Ordinal));
+            Button views = window.ExplorerView.ViewSwitchButton;
             Ui.Click(views);
             Ui.ClickRow(window, Show(window, Path.Combine(folder, "Shop.App")));
             Ui.Run(window, EditorActions.Cut);
@@ -1969,7 +1969,7 @@ public sealed class SolutionViewTests : IDisposable
         // Cut and pasted in the File System view, where a project's folder is a row of its own.
         void MoveIntoSrc()
         {
-            Button views = window.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Switch between the solution", StringComparison.Ordinal));
+            Button views = window.ExplorerView.ViewSwitchButton;
             Ui.Click(views);
             Ui.ClickRow(window, Show(window, Path.Combine(folder, "Shop.App")));
             Ui.Run(window, EditorActions.Cut);

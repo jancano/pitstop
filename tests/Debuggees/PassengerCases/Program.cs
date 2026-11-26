@@ -1193,7 +1193,7 @@ internal static class Typed<T>
 	{
 		List<T> list = [t];
 		V? maybe = v;
-		return $"{list.Count} {list[0]} {maybe}";
+		return FormattableString.Invariant($"{list.Count} {list[0]} {maybe}");
 	}
 }
 

@@ -65,10 +65,11 @@ public sealed class DebuggerRulesTests
             + $"not, which samples each for a second at every pass where NativeStacks can, the test waiting meanwhile: make them only in a throw or an Assert.Fail:\n"
             + string.Join("\n", found));
 
-        // Inside a throw, an Assert.Fail, or a member making those words itself.
+        // The hang watchdog writes a report only when a test is already over its warning threshold.
         static bool OnceFailed(InvocationExpressionSyntax call, string[] describing) => call.Ancestors().Any(around => around is ThrowStatementSyntax or ThrowExpressionSyntax
             || around is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "Assert" }, Name.Identifier.ValueText: "Fail" } }
-            || around is MethodDeclarationSyntax method && describing.Contains(method.Identifier.ValueText));
+            || around is MethodDeclarationSyntax method && (describing.Contains(method.Identifier.ValueText)
+                || method is { Identifier.ValueText: "Write", Parent: ClassDeclarationSyntax { Identifier.ValueText: "HangReports" } }));
     }
 
     /// <summary>Each C# node under the folder (from the repository's root) that <paramref name="written"/> names, by file
