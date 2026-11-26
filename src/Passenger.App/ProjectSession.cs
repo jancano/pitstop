@@ -262,6 +262,19 @@ public sealed class ProjectSession : IAsyncDisposable
             Trusted = trusted,
         };
         session.Cpp = new(folder, setup.StateFolder, session.Xmake!, setup.StartClangd);
+        session.Configurations.Xmake = session.Xmake;
+        if (session.Xmake is { } native)
+        {
+            XmakeWorkspace? configured = null;
+            native.Changed += (_, _) =>
+            {
+                if (!session.IsEnded && configured != native.Snapshot)
+                {
+                    configured = native.Snapshot;
+                    session.Configurations.Configure(session.Projects);
+                }
+            };
+        }
         // Where the log's timing of the language server's start (CSharpService) begins.
         IdeErrors.Write($"Opened {folder}{(withSolution is { } read && read.OpenedAs != folder ? $" with {Path.GetFileName(read.OpenedAs)}" : string.Empty)}"
             + (trusted ? string.Empty : ", not trusted: none of its code runs"));

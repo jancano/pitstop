@@ -29,6 +29,7 @@ public enum RunKind
     SdkContainer,
     Projects,
     Script,
+    Xmake,
 }
 
 /// <summary>One project a multi-project configuration starts: its file (canonical), what Run and Debug do with it (null for
@@ -76,6 +77,8 @@ public sealed record RunConfiguration
 
     /// <summary>For a Node package's, the script of its package.json it runs.</summary>
     public string Script { get; init; } = string.Empty;
+
+    public string XmakeTarget { get; init; } = string.Empty;
 
     /// <summary>Whether Passenger coordinates this AppHost and its project resources.</summary>
     public bool Aspire { get; init; }
@@ -228,6 +231,9 @@ public sealed record RunConfiguration
     /// <summary>Whether it runs a Node package's script, which Run alone starts: nothing is built, debugged or profiled.</summary>
     [JsonIgnore]
     public bool IsScript => Kind == RunKind.Script;
+
+    [JsonIgnore]
+    public bool IsXmake => Kind == RunKind.Xmake;
 
     /// <summary>Whether it starts several of the solution's projects together, as a multi-project launch profile says.</summary>
     [JsonIgnore]
@@ -511,6 +517,7 @@ public sealed record RunConfiguration
         LaunchProfile = LaunchProfile ?? string.Empty,
         Program = Program ?? string.Empty,
         Script = Script ?? string.Empty,
+        XmakeTarget = XmakeTarget ?? string.Empty,
         Arguments = Arguments ?? string.Empty,
         GodotCopies = Math.Clamp(GodotCopies, 1, GameCopies.Most),
         CopyArguments = [.. (CopyArguments ?? []).Select(a => a ?? string.Empty).Take(GameCopies.Most)],

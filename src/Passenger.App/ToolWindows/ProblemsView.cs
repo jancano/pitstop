@@ -75,6 +75,7 @@ public sealed class ProblemsView : DockPanel
         ListMenus.Attach(list, () => list.SelectedItem is not ProblemRow { Problem: { } problem } ? [] :
         [
             ListMenus.Source(Choose, problem.Path is null ? Refusals.ProblemNamesNoFile : null),
+            .. RelatedLocations(problem),
             ListMenus.Item("Copy Message", () => IdeErrors.Observe(ListMenus.CopyAsync(this, problem.Message))),
             ListMenus.Item("Open Link", () => model.Open(problem.Link!), problem.Link is null ? Refusals.ProblemHasNoLink : null),
             new Separator(),
@@ -92,6 +93,19 @@ public sealed class ProblemsView : DockPanel
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => list.ScrollIntoView(row));
             }
         };
+    }
+
+    private IEnumerable<Control> RelatedLocations(Problem problem)
+    {
+        if (problem.Related.Count > 0)
+        {
+            MenuItem related = new() { Header = "Related Locations" };
+            foreach (Problem note in problem.Related)
+            {
+                related.Items.Add(ListMenus.Item($"{note.Where} · {note.Message.Split('\n')[0]}", () => model.GoTo(note)));
+            }
+            yield return related;
+        }
     }
 
     /// <summary>The list's choice made the model's, scrolled to when the model reveals it.</summary>

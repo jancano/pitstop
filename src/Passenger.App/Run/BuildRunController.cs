@@ -36,6 +36,8 @@ public sealed record BuildRunParts(
     ActionWork Work,
     Func<RunConfiguration, CancellationToken, Task<string?>>? PrepareAspire = null)
 {
+    public Func<bool>? PreferXmake { get; init; }
+
     /// <summary>Shows a Compose project in the Containers window, chosen there, as a container run comes up.</summary>
     public Action<string>? Reveal { get; init; }
 
@@ -192,8 +194,18 @@ public sealed partial class BuildRunController
         session.InspectedChanged += (_, _) => ShowBindings();
         session.GameStarted += (_, game) => FollowGame(game);
         session.Debug.ExceptionRead += (_, stopped) => HearThrown(stopped);
+        if (session.Xmake is { } native)
+        {
+            native.Changed += (_, _) => XmakeChanged(native);
+        }
         session.Builder.Line += (_, line) =>
         {
+            if (xmakeOutput is { } output)
+            {
+                output.Read(line);
+                KeepBuildLine(line);
+                return;
+            }
             (Problem? next, bool continued) = BuildOutput.Next(reading, line, builtPaths);
             if (!continued)
             {
@@ -204,17 +216,19 @@ public sealed partial class BuildRunController
             {
                 made.Add(assembly);
             }
-            builtLines.Enqueue(line);
-            if (builtLines.Count > BuiltLinesKept)
-            {
-                builtLines.Dequeue();
-            }
+            KeepBuildLine(line);
             if (publishing is { } publish)
             {
                 PublishStage(publish, line);
             }
         };
-        session.Builder.Exited += (_, code) => OnBuilt(code);
+        session.Builder.Exited += (_, code) =>
+        {
+            if (xmakeOutput is null)
+            {
+                OnBuilt(code);
+            }
+        };
         // An Aspire service held at its start is attached to as DCP starts it, through the run of services' one attach.
         session.Aspire.AttachStart = async (app, service, purpose, stop) =>
         {
@@ -257,6 +271,10 @@ public sealed partial class BuildRunController
         };
         session.Runner.Exited += (_, code) =>
         {
+            if (session.IsEnded)
+            {
+                return;
+            }
             // A container run's log that ended by itself, its run not stopped, is followed again while its containers run.
             if (session.ContainerRun is { IsStopped: false } containers && !session.Runner.WasStopped && !session.IsEnded && session.Runner.Unstarted is null)
             {
@@ -336,7 +354,9 @@ public sealed partial class BuildRunController
 
     /// <summary>Builds as Build does, and says how it ended once it has: built, failed, stopped, refused or unable to start.
     /// Canceled, the build is stopped as the Build window's Stop stops it.</summary>
-    public Task<BuildOutcome> BuildAsync(CancellationToken cancel) => BuildAsync(null, BuildCause.Explicit, cancel);
+    public Task<BuildOutcome> BuildAsync(CancellationToken cancel) => PrefersXmake
+        ? BuildXmakeAsync(BuildKind.Build, [], BuildCause.Explicit, cancel)
+        : BuildAsync(null, BuildCause.Explicit, cancel);
 
     /// <summary>A test run's build of the projects its tests are in and those they reference, side by side in one build
     /// where they can be (<see cref="JoinAsync"/>), each given the configuration and platform chosen as a build of it alone
@@ -364,6 +384,11 @@ public sealed partial class BuildRunController
     /// <summary>The Build window's Rerun: the last build, rebuild, clean or publish again, of what it built.</summary>
     public void Rebuild()
     {
+        if (lastXmakeBuild is { } native)
+        {
+            BuildXmake(native.Kind, native.Targets);
+            return;
+        }
         if (buildKind == BuildKind.Publish && published is { } again)
         {
             IdeErrors.Observe(PublishAsync(again with { Folder = null }));
@@ -378,7 +403,15 @@ public sealed partial class BuildRunController
     /// started included. A framework given builds the projects for it alone, and an output folder given builds them there
     /// (a single-file AppHost's). A build or rebuild that succeeds is each project's last build here, for a launch's check.</summary>
     public void Build(BuildKind kind, IReadOnlyList<string>? projects = null, Action<BuildOutcome>? then = null, string? framework = null,
-        BuildCause cause = BuildCause.Explicit, string? output = null) => Start(kind, projects, then, framework, cause, null, null, output);
+        BuildCause cause = BuildCause.Explicit, string? output = null)
+    {
+        if (projects is null && kind != BuildKind.Publish && PrefersXmake)
+        {
+            BuildXmake(kind, [], then, cause);
+            return;
+        }
+        Start(kind, projects, then, framework, cause, null, null, output);
+    }
 
     /// <summary>What a dotnet build of a target is given for the build configuration chosen (none for the one MSBuild takes):
     /// the run's own where the build under way is a run's, else the folder's.</summary>
@@ -438,6 +471,8 @@ public sealed partial class BuildRunController
         checking = kind is BuildKind.Build or BuildKind.Rebuild && publish is null && side is null && cause != BuildCause.BeforeLaunch ? [] : null;
         made.Clear();
         string? unsaved = parts.Editors.SaveAllSaying();
+        lastXmakeBuild = null;
+        xmakeProblems = null;
         session.Problems.Clear();
         reading = null;
         builtTexts = null;
@@ -887,6 +922,10 @@ public sealed partial class BuildRunController
     /// (<see cref="ProjectSession.ProjectsAsWrittenAsync"/>), or why it has none.</summary>
     public async Task<(LaunchPlan? Plan, string? Problem)> ResolvePlanAsync(RunConfiguration chosen, string? arguments, CancellationToken stop = default)
     {
+        if (chosen.IsXmake)
+        {
+            return (null, "Xmake supplies this target's launch settings. Use Run to launch it.");
+        }
         try
         {
             await session.ProjectsAsWrittenAsync(null, stop);
@@ -1314,6 +1353,10 @@ public sealed partial class BuildRunController
         }
         // What the Run window's last program said it needs is its own: this start is heard afresh where it uses the console.
         HearNeeds(null, chosen.Name, debugged: false);
+        if (chosen.IsXmake)
+        {
+            return await RunXmakeAsync(chosen, arguments, work);
+        }
         if (chosen.IsScript)
         {
             return await RunScriptAsync(chosen, arguments, work);
@@ -2011,6 +2054,10 @@ public sealed partial class BuildRunController
         async Task Ended()
         {
             int code = await run.Ended;
+            if (session.IsEnded)
+            {
+                return;
+            }
             if (session.InTerminal == run)
             {
                 ran = string.Empty;
@@ -2531,6 +2578,10 @@ public sealed partial class BuildRunController
 
     private async Task<string?> DebugAsync(RunConfiguration chosen, string? arguments, CancellationToken cancellation = default)
     {
+        if (chosen.IsXmake)
+        {
+            return Said(XmakeDebugUnavailable);
+        }
         if (chosen.IsScript)
         {
             return Said(Refusals.ScriptOnlyRuns(chosen.Name));
@@ -3143,7 +3194,7 @@ public sealed partial class BuildRunController
         session.RunProgram.Stop();
         Task copies = EndCopyRunsAsync();
         session.Profiled?.Kill();
-        session.Builder.Stop();
+        StopBuild();
         Task played = parts.StopInGodotEditor?.Invoke() ?? Task.CompletedTask;
         return Task.WhenAll(containers, aspire, ran, copies, played);
     }

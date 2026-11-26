@@ -283,7 +283,8 @@ public sealed class ProfilerCommands
         {
             return Refusals.Untrusted;
         }
-        return Busy(folder) ?? (chosen is not null && folder.Aspire.IsAspire(chosen) ? null
+        return (chosen?.IsXmake == true ? BuildRunController.XmakeProfileUnavailable : null)
+            ?? Busy(folder) ?? (chosen is not null && folder.Aspire.IsAspire(chosen) ? null
             : GoesOn(folder) ?? (chosen?.Console == ConsoleKind.Terminal ? null : RunConsoleTaken(folder, chosen)));
     }
 

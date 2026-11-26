@@ -126,6 +126,7 @@ public partial class MainWindow
         InGodotEditor = PlayInGodotEditorAsync,
         StopInGodotEditor = StopInGodotEditorAsync,
         PlaysInGodotEditor = () => PlaysInGodotEditor,
+        PreferXmake = () => PreferXmakeBuild,
     };
 
     /// <summary>Opens a folder, or a solution (.sln, .slnx) or C# project (.csproj) over its folder, as the workspace (a

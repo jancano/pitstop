@@ -2,6 +2,8 @@ using System.Text.Json.Nodes;
 using Passenger.App.State;
 using Passenger.Core;
 using Passenger.Workspace;
+using Passenger.App.Workspace;
+using Pitstop.Xmake;
 
 namespace Passenger.App.Run;
 
@@ -25,6 +27,7 @@ public sealed class RunConfigurations(string? folder, Func<WorkspaceModel?>? wor
     /// stays chosen, rather than the first there was, which follows the projects as their evaluations land.</summary>
     private bool picked;
     private string? preferred;
+    internal XmakeWorkspaceSession? Xmake { get; set; }
 
     /// <summary>Every configuration: the generated ones, then the folder's own.</summary>
     public IReadOnlyList<RunConfiguration> All { get; private set; } = [];
@@ -88,12 +91,31 @@ public sealed class RunConfigurations(string? folder, Func<WorkspaceModel?>? wor
 
     /// <summary>Why a configuration cannot launch here among the projects loaded now, as the toolbar's menu greys it; null
     /// when it can.</summary>
-    public string? WhyNotHere(RunConfiguration configuration) => configuration.WhyNotHere(projects);
+    public string? WhyNotHere(RunConfiguration configuration) => configuration.IsXmake
+        ? Xmake?.Snapshot is { } native && native.Targets.Any(target => target.Kind == "binary" && target.Name == configuration.XmakeTarget)
+            ? null : Xmake?.Problem ?? "Choose an executable target in the evaluated Xmake workspace."
+        : configuration.WhyNotHere(projects);
 
     private void Configure(IReadOnlyList<ProjectModel> projects, string? keep)
     {
         this.projects = projects;
-        IReadOnlyList<RunConfiguration> generated = [.. RunConfiguration.Generate(projects, workspace?.Invoke(), SingleFileAppHosts, Packages).Select(Edited)];
+        List<RunConfiguration> sources = [.. RunConfiguration.Generate(projects, workspace?.Invoke(), SingleFileAppHosts, Packages)];
+        if (Xmake?.Snapshot is { } native)
+        {
+            foreach (XmakeTarget target in native.Targets.Where(target => target.Kind == "binary"))
+            {
+                string name = RunConfiguration.UniqueName($"Xmake: {target.Name}", sources.Select(source => source.Name));
+                sources.Add(new RunConfiguration
+                {
+                    Name = name,
+                    Kind = RunKind.Xmake,
+                    Project = Path.Combine(native.Root, XmakeService.ProjectFile),
+                    XmakeTarget = target.Name,
+                    Generated = true,
+                });
+            }
+        }
+        IReadOnlyList<RunConfiguration> generated = [.. sources.Select(Edited)];
         (Profiles, ProfileProblems) = Solution is { } solution ? Read(solution, [.. generated.Select(g => g.Name), .. own.Select(o => o.Name)]) : ([], []);
         All = [.. generated, .. Profiles, .. own];
         // With none picked, an AppHost's before its services', which it runs as the person means.

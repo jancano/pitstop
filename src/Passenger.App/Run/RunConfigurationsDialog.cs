@@ -152,6 +152,8 @@ public sealed class RunConfigurationsDialog : IdeWindow
         ArgumentsBox = Field(OwnArguments);
         ArgumentsBox.Name = "ArgumentsBox";
         WorkingDirectoryBox = Field(OwnWorkingDirectory);
+        XmakeTargetBox = new FormDropDown { Name = "XmakeTargetBox" };
+        XmakeTargetBox.SelectionChanged += (_, _) => Edit(c => XmakeTargetBox.SelectedItem is string target ? c with { XmakeTarget = target } : c);
         BuildBox = new CheckBox { Content = "Build the project first" };
         // Its words a TextBlock of their own, which a change from the source marks as a row's label is marked.
         TextBlock consoleWords = new() { Text = "Use external console" };
@@ -290,8 +292,9 @@ public sealed class RunConfigurationsDialog : IdeWindow
             (builtRows[1] = Row("Launch profile", new WrapPanel { ItemSpacing = Gaps.Normal, LineSpacing = Gaps.Small, Children = { ProfileBox, SaveAsProfileButton } }, top: true), [RunKind.Project]),
             (launchRows[0] = Row("Exe path", ProgramBox, fields: ["program"]), [RunKind.Project]),
             (Row("Script", ScriptText, fields: ["script"]), [RunKind.Script]),
-            (launchRows[1] = Row("Program arguments", ArgumentsBox, fields: ["arguments"]), [RunKind.Project, RunKind.Script]),
-            (launchRows[2] = Row("Working directory", WorkingDirectoryBox, fields: ["workingDirectory"]), [RunKind.Project]),
+            (Row("Target", XmakeTargetBox), [RunKind.Xmake]),
+            (launchRows[1] = Row("Program arguments", ArgumentsBox, fields: ["arguments"]), [RunKind.Project, RunKind.Script, RunKind.Xmake]),
+            (launchRows[2] = Row("Working directory", WorkingDirectoryBox, fields: ["workingDirectory"]), [RunKind.Project, RunKind.Xmake]),
             (Row("Compose files", ComposeFilesBox, fields: ["composeFiles"]), [RunKind.Compose]),
             (Row("Env files", EnvFilesBox, fields: ["envFiles"]), [RunKind.Compose]),
             (Row("Profiles", ProfilesBox, fields: ["profiles"]), [RunKind.Compose]),
@@ -304,13 +307,13 @@ public sealed class RunConfigurationsDialog : IdeWindow
             (Row(string.Empty, KeepBackingBox, marked: keepWords, fields: ["keepBackingServices"]), [RunKind.Compose]),
             (telemetryRow = Row(string.Empty, TelemetryBox, marked: telemetryWords, fields: ["telemetry"]), [RunKind.Project, RunKind.Compose, RunKind.Dockerfile, RunKind.SdkContainer]),
             (launchRows[3] = Row("Environment variables", new StackPanel { Spacing = Gaps.Small, Children = { VariablesHeader(), variables, AddVariableButton } }, top: true, fields: ["environment"]),
-                [RunKind.Project, RunKind.Dockerfile, RunKind.SdkContainer, RunKind.Script]),
-            (launchRows[4] = Row(string.Empty, ConsoleBox, marked: consoleWords, fields: ["console"]), [RunKind.Project, RunKind.Script]),
+                [RunKind.Project, RunKind.Dockerfile, RunKind.SdkContainer, RunKind.Script, RunKind.Xmake]),
+            (launchRows[4] = Row(string.Empty, ConsoleBox, marked: consoleWords, fields: ["console"]), [RunKind.Project, RunKind.Script, RunKind.Xmake]),
             (browserRows[0], [RunKind.Project, RunKind.Compose, RunKind.Dockerfile, RunKind.SdkContainer]),
             (browserRows[1], [RunKind.Project, RunKind.Compose, RunKind.Dockerfile, RunKind.SdkContainer]),
             (browserRows[2], [RunKind.Project, RunKind.Compose, RunKind.Dockerfile, RunKind.SdkContainer]),
             (Row("Launched service", LaunchServiceBox, fields: ["launchService"]), [RunKind.Compose]),
-            (builtRows[2] = Row("Before launch", BuildBox, fields: ["buildBeforeLaunch"]), [RunKind.Project]),
+            (builtRows[2] = Row("Before launch", BuildBox, fields: ["buildBeforeLaunch"]), [RunKind.Project, RunKind.Xmake]),
             (Row("Projects", StartsTable, top: true), [RunKind.Projects]),
             (Row(string.Empty, SharedBox), [RunKind.Projects]),
         ];
@@ -525,6 +528,8 @@ public sealed class RunConfigurationsDialog : IdeWindow
 
     public TextBox WorkingDirectoryBox { get; }
 
+    public ComboBox XmakeTargetBox { get; }
+
     public CheckBox BuildBox { get; }
 
     /// <summary>Use external console: the program runs in a tab of the Terminal window.</summary>
@@ -706,6 +711,7 @@ public sealed class RunConfigurationsDialog : IdeWindow
         RunKind.Dockerfile => "Dockerfile",
         RunKind.SdkContainer => "SDK Container",
         RunKind.Script => "package.json Script",
+        RunKind.Xmake => "Xmake Target",
         _ => ".NET Project",
     };
 
@@ -1261,13 +1267,22 @@ public sealed class RunConfigurationsDialog : IdeWindow
             CopiesBox.Value = shown.GodotCopies;
             CopyArgumentsBox.Text = string.Join(Environment.NewLine, shown.CopyArguments);
             ProgramBox.PlaceholderText = godot ? GodotProgram(project?.IsScriptGame == true) : OwnProgram;
-            ArgumentsBox.PlaceholderText = godot ? GodotArguments : shown.IsScript ? ScriptArguments : OwnArguments;
+            ArgumentsBox.PlaceholderText = shown.IsXmake ? "Xmake target defaults" : godot ? GodotArguments : shown.IsScript ? ScriptArguments : OwnArguments;
             ScriptText.Text = shown.IsScript ? $"{shown.Script}, in {Shown(Path.GetDirectoryName(shown.Project) ?? shown.Project)}" : string.Empty;
-            WorkingDirectoryBox.PlaceholderText = godot ? GodotWorkingDirectory : OwnWorkingDirectory;
+            WorkingDirectoryBox.PlaceholderText = shown.IsXmake ? "Xmake target directory" : godot ? GodotWorkingDirectory : OwnWorkingDirectory;
+            if (shown.IsXmake)
+            {
+                string[] targets = [.. generated.Select(entry => entry.Configuration).Where(configuration => configuration.IsXmake)
+                    .Select(configuration => configuration.XmakeTarget).Append(shown.XmakeTarget).Distinct(StringComparer.Ordinal)];
+                XmakeTargetBox.ItemsSource = targets;
+                XmakeTargetBox.SelectedItem = shown.XmakeTarget;
+                XmakeTargetBox.IsEnabled = !shown.Generated;
+            }
             ProgramBox.Text = shown.Program;
             ArgumentsBox.Text = shown.Arguments;
             WorkingDirectoryBox.Text = shown.WorkingDirectory;
             BuildBox.IsChecked = shown.BuildBeforeLaunch;
+            BuildBox.Content = shown.IsXmake ? "Build the target first" : "Build the project first";
             ConsoleBox.IsChecked = shown.Console == ConsoleKind.Terminal;
             BrowserBox.IsChecked = shown.LaunchBrowser;
             BrowserUrlBox.Text = shown.BrowserUrl;
@@ -1351,6 +1366,7 @@ public sealed class RunConfigurationsDialog : IdeWindow
     {
         string name = project?.Name ?? Path.GetFileNameWithoutExtension(shown.Project);
         string origin = !shown.Generated ? string.Empty
+            : shown.IsXmake ? $"Generated for Xmake target {shown.XmakeTarget}"
             : shown.Origin is { } container ? container
             : shown.LaunchProfile.Length > 0 ? $"Generated from the launch profile {shown.LaunchProfile} in {name}'s {LaunchProfile.SettingsShown(shown.Project)}"
             : project?.GodotFolder is not null ? (shown.GodotEditor ? $"Generated for Godot's editor on the Godot project {name}" : $"Generated for the Godot project {name}'s game")
@@ -1380,6 +1396,7 @@ public sealed class RunConfigurationsDialog : IdeWindow
         { Kind: RunKind.Compose } => "compose file",
         { Kind: RunKind.Dockerfile } => "Dockerfile",
         { Kind: RunKind.Script } => "package.json",
+        { Kind: RunKind.Xmake } => "Xmake target",
         _ => "project",
     };
 
@@ -1518,6 +1535,7 @@ public sealed class RunConfigurationsDialog : IdeWindow
                 RunKind.Compose => "compose file",
                 RunKind.Dockerfile when row.LaunchProfile.Length == 0 => "Dockerfile",
                 RunKind.SdkContainer when row.LaunchProfile.Length == 0 => "SDK container",
+                RunKind.Xmake => "Xmake",
                 _ => row.LaunchProfile.Length > 0 ? LaunchProfile.SettingsFile : "project",
             };
         });

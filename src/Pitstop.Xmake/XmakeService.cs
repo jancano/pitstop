@@ -69,14 +69,7 @@ public sealed class XmakeService(string? executable = null)
         Task<string> ProjectAsync(string description, string[] arguments, string? input = null)
         {
             cancel.ThrowIfCancellationRequested();
-            WorkspaceTrust.Check(root);
-            WorkspaceTrust.Check(projectFile);
-            if (!File.Exists(projectFile))
-            {
-                throw new XmakeException($"{ProjectFile} is missing from {root}. Restore it or open another folder.");
-            }
-            return RunAsync(installation.Executable, root, description,
-                [arguments[0], $"--project={root}", $"--file={projectFile}", .. arguments[1..]], cancel, input is null ? null : input + "\n");
+            return RunAsync(ProjectCommand(installation.Executable, root, arguments), description, cancel, input is null ? null : input + "\n");
         }
 
         await ProjectAsync("configuring the project (check xmake.lua and the installed toolchain)", ["f", "--require=no", "-y"]).ConfigureAwait(false);
@@ -163,12 +156,32 @@ public sealed class XmakeService(string? executable = null)
         return entries.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n";
     }
 
-    private static async Task<string> RunAsync(string program, string folder, string action, string[] arguments, CancellationToken cancel, string? input = null)
+    internal static ProcessStartInfo ProjectCommand(string program, string root, string[] arguments)
     {
-        cancel.ThrowIfCancellationRequested();
+        string projectFile = Path.Combine(root, ProjectFile);
+        WorkspaceTrust.Check(root);
+        WorkspaceTrust.Check(projectFile);
+        if (!File.Exists(projectFile))
+        {
+            throw new XmakeException($"{ProjectFile} is missing from {root}. Restore it or open another folder.");
+        }
+        return Command(program, root, [arguments[0], $"--project={root}", $"--file={projectFile}", .. arguments[1..]]);
+    }
+
+    private static ProcessStartInfo Command(string program, string folder, string[] arguments)
+    {
         ProcessStartInfo command = ChildProcesses.Command(program, arguments, folder);
         command.Environment["XMAKE_COLORTERM"] = "nocolor";
         command.Environment["XMAKE_STATS"] = "false";
+        return command;
+    }
+
+    private static Task<string> RunAsync(string program, string folder, string action, string[] arguments, CancellationToken cancel, string? input = null) =>
+        RunAsync(Command(program, folder, arguments), action, cancel, input);
+
+    private static async Task<string> RunAsync(ProcessStartInfo command, string action, CancellationToken cancel, string? input = null)
+    {
+        cancel.ThrowIfCancellationRequested();
         try
         {
             ChildResult result = await ChildProcesses.RunAsync(command, input, limit: CommandLimit, cancel: cancel,
@@ -176,7 +189,7 @@ public sealed class XmakeService(string? executable = null)
             if (!result.Succeeded)
             {
                 string detail = (string.IsNullOrWhiteSpace(result.Error) ? result.Output : result.Error).Trim();
-                PassengerLog.Write($"Xmake exited {result.ExitCode} while {action} in {folder}.\n{result.Output}\n{result.Error}");
+                PassengerLog.Write($"Xmake exited {result.ExitCode} while {action} in {command.WorkingDirectory}.\n{result.Output}\n{result.Error}");
                 throw new XmakeException($"Xmake exited with code {result.ExitCode} while {action}. {detail[..Math.Min(detail.Length, 1600)]}");
             }
             return result.Output;

@@ -52,6 +52,11 @@ public partial class MainWindow
         }
         if (RowOf(context) is { } row)
         {
+            if (row.NativeTarget is { Kind: "binary" } target)
+            {
+                return Configuration is { IsXmake: true } selected && selected.XmakeTarget == target.Name ? selected
+                    : Configurations.FirstOrDefault(configuration => configuration.IsXmake && configuration.XmakeTarget == target.Name);
+            }
             return row is { Kind: NodeKind.Project, Path: { } project } ? ProgramConfiguration(project) : null;
         }
         if (ExplorerHasKeys(context))

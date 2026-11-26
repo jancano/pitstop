@@ -20,6 +20,11 @@ public sealed class XmakeWorkspaceSession
     private Task<XmakeWorkspace>? worker;
     private int requested;
     private bool closed;
+    private Operation? operation;
+    private FileStamp? projectStamp;
+    private FileStamp? configurationStamp;
+    private bool recheckAfterOperation;
+    private string refreshReason = "the workspace was refreshed";
 
     internal XmakeWorkspaceSession(string root, Func<string, string, CancellationToken, Task<XmakeWorkspace>>? evaluate)
     {
@@ -36,13 +41,70 @@ public sealed class XmakeWorkspaceSession
     public string? Problem { get; private set; }
     public event EventHandler? Changed;
 
-    internal void Refresh()
+    internal string? WhyNotOperate => closed ? "The Xmake workspace is closed."
+        : !WorkspaceTrust.Trusts(root) ? TrustRequired
+        : operation is not null ? "An Xmake operation is active. Stop it or wait for it to finish."
+        : IsEvaluating ? "Wait for Xmake to finish evaluating the active configuration."
+        : Snapshot is null ? Problem ?? "Open a folder with an evaluated xmake.lua project." : null;
+
+    internal Operation? BeginOperation()
+    {
+        UiThread.Check();
+        if (WhyNotOperate is not null || Snapshot is not { } snapshot)
+        {
+            return null;
+        }
+        if (!InputsMatch(snapshot))
+        {
+            Refresh();
+            return null;
+        }
+        return operation = new(this, snapshot, requested);
+    }
+
+    private bool InputsMatch(XmakeWorkspace snapshot) => FileStamp.Of(projectFile) == projectStamp
+        && FileStamp.Of(snapshot.Configuration.ConfigurationFile) == configurationStamp;
+
+    internal sealed class Operation(XmakeWorkspaceSession owner, XmakeWorkspace snapshot, int generation) : IDisposable
+    {
+        private readonly CancellationTokenSource stopped = new();
+        internal XmakeWorkspace Snapshot { get; } = snapshot;
+        internal CancellationToken Stopping => stopped.Token;
+        internal bool IsCurrent => ObsoleteReason is null;
+        internal string? ObsoleteReason => owner.closed ? "the workspace closed"
+            : !WorkspaceTrust.Trusts(Snapshot.Root) ? "workspace trust was revoked"
+            : FileStamp.Of(owner.projectFile) != owner.projectStamp ? "xmake.lua changed"
+            : FileStamp.Of(Snapshot.Configuration.ConfigurationFile) != owner.configurationStamp ? "the active Xmake configuration file changed"
+            : owner.requested != generation ? owner.refreshReason : null;
+
+        internal void Cancel() => stopped.Cancel();
+
+        public void Dispose()
+        {
+            stopped.Dispose();
+            owner.operation = null;
+            if (!owner.closed && owner.IsEvaluating)
+            {
+                owner.refresh.Restart();
+            }
+            else if (!owner.closed && owner.Snapshot == Snapshot && (owner.recheckAfterOperation || !owner.InputsMatch(Snapshot)))
+            {
+                owner.Refresh();
+            }
+            owner.recheckAfterOperation = false;
+        }
+    }
+
+    internal void Refresh() => Refresh("the workspace was refreshed");
+
+    private void Refresh(string reason)
     {
         if (closed)
         {
             return;
         }
         requested++;
+        refreshReason = reason;
         cancel?.Cancel();
         refresh.Stop();
         bool recognized = XmakeService.IsWorkspace(root);
@@ -50,12 +112,13 @@ public sealed class XmakeWorkspaceSession
         IsXmake = recognized;
         IsEvaluating = recognized && WorkspaceTrust.Trusts(root);
         Problem = recognized && !IsEvaluating ? TrustRequired : null;
-        if (IsEvaluating)
+        if (IsEvaluating && operation is null)
         {
             refresh.Restart();
         }
-        else
+        else if (!IsEvaluating)
         {
+            operation?.Cancel();
             Snapshot = null;
             configuration?.Dispose();
             configuration = null;
@@ -68,10 +131,23 @@ public sealed class XmakeWorkspaceSession
 
     internal void FilesChanged(FolderChanges changes)
     {
-        if (changes.Lost || changes.Paths.Any(path => PathNames.Same(path, projectFile))
-            || IsXmake && (changes.Paths.Any(IsProjectInput) || changes.ComeOrGone.Any(ChangesMembership)))
+        string? input = changes.Paths.FirstOrDefault(path => PathNames.Same(path, projectFile) || IsXmake && IsProjectInput(path));
+        string? membership = IsXmake ? changes.ComeOrGone.FirstOrDefault(ChangesMembership) : null;
+        if ((input ?? membership) is { } changed)
         {
-            Refresh();
+            Refresh($"{Path.GetRelativePath(root, changed)} changed");
+        }
+        else if (changes.Lost)
+        {
+            if (operation is null)
+            {
+                Refresh();
+            }
+            else
+            {
+                // A busy build can overflow the watcher with output changes. Recheck once Xmake releases the workspace.
+                recheckAfterOperation = true;
+            }
         }
     }
 
@@ -82,7 +158,7 @@ public sealed class XmakeWorkspaceSession
     private bool ChangesMembership(string path)
     {
         string build = Snapshot?.Configuration.BuildDirectory ?? Path.Combine(root, "build");
-        return !PathNames.Within(path, Path.Combine(root, ".xmake"))
+        return !PathNames.Same(path, root) && !PathNames.Within(path, Path.Combine(root, ".xmake"))
             && (PathNames.Same(root, build) || !PathNames.Within(path, build));
     }
 
@@ -122,6 +198,8 @@ public sealed class XmakeWorkspaceSession
                 }
                 if (WorkspaceTrust.Trusts(root))
                 {
+                    projectStamp = FileStamp.Of(projectFile);
+                    configurationStamp = FileStamp.Of(snapshot.Configuration.ConfigurationFile);
                     Snapshot = snapshot;
                     WatchConfiguration(snapshot.Configuration.ConfigurationFile);
                 }
@@ -171,7 +249,7 @@ public sealed class XmakeWorkspaceSession
             {
                 if (configuration is { } active && PathNames.Same(active.Path, path))
                 {
-                    Refresh();
+                    Refresh("the active Xmake configuration file changed");
                 }
             });
             return true;
@@ -185,6 +263,7 @@ public sealed class XmakeWorkspaceSession
         closed = true;
         refresh.Stop();
         cancel?.Cancel();
+        operation?.Cancel();
         configuration?.Dispose();
         configuration = null;
         if (worker is Task active)

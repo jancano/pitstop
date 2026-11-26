@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.VisualTree;
 using Passenger.App.Run;
+using Passenger.App.Explorer;
 using Passenger.App.Workspace;
 using Passenger.Editor;
 using E = Passenger.Editor.EditorActions;
@@ -397,16 +398,16 @@ public partial class MainWindow
     /// Configurations.</summary>
     private void AddBuilding()
     {
-        Add(A.Build, "Build Solution", "Run", _ => BuildSolution(), Unbuildable, ("Build", 0, 0));
-        // One build at a time, whichever began it: while one works, the others say so.
-        Add(A.RebuildSolution, "Rebuild Solution", "Build", _ => Build(BuildKind.Rebuild), Unbuildable, ("Build", 0, 1), works: A.Build);
-        Add(A.CleanSolution, "Clean Solution", "Build", _ => Build(BuildKind.Clean), Unbuildable, ("Build", 0, 2), works: A.Build);
-        Add(A.BuildSelected, "Build Selected Projects", "Build", _ => Build(BuildKind.Build, SelectedProjects()), NoneSelected, ("Build", 1, 0), works: A.Build);
-        Add(A.RebuildSelected, "Rebuild Selected Projects", "Build", _ => Build(BuildKind.Rebuild, SelectedProjects()), NoneSelected, ("Build", 1, 1), works: A.Build);
-        Add(A.CleanSelected, "Clean Selected Projects", "Build", _ => Build(BuildKind.Clean, SelectedProjects()), NoneSelected, ("Build", 1, 2), works: A.Build);
+        BuildAction(A.Build, BuildKind.Build, 0, selected: false);
+        BuildAction(A.RebuildSolution, BuildKind.Rebuild, 1, selected: false);
+        BuildAction(A.CleanSolution, BuildKind.Clean, 2, selected: false);
+        BuildAction(A.BuildSelected, BuildKind.Build, 0, selected: true);
+        BuildAction(A.RebuildSelected, BuildKind.Rebuild, 1, selected: true);
+        BuildAction(A.CleanSelected, BuildKind.Clean, 2, selected: true);
 
         Add(A.RunProgram, "Run", "Run", _ => RunSelected(), _ => Unconfigured("run"), ("Run", 0, 0));
-        Add(A.Debug, "Debug", "Run", _ => DebugSelected(), _ => Untrusted() ?? (Configuration is { IsScript: true } script ? Refusals.ScriptOnlyRuns(script.Name) : Unconfigured("debug")),
+        Add(A.Debug, "Debug", "Run", _ => DebugSelected(), _ => Untrusted() ?? (Configuration is { IsScript: true } script ? Refusals.ScriptOnlyRuns(script.Name)
+            : Configuration?.IsXmake == true ? BuildRunController.XmakeDebugUnavailable : Unconfigured("debug")),
             ("Run", 0, 1));
         Add(A.RunCurrentScene, "Run Current Scene", "Run", _ => IdeErrors.Observe(buildRun.RunCurrentSceneAsync()), _ => Untrusted() ?? buildRun.WhyNotRunScene(), ("Run", 0, 2));
         Add(A.RunAnotherCopy, "Run Another Copy", "Run", _ => IdeErrors.Observe(buildRun.RunAnotherCopyAsync()),
@@ -431,7 +432,7 @@ public partial class MainWindow
             {
                 actions!.Run(A.ReattachToProcess, c);
             }
-            else if (session.Debug.IsDebugging)
+            else if (session.Debug.IsDebugging && Configuration?.IsXmake != true)
             {
                 DebugSelected();
             }
@@ -476,14 +477,56 @@ public partial class MainWindow
         }, Refusals.NeedsFile, ("Run", 2, 2));
         Add(A.ViewBreakpoints, "View Breakpoints and Exceptions…", "Debug", _ => ShowBreakpoints(null), menu: ("Run", 2, 3));
 
-        string? Unbuildable(ActionContext _) => Folder is null ? Refusals.NoFolderTo("build") : Untrusted() is { } untrusted ? untrusted : IsBuilding ? Refusals.Building
+        string? Unbuildable() => Folder is null ? Refusals.NoFolderTo("build") : Untrusted() is { } untrusted ? untrusted : IsBuilding ? Refusals.Building
             : session.Workspace is { Solution: null, Projects.Count: 0, GodotGames.Count: > 0 } ? Refusals.NothingToBuildOfScripts : WithoutSdk();
 
-        string? NoneSelected(ActionContext context) => Unbuildable(context)
-            ?? (SelectedProjects().Count == 0 ? "No project is chosen in the Explorer or open in the editor" : null);
+        void BuildAction(string id, BuildKind kind, int order, bool selected)
+        {
+            string title = $"{kind} {(selected ? "Selected Projects" : "Solution")}";
+            actions!.Add(new IdeAction(id, title, id == A.Build ? "Run" : "Build", context =>
+            {
+                if (UsesXmake(context))
+                {
+                    buildRun.BuildXmake(kind, selected ? SelectedXmakeTargets(context) : []);
+                }
+                else
+                {
+                    Build(kind, selected ? SelectedProjects() : null);
+                }
+            })
+            {
+                Menus = [new MenuPlace("Build", selected ? 1 : 0, order)],
+                Works = id == A.Build ? null : A.Build,
+                TitleIn = context => UsesXmake(context) ? $"{kind} {(selected ? "Selected Targets" : "Xmake Workspace")}" : title,
+                WhyNot = context => UsesXmake(context) ? Untrusted() ?? buildRun.WhyNotBuildXmake()
+                    ?? (selected && SelectedXmakeTargets(context).Count == 0 ? "Choose an Xmake target in the Explorer or toolbar." : null)
+                    : Unbuildable() ?? (selected && SelectedProjects().Count == 0 ? "No project is chosen in the Explorer or open in the editor" : null),
+            });
+        }
 
         string? Unconfigured(string verb) => Untrusted() is { } untrusted ? untrusted : Configuration is null ? WithoutSdk() ?? session.NothingTo(verb)
+            : Configuration.IsXmake ? session.Configurations.WhyNotHere(Configuration)
             : Configuration is { Kind: Run.RunKind.Project or Run.RunKind.Projects, RunsScriptGame: false } ? WithoutSdk() : null;
+    }
+
+    private bool PreferXmakeBuild => session.Xmake is { IsXmake: true } && (!Explorer.HasSolutionView
+        || Explorer.ViewShown == ExplorerViewKind.Xmake || Explorer.ViewShown == ExplorerViewKind.Files && Configuration?.IsXmake == true);
+
+    private bool UsesXmake(ActionContext context) => context.ExplorerRow is { } row
+        ? row.Kind is NodeKind.XmakeWorkspace or NodeKind.XmakeTarget : PreferXmakeBuild;
+
+    private IReadOnlyList<string> SelectedXmakeTargets(ActionContext context)
+    {
+        if (context.ExplorerRow?.NativeTarget is { } target)
+        {
+            return [target.Name];
+        }
+        IReadOnlyList<ExplorerNode> rows = Explorer.SelectedNodes;
+        if (rows.Any(row => row.NativeTarget is not null))
+        {
+            return [.. rows.Select(row => row.NativeTarget?.Name).OfType<string>().Distinct(StringComparer.Ordinal)];
+        }
+        return Configuration is { IsXmake: true } native ? [native.XmakeTarget] : [];
     }
 
     /// <summary>The unit tests' actions: in context (the Unit Tests window's chosen rows while it has the keys, else the

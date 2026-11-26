@@ -345,6 +345,16 @@ public partial class MainWindow
     /// Dependencies add a reference, and a project reference is removed. None for a row with nothing to do.</summary>
     private IReadOnlyList<Control>? ExplorerMenu(ExplorerNode node)
     {
+        if (node.Kind == NodeKind.XmakeWorkspace)
+        {
+            return Made([Item(A.Build), Item(A.RebuildSolution), Item(A.CleanSolution)]);
+        }
+        if (node.NativeTarget is { } native)
+        {
+            return Made(native.Kind == "binary"
+                ? [Item(A.BuildSelected), Item(A.RebuildSelected), Item(A.CleanSelected), new MenuEntry(null), Item(A.RunHere)]
+                : [Item(A.BuildSelected), Item(A.RebuildSelected), Item(A.CleanSelected)]);
+        }
         bool onDisk = node.Kind is NodeKind.File or NodeKind.Folder or NodeKind.Project;
         bool holds = node.Kind is NodeKind.Folder or NodeKind.Project or NodeKind.Solution or NodeKind.File && !node.IsSolutionItem;
         bool solutionFolder = node.Kind == NodeKind.SolutionFolder;
