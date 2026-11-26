@@ -85,7 +85,23 @@ Metadata timing covers sequential Xmake `show` calls. The real IDE's opening tim
 | 500 | 234 MiB | 242 MiB | 51 MiB | 69 MiB |
 | 1,000 | 255 MiB | 264 MiB | 134 MiB | 136 MiB |
 
-The memory figures are per-process snapshots and peaks up to first diagnostics, excluding other tools. The editor timings use prepared Xmake caches. Long-running steady-state memory, display frame latency and whole-workspace clangd background indexing completion remain unmeasured.
+The memory figures above are per-process snapshots and peaks up to first diagnostics, excluding other tools. The editor timings use prepared Xmake caches.
+
+The packaged IDE also measured background indexing with a real MCP client, a new state directory and the prepared workspace. Opening `main.cpp` starts the timer. Clangd's log records its initialization and each generated workspace source it indexed. The memory readings capture the working set at the last indexed project source and process peaks up to that point.
+
+```powershell
+python -I tools/alpha-package-smoke.py $exe artifacts/scale-1000 artifacts/alpha-index-1000 `
+    --version 0.2.0-alpha.1 --scale-index 1000
+```
+
+| Primary modules | Open to initialized | Open to all project sources indexed | App working set / peak | clangd working set / peak |
+| ---: | ---: | ---: | ---: | ---: |
+| 10 | 0.97 s | 1.22 s | 260 / 310 MiB | 54 / 54 MiB |
+| 100 | 1.55 s | 3.06 s | 263 / 312 MiB | 114 / 121 MiB |
+| 500 | 0.98 s | 10.22 s | 275 / 334 MiB | 222 / 306 MiB |
+| 1,000 | 1.00 s | 16.92 s | 341 / 346 MiB | 220 / 295 MiB |
+
+The last generated workspace source excludes background indexing of external headers or the standard library. In the portable Hello Modules run, clangd indexed its final `std.cppm` command 36.84 s after enqueueing the six compilation commands. Long-running steady-state memory and display frame latency remain unmeasured.
 
 ## Windows packaging
 
