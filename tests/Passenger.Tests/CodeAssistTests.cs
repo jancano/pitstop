@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Passenger.App;
+using Passenger.App.Editors;
 using Passenger.App.Navigation;
 using Passenger.App.Settings;
 using Passenger.App.ToolWindows;
@@ -99,7 +100,8 @@ public sealed class CodeAssistTests : IClassFixture<CodeAssistTests.Project>
 
     /// <summary>What the window says of the code around the caret: the status bar's path, a hover card and File
     /// Structure, once the server has the file; the structure window following the editor; Go to Symbol's generated
-    /// declarations; and parameter info's overloads, those the arguments no longer fit set back.</summary>
+    /// declarations; parameter info's overloads, those the arguments no longer fit set back; and documentation as its
+    /// tags write it in every card.</summary>
     [AvaloniaFact]
     public void The_code_around_the_caret_is_named_and_its_overloads_shown_as_the_server_has_it()
     {
@@ -108,6 +110,7 @@ public sealed class CodeAssistTests : IClassFixture<CodeAssistTests.Project>
         Flow.StepApart("the structure window shows the shown file's outline whenever it is shown, once the server has the file, and follows the editor", () => new CodeAssistTests(project), t => t.The_structure_window_shows_the_shown_files_outline_whenever_it_is_shown_and_once_the_server_has_the_file_and_follows_the_editor());
         Flow.StepApart("Go to Symbol lists a generated method's own declaration alone, and what only a generator wrote after", () => new CodeAssistTests(project), t => t.Go_to_Symbol_lists_a_generated_methods_own_declaration_alone_and_what_only_a_generator_wrote_after());
         Flow.StepApart("parameter info shows every overload, setting back those the arguments no longer fit", () => new CodeAssistTests(project), t => t.Parameter_info_shows_every_overload_setting_back_those_the_arguments_no_longer_fit());
+        Flow.StepApart("documentation shows bold, emphasis, underline, code and links in the hover, completion and parameter cards, tags written escaped too", () => new CodeAssistTests(project), t => t.Documentation_shows_its_tags_in_the_hover_completion_and_parameter_cards_tags_written_escaped_too());
     }
 
     /// <summary>Find Usages groups, previews and keeps each search, lists each place once and gives its results the
@@ -2500,6 +2503,54 @@ public sealed class CodeAssistTests : IClassFixture<CodeAssistTests.Project>
         window.Close();
     }
 
+    private void Documentation_shows_its_tags_in_the_hover_completion_and_parameter_cards_tags_written_escaped_too()
+    {
+        MainWindow window = project.Open("Documented.cs");
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Uri guide = new("https://example.test/guide?x=1&y=2");
+
+        Ui.PlaceAfter(editor, "return Documented.Re");
+        Ui.Run(window, AppActions.QuickDocumentation);
+        Ui.WaitFor(() => window.Assist.HoverText?.Contains("Use the", StringComparison.Ordinal) == true, "Read's documentation in hover");
+        MarkdownText hover = AssertDocumentation(window.Assist.HoverCard!, "quantity", "guide", guide);
+        string shown = hover.Shown.Replace('\u00A0', ' ');
+        Assert.Contains("Related", hover.Shown, StringComparison.Ordinal);
+        Assert.Contains("or null.", shown, StringComparison.Ordinal);
+        Assert.Matches(@"Read more with value of type (?:T|int)\.\nSecond line\.", shown);
+        Assert.Contains("• First step", window.Assist.HoverText, StringComparison.Ordinal);
+        Assert.Contains("int value = 1;", window.Assist.HoverText, StringComparison.Ordinal);
+        Assert.Contains(hover.Inlines!.OfType<Avalonia.Controls.Documents.Run>(), run => run.Text == "any value" && run.FontStyle == FontStyle.Italic);
+        Assert.Contains(hover.Inlines!.OfType<Avalonia.Controls.Documents.Run>(), run => run.Text == "unchanged" && run.TextDecorations == TextDecorations.Underline);
+        Assert.Contains(hover.Inlines!.OfType<Avalonia.Controls.Documents.Run>(), run => run.Text == "<b>literal</b>");
+        Ui.Click(hover, hover.PointOf(guide));
+        Assert.Equal(guide, window.Browsed.LastOrDefault());
+        Ui.Press(window, "ESCAPE");
+
+        Ui.PlaceAfter(editor, "public static int Run()\n    {\n");
+        window.KeyTextInput("        Documented");
+        window.KeyTextInput(".");
+        Ui.WaitFor(() => window.Assist.IsCompletionOpen, "members of Documented");
+        window.KeyTextInput("Rea");
+        Ui.WaitFor(() => window.Assist.ItemDocumentation?.Contains("Use the", StringComparison.Ordinal) == true, "Read's documentation in completion");
+        AssertDocumentation(window.Assist.ItemCard!, "quantity", "guide", guide);
+        Ui.Press(window, "ESCAPE");
+
+        Ui.PlaceAfter(editor, "return Documented.Read(");
+        Ui.Run(window, AppActions.ParameterInfo);
+        Ui.WaitFor(() => window.Assist.SignatureText?.Contains("The value", StringComparison.Ordinal) == true, "Read's parameter documentation");
+        AssertDocumentation(window.Assist.SignatureCard!, "value", "parameter guide", guide);
+        window.Close();
+
+        static MarkdownText AssertDocumentation(Border card, string bold, string label, Uri target)
+        {
+            MarkdownText words = Assert.Single(card.GetVisualDescendants().OfType<MarkdownText>(), block => block.Links.Any());
+            Assert.Contains((label, target), words.Links);
+            Assert.Contains(words.Inlines!.OfType<Avalonia.Controls.Documents.Run>(), run => run.Text == bold && run.FontWeight == FontWeight.Bold);
+            Assert.DoesNotContain("<see", words.Shown, StringComparison.Ordinal);
+            return words;
+        }
+    }
+
     private static T Await<T>(Task<T> task, string what) => Ui.Await(task, what, TimeSpan.FromSeconds(30));
 
     /// <summary>Chooses an item of the open list of choices by its words, with the keys a person would press.</summary>
@@ -3516,6 +3567,30 @@ public sealed class CodeAssistTests : IClassFixture<CodeAssistTests.Project>
             File.WriteAllText(PathOf("Paths.cs"), "static class Paths\n{\n"
                 + "    /// <summary>Keeps its logs under <c>C:\\temp</c>, in C:\\temp\\logs, &quot;never&quot; elsewhere.</summary>\n"
                 + "    public static int Keep() => 1;\n}\n");
+            File.WriteAllText(PathOf("Documented.cs"), """
+                static class Documented
+                {
+                    /// <summary>
+                    /// Use the &lt;b&gt;quantity&lt;/b&gt; in the &lt;see href=&quot;https://example.test/guide?x=1&amp;y=2&quot;&gt;guide&lt;/see&gt;.
+                    /// See <see cref="Related"/> or type <c>&lt;b&gt;literal&lt;/b&gt;</c>. Pass <i>any value</i> or <see langword="null"/>. It comes back <u>unchanged</u>.
+                    /// <para>Read more with <paramref name="value"/> of type <typeparamref name="T"/>.<br/>Second line.</para>
+                    /// <list type="bullet"><item><description>First step</description></item></list>
+                    /// <code>int value = 1;</code>
+                    /// </summary>
+                    /// <param name="value">The <b>value</b> in the <see href="https://example.test/guide?x=1&amp;y=2">parameter guide</see>.</param>
+                    public static T Read<T>(T value) => value;
+                    public static int Related() => 0;
+                }
+
+                static class Reader
+                {
+                    public static int Run()
+                    {
+
+                        return Documented.Read(1);
+                    }
+                }
+                """);
             // A statement's completion with no usings, and with the usings a project's implicit ones bring.
             const string Statement = "\nstatic class Statement\n{\n    public static int Sum()\n    {\n        int total = 0;\n        return total;\n    }\n}\n";
             File.WriteAllText(PathOf("Bare.cs"), Statement.Replace("Statement", "Bare", StringComparison.Ordinal));

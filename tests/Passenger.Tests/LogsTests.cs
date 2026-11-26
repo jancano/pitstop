@@ -201,7 +201,7 @@ public sealed class LogsTests : IDisposable
     internal static string WholeIdeLog()
     {
         IdeErrors.Flush();
-        return string.Join('\n', Directory.GetFiles(IdeErrors.LogFolder, "passenger*.log").Select(Ui.Shared));
+        return string.Join('\n', Directory.GetFiles(IdeErrors.LogFolder, $"{IdeLog.Ide}*.log").Select(Ui.Shared));
     }
 
     private void Tracing_writes_the_debuggers_messages_to_dap_log_beside_each_sessions_start_and_end()
@@ -302,7 +302,7 @@ public sealed class LogsTests : IDisposable
         {
             // Rotated a dozen times over, so every rotated log is there.
             Fill("before", (IdeErrors.Rotations + 1) * IdeErrors.LogLimit);
-            string[] rotated = [.. Enumerable.Range(1, IdeErrors.Rotations).Select(n => Path.Combine(IdeErrors.LogFolder, $"passenger.{n}.log"))];
+            string[] rotated = [.. Enumerable.Range(1, IdeErrors.Rotations).Select(n => Path.Combine(IdeErrors.LogFolder, $"{IdeLog.Ide}.{n}.log"))];
             Assert.All(rotated, path => Assert.True(File.Exists(path), $"{Path.GetFileName(path)} was not made by a dozen rotations"));
             string[] before = [.. rotated.Select(Ui.Shared)];
 

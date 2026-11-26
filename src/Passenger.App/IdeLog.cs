@@ -293,7 +293,7 @@ public static partial class IdeLog
         return true;
     }
 
-    /// <summary>A rotated log's path: <c>passenger.3.log</c> beside <c>pitstop.log</c>.</summary>
+    /// <summary>A rotated log's path: <c>pitstop.3.log</c> beside <c>pitstop.log</c>.</summary>
     private static string Rotated(string path, int number) => Rotated(path, $"{number}");
 
     private static string Rotated(string path, string part) =>
