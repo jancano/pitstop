@@ -124,7 +124,7 @@ class Process:
         command = ["dotnet", "test"] + built + ["--settings", settings_path, "--results-directory", folder,
                    "--logger", "trx", "--logger", "console;verbosity=normal"] + shards.HANG_ARGUMENTS
         self.started = time.monotonic()
-        self.log = open(self.log_path, "w", encoding="utf-8", errors="replace")
+        self.log = open(self.log_path, "w", encoding="utf-8", errors="replace", buffering=1 if shown else -1)
         if shown:
             self.process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT, bufsize=1, encoding="utf-8", errors="replace")
@@ -357,7 +357,7 @@ def keep_awake():
 
 def main():
     # Failure details can contain Unicode even when the runner's redirected console uses a legacy code page.
-    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+    sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace", line_buffering=True)
     sys.stderr.reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("filter", nargs="?", default="", help="dotnet test's --filter, as `just test Editing` gives it")
