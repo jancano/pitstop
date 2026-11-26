@@ -1,0 +1,50 @@
+{
+  "at": "<workspace>\\xmake.lua",
+  "compilers": [
+    {
+      "flags": "-Qunused-arguments --target=x86_64-w64-windows-gnu -std=c++23",
+      "flags_with_target": "-Qunused-arguments --target=x86_64-w64-windows-gnu -std=c++23",
+      "program": "<llvm-mingw>\\bin\\clang++",
+      "sourcekind": "cxx"
+    }
+  ],
+  "files": [
+    {
+      "path": "detail.cppm",
+      "source": {
+        "file": ".\\xmake.lua",
+        "line": 7
+      }
+    },
+    {
+      "path": "implementation.cpp",
+      "source": {
+        "file": ".\\xmake.lua",
+        "line": 7
+      }
+    },
+    {
+      "path": "arithmetic.cppm",
+      "source": {
+        "file": ".\\xmake.lua",
+        "line": 8
+      }
+    },
+    {
+      "path": "numbers.cppm",
+      "source": {
+        "file": ".\\xmake.lua",
+        "line": 8
+      }
+    }
+  ],
+  "kind": "static",
+  "linker": {
+    "flags": "cr",
+    "flags_with_target": "cr",
+    "kind": "ar",
+    "program": "<llvm-mingw>\\bin\\llvm-ar"
+  },
+  "name": "arithmetic",
+  "targetfile": "build\\mingw\\x86_64\\debug\\libarithmetic.a"
+}

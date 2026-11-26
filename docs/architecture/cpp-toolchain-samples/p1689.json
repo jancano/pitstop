@@ -1,0 +1,120 @@
+{
+  "revision": 0,
+  "rules": [
+    {
+      "primary-output": "build\\.gens\\arithmetic\\mingw\\x86_64\\debug\\rules\\bmi\\cache\\implementation\\5e2d36e1e4226c28\\arithmetic_PARTITION_detail.pcm",
+      "provides": [
+        {
+          "is-interface": false,
+          "logical-name": "arithmetic:detail",
+          "source-path": "detail.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.gens\\arithmetic\\mingw\\x86_64\\debug\\rules\\bmi\\cache\\interfaces\\796996b9d2adea92\\arithmetic_PARTITION_numbers.pcm",
+      "provides": [
+        {
+          "is-interface": true,
+          "logical-name": "arithmetic:numbers",
+          "source-path": "numbers.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.gens\\arithmetic\\mingw\\x86_64\\debug\\rules\\bmi\\cache\\interfaces\\8a82b5692078509f\\arithmetic.pcm",
+      "provides": [
+        {
+          "is-interface": true,
+          "logical-name": "arithmetic",
+          "source-path": "arithmetic.cppm"
+        }
+      ],
+      "requires": [
+        {
+          "logical-name": "arithmetic:numbers",
+          "source-path": "numbers.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.gens\\arithmetic\\mingw\\x86_64\\debug\\rules\\bmi\\cache\\interfaces\\f4344b43d84aa739\\std.pcm",
+      "provides": [
+        {
+          "is-interface": true,
+          "logical-name": "std",
+          "source-path": "<llvm-mingw>\\share\\libc++\\v1\\std.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.objs\\arithmetic\\mingw\\x86_64\\debug\\arithmetic.cppm.obj",
+      "provides": [
+        {
+          "is-interface": true,
+          "logical-name": "arithmetic",
+          "source-path": "arithmetic.cppm"
+        }
+      ],
+      "requires": [
+        {
+          "logical-name": "arithmetic:numbers",
+          "source-path": "numbers.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.objs\\arithmetic\\mingw\\x86_64\\debug\\d453be08e82f10282f4777c36b92fdcf\\std.cppm.obj",
+      "provides": [
+        {
+          "is-interface": true,
+          "logical-name": "std",
+          "source-path": "<llvm-mingw>\\share\\libc++\\v1\\std.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.objs\\arithmetic\\mingw\\x86_64\\debug\\detail.cppm.obj",
+      "provides": [
+        {
+          "is-interface": false,
+          "logical-name": "arithmetic:detail",
+          "source-path": "detail.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.objs\\arithmetic\\mingw\\x86_64\\debug\\implementation.cpp.obj",
+      "requires": [
+        {
+          "logical-name": "arithmetic:detail",
+          "source-path": "detail.cppm"
+        },
+        {
+          "logical-name": "arithmetic",
+          "source-path": "arithmetic.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.objs\\arithmetic\\mingw\\x86_64\\debug\\numbers.cppm.obj",
+      "provides": [
+        {
+          "is-interface": true,
+          "logical-name": "arithmetic:numbers",
+          "source-path": "numbers.cppm"
+        }
+      ]
+    },
+    {
+      "primary-output": "build\\.objs\\modules\\mingw\\x86_64\\debug\\main.cpp.obj",
+      "requires": [
+        {
+          "logical-name": "arithmetic",
+          "source-path": "arithmetic.cppm"
+        }
+      ]
+    }
+  ],
+  "version": 1
+}

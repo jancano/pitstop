@@ -1,0 +1,17 @@
+{
+  "root_targets": [
+    "modules"
+  ],
+  "targets": [
+    {
+      "deps": [],
+      "name": "arithmetic"
+    },
+    {
+      "deps": [
+        "arithmetic"
+      ],
+      "name": "modules"
+    }
+  ]
+}

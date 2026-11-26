@@ -1,0 +1,6 @@
+set_project("pitstop-headers")
+set_languages("cxx23")
+target("headers")
+    set_kind("binary")
+    add_includedirs("include")
+    add_files("main.cpp")

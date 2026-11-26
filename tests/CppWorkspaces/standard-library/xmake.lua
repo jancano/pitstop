@@ -1,0 +1,6 @@
+set_project("pitstop-import-std")
+set_languages("cxx23")
+set_policy("build.c++.modules", true)
+target("import_std")
+    set_kind("binary")
+    add_files("main.cpp")

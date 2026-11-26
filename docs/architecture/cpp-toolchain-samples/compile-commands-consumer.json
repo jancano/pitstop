@@ -1,0 +1,18 @@
+[
+  {
+    "directory": "<workspace>",
+    "arguments": [
+      "<llvm-mingw>\\bin\\clang++.exe",
+      "-c",
+      "-Qunused-arguments",
+      "--target=x86_64-w64-windows-gnu",
+      "-std=c++23",
+      "-fmodule-file=arithmetic=build\\.gens\\arithmetic\\mingw\\x86_64\\debug\\rules\\bmi\\cache\\interfaces\\8a82b5692078509f\\arithmetic.pcm",
+      "-fmodule-file=arithmetic:numbers=build\\.gens\\arithmetic\\mingw\\x86_64\\debug\\rules\\bmi\\cache\\interfaces\\796996b9d2adea92\\arithmetic_PARTITION_numbers.pcm",
+      "-o",
+      "build\\.objs\\modules\\mingw\\x86_64\\debug\\main.cpp.obj",
+      "main.cpp"
+    ],
+    "file": "main.cpp"
+  }
+]

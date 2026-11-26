@@ -1,0 +1,526 @@
+{
+  "llvm-mingw-23.1.6": {
+    "headers-cxx23": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++23"
+      ],
+      "cold": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      }
+    },
+    "headers-cxx26": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++26"
+      ],
+      "cold": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      }
+    },
+    "modules-cxx23": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++23"
+      ],
+      "cold": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": true
+      },
+      "built": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": true,
+        "partitionResolved": true,
+        "implementationResolved": true,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "source": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false,
+        "partitionResolved": true,
+        "implementationResolved": true,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "restarted-source": {
+        "symbol": "fresh_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 0,
+      "p1689Rules": 10
+    },
+    "modules-cxx26": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++26"
+      ],
+      "cold": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": true
+      },
+      "built": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": true,
+        "partitionResolved": true,
+        "implementationResolved": true,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "source": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": true,
+        "partitionResolved": true,
+        "implementationResolved": false,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "restarted-source": {
+        "symbol": "fresh_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 0,
+      "p1689Rules": 10
+    },
+    "standard-library-cxx23": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++23"
+      ],
+      "cold": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 0,
+      "p1689Rules": 3
+    },
+    "standard-library-cxx26": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++26"
+      ],
+      "cold": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 0,
+      "p1689Rules": 3
+    }
+  },
+  "stock-clang-22.1.8": {
+    "headers-cxx23": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++23"
+      ],
+      "cold": {
+        "symbol": "header_answer",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "header_answer",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      }
+    },
+    "headers-cxx26": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++26"
+      ],
+      "cold": {
+        "symbol": "header_answer",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "header_answer",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "header_answer",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      }
+    },
+    "modules-cxx23": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++23"
+      ],
+      "cold": {
+        "symbol": "module_value",
+        "noErrors": false,
+        "completionContainsSymbol": false,
+        "hoverContainsSymbol": false,
+        "definitionMatches": false,
+        "referencesIncludeConsumer": false,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "module_value",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": true,
+        "partitionResolved": true,
+        "implementationResolved": false,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "source": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false,
+        "partitionResolved": true,
+        "implementationResolved": true,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "restarted-source": {
+        "symbol": "fresh_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 1
+    },
+    "modules-cxx26": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++26"
+      ],
+      "cold": {
+        "symbol": "module_value",
+        "noErrors": false,
+        "completionContainsSymbol": false,
+        "hoverContainsSymbol": false,
+        "definitionMatches": false,
+        "referencesIncludeConsumer": false,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "module_value",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": true,
+        "partitionResolved": true,
+        "implementationResolved": false,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "source": {
+        "symbol": "module_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false,
+        "partitionResolved": true,
+        "implementationResolved": true,
+        "introducedErrorObserved": true,
+        "unsavedResolved": false,
+        "savedResolved": false
+      },
+      "restarted-source": {
+        "symbol": "fresh_value",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 1
+    },
+    "standard-library-cxx23": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++23"
+      ],
+      "cold": {
+        "symbol": "vector",
+        "noErrors": false,
+        "completionContainsSymbol": false,
+        "hoverContainsSymbol": false,
+        "definitionMatches": false,
+        "referencesIncludeConsumer": false,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "vector",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 1
+    },
+    "standard-library-cxx26": {
+      "configure": 0,
+      "compile-database": 0,
+      "build": 0,
+      "run": 0,
+      "standardArguments": [
+        "-std=c++26"
+      ],
+      "cold": {
+        "symbol": "vector",
+        "noErrors": false,
+        "completionContainsSymbol": false,
+        "hoverContainsSymbol": false,
+        "definitionMatches": false,
+        "referencesIncludeConsumer": false,
+        "referencesIncludeProvider": false
+      },
+      "built": {
+        "symbol": "vector",
+        "noErrors": false,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "source": {
+        "symbol": "vector",
+        "noErrors": true,
+        "completionContainsSymbol": true,
+        "hoverContainsSymbol": true,
+        "definitionMatches": true,
+        "referencesIncludeConsumer": true,
+        "referencesIncludeProvider": false
+      },
+      "p1689ExitCode": 1
+    }
+  }
+}

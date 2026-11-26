@@ -1,0 +1,26 @@
+{
+  "project": {
+    "arch": "x86_64",
+    "builddir": "build",
+    "configdir": "<workspace>\\.xmake\\windows\\x64",
+    "mode": "debug",
+    "name": "pitstop-modules",
+    "plat": "mingw",
+    "projectdir": "<workspace>",
+    "projectfile": "<workspace>\\xmake.lua"
+  },
+  "xmake": {
+    "globaldir": "<run>\\xmake-global\\.xmake",
+    "host": {
+      "arch": "x64",
+      "os": "windows"
+    },
+    "packagedir": "<run>\\xmake-global\\.xmake\\packages",
+    "packagedir_cache": "<run>\\xmake-global\\.xmake\\cache\\packages\\2611",
+    "programdir": "<xmake>",
+    "programfile": "<xmake>\\xmake.exe",
+    "tmpdir": "<temp>\\.xmake\\261126",
+    "version": "3.1.2+HEAD.5d21e9daf",
+    "workingdir": "<workspace>"
+  }
+}
