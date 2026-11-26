@@ -19,7 +19,7 @@ public sealed partial record NodeRuntime(string? Path, Version? Version, string?
     public static readonly string SettingsPlace = SettingsDialog.PlaceOfPage(SettingsDialog.NodePage);
 
     /// <summary>The empty Bun configuration carried beside the servers, which Bun takes in place of the folder's.</summary>
-    public static string BunConfig => System.IO.Path.Combine(WebLanguages.Carried, "passenger", "bunfig.toml");
+    public static string BunConfig => System.IO.Path.Combine(WebLanguages.Carried, "pitstop", "bunfig.toml");
 
     /// <summary>Which runtime it is.</summary>
     public ScriptRuntime Kind { get; init; } = ScriptRuntime.Node;

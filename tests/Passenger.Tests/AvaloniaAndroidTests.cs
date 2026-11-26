@@ -144,10 +144,10 @@ internal static class AvaloniaAndroidTests
             "the app's files").Output;
         string debugged = Ui.Await(Waiting.Apart(() => ChildProcesses.RunAsync(ChildProcesses.Command(tools.Adb, ["-s", serial, "shell", "dumpsys activity processes | grep mDebugApp="]))),
             "the device's debugged app").Output;
-        return string.Join("; ", [.. forwards.Split('\n').Where(l => l.StartsWith(serial + " ", StringComparison.Ordinal) && l.Contains("localabstract:passenger-", StringComparison.Ordinal))
+        return string.Join("; ", [.. forwards.Split('\n').Where(l => l.StartsWith(serial + " ", StringComparison.Ordinal) && l.Contains("localabstract:pitstop-", StringComparison.Ordinal))
                 .Select(l => l.Trim()),
-            .. reverses.Split('\n').Where(l => l.Contains("localabstract:passenger-", StringComparison.Ordinal)).Select(l => l.Trim()),
-            .. files.Split('\n').Any(l => l.Trim() == ".passenger") ? ["the inspector's files"] : (string[])[],
+            .. reverses.Split('\n').Where(l => l.Contains("localabstract:pitstop-", StringComparison.Ordinal)).Select(l => l.Trim()),
+            .. files.Split('\n').Any(l => l.Trim() == ".pitstop") ? ["the inspector's files"] : (string[])[],
             .. debugged.Contains($"mDebugApp={Package}/", StringComparison.Ordinal) ? [$"{Package} marked as debugged"] : (string[])[]]);
     }
 

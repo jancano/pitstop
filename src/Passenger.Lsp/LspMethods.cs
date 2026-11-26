@@ -24,6 +24,7 @@ public static class LspMethods
     public const string Hover = "textDocument/hover";
     public const string SignatureHelp = "textDocument/signatureHelp";
     public const string Definition = "textDocument/definition";
+    public const string Declaration = "textDocument/declaration";
     public const string TypeDefinition = "textDocument/typeDefinition";
     public const string Implementation = "textDocument/implementation";
     public const string References = "textDocument/references";

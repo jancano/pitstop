@@ -159,7 +159,7 @@ public sealed class NewItemTests : IDisposable
             Ui.WaitFor(() => window.EditorArea.Active?.Path == ignore, () => $"the .gitignore made and opened: {window.Status}", TimeSpan.FromMinutes(3));
             string ignored = File.ReadAllText(ignore);
             Assert.True(ignored.Contains("dotnet new gitignore", StringComparison.Ordinal) && ignored.EndsWith(RepositoryFiles.PassengerIgnores, StringComparison.Ordinal),
-                $"The .gitignore made is not dotnet new's with Passenger's section after:\n{ignored}");
+                $"The .gitignore made is not dotnet new's with Pitstop's section after:\n{ignored}");
 
             string attributes = Path.Combine(folder, ".gitattributes");
             Ui.ChooseFromRowMenu(window, Row(window, NodeKind.Solution, "Shop"), "Add", ".gitattributes File");

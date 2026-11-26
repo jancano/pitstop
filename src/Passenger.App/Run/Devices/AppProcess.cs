@@ -13,7 +13,7 @@ public sealed partial class AppProcess
 {
     /// <summary>The variable a start gives the app it opens, holding the start's <see cref="Token"/>.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_APP_START";
+    public const string Variable = "PITSTOP_APP_START";
 
     /// <summary>This start's own, which no other start gives an app.</summary>
     public string Token { get; } = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));

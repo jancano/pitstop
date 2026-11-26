@@ -57,7 +57,7 @@ public sealed class GodotUnseenTests : McpRig
             test => test.A_game_planned_headless_goes_without_SDLs_HID_gamepads_one_in_a_persons_window_keeps_them_and_the_editor_sends_no_telemetry());
     }
 
-    /// <summary>An agent's own Passenger, started outside a test run (no PASSENGER_START), runs the game with no window though
+    /// <summary>An agent's own Passenger, started outside a test run (no PITSTOP_START), runs the game with no window though
     /// neither its configuration nor the Godot setting asks it to: headless, or drawn where no screen shows it, on macOS
     /// through Godot's embedded display, on Windows in a window of a desktop of its own, on Linux in Xvfb's.</summary>
     private async Task An_agents_own_passenger_runs_a_godot_game_with_no_window_though_nothing_it_was_given_says_so()
@@ -67,7 +67,7 @@ public sealed class GodotUnseenTests : McpRig
         JsonElement ran = await Call(client, McpTools.Run, new() { ["configuration"] = Lonely, ["waitSeconds"] = 60 });
         IReadOnlyList<string> started = await godot.StartedAsync($"the game's start ({ran})");
         string unseen = !GodotExecutables.DrawsWithoutWindow("4.7.2") ? GodotExecutables.Headless : OperatingSystem.IsMacOS() ? GodotExecutables.Embedded : "--resolution";
-        Assert.True(started.Contains(unseen), $"The agent's own Passenger started Godot with a window, as {string.Join(' ', started)}");
+        Assert.True(started.Contains(unseen), $"The agent's own Pitstop started Godot with a window, as {string.Join(' ', started)}");
     }
 
     /// <summary>A screenshot, started outside a test run, whose agent runs the game: Godot is started headless, so no game
@@ -264,7 +264,7 @@ public static class ScreenshotAgent
             string script = Path.Combine(folder, "agent.ps1");
             await File.WriteAllTextAsync(script, $$"""
                 $env:{{Passenger.App.Mcp.McpProxy.StartVariable}} = 'headless'
-                $start = New-Object System.Diagnostics.ProcessStartInfo $env:PASSENGER, "--mcp-attach $env:PASSENGER_PID"
+                $start = New-Object System.Diagnostics.ProcessStartInfo $env:PITSTOP, "--mcp-attach $env:PITSTOP_PID"
                 $start.UseShellExecute = $false
                 $start.RedirectStandardInput = $true
                 $start.RedirectStandardOutput = $true
@@ -287,7 +287,7 @@ public static class ScreenshotAgent
         await File.WriteAllTextAsync(shell, $$"""
             cd '{{folder}}'
             mkfifo calls
-            {{Passenger.App.Mcp.McpProxy.StartVariable}}=headless "$PASSENGER" --mcp-attach "$PASSENGER_PID" < calls > answers.txt &
+            {{Passenger.App.Mcp.McpProxy.StartVariable}}=headless "$PITSTOP" --mcp-attach "$PITSTOP_PID" < calls > answers.txt &
             exec 3> calls
             answered() { until grep -q "\"id\":$1" answers.txt; do sleep 0.1; done; }
             printf '%s\n' '{{Initialize}}' >&3

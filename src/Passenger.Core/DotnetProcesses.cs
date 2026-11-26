@@ -331,7 +331,7 @@ public static partial class DotnetProcesses
     {
         if (OperatingSystem.IsWindows())
         {
-            return Runs32Bit(id) ? $"process {id} {RunsAs32Bit}, whose runtime's reader of its memory this 64-bit Passenger cannot load" : null;
+            return Runs32Bit(id) ? $"process {id} {RunsAs32Bit}, whose runtime's reader of its memory this 64-bit Pitstop cannot load" : null;
         }
         if (!OperatingSystem.IsMacOS())
         {
@@ -858,7 +858,7 @@ public static partial class DotnetProcesses
 
     /// <summary>Why the debugger attaches to no 32-bit program: the runtime's debugging library it loads is of the program's
     /// own processor, and Passenger's debugger is a 64-bit program.</summary>
-    public const string Undebugged32Bit = $"it {RunsAs32Bit}, and Passenger's debugger, a 64-bit program, loads only a 64-bit runtime's debugging library";
+    public const string Undebugged32Bit = $"it {RunsAs32Bit}, and Pitstop's debugger, a 64-bit program, loads only a 64-bit runtime's debugging library";
 
     /// <summary>Whether a process runs as a 32-bit program on 64-bit Windows (an x86 program's apphost, or the x86 dotnet);
     /// false where it does not, it is gone or Windows will not say, and off Windows.</summary>

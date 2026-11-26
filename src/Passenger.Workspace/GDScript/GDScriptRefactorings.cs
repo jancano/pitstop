@@ -60,7 +60,7 @@ public static partial class GDScriptRefactorings
     /// <summary>Why no change across these scripts can be made: one is read only in part, so a use after where reading stopped
     /// would go unseen; null where each is read whole.</summary>
     public static string? WhyNotChanged(IEnumerable<GDScriptRead> scripts) =>
-        scripts.FirstOrDefault(s => s.Tree.Stopped is not null) is { } unread ? $"{Path.GetFileName(unread.Script)} is nested too deeply for Passenger to read whole, so a use of what this changes could go unseen" : null;
+        scripts.FirstOrDefault(s => s.Tree.Stopped is not null) is { } unread ? $"{Path.GetFileName(unread.Script)} is nested too deeply for Pitstop to read whole, so a use of what this changes could go unseen" : null;
 
     /// <summary>Why a name cannot be one GDScript declares; null where it can.</summary>
     public static string? WhyNotName(string name) =>

@@ -8,7 +8,7 @@ public static partial class GodotAgent
     private static readonly Lazy<byte[]> Source = new(() =>
     {
         using Stream stream = typeof(GodotAgent).Assembly.GetManifestResourceStream("Godot/PassengerAgent.gd")
-            ?? throw new InvalidOperationException("Passenger carries no Godot/PassengerAgent.gd");
+            ?? throw new InvalidOperationException("Pitstop carries no Godot/PassengerAgent.gd");
         using MemoryStream read = new();
         stream.CopyTo(read);
         return read.ToArray();

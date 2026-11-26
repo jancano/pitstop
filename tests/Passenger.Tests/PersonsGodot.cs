@@ -74,7 +74,7 @@ public static class PersonsGodot
         }
         string named = string.Join("; ", changes.Take(Named)) + (changes.Count > Named ? $"; and {changes.Count - Named} more" : string.Empty);
         return $"The person's own Godot user folders were written {when} (by a Godot the run started in the person's, or by another program meanwhile: "
-            + $"Godot run by hand, another test run): {named}. Every Godot a test's Passenger starts keeps its user folders in the run's own, "
+            + $"Godot run by hand, another test run): {named}. Every Godot a test's Pitstop starts keeps its user folders in the run's own, "
             + $"which {Passenger.App.Godot.GodotUserFolders.HomeVariable} names, unless its window, its run configuration or its test host gives it a test's";
     }
 

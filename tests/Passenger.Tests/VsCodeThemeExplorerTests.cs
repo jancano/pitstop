@@ -134,7 +134,7 @@ public sealed class VsCodeThemeExplorerTests : IDisposable
             Ui.WaitFor(() => explorer.Listed.Count == 1, () => $"the broken theme listed, where it says {explorer.Said.Text}");
             explorer.Choose("Broken");
             Ui.WaitFor(() => explorer.Said.Text?.Contains("is not used", StringComparison.Ordinal) == true, () => $"the refusal said, where it says {explorer.Said.Text}");
-            Assert.Contains("no zip Passenger reads", explorer.Said.Text, StringComparison.Ordinal);
+            Assert.Contains("no zip Pitstop reads", explorer.Said.Text, StringComparison.Ordinal);
             Assert.Contains(StyleClasses.Error, explorer.Said.Classes);
             Assert.Null(dialog.Working.Look);
             Assert.False(KeptThemes.Holds(ThemeSource.OpenVsx, false, "Broken"), "A theme refused was kept");
@@ -299,13 +299,13 @@ public sealed class VsCodeThemeExplorerTests : IDisposable
             Assert.Equal(Token(CarriedThemes.Theme(CarriedThemes.VsCodePrefix + "Paper")!, "Editor.Background"), Drawn(window, TokenKeys.Editor_Background));
 
             string? refused = Ui.Await(dialog.ThemePicker.AddFileAsync(broken), "a broken .vsix refused");
-            Assert.Contains("no zip Passenger reads", refused, StringComparison.Ordinal);
+            Assert.Contains("no zip Pitstop reads", refused, StringComparison.Ordinal);
             Assert.Equal(new SourcedTheme(ThemeSource.Added.Name, "Paper"), dialog.Working.Look);
             Assert.EndsWith("huge.vsix is 33 MB, more than the 32 MB it may hold", Ui.Await(dialog.ThemePicker.AddFileAsync(huge), "a .vsix past the most refused"));
             Assert.Equal(new SourcedTheme(ThemeSource.Added.Name, "Paper"), dialog.Working.Look);
 
             // As a code colour scheme under Passenger's own theme: Lantern's code colours in Dark, moved to read in Light.
-            dialog.ThemePicker.Choose("Passenger");
+            dialog.ThemePicker.Choose("Pitstop");
             Assert.Null(Ui.Await(dialog.SchemePicker.AddFileAsync(json), "Lantern's JSON added as a code colour scheme"));
             Ui.Settle();
             Assert.Equal(new SourcedTheme(ThemeSource.Added.Name, "Lantern"), dialog.Working.ColourScheme);

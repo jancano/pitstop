@@ -4,7 +4,7 @@ using Passenger.App.Containers;
 namespace Passenger.App.Debugging;
 
 /// <summary>Where a session's debug adapter runs when not beside the app: the command that starts it there, given the
-/// adapter's flags (<c>docker exec -i CONTAINER …/passenger-tools dap</c>, the protocol over its standard input and
+/// adapter's flags (<c>docker exec -i CONTAINER …/pitstop-tools dap</c>, the protocol over its standard input and
 /// output), the folder it keeps decompiled symbols in there, how paths cross at the protocol's edge (a container run's
 /// <see cref="ContainerPaths"/>; a path the map does not cover crosses as it is, but one coming back that names a file of
 /// the folder's <see cref="Sources"/>), and what to call the place (the container's name, which docker exec reaches it

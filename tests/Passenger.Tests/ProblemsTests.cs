@@ -189,8 +189,8 @@ public sealed class ProblemsTests : IClassFixture<ProblemsTests.Project>
             window.KeyTextInput(" ");
             Ui.PumpUntil(() => pulled.IsCompleted, "the file's project-wide pull to be answered, and its answer held");
             Passenger.Lsp.LongWait pull = slow.SaidOf(SlowAnswers.ProjectWidePull);
-            Assert.True(pull.Conversation.Contains("it answered Passenger's check", StringComparison.Ordinal),
-                $"The server was to answer Passenger's checks while the pull waited: {pull.Conversation}");
+            Assert.True(pull.Conversation.Contains("it answered Pitstop's check", StringComparison.Ordinal),
+                $"The server was to answer Pitstop's checks while the pull waited: {pull.Conversation}");
             Assert.False(pull.Told, $"A pull nobody waits on, past the server's patience while it answers its checks, was to be the log's alone: {pull.Asked}: {pull.Conversation}");
             slow.HeardByTheWindow();
             Assert.True(slow.Noticed.Count == 0,
@@ -231,7 +231,7 @@ public sealed class ProblemsTests : IClassFixture<ProblemsTests.Project>
             Task pulled = slow.HoldProjectWidePull();
             window.KeyTextInput(" ");
             Ui.PumpUntil(() => pulled.IsCompleted && checking.IsCompleted,
-                "the file's project-wide pull to be answered and Passenger's check of the server to be asked, both held");
+                "the file's project-wide pull to be answered and Pitstop's check of the server to be asked, both held");
             Passenger.Lsp.LongWait pull = slow.SaidOf(SlowAnswers.ProjectWidePull);
             Assert.True(pull.Told, $"A pull past the server's patience, its check unanswered, was to be told: {pull.Asked}: {pull.Conversation}");
             slow.HeardByTheWindow();

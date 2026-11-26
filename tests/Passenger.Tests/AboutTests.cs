@@ -40,7 +40,7 @@ public sealed partial class AboutTests : IDisposable
             AboutDialog about = OpenAbout(window);
             string shown = Shown(about);
             string version = VersionRegex().Match(File.ReadAllText(Path.Combine(Repository, "Directory.Build.props"))).Groups[1].Value;
-            Assert.True(shown.Contains($"Passenger {version}", StringComparison.Ordinal),
+            Assert.True(shown.Contains($"Pitstop {version}", StringComparison.Ordinal),
                 $"About does not name the version Directory.Build.props gives the build, {version}: it shows\n{shown}");
             string head = TestGit.Run(Repository, "rev-parse", "HEAD").Trim();
             Assert.True(shown.Contains($"Commit {head[..12]}", StringComparison.Ordinal),
@@ -53,7 +53,7 @@ public sealed partial class AboutTests : IDisposable
             Assert.False(about.IsVisible, "About stays open over the notices its link opened");
             Assert.Equal(PathNames.Canonical(Path.Combine(AppContext.BaseDirectory, "THIRD-PARTY-NOTICES.txt")), window.EditorArea.Active?.Path);
             string notices = window.EditorArea.CodeEditor.Document.Snapshot.ToString();
-            Assert.StartsWith("Third-party notices for Passenger", notices, StringComparison.Ordinal);
+            Assert.StartsWith("Third-party notices for Pitstop", notices, StringComparison.Ordinal);
             window.EditorArea.CodeEditor.Focus();
             Ui.Type(window, "X", "X");
             Assert.True(window.EditorArea.CodeEditor.Document.Snapshot.ToString() == notices && !window.EditorArea.Active!.IsModified,
@@ -96,7 +96,7 @@ public sealed partial class AboutTests : IDisposable
         }
 
         SortedSet<string> carried = new(StringComparer.OrdinalIgnoreCase);
-        carried.UnionWith(AppPackages(Path.Combine(beside, "Passenger.deps.json")));
+        carried.UnionWith(AppPackages(Path.Combine(beside, "Pitstop.deps.json")));
         foreach (string deps in Directory.EnumerateFiles(Path.Combine(beside, "debugger"), "*.deps.json")
             .Concat(Directory.EnumerateFiles(Path.Combine(beside, "roslyn"), "*.deps.json", SearchOption.AllDirectories)))
         {
@@ -124,7 +124,7 @@ public sealed partial class AboutTests : IDisposable
         {
             Assert.DoesNotContain(help.Items.OfType<NativeMenuItem>(), i => i.Header == "About");
             NativeMenuItem first = MainWindow.ApplicationMenu!.Items.OfType<NativeMenuItem>().First();
-            Assert.Equal("About Passenger", first.Header);
+            Assert.Equal("About Pitstop", first.Header);
             first.Command!.Execute(null);
         }
         else
@@ -181,7 +181,7 @@ public sealed partial class AboutTests : IDisposable
         JsonElement target = root.GetProperty("targets").GetProperty(root.GetProperty("runtimeTarget").GetProperty("name").GetString()!);
         Dictionary<string, JsonElement> entries = target.EnumerateObject().ToDictionary(e => e.Name, e => e.Value, StringComparer.OrdinalIgnoreCase);
         HashSet<string> reached = new(StringComparer.OrdinalIgnoreCase);
-        Stack<string> next = new([entries.Keys.Single(k => k.StartsWith("Passenger/", StringComparison.Ordinal))]);
+        Stack<string> next = new([entries.Keys.Single(k => k.StartsWith("Pitstop/", StringComparison.Ordinal))]);
         while (next.TryPop(out string? entry))
         {
             // A dependency the app names but takes nothing of (its assets excluded) has no entry: the app carries none of it.

@@ -102,8 +102,8 @@ public sealed class LocalHistoryTests : IDisposable
     [AvaloniaFact]
     public void Passengers_sharing_a_state_keep_one_history_within_its_limits()
     {
-        Flow.StepApart<LocalHistoryTests>("a change kept by its maker and as heard by another passenger on the same state lists once under its makers name", t => t.A_change_kept_by_its_maker_and_as_heard_by_another_passenger_on_the_same_state_lists_once_under_its_makers_name());
-        Flow.StepApart<LocalHistoryTests>("a label put while another passenger on the same state writes the log anew is kept after its rewrite", t => t.A_label_put_while_another_passenger_on_the_same_state_writes_the_log_anew_is_kept_after_its_rewrite());
+        Flow.StepApart<LocalHistoryTests>("a change kept by its maker and as heard by another pitstop on the same state lists once under its makers name", t => t.A_change_kept_by_its_maker_and_as_heard_by_another_passenger_on_the_same_state_lists_once_under_its_makers_name());
+        Flow.StepApart<LocalHistoryTests>("a label put while another pitstop on the same state writes the log anew is kept after its rewrite", t => t.A_label_put_while_another_passenger_on_the_same_state_writes_the_log_anew_is_kept_after_its_rewrite());
         Flow.StepApart<LocalHistoryTests>("the store keeps days of activity as Riders does and no more content than its limit", t => t.The_store_keeps_days_of_activity_as_Riders_does_and_no_more_content_than_its_limit());
     }
 
@@ -280,7 +280,7 @@ public sealed class LocalHistoryTests : IDisposable
         TestGit.Run(origin, "switch", "-q", "main");
         TestGit.Run(folder, "clone", "-q", "-c", "core.autocrlf=false", origin, ".");
         TestGit.Run(folder, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        TestGit.Run(folder, "config", "user.name", "Passenger Tests");
+        TestGit.Run(folder, "config", "user.name", "Pitstop Tests");
         File.WriteAllText(Path.Combine(origin, "Readme.md"), "# Shop\n\nSells things.\n");
         TestGit.Run(origin, "commit", "-q", "-am", "Readme");
         File.WriteAllText(Path.Combine(folder, "Todo.txt"), "count\nsell\n");
@@ -761,7 +761,7 @@ public sealed class LocalHistoryTests : IDisposable
         HistoryTab history = ShowFromFileMenu(later, "Show History…");
         Ui.Settle();
         Assert.True(history.Rows.Any(r => r.Title == "Change"),
-            $"A later Passenger on the same state listed none of the save kept for Shop\\Copy.cs, only [{string.Join(", ", history.Rows.Select(r => r.Title))}]: its history was kept under Shop/Copy.cs, another file's name");
+            $"A later Pitstop on the same state listed none of the save kept for Shop\\Copy.cs, only [{string.Join(", ", history.Rows.Select(r => r.Title))}]: its history was kept under Shop/Copy.cs, another file's name");
         later.Close();
     }
 
@@ -795,16 +795,16 @@ public sealed class LocalHistoryTests : IDisposable
             AtomicFile.Write(log, Encoding.UTF8.GetBytes(string.Concat(read.Skip(1).Select(line => line + "\n"))));
             return grew;
         });
-        Ui.PumpUntil(() => held.IsSet, "the other Passenger to hold the history");
+        Ui.PumpUntil(() => held.IsSet, "the other Pitstop to hold the history");
         Ui.ChooseFromEditorMenu(window, "Local History", "Put Label…");
         window.KeyTextInput("Mine");
         Ui.Press(window, "ENTER", settle: false);
-        bool written = Ui.AwaitPumped(other, "the other Passenger to write the log anew and let go");
+        bool written = Ui.AwaitPumped(other, "the other Pitstop to write the log anew and let go");
         Ui.Settle();
 
         string[] labels = [.. File.ReadAllLines(log).Select(line => System.Text.Json.Nodes.JsonNode.Parse(line)?["n"]?.GetValue<string>()).OfType<string>()];
-        Assert.False(written, "The label was written into the log while another Passenger held the history to write it anew");
-        Assert.True(labels.Contains("Mine"), $"The label put while another Passenger on the same state wrote the log anew was lost to its rewrite: the log holds [{string.Join(", ", labels)}]");
+        Assert.False(written, "The label was written into the log while another Pitstop held the history to write it anew");
+        Assert.True(labels.Contains("Mine"), $"The label put while another Pitstop on the same state wrote the log anew was lost to its rewrite: the log holds [{string.Join(", ", labels)}]");
         Assert.Equal(["Kept by the other", "Mine"], labels);
         window.Close();
     }

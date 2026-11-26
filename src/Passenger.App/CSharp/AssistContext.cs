@@ -22,6 +22,7 @@ internal sealed class AssistContext(EditorArea editors, Func<CSharpService?> ser
 
     /// <summary>The window's JavaScript, TypeScript, HTML, CSS and JSON, for a web file shown.</summary>
     public Func<WebLanguages?>? Web { get; set; }
+    public Func<CppLanguageService?>? Cpp { get; set; }
 
     /// <summary>The window's XAML, for a XAML file shown.</summary>
     public Func<XamlService?>? Xaml { get; set; }
@@ -71,7 +72,8 @@ internal sealed class AssistContext(EditorArea editors, Func<CSharpService?> ser
     public IServerDocument? Current => editors.Active is { } active ? ServerOf(active) : null;
 
     /// <summary>A file's share of its language server: C#'s or Razor's, else a web language's.</summary>
-    public IServerDocument? ServerOf(OpenDocument document) => service()?.For(document) ?? (IServerDocument?)WebOf(document);
+    public IServerDocument? ServerOf(OpenDocument document) => (IServerDocument?)Cpp?.Invoke()?.For(document)
+        ?? service()?.For(document) ?? (IServerDocument?)WebOf(document);
 
     public WebDocument? WebOf(OpenDocument document) => Web?.Invoke()?.For(document);
 
@@ -107,14 +109,16 @@ internal sealed class AssistContext(EditorArea editors, Func<CSharpService?> ser
     /// <summary>Why a command (<paramref name="what"/>) gets no server's document for the file shown, a server's file it
     /// cannot take yet, in the status bar's words; null where it has one, or no server reads the file.</summary>
     public string? Unready(string what) => Current is not { Lsp: null } current ? null
+        : current is CppEditorDocument && editors.Active is { } native ? Cpp?.Invoke()?.Label(native)
         : current is WebDocument && Web?.Invoke() is { } web && editors.Active is { } shown ? web.Unready(what, shown)
         : service() is { } csharp ? csharp.Unready(what, editors.Active)
         : null;
 
     /// <summary>An open file's server document as it is now, for what the person chose from an answer (a fix, a new
     /// name): the server that answered may have been started again while they chose.</summary>
-    public LspDocument Now(OpenDocument document) => service()?.For(document)?.Lsp ?? WebOf(document)?.Lsp ?? throw new LanguageServerFailed(
-        WebOf(document) is not null ? "its language server is not running"
+    public LspDocument Now(OpenDocument document) => ServerOf(document)?.Lsp ?? throw new LanguageServerFailed(
+        Cpp?.Invoke()?.For(document) is not null ? Cpp?.Invoke()?.Label(document) ?? "clangd is not running"
+        : WebOf(document) is not null ? "its language server is not running"
         : service() is { } csharp ? $"the C# language server is not ready: {csharp.State}" : Refusals.NoCSharp);
 
     /// <summary>Waits, for a change at an offset of a C# file, until the server holds in their projects the C# files come

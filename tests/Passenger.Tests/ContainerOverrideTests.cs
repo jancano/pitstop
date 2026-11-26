@@ -93,7 +93,7 @@ public sealed class ContainerOverrideTests : IDisposable
     /// <summary>Runs <paramref name="test"/> with user secrets of an id of its own in the run's folder, deleted after.</summary>
     private static async Task WithSecretsAsync(Func<string, Task> test)
     {
-        string id = $"passenger-test-override-{Guid.NewGuid():N}";
+        string id = $"pitstop-test-override-{Guid.NewGuid():N}";
         string secrets = TestFolders.Write(TestRun.UserSecrets, $"{id}/secrets.json", "{ \"Greeting\": \"from secrets\" }\n");
         try
         {

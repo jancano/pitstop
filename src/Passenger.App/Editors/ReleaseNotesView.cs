@@ -37,7 +37,7 @@ public sealed class ReleaseNotesView : ScrollViewer
             }
         }
         Versions = versions;
-        Image mark = new() { Classes = { StyleClasses.NotesMark }, Source = new Bitmap(AssetLoader.Open(new Uri("avares://Passenger/Assets/passenger.png"))) };
+        Image mark = new() { Classes = { StyleClasses.NotesMark }, Source = new Bitmap(AssetLoader.Open(new Uri("avares://Pitstop/Assets/pitstop.png"))) };
         RenderOptions.SetBitmapInterpolationMode(mark, BitmapInterpolationMode.HighQuality);
         Title = ReleaseNotes.HeadingOf(version);
         Grid hero = new() { Classes = { StyleClasses.NotesHero }, ColumnDefinitions = new ColumnDefinitions("Auto,*") };

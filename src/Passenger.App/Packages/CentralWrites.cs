@@ -92,7 +92,7 @@ internal sealed record CentralWrites(IReadOnlyDictionary<string, (FileText Had, 
             }
             if (Expression(written))
             {
-                return $"{id}'s version in {Path.GetFileName(file)} is written as {written}, which Passenger moves only where it is a version or one property alone";
+                return $"{id}'s version in {Path.GetFileName(file)} is written as {written}, which Pitstop moves only where it is a version or one property alone";
             }
             writer.Set(file, ProjectEdits.WithPackageVersion(writer.Text(file), id, version, held.Place.Line)!);
             return null;

@@ -128,7 +128,7 @@ public sealed class McpGodotProfileTests : McpRig, IClassFixture<GodotProfileGam
         await using McpClient client = await Started();
         JsonElement ran = await Call(client, McpTools.Run, new() { ["configuration"] = Game, ["waitSeconds"] = 180 });
         Assert.True(ran.GetProperty("stillRunning").GetBoolean(), $"The game ended as it started: {ran}");
-        Assert.Contains("Passenger its remote debugger", ran.GetProperty("status").GetString(), StringComparison.Ordinal);
+        Assert.Contains("Pitstop its remote debugger", ran.GetProperty("status").GetString(), StringComparison.Ordinal);
         string said = await Ready(client);
         // Headless, or where the system draws an unseen game: macOS's embedded display, a desktop of its own on Windows, Xvfb on Linux.
         string unseen = !GodotExecutables.DrawsWithoutWindow(game.Godot!.Version) ? "display [headless]"

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Pitstop's launcher on Linux: it runs the app in app/ beside it, from wherever the folder was unpacked or installed
+# and through a link to it too, with everything it is given: a folder, a solution or a file, and Pitstop's flags.
+self=$(readlink -f "$0") || self=$0
+exec "$(dirname "$self")/app/Pitstop" "$@"

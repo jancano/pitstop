@@ -6,27 +6,41 @@ using Velopack;
 namespace Passenger.App;
 
 /// <summary>Passenger as its Windows installer left it (tools/package-win.sh): Velopack's, per user, in
-/// <c>%LocalAppData%\PassengerIDE\current</c> beside its manifest (<c>sq.version</c>), Update.exe above. Its installer,
-/// updater and uninstaller run Passenger.exe with a hook's flag before anything else of it, and Passenger answers by
-/// registering or removing the file types it opens and the passenger-ide command's folder on the person's own Path
+/// <c>%LocalAppData%\PitstopIDE\current</c> beside its manifest (<c>sq.version</c>), Update.exe above. Its installer,
+/// updater and uninstaller run Pitstop.exe with a hook's flag before anything else of it, and Passenger answers by
+/// registering or removing the file types it opens and the pitstop-ide command's folder on the person's own Path
 /// (<see cref="PassengerCommand"/>), then exits. A copy anywhere else (a build, the tests, macOS) never
 /// starts Velopack, which would only add to a log of its own in local app data at every start.</summary>
 internal static partial class Installation
 {
+    // The same ID is written into the Windows shortcut by tools/package-win.sh.
+    private const string AppUserModelId = "velopack.PitstopIDE";
+
     /// <summary>The types a double-click opens in Passenger, each under a ProgID of its own: a solution as the
     /// workspace, a project as its folder (<see cref="LaunchOptions"/>).</summary>
     private static readonly (string Extension, string ProgId, string Name)[] FileTypes =
     [
-        (".sln", "Passenger.sln", "Solution File"),
-        (".slnx", "Passenger.slnx", "Solution File"),
-        (".slnf", "Passenger.slnf", "Solution Filter File"),
-        (".csproj", "Passenger.csproj", "C# Project File"),
+        (".sln", "Pitstop.sln", "Solution File"),
+        (".slnx", "Pitstop.slnx", "Solution File"),
+        (".slnf", "Pitstop.slnf", "Solution Filter File"),
+        (".csproj", "Pitstop.csproj", "C# Project File"),
     ];
 
     private const string Classes = @"Software\Classes";
 
     /// <summary>Whether this copy is one Velopack packed, whose start Main hands to Velopack first.</summary>
     public static bool Installed => File.Exists(Path.Combine(AppContext.BaseDirectory, "sq.version"));
+
+    public static bool IsInstallerHook(string[] args) => OperatingSystem.IsWindows() && Installed && args is
+        ["--veloapp-install" or "--veloapp-updated" or "--veloapp-obsolete" or "--veloapp-uninstall", _];
+
+    public static void RegisterProcessIdentity()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            _ = SetCurrentProcessExplicitAppUserModelID(AppUserModelId);
+        }
+    }
 
     /// <summary>Velopack's start with Passenger's hooks, which are Windows' alone.</summary>
     public static VelopackApp Hooked(VelopackApp app) => OperatingSystem.IsWindows() ? WithHooks(app) : app;
@@ -72,7 +86,7 @@ internal static partial class Installation
     [SupportedOSPlatform("windows")]
     private static void RegisterFileTypes()
     {
-        string exe = Environment.ProcessPath ?? throw new InvalidOperationException("Passenger.exe has no path");
+        string exe = Environment.ProcessPath ?? throw new InvalidOperationException("Pitstop.exe has no path");
         using RegistryKey classes = Registry.CurrentUser.CreateSubKey(Classes);
         foreach ((string extension, string progId, string name) in FileTypes)
         {
@@ -165,4 +179,7 @@ internal static partial class Installation
 
     [LibraryImport("shell32.dll")]
     private static partial void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
+
+    [LibraryImport("shell32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial int SetCurrentProcessExplicitAppUserModelID(string appId);
 }

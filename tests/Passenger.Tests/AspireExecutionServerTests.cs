@@ -17,7 +17,7 @@ namespace Passenger.Tests;
 [Collection(Beside.Name)]
 public sealed class AspireExecutionServerTests
 {
-    private const string Instance = "passenger-tests-abcdefghijkl";
+    private const string Instance = "pitstop-tests-abcdefghijkl";
     private const string InstanceHeader = "Microsoft-Developer-DCP-Instance-ID";
     private static CancellationToken Cancel => TestContext.Current.CancellationToken;
     private static TimeSpan Limit => TimeSpan.FromSeconds(30).Scaled();

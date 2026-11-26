@@ -288,7 +288,7 @@ public sealed class RefactoringDialogsTests
         Ui.WaitFor(() => window.Assist.Offered.Count > 0, () => $"Refactor This's list: {window.Status}");
         IReadOnlyList<string> offered = window.Assist.Offered;
         Assert.True(offered.Contains("Pull Members Up…") && !offered.Contains("Extract Method…"),
-            $"Refactor This on a member offers Passenger's refactorings that apply, never those the server has none of here: {string.Join("; ", offered)}");
+            $"Refactor This on a member offers Pitstop's refactorings that apply, never those the server has none of here: {string.Join("; ", offered)}");
         Ui.Press(window, "ESCAPE");
 
         int fins = editor.Document.Snapshot.ToString().IndexOf("Fins", StringComparison.Ordinal) + 1;

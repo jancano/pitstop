@@ -2096,7 +2096,7 @@ public sealed partial class Git
             ? await BackgroundWork.Run(() => PartialCommit.Unstaged(headBytes, heldBytes, changes)) : null;
         if (kept is null)
         {
-            return new GitResult(1, string.Empty, $"Passenger can't take part of what Git's index holds of {System.IO.Path.GetFileName(path)} out: unstage it whole");
+            return new GitResult(1, string.Empty, $"Pitstop can't take part of what Git's index holds of {System.IO.Path.GetFileName(path)} out: unstage it whole");
         }
         (GitResult Ran, string? Read) written = await RunAsync(Root, ["hash-object", "-w", "--stdin", "--no-filters"], TextAsync, kept);
         return !written.Ran.Succeeded ? written.Ran
@@ -2415,7 +2415,7 @@ public sealed partial class Git
             if (merged is null)
             {
                 return (null, false, new GitResult(1, string.Empty,
-                    $"{System.IO.Path.GetFileName(name)} has staged changes Passenger can't keep beside the ones chosen: commit it whole, or unstage it first"));
+                    $"{System.IO.Path.GetFileName(name)} has staged changes Pitstop can't keep beside the ones chosen: commit it whole, or unstage it first"));
             }
             (GitResult Ran, string? Read) written = await RunAsync(Root, ["hash-object", "-w", "--stdin", "--no-filters"], TextAsync, merged);
             if (!written.Ran.Succeeded)

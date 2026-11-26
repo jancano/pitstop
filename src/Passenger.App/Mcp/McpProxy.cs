@@ -28,14 +28,14 @@ namespace Passenger.App.Mcp;
 public sealed partial class McpProxy
 {
     /// <summary><c>headless</c> has a call with no window start this build headless, as its own child, in the state
-    /// PASSENGER_SETTINGS names, never the person's installed Passenger.</summary>
+    /// PITSTOP_SETTINGS names, never the person's installed Passenger.</summary>
     [IdentifierHome]
-    public const string StartVariable = "PASSENGER_START";
+    public const string StartVariable = "PITSTOP_START";
 
     /// <summary>What the proxy tells a Passenger it starts for an agent (<c>agent</c>), which takes it out of its own
     /// environment as it starts, so nothing it runs inherits it.</summary>
     [IdentifierHome]
-    public const string StartedForVariable = "PASSENGER_STARTED_FOR";
+    public const string StartedForVariable = "PITSTOP_STARTED_FOR";
 
     /// <summary>Whether an agent's --mcp-attach started this Passenger, to open a folder for it: its window shows the person
     /// no What's New, which waits for a start of their own.</summary>
@@ -47,7 +47,7 @@ public sealed partial class McpProxy
     /// <summary>The file of the session a relay hands the one taking its process's place from the updated app
     /// (<see cref="SessionFile"/>), which that one reads, removes and goes on with.</summary>
     [IdentifierHome]
-    public const string SessionVariable = "PASSENGER_RELAY_SESSION";
+    public const string SessionVariable = "PITSTOP_RELAY_SESSION";
 
     /// <summary>The session this relay goes on with, handed over by the one whose process it took (<see cref="SessionVariable"/>).</summary>
     private static RelaySession? followed;
@@ -109,7 +109,7 @@ public sealed partial class McpProxy
         {
             if (started != "agent")
             {
-                throw new FormatException($"{StartedForVariable} takes agent (a Passenger an agent's --mcp-attach started), not '{started}'");
+                throw new FormatException($"{StartedForVariable} takes agent (a Pitstop an agent's --mcp-attach started), not '{started}'");
             }
             StartedForAgent = true;
             OwnEnvironment.Set(StartedForVariable, null);
@@ -166,7 +166,7 @@ public sealed partial class McpProxy
                     tools.Relisted();
                 }
             };
-            IdeErrors.Write($"Agents: this relay took the place of the one before it from the updated Passenger, going on with its agent's session"
+            IdeErrors.Write($"Agents: this relay took the place of the one before it from the updated Pitstop, going on with its agent's session"
                 + $" ({Plural.Of(session.Carried.Count, "call")} carried over{(session.Tools == listed ? string.Empty : ", its tools changed")})");
             Unheld();
         }
@@ -234,7 +234,7 @@ public sealed partial class McpProxy
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            IdeErrors.Write($"Agents: this relay cannot say it is one, so an update of Passenger waits for it to end: {error.Message}");
+            IdeErrors.Write($"Agents: this relay cannot say it is one, so an update of Pitstop waits for it to end: {error.Message}");
             return null;
         }
     }
@@ -286,7 +286,7 @@ public sealed partial class McpProxy
             File.Delete(file);
             IdeErrors.Write($"Agents: this relay ends: {why}");
             using Stream error = IdeLog.GivenError();
-            error.Write(System.Text.Encoding.UTF8.GetBytes($"passenger: {why}\n"));
+            error.Write(System.Text.Encoding.UTF8.GetBytes($"pitstop: {why}\n"));
             error.Flush();
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -394,7 +394,7 @@ public sealed partial class McpProxy
     private void Follow(McpServer server, RelayTransport agent)
     {
         RelaySession session = agent.Freeze(server.NegotiatedProtocolVersion, ToolsListed(),
-            tool => $"The connection to the Passenger window ended before it answered {tool}, as Passenger updated; call it again.");
+            tool => $"The connection to the Pitstop window ended before it answered {tool}, as Pitstop updated; call it again.");
         string why;
         try
         {
@@ -403,12 +403,12 @@ public sealed partial class McpProxy
             string file = SessionFile(sockets, self);
             AtomicFile.Write(file, session.Written(), UnixFileMode.UserRead | UnixFileMode.UserWrite);
             string installing = (FollowOrder() ?? self).ToString(CultureInfo.InvariantCulture);
-            string app = Environment.ProcessPath ?? throw new IOException("Passenger cannot tell where it is installed");
+            string app = Environment.ProcessPath ?? throw new IOException("Pitstop cannot tell where it is installed");
             EndHeadless();
-            IdeErrors.Write($"Agents: this relay follows Passenger's update: it lets go of the app until the update is in place, then starts again from {app}"
+            IdeErrors.Write($"Agents: this relay follows Pitstop's update: it lets go of the app until the update is in place, then starts again from {app}"
                 + $" with its agent's session ({Plural.Of(session.Carried.Count, "call")} carried over)");
             IdeErrors.Flush();
-            why = Become(["/bin/sh", "-c", WaitingShell, "passenger-relay", installing, HeldFile(sockets, self), FollowFile(sockets, self), file,
+            why = Become(["/bin/sh", "-c", WaitingShell, "pitstop-relay", installing, HeldFile(sockets, self), FollowFile(sockets, self), file,
                 app, "--mcp-attach", .. processId is int attached ? [attached.ToString(CultureInfo.InvariantCulture)] : (string[])[], here]);
             File.Delete(file);
         }
@@ -416,13 +416,13 @@ public sealed partial class McpProxy
         {
             why = error.Message;
         }
-        IdeErrors.Write($"Agents: this relay could not follow Passenger's update, and ends: {why}");
+        IdeErrors.Write($"Agents: this relay could not follow Pitstop's update, and ends: {why}");
         IdeErrors.Flush();
         try
         {
             using Stream said = IdeLog.GivenError();
-            said.Write(System.Text.Encoding.UTF8.GetBytes($"passenger: Passenger updated, and this agent's relay could not go on from the updated app ({why}). "
-                + "Reconnect the agent to Passenger to go on (/mcp in Claude Code).\n"));
+            said.Write(System.Text.Encoding.UTF8.GetBytes($"pitstop: Pitstop updated, and this agent's relay could not go on from the updated app ({why}). "
+                + "Reconnect the agent to Pitstop to go on (/mcp in Claude Code).\n"));
         }
         catch (IOException)
         {
@@ -471,7 +471,7 @@ public sealed partial class McpProxy
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            IdeErrors.Write($"Agents: the held file of this relay's wait for the updated Passenger stays: {error.Message}");
+            IdeErrors.Write($"Agents: the held file of this relay's wait for the updated Pitstop stays: {error.Message}");
         }
     }
 
@@ -483,7 +483,7 @@ public sealed partial class McpProxy
     private async Task<CallToolResult> CallAsync(RequestContext<CallToolRequestParams> request, CancellationToken cancel)
     {
         string tool = request.Params?.Name ?? "a tool";
-        await using AgentCall call = AgentCall.Begin(request.Server, null, request.Params?.ProgressToken, tool, $"Joining the Passenger window on {here}",
+        await using AgentCall call = AgentCall.Begin(request.Server, null, request.Params?.ProgressToken, tool, $"Joining the Pitstop window on {here}",
             AgentConnection.NameOf(request.Server.ClientInfo), "attach", Traced());
         try
         {
@@ -529,7 +529,7 @@ public sealed partial class McpProxy
             await Task.Delay(Timeout.Infinite, cancel);
         }
         call.Logged("forwarded to the window");
-        AgentCall.Say($"Waiting for the Passenger window on {here} to answer");
+        AgentCall.Say($"Waiting for the Pitstop window on {here} to answer");
         bool opens = tool == McpTools.Open;
         if (opens)
         {
@@ -560,7 +560,7 @@ public sealed partial class McpProxy
             {
                 throw;
             }
-            return Refused($"The connection to the Passenger window ended before it answered {tool}; a later call joins one again.");
+            return Refused($"The connection to the Pitstop window ended before it answered {tool}; a later call joins one again.");
         }
         finally
         {
@@ -737,7 +737,7 @@ public sealed partial class McpProxy
             catch (Exception error) when (error is IOException or McpException or InvalidOperationException)
             {
                 await stream.DisposeAsync();
-                throw new NotJoined($"The connection to the Passenger window on {here} ended as the agent joined it; a later call tries again.");
+                throw new NotJoined($"The connection to the Pitstop window on {here} ended as the agent joined it; a later call tries again.");
             }
             catch
             {
@@ -748,7 +748,7 @@ public sealed partial class McpProxy
         }
         catch (OperationCanceledException) when (joiningCancel.IsCancellationRequested && !cancel.IsCancellationRequested)
         {
-            throw new NotJoined($"Joining the Passenger window on {here} timed out after {Durations.Said(StartLimit)}; a later call tries again.");
+            throw new NotJoined($"Joining the Pitstop window on {here} timed out after {Durations.Said(StartLimit)}; a later call tries again.");
         }
         finally
         {
@@ -839,21 +839,21 @@ public sealed partial class McpProxy
     {
         if (processId is int pid)
         {
-            throw new NotJoined($"Passenger {pid} has no window an agent can join. Open {here} in it, or attach without a process id to have Passenger open it.");
+            throw new NotJoined($"Pitstop {pid} has no window an agent can join. Open {here} in it, or attach without a process id to have Pitstop open it.");
         }
         if (!Directory.Exists(here))
         {
-            throw new NotJoined($"{here} is no folder for Passenger to open.");
+            throw new NotJoined($"{here} is no folder for Pitstop to open.");
         }
         // An agent started in no folder of the person's (Claude Desktop's is the disk's root) has no project to open.
         if (PathNames.Same(here, Path.GetPathRoot(here) ?? here) || PathNames.Same(here, PathNames.Canonical(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile))))
         {
-            throw new NotJoined($"The agent works in {here}, which is no project folder for Passenger to open. Give --mcp-attach the folder to work in "
+            throw new NotJoined($"The agent works in {here}, which is no project folder for Pitstop to open. Give --mcp-attach the folder to work in "
                 + "(--mcp-attach FOLDER), or start the agent in it.");
         }
         if (FollowOrder() is not null)
         {
-            call.Waits($"Waiting for Passenger to restart into its update, to join its window on {here}");
+            call.Waits($"Waiting for Pitstop to restart into its update, to join its window on {here}");
             while (FollowOrder() is not null)
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(250), cancel);
@@ -866,12 +866,12 @@ public sealed partial class McpProxy
         }
         if (await AppSocket.AskAsync(here, cancel) is null)
         {
-            call.Waits($"Starting Passenger on {here} and waiting for its window (at most {Durations.Said(StartLimit)})");
+            call.Waits($"Starting Pitstop on {here} and waiting for its window (at most {Durations.Said(StartLimit)})");
             await LaunchAsync(cancel);
         }
         else
         {
-            call.Waits($"Waiting for the running Passenger to open {here} (at most {Durations.Said(StartLimit)})");
+            call.Waits($"Waiting for the running Pitstop to open {here} (at most {Durations.Said(StartLimit)})");
         }
         while (true)
         {
@@ -882,7 +882,7 @@ public sealed partial class McpProxy
             }
             if (headless is { } ended && !DotnetProcesses.Runs(ended))
             {
-                throw new NotJoined($"The Passenger started on {here} ended with {ExitCodes.Said(ended.ExitCode)} before its window opened.");
+                throw new NotJoined($"The Pitstop started on {here} ended with {ExitCodes.Said(ended.ExitCode)} before its window opened.");
             }
             await Task.Delay(TimeSpan.FromMilliseconds(250), cancel);
         }
@@ -893,7 +893,7 @@ public sealed partial class McpProxy
     /// is told it was started for an agent (<see cref="StartedForVariable"/>).</summary>
     private async Task LaunchAsync(CancellationToken cancel)
     {
-        string self = Environment.ProcessPath ?? throw new NotJoined("Passenger cannot tell where it is installed, to start it.");
+        string self = Environment.ProcessPath ?? throw new NotJoined("Pitstop cannot tell where it is installed, to start it.");
         if (StartsHeadless)
         {
             ProcessStartInfo start = ChildProcesses.Command(self, ["--headless", here], here);
@@ -914,7 +914,7 @@ public sealed partial class McpProxy
                 limit: TimeSpan.FromSeconds(30), cancel: cancel);
             if (!opened.Succeeded)
             {
-                throw new NotJoined($"LaunchServices did not start Passenger: {opened.Error.Trim()}");
+                throw new NotJoined($"LaunchServices did not start Pitstop: {opened.Error.Trim()}");
             }
             return;
         }
@@ -926,7 +926,7 @@ public sealed partial class McpProxy
         }
         catch (Exception error) when (ChildFailures.Of(error))
         {
-            throw new NotJoined($"Passenger did not start: {error.Message}");
+            throw new NotJoined($"Pitstop did not start: {error.Message}");
         }
     }
 

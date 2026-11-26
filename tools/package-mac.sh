@@ -1,11 +1,11 @@
 #!/bin/sh
-# Passenger's macOS disk image and portable build: `just package-mac [osx-arm64|osx-x64] [--dry-run]` makes
-# artifacts/package/Passenger-macos-arm64.dmg (Apple Silicon) or -x64.dmg (Intel), and beside it the same app zipped in
-# a Passenger folder, Passenger-macos-arm64.zip or -x64.zip, names each release keeps. The Release publish
-# (self-contained, ReadyToRun, the debugger and Roslyn's server beside it) becomes Passenger.app, signed under the
-# hardened runtime with the entitlements below: by PASSENGER_SIGN_IDENTITY (a Developer ID Application identity), else
+# Pitstop's macOS disk image and portable build: `just package-mac [osx-arm64|osx-x64] [--dry-run]` makes
+# artifacts/package/Pitstop-macos-arm64.dmg (Apple Silicon) or -x64.dmg (Intel), and beside it the same app zipped in
+# a Pitstop folder, Pitstop-macos-arm64.zip or -x64.zip, names each release keeps. The Release publish
+# (self-contained, ReadyToRun, the debugger and Roslyn's server beside it) becomes Pitstop.app, signed under the
+# hardened runtime with the entitlements below: by PITSTOP_SIGN_IDENTITY (a Developer ID Application identity), else
 # ad hoc, which Apple Silicon needs to run it at all and which a person opens once through System Settings > Privacy &
-# Security > Open Anyway. With PASSENGER_NOTARY_PROFILE (a notarytool keychain profile) the app is notarized and stapled
+# Security > Open Anyway. With PITSTOP_NOTARY_PROFILE (a notarytool keychain profile) the app is notarized and stapled
 # before it is zipped, then the image signed, notarized and stapled too. --dry-run writes the Developer ID's and the
 # notary's commands to a file instead of running them, and signs ad hoc. The image is then mounted read-only and
 # checked, and the zip unpacked and run as a portable copy.
@@ -24,13 +24,13 @@ arch=${rid#osx-}
 # lipo's name for the processor, which every Mach-O file in the app must be built for.
 machine=arm64
 [ "$arch" = arm64 ] || machine=x86_64
-identity=${PASSENGER_SIGN_IDENTITY:-}
-profile=${PASSENGER_NOTARY_PROFILE:-}
+identity=${PITSTOP_SIGN_IDENTITY:-}
+profile=${PITSTOP_NOTARY_PROFILE:-}
 if [ -n "$profile" ] && [ -z "$identity" ]; then
-    fail "PASSENGER_NOTARY_PROFILE needs PASSENGER_SIGN_IDENTITY: the notary takes only what a Developer ID signed"
+    fail "PITSTOP_NOTARY_PROFILE needs PITSTOP_SIGN_IDENTITY: the notary takes only what a Developer ID signed"
 fi
 if [ -n "$dry_run" ] && [ -z "$identity" ]; then
-    fail "--dry-run shows what a Developer ID would run: set PASSENGER_SIGN_IDENTITY (and PASSENGER_NOTARY_PROFILE)"
+    fail "--dry-run shows what a Developer ID would run: set PITSTOP_SIGN_IDENTITY (and PITSTOP_NOTARY_PROFILE)"
 fi
 if [ -n "$identity" ] && [ -z "$dry_run" ]; then
     security find-identity -v -p codesigning | grep -qF "$identity" || fail "no code signing identity '$identity' in the keychains"
@@ -42,11 +42,11 @@ work="$out/$rid"
 publish="$work/publish"
 # The image's top folder: the app is built where it is packed.
 stage="$work/image"
-app="$stage/Passenger.app"
+app="$stage/Pitstop.app"
 mount="$work/mount"
 commands="$work/dry-run.txt"
-image="$out/Passenger-macos-$arch.dmg"
-portable="$out/Passenger-macos-$arch.zip"
+image="$out/Pitstop-macos-$arch.dmg"
+portable="$out/Pitstop-macos-$arch.zip"
 version=$(release_version "$root")
 # The build number counts the commits, so each rises.
 if [ "$(git -C "$root" rev-parse --is-shallow-repository)" = true ]; then
@@ -185,13 +185,13 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp -R "$publish/." "$app/Contents/MacOS/"
 # The web servers go in Resources, since codesign takes a dotted folder under Contents/MacOS for a nested bundle.
 mv "$app/Contents/MacOS/web" "$app/Contents/Resources/web"
-# The debug relays too, which Passenger copies out: Gatekeeper refuses a notarized app with an iOS simulator's code in it.
+# The debug relays too, which Pitstop copies out: Gatekeeper refuses a notarized app with an iOS simulator's code in it.
 relays="$app/Contents/Resources/debugger/relay"
 if [ -d "$app/Contents/MacOS/debugger/relay" ]; then
     mkdir -p "$(dirname "$relays")"
     mv "$app/Contents/MacOS/debugger/relay" "$relays"
 fi
-# The passenger-ide command's script too, which Passenger links in ~/.local/bin when the person asks (PassengerCommand.cs).
+# The pitstop-ide command's script too, which Pitstop links in ~/.local/bin when the person asks (PassengerCommand.cs).
 mv "$app/Contents/MacOS/bin" "$app/Contents/Resources/bin"
 # Nothing dotted may stay among the code, or codesign refuses the app's seal as a bundle it cannot read.
 dotted_code() {
@@ -199,19 +199,19 @@ dotted_code() {
     [ -z "$dotted" ] || fail "the app's code carries a dotted folder, which codesign takes for a bundle: ${dotted#"$1/"}"
 }
 dotted_code "$app"
-cp "$root/src/Passenger.App/Assets/Passenger.icns" "$app/Contents/Resources/Passenger.icns"
-# The document types Open With and the Dock offer Passenger: solutions, C# projects and folders, never as default.
+cp "$root/src/Passenger.App/Assets/Pitstop.icns" "$app/Contents/Resources/Pitstop.icns"
+# The document types Open With and the Dock offer Pitstop: solutions, C# projects and folders, never as default.
 cat > "$app/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>Passenger</string>
-    <key>CFBundleDisplayName</key><string>Passenger</string>
-    <key>CFBundleIdentifier</key><string>io.github.zaneris.passenger</string>
-    <key>CFBundleExecutable</key><string>Passenger</string>
+    <key>CFBundleName</key><string>Pitstop</string>
+    <key>CFBundleDisplayName</key><string>Pitstop</string>
+    <key>CFBundleIdentifier</key><string>io.github.jancano.pitstop</string>
+    <key>CFBundleExecutable</key><string>Pitstop</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleIconFile</key><string>Passenger</string>
+    <key>CFBundleIconFile</key><string>Pitstop</string>
     <key>CFBundleShortVersionString</key><string>$version</string>
     <key>CFBundleVersion</key><string>$build</string>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
@@ -295,7 +295,7 @@ notarize() {
 }
 
 # Inside out, then the bundle; its seal takes all of Contents/MacOS for code, so .NET's DLLs and PDBs are signed too.
-find "$app/Contents/MacOS" -type f ! -path "$app/Contents/MacOS/Passenger" | while IFS= read -r file; do
+find "$app/Contents/MacOS" -type f ! -path "$app/Contents/MacOS/Pitstop" | while IFS= read -r file; do
     case $(file -b "$file") in
         Mach-O*executable*) sign --entitlements "$entitlements" "$file" ;;
         *) sign "$file" ;;
@@ -313,20 +313,20 @@ sign --entitlements "$entitlements" "$app"
 codesign --verify --deep --strict "$app"
 # Stapled, the app opens with no Gatekeeper warning offline too, once copied out of the image.
 if [ -n "$profile" ]; then
-    ditto -c -k --keepParent "$app" "$work/Passenger.zip"
-    notarize "$work/Passenger.zip"
+    ditto -c -k --keepParent "$app" "$work/Pitstop.zip"
+    notarize "$work/Pitstop.zip"
     developer xcrun stapler staple "$app"
 fi
-# The portable build: the app as the image carries it in a Passenger folder, where a portable copy's data folder goes.
-mkdir -p "$work/zip/Passenger"
-ditto "$app" "$work/zip/Passenger/Passenger.app"
-ditto -c -k --keepParent "$work/zip/Passenger" "$portable"
+# The portable build: the app as the image carries it in a Pitstop folder, where a portable copy's data folder goes.
+mkdir -p "$work/zip/Pitstop"
+ditto "$app" "$work/zip/Pitstop/Pitstop.app"
+ditto -c -k --keepParent "$work/zip/Pitstop" "$portable"
 rm -rf "$work/zip"
 
 # Beside the app: a link to /Applications and the volume's icon; its name carries the version, as the file's cannot.
-volume_name="Passenger $version"
+volume_name="Pitstop $version"
 ln -s /Applications "$stage/Applications"
-cp "$root/src/Passenger.App/Assets/Passenger.icns" "$stage/.VolumeIcon.icns"
+cp "$root/src/Passenger.App/Assets/Pitstop.icns" "$stage/.VolumeIcon.icns"
 # The window's picture at 1x and 2x in one TIFF; sips's exit status ignores a file it skipped, so its absence says it.
 background="$root/tools/dmg-background.svg"
 size=$(sed -n 's/^<svg [^>]*width="\([0-9]*\)" height="\([0-9]*\)".*/\1 \2/p' "$background")
@@ -366,7 +366,7 @@ hdiutil verify -quiet "$image"
 format=$(hdiutil imageinfo "$image" 2>/dev/null | sed -n 's/^Format: //p')
 [ "$format" = ULMO ] || fail "the image's format is '$format', not ULMO"
 attach "$image" -readonly
-shipped="$mount/Passenger.app"
+shipped="$mount/Pitstop.app"
 volume=$(diskutil info "$mount" | sed -n 's/^ *Volume Name: *//p')
 [ "$volume" = "$volume_name" ] || fail "the image's volume is named '$volume', not '$volume_name'"
 [ "$(readlink "$mount/Applications")" = /Applications ] || fail "the image has no link to /Applications beside the app"
@@ -385,15 +385,15 @@ said=$(plutil -extract CFBundleShortVersionString raw -o - "$plist")
 said=$(plutil -extract CFBundleVersion raw -o - "$plist")
 [ "$said" = "$build" ] || fail "the app's Info.plist says build $said, not $build"
 for part in roslyn/Microsoft.CodeAnalysis.LanguageServer.dll roslyn-extension/Passenger.Roslyn.Extension.dll debugger/Passenger.DebugAdapter.dll \
-    debugger/libdbgshim.dylib inspector/Passenger.Inspector.dll inspector/Avalonia.Headless.dll passenger-helper passenger-helper.dll \
-    passenger-helper.deps.json passenger-helper.runtimeconfig.json LICENSE.txt THIRD-PARTY-NOTICES.txt; do
+    debugger/libdbgshim.dylib inspector/Passenger.Inspector.dll inspector/Avalonia.Headless.dll pitstop-helper pitstop-helper.dll \
+    pitstop-helper.deps.json pitstop-helper.runtimeconfig.json LICENSE.txt THIRD-PARTY-NOTICES.txt; do
     [ -f "$shipped/Contents/MacOS/$part" ] || fail "the app has no $part"
 done
-for part in web/passenger/prettier.cjs web/passenger/docker-hub.cjs web/passenger/yaml-schemas.mjs web/passenger/bunfig.toml web/schemas/compose-spec.json; do
+for part in web/pitstop/prettier.cjs web/pitstop/docker-hub.cjs web/pitstop/yaml-schemas.mjs web/pitstop/bunfig.toml web/schemas/compose-spec.json; do
     [ -f "$shipped/Contents/Resources/$part" ] || fail "the app has no $part in its Resources"
 done
-[ -x "$shipped/Contents/Resources/bin/passenger-ide" ] || fail "the app has no passenger-ide command in its Resources"
-[ ! -e "$shipped/Contents/MacOS/bin" ] || fail "the app carries its passenger-ide command among its code"
+[ -x "$shipped/Contents/Resources/bin/pitstop-ide" ] || fail "the app has no pitstop-ide command in its Resources"
+[ ! -e "$shipped/Contents/MacOS/bin" ] || fail "the app carries its pitstop-ide command among its code"
 # Every headless platform the inspector carries for an older Avalonia is the app's too.
 for part in $(cd "$publish/inspector" && find avalonia -type f); do
     [ -f "$shipped/Contents/MacOS/inspector/$part" ] || fail "the app has no inspector/$part"
@@ -423,9 +423,9 @@ fi
 # A run must write nothing inside the app, or its seal breaks and Gatekeeper calls it damaged: run twice, then verified.
 check="$work/check"
 mkdir -p "$check/Sample"
-ditto "$shipped" "$check/Passenger.app"
+ditto "$shipped" "$check/Pitstop.app"
 detach
-codesign --verify --deep --strict "$check/Passenger.app" || fail "the app copied out of the image does not verify before it runs"
+codesign --verify --deep --strict "$check/Pitstop.app" || fail "the app copied out of the image does not verify before it runs"
 # Under Rosetta the Intel app evaluates projects only with an Intel SDK: DOTNET_ROOT_X64's, as .NET's own host reads it.
 evaluates=1
 if [ "$machine" = x86_64 ] && [ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" = 1 ]; then
@@ -450,39 +450,39 @@ cat > "$check/Sample/Sample.csproj" <<EOF
 EOF
 printf 'int unused = 1;\nSystem.Console.WriteLine("Hello");\n' > "$check/Sample/Program.cs"
 # A short state folder of its own (a socket's path holds 104 bytes), never the person's.
-settings=$(mktemp -d /tmp/passenger-package.XXXXXX)
+settings=$(mktemp -d /tmp/pitstop-package.XXXXXX)
 for run in 1 2; do
-    PASSENGER_SETTINGS="$settings" "$check/Passenger.app/Contents/MacOS/Passenger" "$check/Sample" --file Program.cs \
+    PITSTOP_SETTINGS="$settings" "$check/Pitstop.app/Contents/MacOS/Pitstop" "$check/Sample" --file Program.cs \
         --screenshot "$check/run-$run.png" --size 800x600 > "$check/run-$run.log" 2>&1 \
         || { cat "$check/run-$run.log" >&2; fail "the app copied out of the image failed its headless run $run"; }
-    loaded=$(grep -c 'C# language server (process [0-9]*) loaded' "$settings/logs/passenger.log" 2>/dev/null || true)
+    loaded=$(grep -c 'C# language server (process [0-9]*) loaded' "$settings/logs/pitstop.log" 2>/dev/null || true)
     if [ "${loaded:-0}" -ne "$run" ]; then
-        tail -n 20 "$settings/logs/passenger.log" >&2 || true
+        tail -n 20 "$settings/logs/pitstop.log" >&2 || true
         fail "the C# language server of the app copied out of the image did not load the sample in run $run"
     fi
-    if [ -n "$evaluates" ] && grep -E 'The project host could not (evaluate|build) the projects' "$settings/logs/passenger.log" >&2; then
+    if [ -n "$evaluates" ] && grep -E 'The project host could not (evaluate|build) the projects' "$settings/logs/pitstop.log" >&2; then
         fail "the project host of the app copied out of the image could not read the sample in run $run"
     fi
 done
 ls "$settings"/cache/roslyn/*/cache/* > /dev/null 2>&1 \
     || fail "the C# language server of the app copied out of the image did not run from its copy in the state's cache"
-codesign --verify --deep --strict "$check/Passenger.app" || fail "a run of the app wrote inside it, breaking its seal"
+codesign --verify --deep --strict "$check/Pitstop.app" || fail "a run of the app wrote inside it, breaking its seal"
 rm -rf "$settings" "$check"
 settings=
 
 # The portable build unpacked: the app alone, sealed (and notarized), run as a portable copy that writes nothing inside.
 mkdir -p "$work/portable"
 ditto -x -k "$portable" "$work/portable"
-unpacked="$work/portable/Passenger"
-[ "$(ls -A "$work/portable")" = Passenger ] && [ "$(ls -A "$unpacked")" = Passenger.app ] \
-    || fail "the portable build holds $(cd "$work/portable" && find . -maxdepth 2 | tr '\n' ' ')rather than Passenger/Passenger.app alone"
-codesign --verify --deep --strict "$unpacked/Passenger.app" || fail "the portable build's app does not verify"
+unpacked="$work/portable/Pitstop"
+[ "$(ls -A "$work/portable")" = Pitstop ] && [ "$(ls -A "$unpacked")" = Pitstop.app ] \
+    || fail "the portable build holds $(cd "$work/portable" && find . -maxdepth 2 | tr '\n' ' ')rather than Pitstop/Pitstop.app alone"
+codesign --verify --deep --strict "$unpacked/Pitstop.app" || fail "the portable build's app does not verify"
 if [ -n "$profile" ]; then
-    developer xcrun stapler validate "$unpacked/Passenger.app"
-    developer spctl --assess --type execute --verbose "$unpacked/Passenger.app"
+    developer xcrun stapler validate "$unpacked/Pitstop.app"
+    developer spctl --assess --type execute --verbose "$unpacked/Pitstop.app"
 fi
-check_portable "$unpacked/Passenger.app/Contents/MacOS/Passenger" "$unpacked"
-codesign --verify --deep --strict "$unpacked/Passenger.app" || fail "a portable copy's run wrote inside the app, breaking its seal"
+check_portable "$unpacked/Pitstop.app/Contents/MacOS/Pitstop" "$unpacked"
+codesign --verify --deep --strict "$unpacked/Pitstop.app" || fail "a portable copy's run wrote inside the app, breaking its seal"
 rm -rf "$work/portable"
 
 size=$(du -h "$image" | cut -f1 | tr -d ' ')
@@ -495,5 +495,5 @@ elif [ -z "$profile" ]; then
 else
     signed="signed by $identity, notarized and stapled"
 fi
-echo "package: $image ($size, Passenger $version build $build for $rid, $signed)"
+echo "package: $image ($size, Pitstop $version build $build for $rid, $signed)"
 echo "package: $portable ($(du -h "$portable" | cut -f1 | tr -d ' '), the same app zipped, its portable build)"

@@ -73,7 +73,7 @@ public sealed class MigrationsPostgresTests
             }
             Assert.Contains(commands, c => c.Contains("ef.dll database update", StringComparison.Ordinal));
             Assert.True(!commands.Any(c => c.Contains(Password, StringComparison.Ordinal)),
-                $"A command line Passenger ran has the database's password:\n{string.Join('\n', commands.Where(c => c.Contains(Password, StringComparison.Ordinal)))}");
+                $"A command line Pitstop ran has the database's password:\n{string.Join('\n', commands.Where(c => c.Contains(Password, StringComparison.Ordinal)))}");
             string log = LogsTests.WholeIdeLog();
             Assert.Contains("ef.dll database update", log, StringComparison.Ordinal);
             Assert.True(!log.Contains(Password, StringComparison.Ordinal),

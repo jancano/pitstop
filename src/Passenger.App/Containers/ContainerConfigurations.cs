@@ -273,7 +273,7 @@ public static class ContainerConfigurations
     /// where Passenger runs Linux ones; null otherwise.</summary>
     private static string? WindowsContainer(ProjectModel project) =>
         string.Equals(project.Property(CarriedProperties.DockerDefaultTargetOS), "Windows", StringComparison.OrdinalIgnoreCase)
-            ? $"{project.Name}'s Dockerfile builds a Windows container (its DockerDefaultTargetOS), and Passenger runs Linux containers"
+            ? $"{project.Name}'s Dockerfile builds a Windows container (its DockerDefaultTargetOS), and Pitstop runs Linux containers"
             : null;
 
     /// <summary>Whether a project is an ASP.NET Core app, whose container serves a page: as Add Docker Support decides its

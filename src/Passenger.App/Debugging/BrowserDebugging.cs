@@ -17,7 +17,7 @@ public sealed record BrowserDebugging(ChromiumFound Browser, string Proxy, Uri P
     private static readonly string[] Hosting = ["Microsoft.AspNetCore.Components.WebAssembly.Server", "Microsoft.AspNetCore.Components.WebAssembly.DevServer"];
 
     /// <summary>The proxy's own limits, said where its session begins.</summary>
-    public const string Limits = "In the browser, .NET's debug proxy evaluates a narrower C# than Passenger's engine and sets no values; Hot Reload of "
+    public const string Limits = "In the browser, .NET's debug proxy evaluates a narrower C# than Pitstop's engine and sets no values; Hot Reload of "
         + "the WebAssembly half comes through dotnet watch's browser refresh (Run with Hot Reload), not through the debugger; and only Chromium browsers "
         + "(Chrome, Edge, Chromium, Brave) are debugged";
 

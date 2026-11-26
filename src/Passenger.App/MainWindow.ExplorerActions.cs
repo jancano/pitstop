@@ -115,8 +115,8 @@ public partial class MainWindow
         });
         actions.Add(new IdeAction(A.SwitchExplorerView, "Switch Explorer View", ExplorerGroup, SwitchExplorerView)
         {
-            WhyNot = _ => Explorer.Tree.Root is null ? Refusals.NoFolder : Explorer.HasSolutionView ? null : Refusals.NoSolutionView,
-            Words = ["Solution View", "Files View", "File System View", "Show Files on Disk"],
+            WhyNot = _ => Explorer.Tree.Root is null ? Refusals.NoFolder : Explorer.HasProjectView ? null : Refusals.NoSolutionView,
+            Words = ["Solution View", "Xmake View", "Files View", "File System View", "Show Files on Disk"],
         });
         ActionButtons.Bind(Explorer.ViewSwitchButton, A.SwitchExplorerView, actions, id => Request(id));
 
@@ -160,7 +160,7 @@ public partial class MainWindow
     /// but is not theirs to keep.</summary>
     private void SwitchExplorerView(ActionContext context)
     {
-        ExplorerViewKind next = Explorer.ViewShown == ExplorerViewKind.Solution ? ExplorerViewKind.Files : ExplorerViewKind.Solution;
+        ExplorerViewKind next = Explorer.NextView;
         Explorer.ShowView(next);
         if (!context.ByAgent)
         {
@@ -178,7 +178,12 @@ public partial class MainWindow
                 Dock.Show(ToolWindowIds.Explorer);
             }
         }
-        ActionWork.Tell(true, next == ExplorerViewKind.Files ? "The Explorer shows the folder's files on disk" : "The Explorer shows the solution");
+        ActionWork.Tell(true, next switch
+        {
+            ExplorerViewKind.Files => "The Explorer shows the folder's files on disk",
+            ExplorerViewKind.Xmake => "The Explorer shows the Xmake project",
+            _ => "The Explorer shows the solution",
+        });
     }
 
     /// <summary>The Explorer's own items atop its header's options: whether it follows the file shown and opens a file on

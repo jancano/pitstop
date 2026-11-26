@@ -80,11 +80,11 @@ public class SimulatorTargetsTests
 
     private void A_debug_start_gives_the_app_the_relay_as_its_profiler_listening_on_a_port_of_this_mac()
     {
-        IReadOnlyDictionary<string, string> relay = SimulatorApp.RelayVariables("/Passenger/debugger/relay/iossimulator-arm64/libpassenger-debug.dylib", 51141, "ABC");
+        IReadOnlyDictionary<string, string> relay = SimulatorApp.RelayVariables("/Passenger/debugger/relay/iossimulator-arm64/libpitstop-debug.dylib", 51141, "ABC");
 
         Assert.Equal("1", relay[RuntimeVariables.EnableProfiling]);
         Assert.Equal(AndroidApp.RelayProfiler, relay[RuntimeVariables.Profiler]);
-        Assert.Equal("/Passenger/debugger/relay/iossimulator-arm64/libpassenger-debug.dylib", relay[RuntimeVariables.ProfilerPath]);
+        Assert.Equal("/Passenger/debugger/relay/iossimulator-arm64/libpitstop-debug.dylib", relay[RuntimeVariables.ProfilerPath]);
         Assert.Equal("51141", relay[SimulatorApp.RelayPortVariable]);
         Assert.Equal("ABC", relay[AndroidApp.RelayTokenVariable]);
         Assert.Equal("60000", relay[AndroidApp.RelayWaitVariable]);

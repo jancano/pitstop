@@ -40,7 +40,7 @@ public static class OpenVsx
 {
     /// <summary>The variable naming the address Open VSX's API is asked at instead (a stand-in's).</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_OPEN_VSX";
+    public const string Variable = "PITSTOP_OPEN_VSX";
 
     /// <summary>The category its colour and icon themes are in.</summary>
     public const string Category = "Themes";

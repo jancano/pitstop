@@ -300,7 +300,7 @@ public sealed partial class UiaTextTests
             }
             foreach (nint pointer in kept)
             {
-                UiaTextRange range = Uia.From<UiaTextRange>(pointer) ?? throw new Xunit.Sdk.XunitException("A range handed out is none of Passenger's");
+                UiaTextRange range = Uia.From<UiaTextRange>(pointer) ?? throw new Xunit.Sdk.XunitException("A range handed out is none of Pitstop's");
                 (long held, string most) = HeldBytes.Of(range, o => o is Avalonia.Threading.Dispatcher);
                 Assert.True(held < 4096, $"A range a reader keeps of a closed control holds {held:N0} bytes, the most in {most}");
                 InvalidOperationException gone = Assert.Throws<InvalidOperationException>(() => range.GetText(-1));

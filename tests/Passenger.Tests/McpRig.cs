@@ -20,7 +20,7 @@ public abstract class McpRig : IDisposable
 {
     /// <summary>What names an installed Passenger for the agents to start in place of the build's.</summary>
     [IdentifierHome]
-    public const string ExecutableVariable = "PASSENGER_EXECUTABLE";
+    public const string ExecutableVariable = "PITSTOP_EXECUTABLE";
 
     /// <summary>The build's, beside the tests, or an installed copy that <see cref="ExecutableVariable"/> names: CI's
     /// installer job has an agent debug through the Passenger its Windows installer installed.</summary>
@@ -179,7 +179,7 @@ public abstract class McpRig : IDisposable
     /// protocol version given (the SDK's latest else). Its probe of the latest waits as long as the start may, since one given
     /// up while the server answers it leaves the initialize it falls back to refused.</summary>
     protected Task<McpClient> Connect(Process passenger, IList<string> arguments, string? protocol = null) =>
-        Exchange($"Starting passenger {string.Join(' ', arguments)}", TimeSpan.FromMinutes(1),
+        Exchange($"Starting pitstop {string.Join(' ', arguments)}", TimeSpan.FromMinutes(1),
             cancel => McpClient.CreateAsync(new PassengerTransport(passenger), new McpClientOptions
             {
                 ClientInfo = Agent,
@@ -196,7 +196,7 @@ public abstract class McpRig : IDisposable
     /// call's cancellation unawaited, and its failure would be the next window test's caught error.</summary>
     private sealed class PassengerTransport(Process passenger) : IClientTransport
     {
-        public string Name => "passenger";
+        public string Name => "pitstop";
 
         public async Task<ITransport> ConnectAsync(CancellationToken cancellationToken = default) =>
             new Session(new PeerTransport(await new StreamClientTransport(passenger.StandardInput.BaseStream, passenger.StandardOutput.BaseStream).ConnectAsync(cancellationToken)), passenger);
@@ -509,7 +509,7 @@ public abstract class McpRig : IDisposable
         }
         if (DotnetProcesses.Runs(last))
         {
-            return ManagedStacks.Describe("Where Passenger's threads were", last.Id);
+            return ManagedStacks.Describe("Where Pitstop's threads were", last.Id);
         }
         last.WaitForExit();
         // .NET gives a child a signal ended on macOS and Linux 128 and the signal's number.
@@ -523,10 +523,10 @@ public abstract class McpRig : IDisposable
     {
         string[] written = Errors();
         return $"\nPassenger's standard error:{(written.Length == 0 ? " nothing" : "\n  " + string.Join("\n  ", written.TakeLast(40)))}"
-            + Tail("Passenger's log", Path.Combine(OwnState, "logs", "passenger.log"), 20)
+            + Tail("Pitstop's log", Path.Combine(OwnState, "logs", "pitstop.log"), 20)
             + ServerTold()
             // An attached agent's window and proxy keep the run's own state, not the test's.
-            + Tail("The run's Passenger log", Path.Combine(TestRun.Settings, "logs", "passenger.log"), 20)
+            + Tail("The run's Pitstop log", Path.Combine(TestRun.Settings, "logs", "pitstop.log"), 20)
             + Tail("The run's MCP log", Path.Combine(TestRun.Settings, "logs", "mcp.log"), 30)
             + Tail("The debugger engine's log", EngineLog, 30);
 

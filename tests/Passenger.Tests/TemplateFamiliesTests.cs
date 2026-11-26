@@ -388,7 +388,7 @@ public sealed class TemplateFamiliesTests : IDisposable
         File.WriteAllText(Path.Combine(folder, ".template.config", "template.json"), """
             {
               "$schema": "http://json.schemastore.org/template",
-              "author": "Passenger's tests",
+              "author": "Pitstop's tests",
               "classifications": [ "Probe" ],
               "identity": "Passenger.Tests.ProbeHost.CSharp",
               "groupIdentity": "Passenger.Tests.ProbeHost",
@@ -446,7 +446,7 @@ public sealed class TemplateFamiliesTests : IDisposable
         File.WriteAllText(Path.Combine(folder, ".template.config", "template.json"), """
             {
               "$schema": "http://json.schemastore.org/template",
-              "author": "Passenger's tests",
+              "author": "Pitstop's tests",
               "classifications": [ "Test", "Probe" ],
               "identity": "Passenger.Tests.ProbeTest.CSharp",
               "groupIdentity": "Passenger.Tests.ProbeTest",

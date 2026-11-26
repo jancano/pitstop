@@ -24,7 +24,7 @@ public class ShellPathTests
     {
         (string file, string lines) = ShellPath.Of(ShellKind.Zsh, Home, Installed, macOS: true, zdotdir: null, NoneThere);
         Assert.Equal(Path.Combine(Home, ".zshrc"), file);
-        Assert.Equal("# The .NET SDK Passenger installed\nexport DOTNET_ROOT=\"$HOME/.dotnet\"\nexport PATH=\"$DOTNET_ROOT:$PATH\"\n", lines);
+        Assert.Equal("# The .NET SDK Pitstop installed\nexport DOTNET_ROOT=\"$HOME/.dotnet\"\nexport PATH=\"$DOTNET_ROOT:$PATH\"\n", lines);
         Assert.Equal(Path.Combine(Home, "zsh", ".zshrc"), ShellPath.Of(ShellKind.Zsh, Home, Installed, macOS: true, zdotdir: Path.Combine(Home, "zsh"), NoneThere).File);
     }
 
@@ -44,7 +44,7 @@ public class ShellPathTests
     {
         (string file, string lines) = ShellPath.Of(ShellKind.Fish, Home, Installed, macOS: false, zdotdir: null, NoneThere);
         Assert.Equal(Path.Combine(Home, ".config", "fish", "conf.d", "dotnet.fish"), file);
-        Assert.Equal("# The .NET SDK Passenger installed\nset -gx DOTNET_ROOT \"$HOME/.dotnet\"\nset -gx PATH \"$DOTNET_ROOT\" $PATH\n", lines);
+        Assert.Equal("# The .NET SDK Pitstop installed\nset -gx DOTNET_ROOT \"$HOME/.dotnet\"\nset -gx PATH \"$DOTNET_ROOT\" $PATH\n", lines);
     }
 
     [Fact]
@@ -69,19 +69,19 @@ public class ShellPathTests
             StringComparison.Ordinal);
     }
 
-    /// <summary>A command's folder (passenger-ide's ~/.local/bin) goes first on the PATH alone, no variable named, in the same
+    /// <summary>A command's folder (pitstop-ide's ~/.local/bin) goes first on the PATH alone, no variable named, in the same
     /// startup file .NET's lines take; fish's in a file of conf.d named after the command, beside .NET's.</summary>
     private void A_commands_folder_goes_first_on_the_PATH_in_the_same_startup_file_and_fish_takes_a_file_of_its_own()
     {
         string bin = Path.Combine(Home, ".local", "bin");
-        (string file, string lines) = ShellPath.CommandsOf(ShellKind.Zsh, Home, bin, "passenger-ide", macOS: true, zdotdir: null, NoneThere);
+        (string file, string lines) = ShellPath.CommandsOf(ShellKind.Zsh, Home, bin, "pitstop-ide", macOS: true, zdotdir: null, NoneThere);
         Assert.Equal(ShellPath.Of(ShellKind.Zsh, Home, Installed, macOS: true, zdotdir: null, NoneThere).File, file);
-        Assert.Equal("# Where Passenger's passenger-ide command is\nexport PATH=\"$HOME/.local/bin:$PATH\"\n", lines);
-        Assert.Equal(".bash_profile", Path.GetFileName(ShellPath.CommandsOf(ShellKind.Bash, Home, bin, "passenger-ide", macOS: true, zdotdir: null, NoneThere).File));
-        (file, lines) = ShellPath.CommandsOf(ShellKind.Fish, Home, bin, "passenger-ide", macOS: true, zdotdir: null, NoneThere);
-        Assert.Equal(Path.Combine(Home, ".config", "fish", "conf.d", "passenger-ide.fish"), file);
-        Assert.Equal("# Where Passenger's passenger-ide command is\nset -gx PATH \"$HOME/.local/bin\" $PATH\n", lines);
-        Assert.Contains("export PATH=\"/opt/my \\$tools:$PATH\"\n", ShellPath.CommandsOf(ShellKind.Posix, Home, "/opt/my $tools", "passenger-ide", macOS: false, zdotdir: null, NoneThere).Lines,
+        Assert.Equal("# Where Pitstop's pitstop-ide command is\nexport PATH=\"$HOME/.local/bin:$PATH\"\n", lines);
+        Assert.Equal(".bash_profile", Path.GetFileName(ShellPath.CommandsOf(ShellKind.Bash, Home, bin, "pitstop-ide", macOS: true, zdotdir: null, NoneThere).File));
+        (file, lines) = ShellPath.CommandsOf(ShellKind.Fish, Home, bin, "pitstop-ide", macOS: true, zdotdir: null, NoneThere);
+        Assert.Equal(Path.Combine(Home, ".config", "fish", "conf.d", "pitstop-ide.fish"), file);
+        Assert.Equal("# Where Pitstop's pitstop-ide command is\nset -gx PATH \"$HOME/.local/bin\" $PATH\n", lines);
+        Assert.Contains("export PATH=\"/opt/my \\$tools:$PATH\"\n", ShellPath.CommandsOf(ShellKind.Posix, Home, "/opt/my $tools", "pitstop-ide", macOS: false, zdotdir: null, NoneThere).Lines,
             StringComparison.Ordinal);
     }
 

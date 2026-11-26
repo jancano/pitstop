@@ -114,7 +114,7 @@ public static class ThemeResources
 
     private static Dictionary<string, ThemeTokenKind> Read()
     {
-        ResourceDictionary tokens = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Passenger/Theme/Tokens.axaml"));
+        ResourceDictionary tokens = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Pitstop/Theme/Tokens.axaml"));
         ResourceDictionary dark = (ResourceDictionary)tokens.ThemeDictionaries[ThemeVariant.Dark];
         Dictionary<string, ThemeTokenKind> read = new(StringComparer.Ordinal);
         foreach (ResourceDictionary holder in (ResourceDictionary[])[tokens, dark])

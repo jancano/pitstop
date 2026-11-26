@@ -4,6 +4,7 @@ using Passenger.Core;
 using Passenger.Host;
 using Passenger.Vcs;
 using Passenger.Workspace;
+using Pitstop.Xmake;
 
 namespace Passenger.App.Explorer;
 
@@ -22,6 +23,11 @@ public enum NodeKind
 
     /// <summary>A shared project a project imports the items of, under its Dependencies.</summary>
     SharedProject,
+    XmakeWorkspace,
+    XmakeConfiguration,
+    XmakeTarget,
+    XmakeDependency,
+    XmakeStatus,
 }
 
 /// <summary>A folder at a project's top that the .NET SDK reads by its name, in the order the Explorer lists them before
@@ -39,7 +45,7 @@ public enum SdkFolder
 /// each project's dependencies and its files, a file's dependents nested under it, <see cref="FileNesting"/>) or the
 /// File System. Flattened into the rows currently visible, so a virtualizing list draws only what is on screen; a
 /// node's children are made the first time it opens.</summary>
-public sealed class ExplorerTree
+public sealed partial class ExplorerTree
 {
     /// <summary>Never listed: version control's own store, which nobody edits by hand (and the system's own files,
     /// <see cref="PathNames.IsSystemFile"/>). The other folders the walks pass over are listed dimmed
@@ -106,6 +112,7 @@ public sealed class ExplorerTree
     /// <summary>A folder's files, the projects among them telling which of its folders the SDK reads (<see cref="SdkFolder"/>).</summary>
     public void LoadFileSystem(string folder, IReadOnlyList<ProjectModel> within)
     {
+        xmakeView = false;
         IsSolutionView = false;
         solution = null;
         programs = [];
@@ -116,6 +123,7 @@ public sealed class ExplorerTree
     /// <summary>A solution: its folders, projects and items, then the programs beside it, each by name.</summary>
     public void LoadSolution(SolutionModel solution, IReadOnlyList<ProjectModel> beside)
     {
+        xmakeView = false;
         IsSolutionView = true;
         this.solution = solution;
         programs = beside;
@@ -131,6 +139,7 @@ public sealed class ExplorerTree
     /// <summary>A project opened alone: the project at the top, its dependencies and files under it.</summary>
     public void LoadProject(ProjectModel project)
     {
+        xmakeView = false;
         IsSolutionView = true;
         solution = null;
         Take([project]);
@@ -453,6 +462,10 @@ public sealed class ExplorerTree
         {
             return null;
         }
+        if (xmakeView)
+        {
+            return PathNames.Same(full, Root.Path!) ? Root : FindXmakeFiles(full, through).FirstOrDefault();
+        }
         string? owner = solution is null ? null : ProjectModel.Owning([.. solution.Projects, .. programs], full)?.Path;
         // A file a project takes from elsewhere shows where its Link puts it, in the project that holds it.
         string? linked = null;
@@ -538,12 +551,20 @@ public sealed class ExplorerTree
         foreach (string file in canonical)
         {
             List<ExplorerNode> above = [];
-            if (Find(file, above.Add) is { IsFile: true } found)
+            if (xmakeView)
+            {
+                passing.UnionWith(FindXmakeFiles(file, above.Add));
+            }
+            else if (Find(file, above.Add) is { IsFile: true } found)
             {
                 passing.Add(found);
-                passing.UnionWith(above);
-                through.UnionWith(above);
             }
+            else
+            {
+                continue;
+            }
+            passing.UnionWith(above);
+            through.UnionWith(above);
         }
         foreach (ExplorerNode node in through.Where(n => n.HasChildren))
         {
@@ -602,6 +623,7 @@ public sealed class ExplorerTree
         solution = null;
         programs = [];
         IsSolutionView = false;
+        xmakeView = false;
     }
 
     /// <summary>The projects unloaded, by path: shown dimmed, with nothing under them. The open folder's own set, which
@@ -732,7 +754,7 @@ public sealed class ExplorerTree
     /// what Passenger still does with it here.</summary>
     private string? TipOf(ProjectModel project) => SharedProjects.Is(project.Path) ? SharedTip(project)
         : noSdk ?? (project.WindowsOnly is [(string framework, _), ..] && project.RunsOnlyOnWindows(framework) is { } why
-            ? $"{why}: Passenger builds {project.Name} here for its code help (EnableWindowsTargeting), and Run, Debug and Profile need Windows"
+            ? $"{why}: Pitstop builds {project.Name} here for its code help (EnableWindowsTargeting), and Run, Debug and Profile need Windows"
             : null);
 
     /// <summary>What hovering a shared project's row says: whose code its files are, as the projects shown import its items.</summary>
@@ -1014,6 +1036,9 @@ public sealed class ExplorerNode : Observable, ITreeRow
     public int Depth { get; }
     public bool IsDimmed { get; }
 
+    internal string? ViewKey { get; init; }
+    internal XmakeTarget? NativeTarget { get; init; }
+
     /// <summary>A quieter word beside the name: a package's version, a project's frameworks (which an evaluation changes).</summary>
     public string? Detail
     {
@@ -1057,7 +1082,10 @@ public sealed class ExplorerNode : Observable, ITreeRow
     private ProjectKind projectKind;
 
     /// <summary>What a screen reader names a project's row by: its name and kind; null for a row its words name.</summary>
-    public string? Said => ProjectKind == ProjectKind.Other ? null : ProjectKinds.Said(Name, ProjectKind);
+    public string? Said => Kind == NodeKind.XmakeStatus ? Tip ?? Name
+        : Kind is NodeKind.XmakeWorkspace or NodeKind.XmakeConfiguration or NodeKind.XmakeTarget or NodeKind.XmakeDependency
+            ? Detail is { } detail ? $"{Name}, {detail}" : Name
+            : ProjectKind == ProjectKind.Other ? null : ProjectKinds.Said(Name, ProjectKind);
 
     /// <summary>What hovering the row shows: a project's kind, then its <see cref="Tip"/>, which a shared project's names.</summary>
     public string? Hover => ProjectKinds.Words(ProjectKind) is not { } words || (ProjectKind == ProjectKind.Shared && Tip is not null) ? Tip

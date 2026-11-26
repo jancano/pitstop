@@ -86,13 +86,13 @@ public partial class MainWindow
         }
         if (session.GodotEditors.Editors.FirstOrDefault(e => PathNames.Same(e.Project, folder)) is { } older)
         {
-            return (false, $"Passenger's addon in {name} is version {older.Addon}, which opens no scene as asked: Install Passenger's Godot Addon… updates it, and Godot's editor takes it as it next opens the project");
+            return (false, $"Pitstop's addon in {name} is version {older.Addon}, which opens no scene as asked: Install Pitstop's Godot Addon… updates it, and Godot's editor takes it as it next opens the project");
         }
         working.Say("Looking for Godot's editor on the project");
         if (await session.GodotIde.IsOpenAsync(folder))
         {
-            return (false, $"Godot's editor is open on {name} without Passenger's addon, which alone opens a scene in an editor already running (Godot's command line would start a second editor): "
-                + "Install Passenger's Godot Addon…, which Godot's editor takes as it next opens the project");
+            return (false, $"Godot's editor is open on {name} without Pitstop's addon, which alone opens a scene in an editor already running (Godot's command line would start a second editor): "
+                + "Install Pitstop's Godot Addon…, which Godot's editor takes as it next opens the project");
         }
         if (session.RunProjects.FirstOrDefault(p => p.GodotFolder is { } at && PathNames.Same(at, folder)) is not { } project
             || session.Configurations.All.FirstOrDefault(c => c.GodotEditor && PathNames.Same(c.Project, project.Path)) is not { } configuration)
@@ -114,8 +114,8 @@ public partial class MainWindow
             return (false, $"Godot's editor could not open on {name}: {refusedRun}");
         }
         return (true, node == "." ? $"Godot's editor opens on {name} at {Path.GetFileName(scene)}"
-            : addon ? $"Godot's editor opens on {name} at {Path.GetFileName(scene)}, where Passenger's addon selects {node} once it is up"
-            : $"Godot's editor opens on {name} at {Path.GetFileName(scene)}; its command line opens a scene, never a node in it, so selecting {node} there takes Passenger's addon (Install Passenger's Godot Addon…)");
+            : addon ? $"Godot's editor opens on {name} at {Path.GetFileName(scene)}, where Pitstop's addon selects {node} once it is up"
+            : $"Godot's editor opens on {name} at {Path.GetFileName(scene)}; its command line opens a scene, never a node in it, so selecting {node} there takes Pitstop's addon (Install Pitstop's Godot Addon…)");
     }
 
     /// <summary>The scene (res://) and node path in it a file at a caret leads to, with words where it says more (a node path

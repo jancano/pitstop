@@ -40,6 +40,44 @@ public sealed class FoldScan : IFoldFinder, IDisposable
     /// <summary>A JSON file's folds: each object and array over several lines, and each block comment.</summary>
     public static FoldScan Json(TextDocument document) => new(document, JsonFolds.Find);
 
+    /// <summary>Folds visibly indented blocks for languages whose syntax is colored by a TextMate grammar.</summary>
+    public static FoldScan Indented(TextDocument document) => new(document, IndentedFolds);
+
+    private static void IndentedFolds(TextSnapshot text, List<FoldRegion> found)
+    {
+        Stack<(int Indent, int Start)> blocks = new();
+        int previous = -1;
+        int previousIndent = 0;
+        for (int i = 0; i < text.LineCount; i++)
+        {
+            LineSpan line = text.GetLine(i);
+            int indent = 0;
+            int offset = line.Start;
+            while (offset < line.End && text[offset] is ' ' or '\t')
+            {
+                indent += text[offset++] == '\t' ? 4 : 1;
+            }
+            if (offset == line.End)
+            {
+                continue;
+            }
+            while (blocks.TryPeek(out (int Indent, int Start) block) && block.Indent >= indent)
+            {
+                blocks.Pop();
+                found.Add(new FoldRegion(block.Start, previous, "...", Kind: FoldKind.Code));
+            }
+            if (previous >= 0 && indent > previousIndent)
+            {
+                blocks.Push((previousIndent, previous));
+            }
+            (previous, previousIndent) = (line.End, indent);
+        }
+        while (blocks.TryPop(out (int Indent, int Start) block))
+        {
+            found.Add(new FoldRegion(block.Start, previous, "...", Kind: FoldKind.Code));
+        }
+    }
+
     /// <summary>A .feature file's folds, as Gherkin's reader reads it (<see cref="FeatureReading.Folds"/>): the feature, its
     /// rules, scenarios and examples, its doc strings and tables, each folded after its first line.</summary>
     public static FoldScan Gherkin(TextDocument document) => new(document, GherkinFolds);

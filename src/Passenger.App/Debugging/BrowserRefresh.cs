@@ -78,7 +78,7 @@ public sealed class BrowserRefresh : IDisposable
         if (middleware is null || forwarded is null)
         {
             return (null, plan, $"Hot Reload: the browser is not kept up: the SDK {Path.GetFileName(web.Sdk)} {name} builds with has "
-                + (middleware is null ? "no browser refresh" : "a browser refresh Passenger does not speak"));
+                + (middleware is null ? "no browser refresh" : "a browser refresh Pitstop does not speak"));
         }
         string? keyFile = null;
         if (forwarded == true)

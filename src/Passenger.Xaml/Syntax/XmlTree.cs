@@ -13,10 +13,10 @@ public sealed class XmlTree
     public const int DeepestNesting = 256;
 
     /// <summary>What is said where reading stopped.</summary>
-    public const string TooDeep = "Passenger read no deeper than this, so the rest of the file is unread and unmarked.";
+    public const string TooDeep = "Pitstop read no deeper than this, so the rest of the file is unread and unmarked.";
 
     /// <summary>What is said where a walk of the file ran short of its thread's stack (<see cref="StackLeft"/>).</summary>
-    public const string CheckedInPart = "Passenger ran out of room to read a file nested this deeply, so only its markup is marked.";
+    public const string CheckedInPart = "Pitstop ran out of room to read a file nested this deeply, so only its markup is marked.";
 
     private readonly List<XmlElement> elements;
     private readonly List<TextRange> comments;

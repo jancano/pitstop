@@ -52,7 +52,7 @@ public static class Program
         {
             requests.Read(input, previewer.Arrived);
             app.Dispatcher.InvokeAsync(app.Shutdown);
-        }) { IsBackground = true, Name = "Passenger preview requests" };
+        }) { IsBackground = true, Name = "Pitstop preview requests" };
         reading.Start();
         app.Run();
         return 0;

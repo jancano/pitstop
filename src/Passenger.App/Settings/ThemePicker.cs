@@ -238,7 +238,7 @@ public sealed class ThemePicker : StackPanel
         IReadOnlyList<IStorageFile> picked = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = setting.Code ? "Add Code Colour Scheme" : "Add Theme",
-            FileTypeFilter = [new FilePickerFileType("Passenger and VS Code themes") { Patterns = ["*.json", "*.vsix"] }],
+            FileTypeFilter = [new FilePickerFileType("Pitstop and VS Code themes") { Patterns = ["*.json", "*.vsix"] }],
         });
         if (picked.Count == 1 && picked[0].TryGetLocalPath() is { } path)
         {
@@ -248,7 +248,7 @@ public sealed class ThemePicker : StackPanel
 
     /// <summary>The sources listed: Passenger's themes repository, then the person's.</summary>
     private IEnumerable<ThemeSource> Sources() =>
-        [ThemeSource.Repository, .. working().ThemeSources.Select(s => ThemeSource.Of(s, out _)).OfType<ThemeSource>()];
+        [.. ThemeSource.ConfiguredSources, .. working().ThemeSources.Select(s => ThemeSource.Of(s, out _)).OfType<ThemeSource>()];
 
     private async Task ChooseAsync(Choice choice)
     {
@@ -283,7 +283,7 @@ public sealed class ThemePicker : StackPanel
     {
         bool code = setting.Code;
         SourcedTheme? chosen = setting.Get(working());
-        List<Choice> choices = [new(null, code ? "Same as theme" : "Passenger", string.Empty, null)];
+        List<Choice> choices = [new(null, code ? "Same as theme" : "Pitstop", string.Empty, null)];
         List<string> refused = [];
         List<string> underWay = [];
         SourceRead builtIn = BuiltInThemes.Listed(ThemeResources.Kinds);

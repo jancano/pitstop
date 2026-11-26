@@ -305,7 +305,7 @@ public sealed class CaseTellingFolderTests : IDisposable
         if (OperatingSystem.IsMacOS())
         {
             string disk = Path.Combine(root, "volume.dmg");
-            ChildResult made = Ran("/usr/bin/hdiutil", "create", "-size", "20m", "-fs", "Case-sensitive APFS", "-volname", "Passenger Case Tests", "-ov", disk, "-quiet");
+            ChildResult made = Ran("/usr/bin/hdiutil", "create", "-size", "20m", "-fs", "Case-sensitive APFS", "-volname", "Pitstop Case Tests", "-ov", disk, "-quiet");
             Assert.SkipUnless(made.Succeeded, $"hdiutil made no case-sensitive disk image (exit code {made.ExitCode}): {made.Error}{made.Output}");
             ChildResult attached = Ran("/usr/bin/hdiutil", "attach", disk, "-nobrowse", "-noautoopen", "-mountpoint", folder, "-quiet");
             Assert.SkipUnless(attached.Succeeded, $"hdiutil attached no case-sensitive disk image (exit code {attached.ExitCode}): {attached.Error}{attached.Output}");

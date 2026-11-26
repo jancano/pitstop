@@ -152,7 +152,7 @@ public sealed class UntrustedGitTests : IDisposable
         await TestGit.RunAsync(clone, "config", "remote.origin.uploadpack", Marking("uploadpack", "exit 1"));
         await TestGit.RunAsync(clone, "config", "remote.origin.receivepack", Marking("receivepack", "exit 1"));
         await TestGit.RunAsync(clone, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        await TestGit.RunAsync(clone, "config", "user.name", "Passenger Tests");
+        await TestGit.RunAsync(clone, "config", "user.name", "Pitstop Tests");
         // The clone checked nothing out, so this commit holds no file: the remote's branch is the one read.
         await TestGit.RunAsync(clone, "commit", "-q", "--allow-empty", "-m", "To push");
 

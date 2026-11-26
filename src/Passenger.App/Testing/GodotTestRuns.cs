@@ -133,7 +133,7 @@ public static class GodotTestRuns
 
     /// <summary>A file of a framework's run, named for it, where the system keeps temporary files.</summary>
     public static string TemporaryFile(string framework, string extension) =>
-        Path.Combine(Path.GetTempPath(), $"passenger-{framework.ToLowerInvariant()}-{Guid.NewGuid():N}{extension}");
+        Path.Combine(Path.GetTempPath(), $"pitstop-{framework.ToLowerInvariant()}-{Guid.NewGuid():N}{extension}");
 
     /// <summary>What a run says of the tests it ran beside the chosen ones, each failure with its words: a framework's run of a
     /// script or suite takes what the code does not declare, which no row shows (a test a script inherits); null for none.</summary>

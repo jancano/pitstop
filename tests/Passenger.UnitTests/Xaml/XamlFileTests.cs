@@ -21,7 +21,7 @@ public class XamlFileTests
             "xaml",
         ], The_code_behinds_class_is_read_from_x_class_whatever_prefix_xamls_language_is_declared_with)),
         ("a nested style with no type asks each style above it once", A_nested_style_with_no_type_asks_each_style_above_it_once),
-        ("a type nested as deep as passenger reads reads as far as a reference goes and ends nothing", A_type_nested_as_deep_as_passenger_reads_reads_as_far_as_a_reference_goes_and_ends_nothing),
+        ("a type nested as deep as pitstop reads reads as far as a reference goes and ends nothing", A_type_nested_as_deep_as_passenger_reads_reads_as_far_as_a_reference_goes_and_ends_nothing),
         ("a file whose strings leave brackets open still declares its types", A_file_whose_strings_leave_brackets_open_still_declares_its_types),
         ("a colours casts deeper than a stack holds say no colour and end nothing", A_colours_casts_deeper_than_a_stack_holds_say_no_colour_and_end_nothing));
 

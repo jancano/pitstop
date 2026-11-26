@@ -80,7 +80,7 @@ public class MobileNeedsTests
     [Fact]
     public void The_workloads_a_mobile_project_lacks_are_read_from_msbuilds_answer_said_once_and_installed_where_dotnet_puts_them() => Cases.All(
         ("the workloads the SDK names are each taken once with the framework that needs it", The_workloads_the_SDK_names_are_each_taken_once_with_the_framework_that_needs_it),
-        ("A mobile project on dotnet 10 is said to run on Mono which Passenger does not run", A_mobile_project_on_dotnet_10_is_said_to_run_on_Mono_which_Passenger_does_not_run),
+        ("A mobile project on dotnet 10 is said to run on Mono which Pitstop does not run", A_mobile_project_on_dotnet_10_is_said_to_run_on_Mono_which_Passenger_does_not_run),
         ("a workload install says where it puts the workload and an administrators command names the dotnet by its path", A_workload_install_says_where_it_puts_the_workload_and_an_administrators_command_names_the_dotnet_by_its_path),
         ("a workload install downloads onto disk where the temporary folder is held in memory and reads dotnets words", A_workload_install_downloads_onto_disk_where_the_temporary_folder_is_held_in_memory_and_reads_dotnets_words));
 
@@ -290,7 +290,7 @@ public class MobileNeedsTests
         MobileWant want = Want([new ProjectNeeds("OldApp", ["net10.0-android", "net10.0-ios"])]);
 
         Assert.Equal([("OldApp", "net10.0-android")], want.OnMono);
-        Assert.Equal("OldApp targets net10.0-android, whose mobile apps run on Mono: Passenger builds, runs and debugs mobile apps from .NET 11, on CoreCLR", want.Said);
+        Assert.Equal("OldApp targets net10.0-android, whose mobile apps run on Mono: Pitstop builds, runs and debugs mobile apps from .NET 11, on CoreCLR", want.Said);
         Assert.Empty(Want([new ProjectNeeds("Desktop", ["net10.0", "net10.0-windows"])]).OnMono);
     }
 
@@ -353,7 +353,7 @@ public class MobileNeedsTests
 
     private void A_workload_install_downloads_onto_disk_where_the_temporary_folder_is_held_in_memory_and_reads_dotnets_words()
     {
-        string cache = Path.Combine("/home", "ann", ".local", "share", "Passenger", "cache");
+        string cache = Path.Combine("/home", "ann", ".local", "share", "Pitstop", "cache");
 
         string? fromMemory = WorkloadInstalls.DownloadsFolder("/tmp/", _ => "tmpfs", cache);
 

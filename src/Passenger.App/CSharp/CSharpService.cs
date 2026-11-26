@@ -28,7 +28,7 @@ public sealed partial class CSharpService : IAsyncDisposable
 
     /// <summary>The variable that gives <see cref="SlowLoad"/> in milliseconds.</summary>
     [IdentifierHome]
-    public const string SlowLoadVariable = "PASSENGER_CSHARP_SLOW_LOAD_MS";
+    public const string SlowLoadVariable = "PITSTOP_CSHARP_SLOW_LOAD_MS";
 
     /// <summary>How long a server started ahead may take to start, and then the projects to load, before the status bar
     /// warns that C# is still starting or loading, C# going on however long they take: 5 minutes, or what

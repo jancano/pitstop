@@ -12,7 +12,7 @@ namespace Passenger.App.Editors;
 public sealed class ServedPage
 {
     /// <summary>The host every page is served on.</summary>
-    public const string Host = "preview.passenger.invalid";
+    public const string Host = "preview.pitstop.invalid";
 
     private readonly string page;
     private readonly string folder;

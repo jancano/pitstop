@@ -13,7 +13,7 @@ BOLD, DIM, CYAN, GREEN, RED, PLAIN = "\x1b[1m", "\x1b[2m", "\x1b[36m", "\x1b[32m
 # The widest line the Terminal tab shows without wrapping, at the site's window size.
 WIDEST = 132
 
-server = subprocess.Popen([os.environ["PASSENGER"], "--mcp-attach", os.environ["PASSENGER_PID"]],
+server = subprocess.Popen([os.environ["PITSTOP"], "--mcp-attach", os.environ["PITSTOP_PID"]],
                           stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, encoding="utf-8")
 asked = 0
 

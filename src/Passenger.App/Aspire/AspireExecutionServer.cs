@@ -16,7 +16,7 @@ namespace Passenger.App.Aspire;
 /// <summary>A loopback implementation of Aspire's 2024-03-03 IDE execution protocol.</summary>
 public sealed class AspireExecutionServer : IAsyncDisposable
 {
-    internal const string FileServiceUnsupported = "File-based Aspire services are not supported by Passenger";
+    internal const string FileServiceUnsupported = "File-based Aspire services are not supported by Pitstop";
     private const string InstanceHeader = "Microsoft-Developer-DCP-Instance-ID";
     private const string BaselineProtocol = "2024-03-03";
     private const int MaximumInstances = 64;

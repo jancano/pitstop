@@ -242,7 +242,7 @@ public sealed partial class EditorArea
             if (frame.Window is { } window)
             {
                 string? file = frame.Current.Active?.Name;
-                window.Window.Title = file is null ? folderName ?? "Passenger" : folderName is null ? file : $"{folderName} – {file}";
+                window.Window.Title = file is null ? folderName ?? "Pitstop" : folderName is null ? file : $"{folderName} – {file}";
             }
         }
     }

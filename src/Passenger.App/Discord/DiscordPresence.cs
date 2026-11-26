@@ -16,16 +16,13 @@ public sealed record DiscordActivity(string? Details, string? State, DateTimeOff
 /// silence. No UI: <paramref name="log"/> is called on any thread.</summary>
 public sealed class DiscordPresence(DiscordIpc ipc, Action<string> log)
 {
-    /// <summary>The Discord application "Passenger", whose name follows Playing; not a secret.</summary>
-    public const string Application = "1559714715847098468";
-
     /// <summary>The application's art asset of Passenger's 1024-pixel icon.</summary>
-    public const string LargeImage = "passenger-1024";
+    public const string LargeImage = "pitstop-1024";
 
     // Passenger's own words, wherever the activity names nothing of the work.
 
     /// <summary>The icon's hover text, whatever the activity names.</summary>
-    public const string LargeText = "Passenger: an IDE for C# and .NET, open to your coding agent";
+    public const string LargeText = "Pitstop: an IDE for C# and .NET, open to your coding agent";
 
     /// <summary>The details line of an activity that names nothing of the work (Passenger only, or idle).</summary>
     public const string OwnDetails = "An IDE for C# and .NET";
@@ -33,8 +30,8 @@ public sealed class DiscordPresence(DiscordIpc ipc, Action<string> log)
     /// <summary>The state line of an activity that names nothing of the work.</summary>
     public const string OwnState = "Open source · Windows, macOS and Linux";
 
-    public const string ButtonLabel = "Get Passenger";
-    public const string ButtonUrl = "https://passenger-ide.net";
+    public const string ButtonLabel = "Get Pitstop";
+    public const string ButtonUrl = "https://github.com/jancano/pitstop";
 
     private readonly Channel<bool> wake = Channel.CreateBounded<bool>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite });
     private readonly CancellationTokenSource ending = new();
@@ -130,7 +127,7 @@ public sealed class DiscordPresence(DiscordIpc ipc, Action<string> log)
                 }
                 if (connection is null)
                 {
-                    (DiscordConnection? opened, string why) = await DiscordConnection.OpenAsync(ipc, Application, Refused, end).ConfigureAwait(false);
+                    (DiscordConnection? opened, string why) = await DiscordConnection.OpenAsync(ipc, ipc.ApplicationId!, Refused, end).ConfigureAwait(false);
                     if (opened is null)
                     {
                         Say(ref quiet, why);

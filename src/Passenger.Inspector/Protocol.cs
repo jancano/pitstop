@@ -20,7 +20,7 @@ public static class Wire
 
     /// <summary>The app's environment: the socket's path, where it connects.</summary>
     [IdentifierHome]
-    public const string SocketVariable = "PASSENGER_INSPECTOR";
+    public const string SocketVariable = "PITSTOP_INSPECTOR";
 
     /// <summary>What begins <see cref="SocketVariable"/>'s value where the app listens rather than connects: an app on a
     /// device, whose abstract socket of this name Passenger reaches through adb's forward, on an iOS simulator, whose
@@ -31,28 +31,28 @@ public static class Wire
     /// <summary>The app's environment where it listens (<see cref="Listens"/>): the line Passenger first writes, which only the
     /// launch that put it there knows.</summary>
     [IdentifierHome]
-    public const string TokenVariable = "PASSENGER_INSPECTOR_TOKEN";
+    public const string TokenVariable = "PITSTOP_INSPECTOR_TOKEN";
 
     /// <summary>The app's environment: Avalonia's renderer debug overlays its windows show from the launch on, as
     /// <see cref="Request.Overlays"/> names them, joined by commas.</summary>
     [IdentifierHome]
-    public const string OverlaysVariable = "PASSENGER_INSPECTOR_OVERLAYS";
+    public const string OverlaysVariable = "PITSTOP_INSPECTOR_OVERLAYS";
 
     /// <summary>A WPF or MAUI app's environment: the launched project's folder, where its XAML is when its build's symbols do
     /// not say (a MAUI app's places are relative to it).</summary>
     [IdentifierHome]
-    public const string ProjectVariable = "PASSENGER_INSPECTOR_PROJECT";
+    public const string ProjectVariable = "PITSTOP_INSPECTOR_PROJECT";
 
     /// <summary>The app's environment: the XAML file Avalonia's designer previews, whose each load the inspector has record
     /// where in the file it made each element, for <see cref="Placed"/>.</summary>
     [IdentifierHome]
-    public const string PreviewVariable = "PASSENGER_INSPECTOR_PREVIEW";
+    public const string PreviewVariable = "PITSTOP_INSPECTOR_PREVIEW";
 
     /// <summary>The app's environment where nobody is to see it (a Passenger nobody sees launched it): its Avalonia draws on
     /// the headless platform, and where it would draw elsewhere it ends before its Main (<see cref="UnseenEnds"/>) or runs
     /// on, on a desktop of its own (<see cref="UnseenRuns"/>).</summary>
     [IdentifierHome]
-    public const string UnseenVariable = "PASSENGER_INSPECTOR_UNSEEN";
+    public const string UnseenVariable = "PITSTOP_INSPECTOR_UNSEEN";
 
     /// <summary><see cref="UnseenVariable"/>'s value where nothing hides an app's windows but its headless platform.</summary>
     public const string UnseenEnds = "ends";
@@ -62,7 +62,7 @@ public static class Wire
 
     /// <summary>The app's environment: a file the inspector traces its start and its answers to.</summary>
     [IdentifierHome]
-    public const string TraceVariable = "PASSENGER_INSPECTOR_TRACE";
+    public const string TraceVariable = "PITSTOP_INSPECTOR_TRACE";
 
     public const string Tree = "tree";
     public const string Details = "details";

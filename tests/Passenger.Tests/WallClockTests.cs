@@ -36,7 +36,7 @@ public sealed class WallClockTests
             }
             found.AddRange(Measured(File.ReadAllText(file)).Where(at => TheirTicks.GetValueOrDefault(relative) != at.Code).Select(at => $"{relative}:{at.Line}: {at.Code}"));
         }
-        Assert.True(found.Count == 0, $"{found.Count} times between Passenger's own moments are measured on the wall clock, so a wait under way as the "
+        Assert.True(found.Count == 0, $"{found.Count} times between Pitstop's own moments are measured on the wall clock, so a wait under way as the "
             + "machine sleeps gives up at once as it wakes, and one the clock is set back under lasts that much longer: measure each on Stopwatch's "
             + $"clock (Deadline, Stopwatch.GetElapsedTime):\n{string.Join("\n", found)}");
     }

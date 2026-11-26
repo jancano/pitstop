@@ -28,13 +28,13 @@ public sealed class VelopackUpdater(IVelopackLocator locator) : Updater
         string feed = $"releases.{locator.Channel ?? "win"}.json";
         if (release.File(feed) is null)
         {
-            return new UpdateOutcome.Unavailable($"Passenger {release.Version} is only announced: its release carries no {feed}");
+            return new UpdateOutcome.Unavailable($"Pitstop {release.Version} is only announced: its release carries no {feed}");
         }
         UpdateManager updates = new(new ReleaseSource(release, feed, cancel), new UpdateOptions(), locator);
         UpdateInfo? found = await updates.CheckForUpdatesAsync().ConfigureAwait(false);
         if (found is null)
         {
-            return new UpdateOutcome.Unavailable($"Passenger {release.Version} is only announced: its {feed} offers nothing newer than {locator.CurrentlyInstalledVersion}");
+            return new UpdateOutcome.Unavailable($"Pitstop {release.Version} is only announced: its {feed} offers nothing newer than {locator.CurrentlyInstalledVersion}");
         }
         VelopackAsset target = found.TargetFullRelease;
         if (target.Version.ToString() != release.Version)
@@ -58,7 +58,7 @@ public sealed class VelopackUpdater(IVelopackLocator locator) : Updater
         }
         manager = updates;
         package = target;
-        return new UpdateOutcome.Ready($"Passenger {release.Version} downloaded to {local}: its size and SHA-256 are {feed}'s {target.SHA256}");
+        return new UpdateOutcome.Ready($"Pitstop {release.Version} downloaded to {local}: its size and SHA-256 are {feed}'s {target.SHA256}");
     }
 
     public override void Install(bool restart)
@@ -80,12 +80,12 @@ public sealed class VelopackUpdater(IVelopackLocator locator) : Updater
         {
             // Quietly when Passenger is only closing; with Velopack's progress while a person waits for it to start again.
             manager.WaitExitThenApplyUpdates(package, silent: !restart, restart: restart);
-            IdeErrors.Write($"Updates: Update.exe installs Passenger {version} in {Installed} once Passenger has ended{(restart ? ", and starts it" : string.Empty)}");
+            IdeErrors.Write($"Updates: Update.exe installs Pitstop {version} in {Installed} once Pitstop has ended{(restart ? ", and starts it" : string.Empty)}");
         }
         catch (Exception error) when (error is IOException or Win32Exception or InvalidOperationException)
         {
             NotInstalled = $"Update.exe did not start: {error.Message}";
-            IdeErrors.Write($"Updates: Passenger {version} was not installed: {NotInstalled}");
+            IdeErrors.Write($"Updates: Pitstop {version} was not installed: {NotInstalled}");
         }
         IdeErrors.Flush();
     }
@@ -118,7 +118,7 @@ public sealed class VelopackUpdater(IVelopackLocator locator) : Updater
             return [];
         }
         List<int> here = [];
-        foreach (Process running in Process.GetProcessesByName("Passenger"))
+        foreach (Process running in Process.GetProcessesByName("Pitstop"))
         {
             using (running)
             {

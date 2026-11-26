@@ -233,7 +233,7 @@ public sealed partial record BackingService(string Service, string Image, string
     public string ConnectionString(string name, string value, string? host = null) => (Service, Database(name, value), host ?? Service) switch
     {
         ("postgres", var database, var at) => $"Host={at};Port=5432;Database={database};Username=postgres;Password=${{POSTGRES_PASSWORD:-postgres}}",
-        ("sqlserver", var database, var at) => $"Server={at},1433;Database={database};User Id=sa;Password=${{MSSQL_SA_PASSWORD:-Passenger_dev1}};TrustServerCertificate=True",
+        ("sqlserver", var database, var at) => $"Server={at},1433;Database={database};User Id=sa;Password=${{MSSQL_SA_PASSWORD:-Pitstop_dev1}};TrustServerCertificate=True",
         ("redis", _, var at) => $"{at}:6379",
         ("rabbitmq", { } vhost, var at) => $"amqp://app:${{RABBITMQ_PASSWORD:-app}}@{at}:5672/{Uri.EscapeDataString(vhost)}",
         ("rabbitmq", null, var at) => $"amqp://app:${{RABBITMQ_PASSWORD:-app}}@{at}:5672",
@@ -276,7 +276,7 @@ public sealed partial record BackingService(string Service, string Image, string
     {
         "postgres" => ["environment:", "  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}", .. databases.Take(1).Select(d => $"  POSTGRES_DB: {d}"),
             "volumes:", "  - postgres-data:/var/lib/postgresql"],
-        "sqlserver" => ["platform: linux/amd64", "environment:", "  ACCEPT_EULA: \"Y\"", "  MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Passenger_dev1}", "volumes:", "  - sqlserver-data:/var/opt/mssql"],
+        "sqlserver" => ["platform: linux/amd64", "environment:", "  ACCEPT_EULA: \"Y\"", "  MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Pitstop_dev1}", "volumes:", "  - sqlserver-data:/var/opt/mssql"],
         "rabbitmq" => ["environment:", "  RABBITMQ_DEFAULT_USER: app", "  RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-app}", .. databases.Take(1).Select(v => $"  RABBITMQ_DEFAULT_VHOST: {v}")],
         "mongo" => ["volumes:", "  - mongo-data:/data/db"],
         _ => [],

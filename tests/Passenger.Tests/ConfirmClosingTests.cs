@@ -15,7 +15,7 @@ namespace Passenger.Tests;
 /// nothing more, and an attached agent's input never closes a window that would ask, nor answers the question.</summary>
 public sealed class ConfirmClosingTests : ProjectWindowsFolders
 {
-    private static readonly string QuitTitle = $"{MainWindow.QuitWord} Passenger";
+    private static readonly string QuitTitle = $"{MainWindow.QuitWord} Pitstop";
 
     private const string CloseTitle = "Close Window";
 
@@ -117,7 +117,7 @@ public sealed class ConfirmClosingTests : ProjectWindowsFolders
             }
             ConfirmDialog quit = Asked(QuitTitle);
             Ui.ClickButton(quit, "Cancel");
-            Assert.True(first.IsVisible, "Cancel on the last window's question quit Passenger");
+            Assert.True(first.IsVisible, "Cancel on the last window's question quit Pitstop");
             first.Close();
             quit = Asked(QuitTitle);
             NotAgain(quit).IsChecked = true;

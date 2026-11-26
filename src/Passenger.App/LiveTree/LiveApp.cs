@@ -169,22 +169,22 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
         }
         if (!File.Exists(InspectorPath))
         {
-            throw new LiveAppException("This build of Passenger carries no inspector");
+            throw new LiveAppException("This build of Pitstop carries no inspector");
         }
         // A Passenger another runs or debugs has that one's inspector, whose binding log a second would fight over the logger.
         if (AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().Name == "Passenger.Inspector"))
         {
-            throw new LiveAppException("This Passenger was started by another Passenger, whose inspector it carries: that one's app tools (app run or debug) look at its windows");
+            throw new LiveAppException("This Pitstop was started by another Pitstop, whose inspector it carries: that one's app tools (app run or debug) look at its windows");
         }
-        (string socket, Socket? listener, string? problem) = Listen("Passenger");
+        (string socket, Socket? listener, string? problem) = Listen("Pitstop");
         if (listener is null)
         {
-            throw new LiveAppException(problem ?? "Passenger could not listen for its own inspector");
+            throw new LiveAppException(problem ?? "Pitstop could not listen for its own inspector");
         }
         // Kept for the process, it starts in no call's context, whose window would ride along in its reads and threads for good.
         using (ExecutionContext.SuppressFlow())
         {
-            LiveApp app = new("Passenger", socket, listener, plan: null, []);
+            LiveApp app = new("Pitstop", socket, listener, plan: null, []);
             try
             {
                 Assembly inspector = AssemblyLoadContext.Default.LoadFromAssemblyPath(InspectorPath);
@@ -198,7 +198,7 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
             catch (Exception error) when (error is IOException or BadImageFormatException or TypeLoadException or MissingMethodException or TargetInvocationException)
             {
                 app.Dispose();
-                throw new LiveAppException($"Passenger's inspector could not start in Passenger: {error.GetBaseException().Message}");
+                throw new LiveAppException($"Pitstop's inspector could not start in Pitstop: {error.GetBaseException().Message}");
             }
             own = app;
             return app;
@@ -303,7 +303,7 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
         {
             return null;
         }
-        string socket = $"passenger-inspector-{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(4)).ToLowerInvariant()}";
+        string socket = $"pitstop-inspector-{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(4)).ToLowerInvariant()}";
         string token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
         return new LiveApp(plan.Name, $"{Wire.Listens}{socket}", null, plan, kind == LiveAppKind.Avalonia ? overlays : [], kind,
             device: new Run.Devices.DeviceInspector(socket, token, Carried(inspector), More(kind, plan, overlays)));
@@ -752,7 +752,7 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
                 MainLeftOut = hello.MainLeftOut;
                 if (hello.Protocol != Wire.Version)
                 {
-                    Problem = $"{Name}'s inspector speaks version {hello.Protocol} of Passenger's protocol, not {Wire.Version}";
+                    Problem = $"{Name}'s inspector speaks version {hello.Protocol} of Pitstop's protocol, not {Wire.Version}";
                 }
                 else
                 {

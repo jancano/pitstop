@@ -534,7 +534,7 @@ internal sealed class AspireContainerOwnership
                 {
                     throw new ContainerCommandException(ContainerEngine.Said(result));
                 }
-                IdeErrors.Write($"Aspire containers: removed {Plural.Of(removing.Count, "container")} an earlier Passenger's AppHost left");
+                IdeErrors.Write($"Aspire containers: removed {Plural.Of(removing.Count, "container")} an earlier Pitstop's AppHost left");
             }
         }
         catch (Exception error) when (error is IOException or ContainerCommandException or JsonException or TimeoutException
@@ -547,7 +547,7 @@ internal sealed class AspireContainerOwnership
         if (ended.Length > 0)
         {
             await RemoveNetworksAsync(engine, [.. ended.Select(entry => entry.Network).OfType<string>().Distinct(StringComparer.Ordinal)],
-                "as an earlier Passenger's AppHost left it", identity.Arguments).ConfigureAwait(false);
+                "as an earlier Pitstop's AppHost left it", identity.Arguments).ConfigureAwait(false);
             Forget(record, [.. ended.Select(entry => entry.Id)]);
         }
         return [.. removing.Select(entry => entry.Id)];

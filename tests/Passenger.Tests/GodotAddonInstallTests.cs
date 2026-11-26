@@ -23,7 +23,7 @@ public sealed class GodotAddonInstallTests
         window.Confirm = (title, _, _) =>
         {
             asked.Add(title);
-            if (title != "Install Passenger's Godot Addon?")
+            if (title != "Install Pitstop's Godot Addon?")
             {
                 return Task.FromResult(false);
             }
@@ -34,12 +34,12 @@ public sealed class GodotAddonInstallTests
         };
 
         Assert.Null(window.Actions.Run(AppActions.GodotAddon));
-        Ui.WaitFor(() => window.Status?.Contains("Passenger's addon is installed", StringComparison.Ordinal) == true, () => $"the addon to be installed ({window.Status})");
+        Ui.WaitFor(() => window.Status?.Contains("Pitstop's addon is installed", StringComparison.Ordinal) == true, () => $"the addon to be installed ({window.Status})");
         string text = File.ReadAllText(project);
-        Assert.True(asked is ["Install Passenger's Godot Addon?"], $"The install was to ask once, and nothing else asked; it asked: {string.Join(" | ", asked)}");
+        Assert.True(asked is ["Install Pitstop's Godot Addon?"], $"The install was to ask once, and nothing else asked; it asked: {string.Join(" | ", asked)}");
         Assert.True(text.Contains("config/description=\"Saved in Godot\"\n", StringComparison.Ordinal)
-            && text.Contains("enabled=PackedStringArray(\"res://addons/plays/plugin.cfg\", \"res://addons/passenger/plugin.cfg\")", StringComparison.Ordinal),
+            && text.Contains("enabled=PackedStringArray(\"res://addons/plays/plugin.cfg\", \"res://addons/pitstop/plugin.cfg\")", StringComparison.Ordinal),
             $"project.godot was to keep what Godot's editor saved while the install asked, the addon enabled beside the plugin it enabled:\n{text}");
-        Assert.True(File.Exists(Path.Combine(folder, "addons", "passenger", "plugin.cfg")), "The addon's plugin.cfg was not written");
+        Assert.True(File.Exists(Path.Combine(folder, "addons", "pitstop", "plugin.cfg")), "The addon's plugin.cfg was not written");
     }
 }

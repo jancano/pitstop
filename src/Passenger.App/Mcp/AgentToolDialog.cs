@@ -27,10 +27,10 @@ public sealed class AgentToolDialog : IdeWindow
         session.Click += (_, _) => Answer(Admission.Allowed);
 
         string asks = ownWindows
-            ? $"{agent}, connected through Passenger's MCP server, wants to {what} (its {tool} tool), the app being Passenger's own windows, where its input does what yours would."
-            : $"{agent}, connected through Passenger's MCP server, wants to {what} (its {tool} tool).";
-        string uses = ownWindows ? $"{tool} in Passenger's windows" : tool;
-        DialogFooter.Question(this, ownWindows ? $"Allow {tool} in Passenger's windows?" : $"Allow {tool}?",
+            ? $"{agent}, connected through Pitstop's MCP server, wants to {what} (its {tool} tool), the app being Pitstop's own windows, where its input does what yours would."
+            : $"{agent}, connected through Pitstop's MCP server, wants to {what} (its {tool} tool).";
+        string uses = ownWindows ? $"{tool} in Pitstop's windows" : tool;
+        DialogFooter.Question(this, ownWindows ? $"Allow {tool} in Pitstop's windows?" : $"Allow {tool}?",
         [
             DialogFooter.Paragraph(asks),
             DialogFooter.Paragraph($"Allow Once lets this call alone go on, asking again at the agent's next. Allow for This Session lets it use {uses} without asking in this folder until it disconnects."),
@@ -46,9 +46,9 @@ public sealed class AgentToolDialog : IdeWindow
         session.Click += (_, _) => Answer(Admission.Allowed);
         DialogFooter.Question(this, AllowEveryTool,
         [
-            DialogFooter.Paragraph($"{agent}, connected through Passenger's MCP server, asks to use the tools below without your leave at each call: to "
+            DialogFooter.Paragraph($"{agent}, connected through Pitstop's MCP server, asks to use the tools below without your leave at each call: to "
                 + "edit and refactor files, build, run, debug and evaluate code, commit, run commands, and click or type in the apps it runs and "
-                + "in Passenger's own windows, where its input does what yours would."),
+                + "in Pitstop's own windows, where its input does what yours would."),
             DialogFooter.Paragraph("Allow for This Session lets it use them all in this folder until it disconnects. Deny keeps each asking at "
                 + "its call, and refuses the agent's later requests for every tool until then."),
             tools,

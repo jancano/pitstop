@@ -143,7 +143,7 @@ public sealed class MethodSources : IDisposable
         }
     }
 
-    /// <summary>A module's file as it is on disk: the trace can name it in lower case (a container's /passenger/app/web.dll for
+    /// <summary>A module's file as it is on disk: the trace can name it in lower case (a container's /pitstop/app/web.dll for
     /// Web.dll), which a file system that tells case apart (Linux's, a container's over it) does not find as named, so each
     /// part of the path is matched ignoring case where it is not there as written. Null when there is no such file.</summary>
     private static string? OnDisk(string path)

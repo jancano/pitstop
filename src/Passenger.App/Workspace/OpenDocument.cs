@@ -224,7 +224,7 @@ public sealed class OpenDocument : Observable
         {
             // A fault of the IDE's rather than the file's: reported, and the tab never left loading for good.
             IdeErrors.Report(error);
-            failed = $"Passenger failed: {error.GetType().Name}: {error.Message}";
+            failed = $"Pitstop failed: {error.GetType().Name}: {error.Message}";
         }
         // Moved meanwhile, it is read again where it is now.
         if (closed || decodeAgain || path != Path)
@@ -845,6 +845,14 @@ public sealed class OpenDocument : Observable
         Path = path;
         FollowReadOnly();
         Language language = Asset is null && !IsBinary ? Language.ForPath(path) : Language;
+        SetLanguage(language);
+        Raise(nameof(Path));
+        Raise(nameof(Name));
+        ReadConventions();
+    }
+
+    internal void SetLanguage(Language language)
+    {
         if (language != Language)
         {
             Language = language;
@@ -856,10 +864,8 @@ public sealed class OpenDocument : Observable
             finder = Finder();
             TestMarks = [];
             Highlighter = parser;
+            Raise(nameof(Language));
         }
-        Raise(nameof(Path));
-        Raise(nameof(Name));
-        ReadConventions();
     }
 
     /// <summary>What the .editorconfig files over the file say of it, as last read.</summary>
@@ -1367,7 +1373,7 @@ public sealed class OpenDocument : Observable
         : Asset is not null ? "a font, shown as a read-only preview"
         : IsWorkbook ? "an Excel workbook, shown as its sheets' cells"
         : IsBinary ? "a binary file, shown as its bytes' text"
-        : IsReleaseNotes ? "Passenger's release notes, shown rendered"
+        : IsReleaseNotes ? "Pitstop's release notes, shown rendered"
         : Diff is not null ? "shown here as a diff" : null;
 
     /// <summary>What the bar over a read-only file says it is and where it came from.</summary>
@@ -1375,9 +1381,9 @@ public sealed class OpenDocument : Observable
         : Asset is not null ? "A font, shown in its own glyphs, read-only"
         : IsWorkbook ? "An Excel workbook, shown as its sheets' cells, read-only"
         : IsBinary ? "A binary file, shown as its bytes' text, read-only"
-        : IsReleaseNotes ? "Passenger's release notes, as the app carries them, read-only"
+        : IsReleaseNotes ? "Pitstop's release notes, as the app carries them, read-only"
         : Diff is not null ? "A diff of two versions of the file, side by side"
-        : Product.Carries(Path) ? "Passenger's own file, as the app carries it, read-only"
+        : Product.Carries(Path) ? "Pitstop's own file, as the app carries it, read-only"
         : MSBuild.MSBuildFiles.IsInstalled(Path) ? "An MSBuild file of the .NET SDK or a package, as installed, read-only"
         : Packages.PackageFolders.PackageOf(Path) is { } package ? $"{Refusals.Sentence(Refusals.PackagesOwn(package))}, read-only"
         : Containers.ContainerFilesPane.IsCopy(Path) ? "A copy of what a container holds, or of what the engine says of it, read-only"

@@ -132,7 +132,7 @@ public class GDScriptFormatterTests
         string text = "func b( ):\n\tpass\nvar deep = " + new string('(', 2_000) + "1" + new string(')', 2_000) + "\nvar a=1\n";
         foreach (GDScriptFormatted refused in (GDScriptFormatted[])[GDScriptFormatter.Format(text, new GDScriptFormatOptions()), GDScriptFormatter.OrderParts(text)])
         {
-            Assert.Equal((text, "the script is nested too deeply for Passenger to read whole"), (refused.Text, refused.Refused));
+            Assert.Equal((text, "the script is nested too deeply for Pitstop to read whole"), (refused.Text, refused.Refused));
         }
     }
 }

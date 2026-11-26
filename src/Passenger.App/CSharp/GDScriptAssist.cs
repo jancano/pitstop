@@ -406,7 +406,7 @@ internal sealed partial class GDScriptAssist(AssistContext context, CodeCompleti
                 return false;
             }
             AskGodot(shown);
-            context.Say("Find Usages finds nothing here: Passenger reads no member or local of a script at the caret, and Godot's server is not serving the script yet");
+            context.Say("Find Usages finds nothing here: Pitstop reads no member or local of a script at the caret, and Godot's server is not serving the script yet");
             return true;
         }
         TextSnapshot text = shown.Text.Snapshot;
@@ -414,7 +414,7 @@ internal sealed partial class GDScriptAssist(AssistContext context, CodeCompleti
         int start = NameStart(text, at);
         string name = text.GetText(start, NameEnd(text, at) - start);
         string? note = unsure.Count == 0 ? null
-            : $"{Plural.Of(unsure.Count, "place")} may use it where Passenger can't see whose member is read: {GDScriptRefactorings.Places(unsure)}";
+            : $"{Plural.Of(unsure.Count, "place")} may use it where Pitstop can't see whose member is read: {GDScriptRefactorings.Places(unsure)}";
         context.ShowUsages($"Usages of {(name.Length > 0 ? name : "symbol")}", places, inPopup ? asked.MapOffset(offset) : null, note);
         return true;
     }

@@ -110,7 +110,7 @@ internal static partial class Lifeline
     /// child starts apart from its group keeps (an orchestrator detached into a session of its own, the programs it runs):
     /// those of them that are .NET programs have their runtime files followed as a group's processes' are, never killed.</summary>
     [IdentifierHome]
-    private const string LineageVariable = "PASSENGER_LINEAGE";
+    private const string LineageVariable = "PITSTOP_LINEAGE";
 
     /// <summary>This process's id and start, as <see cref="LineageVariable"/> gives them.</summary>
     private static readonly Lazy<string> Lineage = new(() => string.Create(System.Globalization.CultureInfo.InvariantCulture,
@@ -485,7 +485,7 @@ internal static partial class Lifeline
     }
 
     /// <summary>What the watchdog of Passenger's process <paramref name="ide"/> is named, last on its command line.</summary>
-    public static string NameOf(int ide) => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"passenger-watchdog-{ide}");
+    public static string NameOf(int ide) => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"pitstop-watchdog-{ide}");
 
     /// <summary>Writes a line to the watchdog. One that was ended by hand is replaced, and its successor is given every
     /// group listed, so the line need not be written again.</summary>

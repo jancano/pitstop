@@ -19,7 +19,7 @@ public sealed class GodotThemeTable
     private static readonly Lazy<GodotThemeTable> carried = new(() =>
     {
         using Stream stream = typeof(GodotThemeTable).Assembly.GetManifestResourceStream(Resource)
-            ?? throw new InvalidOperationException($"Passenger carries no {Resource}");
+            ?? throw new InvalidOperationException($"Pitstop carries no {Resource}");
         using StreamReader reader = new(stream);
         return Read(reader.ReadToEnd());
     });

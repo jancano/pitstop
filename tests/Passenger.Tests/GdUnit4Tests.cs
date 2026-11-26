@@ -94,7 +94,7 @@ public sealed class GdUnit4Tests : IDisposable
                     && window.BottomPanel.Build.Document.Snapshot.ToString().Contains(OlderBase, StringComparison.Ordinal),
                     $"The test GdUnit4 never ran, its runner unbuilt, does not say the compiler's error and why, nor does the run's log:\n{spins.Details}\n{window.BottomPanel.Build.Document.Snapshot}");
                 Assert.Skip($"Godot {godot!.Version}'s C# source generators cannot build GdUnit4's test runner, whose base class gdUnit4.api {AvaloniaApp.Metadata("GdUnit4ApiVersion")} "
-                    + "was built with an older Godot's (godotengine/godot#124939, godot-gdunit-labs/gdUnit4Net#547): Passenger says so, and the test Godot runs and its debugging need a Godot or a GdUnit4 that can");
+                    + "was built with an older Godot's (godotengine/godot#124939, godot-gdunit-labs/gdUnit4Net#547): Pitstop says so, and the test Godot runs and its debugging need a Godot or a GdUnit4 that can");
             }
             int assertion = Line("AssertThat(turns).IsEqual(3);");
             Assert.True(spins.Details.Contains($"SpinnerTest.cs:line {assertion + 1}", StringComparison.Ordinal) && spins.Details.Contains("'3' but is '2'", StringComparison.Ordinal),

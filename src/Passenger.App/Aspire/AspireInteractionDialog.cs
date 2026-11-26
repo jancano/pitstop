@@ -125,7 +125,7 @@ public sealed class AspireInteractionDialog : IdeWindow
             message.Text = update.Message;
             if (update.PromptTerminal is not null)
             {
-                message.Text = "Terminal interactions are not supported in Passenger. Use the Aspire dashboard to open this terminal.";
+                message.Text = "Terminal interactions are not supported in Pitstop. Use the Aspire dashboard to open this terminal.";
             }
             AutomationProperties.SetName(message, message.Text);
             MessageIntent severity = update.MessageBox?.Intent ?? update.Notification?.Intent ?? MessageIntent.None;
@@ -183,7 +183,7 @@ public sealed class AspireInteractionDialog : IdeWindow
                     }
                     if (Owner is not MainWindow window)
                     {
-                        throw new InvalidOperationException("The notification needs its owning Passenger window to open a link.");
+                        throw new InvalidOperationException("The notification needs its owning Pitstop window to open a link.");
                     }
                     window.Browse(uri);
                     return Task.CompletedTask;

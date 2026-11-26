@@ -58,7 +58,7 @@ public static class Program
             previewer.Failed(e.Exception);
         };
         PreviewRequests<MauiPreviewRequest> requests = new();
-        Thread reading = new(() => requests.Read(input)) { IsBackground = true, Name = "Passenger preview requests" };
+        Thread reading = new(() => requests.Read(input)) { IsBackground = true, Name = "Pitstop preview requests" };
         reading.Start();
         while (requests.Next() is { } request)
         {

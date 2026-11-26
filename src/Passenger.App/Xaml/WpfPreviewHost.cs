@@ -36,7 +36,7 @@ internal sealed class WpfPreviewHost : ChildPreviewHost
         }
         if (!File.Exists(Previewer))
         {
-            preview.Say("WPF's previewer is missing from Passenger's folder (wpfpreview/)");
+            preview.Say("WPF's previewer is missing from Pitstop's folder (wpfpreview/)");
             return null;
         }
         if (await CopyAsync(preview, built) is not { } copied)

@@ -46,7 +46,7 @@ public sealed class MauiExpressionsDifferentialTests
                 if (Difference(made[i], generated[i]) is { } difference)
                 {
                     Node smallest = await ShrunkAsync(folder, made[i]);
-                    Assert.Fail($"Passenger and MAUI's source generator read expression {i} of seed {Seed} otherwise: {difference}\n"
+                    Assert.Fail($"Pitstop and MAUI's source generator read expression {i} of seed {Seed} otherwise: {difference}\n"
                         + $"The smallest expression found that still differs: {Difference(smallest, (await GeneratedAsync(folder, [smallest]))[0])}");
                 }
             }

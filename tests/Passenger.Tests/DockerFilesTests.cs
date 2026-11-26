@@ -129,7 +129,7 @@ public sealed class DockerFilesTests : IClassFixture<DockerFilesTests.Shop>
         try
         {
             CodeEditor editor = window.EditorArea.CodeEditor;
-            Assert.True(window.Settings.DockerHubTags, "Complete image tags from Docker Hub is off in a fresh Passenger");
+            Assert.True(window.Settings.DockerHubTags, "Complete image tags from Docker Hub is off in a fresh Pitstop");
             editor.ApplyEdits([new TextEdit(0, editor.Document.Snapshot.Length, "FROM postgres:1\n" + Shop.OpsDockerfile)]);
             Ui.PlaceAfter(editor, "FROM postgres:1");
             Ui.Run(window, AppActions.Complete);
@@ -994,7 +994,7 @@ public sealed class DockerFilesTests : IClassFixture<DockerFilesTests.Shop>
             string compose = File.ReadAllText(Path.Combine(folder, "compose.yaml"));
             Assert.Contains("    environment:\n"
                 + "      ConnectionStrings__Main: \"Host=postgres;Port=5432;Database=orders;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}\"\n"
-                + "      ConnectionStrings__Reports: \"Server=sqlserver,1433;Database=reports;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Passenger_dev1};TrustServerCertificate=True\"\n"
+                + "      ConnectionStrings__Reports: \"Server=sqlserver,1433;Database=reports;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Pitstop_dev1};TrustServerCertificate=True\"\n"
                 + "      ConnectionStrings__Cache: \"redis:6379\"\n    depends_on:\n", compose, StringComparison.Ordinal);
             Assert.DoesNotContain("ConnectionStrings__Local", compose, StringComparison.Ordinal);
             Assert.Contains("  postgres:\n    image: postgres:18\n    environment:\n      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}\n      POSTGRES_DB: orders\n"
@@ -1266,7 +1266,7 @@ public sealed class DockerFilesTests : IClassFixture<DockerFilesTests.Shop>
             platform: linux/amd64
             environment:
               ACCEPT_EULA: "Y"
-              MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Passenger_dev1}
+              MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-Pitstop_dev1}
             volumes:
               - sqlserver-data:/var/opt/mssql
             healthcheck:

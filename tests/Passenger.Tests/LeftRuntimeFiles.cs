@@ -45,7 +45,7 @@ public static partial class LeftRuntimeFiles
         }
         return $"{test}, or a class run beside it, left programs' runtime files in the run's temporary folder after the programs had gone, removed "
             + $"now: a .NET program killed leaves its diagnostic socket and debugger pipes, which pile up in the person's folder and slow every "
-            + $"diagnostics connection there, so Passenger takes them away for a program it ends (RuntimeFiles):\n{string.Join('\n', left.Select(Path.GetFileName))}";
+            + $"diagnostics connection there, so Pitstop takes them away for a program it ends (RuntimeFiles):\n{string.Join('\n', left.Select(Path.GetFileName))}";
     }
 
     /// <summary>The runtime files of a process and of all it started, read while they run, for a test's own kill of them

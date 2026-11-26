@@ -2,7 +2,7 @@ using System.Runtime.ExceptionServices;
 
 namespace Passenger.Core;
 
-/// <summary>The IDE's own log, passenger.log, and its list of errors, for code that knows nothing of the app: a line or an
+/// <summary>The IDE's own log, pitstop.log, and its list of errors, for code that knows nothing of the app: a line or an
 /// error from any thread goes where the app says as it starts (<see cref="Install"/>), a line written before then (the
 /// login shell's environment, read as the process starts) once it does, and what a program said that a line quotes
 /// masked by the app's mask for secrets. A line goes nowhere in a process that says nothing; an error is thrown again

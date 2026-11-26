@@ -27,7 +27,7 @@ public static partial class OwnDesktop
     /// Passenger; suspended until <see cref="OwnDesktopStart.Resume"/> where asked. What CreateProcess refuses, this throws.</summary>
     public static OwnDesktopStart Start(ProcessStartInfo start, bool suspended)
     {
-        string name = $"passenger-{Environment.ProcessId}-{Interlocked.Increment(ref made)}";
+        string name = $"pitstop-{Environment.ProcessId}-{Interlocked.Increment(ref made)}";
         nint desktop = CreateDesktopW(name, 0, 0, 0, GenericAll, 0);
         if (desktop == 0)
         {

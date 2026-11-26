@@ -29,7 +29,7 @@ public static partial class Trash
         {
             return MoveToMacTrash(path);
         }
-        string bin = Folder ?? throw new PlatformNotSupportedException("Passenger knows no Trash on this system");
+        string bin = Folder ?? throw new PlatformNotSupportedException("Pitstop knows no Trash on this system");
         Directory.CreateDirectory(bin);
         string name = Path.GetFileName(path);
         string target = Path.Combine(bin, name);

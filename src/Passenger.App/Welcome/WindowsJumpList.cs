@@ -5,7 +5,7 @@ using Passenger.Core;
 namespace Passenger.App.Welcome;
 
 /// <summary>The jump list of Passenger's taskbar button, pinned or running: its recent folders and solutions under Recent
-/// Solutions and its tasks, each a shell link starting Passenger.exe with its arguments. The list belongs to the process's
+/// Solutions and its tasks, each a shell link starting Pitstop.exe with its arguments. The list belongs to the process's
 /// AppUserModelID, the one the installer's shortcut carries (tools/package-win.sh), so it shows on a button pinned from
 /// either. The shell's COM objects are called by their vtable slots, as ShObjIdl_core.h numbers them, on a thread of a
 /// single-threaded apartment (the window's), every reference let go before it returns.</summary>
@@ -211,7 +211,7 @@ public static unsafe partial class WindowsJumpList
         return taken;
     }
 
-    /// <summary>A collection of links starting Passenger.exe, one for each shortcut, its words its title, its tip the
+    /// <summary>A collection of links starting Pitstop.exe, one for each shortcut, its words its title, its tip the
     /// link's description and its icon Passenger's.</summary>
     private static int Links(string exe, IReadOnlyList<RecentShortcut> shortcuts, out nint collection)
     {

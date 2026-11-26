@@ -22,11 +22,11 @@ public sealed partial record SimulatorApp(string Udid, string Simctl, string Pac
     public const string UnbufferedVariable = "NSUnbufferedIO";
 
     /// <summary>The relay's file name for an Apple platform, in its runtime identifier's folder of what Passenger carries.</summary>
-    public const string RelayFile = "libpassenger-debug.dylib";
+    public const string RelayFile = "libpitstop-debug.dylib";
 
     /// <summary>The port on this Mac the relay listens on in the app, chosen afresh for each session.</summary>
     [IdentifierHome]
-    public const string RelayPortVariable = "PASSENGER_DEBUG_PORT";
+    public const string RelayPortVariable = "PITSTOP_DEBUG_PORT";
 
     /// <summary>simctl's arguments starting the app afresh with its output on simctl's own (<c>--console</c>), until the app
     /// ends: what the Run window shows as the program. simctl says the app's process first (<see cref="StartedIn"/>).</summary>

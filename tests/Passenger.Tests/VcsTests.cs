@@ -592,7 +592,7 @@ public sealed partial class VcsTests : IDisposable
                 "git to make a reftable repository", TimeSpan.FromMinutes(1).Scaled() + TestFolders.Spare);
             Assert.SkipUnless(made.Succeeded, $"The git here makes no reftable repository (Git 2.45 and later do): {made.Error}{made.Output}");
             TestGit.Run(repository, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-            TestGit.Run(repository, "config", "user.name", "Passenger Tests");
+            TestGit.Run(repository, "config", "user.name", "Pitstop Tests");
             TestGit.Run(repository, "config", "core.autocrlf", "false");
             TestGit.Run(repository, "add", "-A");
             TestGit.Run(repository, "commit", "-q", "-m", "First");
@@ -1203,7 +1203,7 @@ public sealed partial class VcsTests : IDisposable
         string clone = TestFolders.Create("git-clone-");
         Git("clone", "-q", "-c", "core.autocrlf=false", folder, clone);
         TestGit.Run(clone, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        TestGit.Run(clone, "config", "user.name", "Passenger Tests");
+        TestGit.Run(clone, "config", "user.name", "Pitstop Tests");
         File.WriteAllText(Path.Combine(folder, "Shop.cs"), Original.Replace("int count", "long count", StringComparison.Ordinal));
         Git("commit", "-q", "-am", "Long");
         // The remote's side of the fetch says it is there, then stalls until go, a minute at most.
@@ -1294,7 +1294,7 @@ public sealed partial class VcsTests : IDisposable
         string clone = TestFolders.Create("git-clone-");
         Git("clone", "-q", "-c", "core.autocrlf=false", folder, clone);
         TestGit.Run(clone, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        TestGit.Run(clone, "config", "user.name", "Passenger Tests");
+        TestGit.Run(clone, "config", "user.name", "Pitstop Tests");
         File.WriteAllText(Path.Combine(folder, "Notes.txt"), Notes.Replace("one", "one, upstream", StringComparison.Ordinal));
         Git("commit", "-q", "-am", "Upstream");
         File.WriteAllText(Path.Combine(clone, "Local.cs"), "class Local { }\n");
@@ -1462,7 +1462,7 @@ public sealed partial class VcsTests : IDisposable
             File.WriteAllText(Path.Combine(tree, "Shop.cs"), Original);
             TestGit.Run(tree, "init", "-q", "-b", "main", "--object-format=sha256");
             TestGit.Run(tree, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-            TestGit.Run(tree, "config", "user.name", "Passenger Tests");
+            TestGit.Run(tree, "config", "user.name", "Pitstop Tests");
             TestGit.Run(tree, "config", "core.autocrlf", "false");
             TestGit.Run(tree, "add", "-A");
             TestGit.Run(tree, "commit", "-q", "-m", "First");
@@ -2118,7 +2118,7 @@ public sealed partial class VcsTests : IDisposable
         // A commit in the submodule, whose clone has no author of its own, then the window told of it.
         void Library(string message)
         {
-            TestGit.Run(lib, "-c", "user.name=Passenger Tests", "-c", "user.email=tests@passenger.invalid", "commit", "-q", "--allow-empty", "-m", message);
+            TestGit.Run(lib, "-c", "user.name=Pitstop Tests", "-c", "user.email=tests@passenger.invalid", "commit", "-q", "--allow-empty", "-m", message);
             Task reading = window.Vcs.RefreshAsync();
             Ui.Landed(() => reading.IsCompleted, "Git read again");
         }

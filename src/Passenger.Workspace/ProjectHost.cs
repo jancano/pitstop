@@ -133,14 +133,14 @@ public sealed class ProjectHost : IAsyncDisposable
         // Translated, the host is x64 code, and an Arm64 SDK's MSBuild would end it as it loads.
         if (Dotnet.Translated && !Dotnet.IsX64(dotnet))
         {
-            string said = $"{dotnet} is no x64 program, and this x64 Passenger loads MSBuild only from an x64 .NET SDK";
+            string said = $"{dotnet} is no x64 program, and this x64 Pitstop loads MSBuild only from an x64 .NET SDK";
             throw new ProjectHostFailed(said) { MissingSdk = MissingSdk.OtherProcessor(said) };
         }
         // An x64 dotnet with no SDK, where the system's own has one, is the same want: the host would load none.
         if (Dotnet.Translated && DotnetMachine.Read(folder).SystemsOwn is { } own)
         {
             string said = $"{Path.GetDirectoryName(PathNames.Canonical(dotnet))} holds no .NET SDK, and the .NET SDK {own.NewestSdk} in {own.Root} is the system's "
-                + "own processor's: this x64 Passenger loads MSBuild only from an x64 .NET SDK";
+                + "own processor's: this x64 Pitstop loads MSBuild only from an x64 .NET SDK";
             throw new ProjectHostFailed(said) { MissingSdk = MissingSdk.OtherProcessor(said) };
         }
         ProcessStartInfo start;

@@ -49,7 +49,7 @@ public sealed class AspireContainerRecoveryTests
         var entry = new
         {
             id = RecordedId,
-            name = "passenger-session-cache",
+            name = "pitstop-session-cache",
             uid = "cache-resource",
             appHost = Hash(Path.Combine(state, "Host.csproj")),
             engine = scenario == "engine-mismatch" ? Hash("another engine") : fingerprint,
@@ -134,7 +134,7 @@ public sealed class AspireContainerRecoveryTests
         File.WriteAllText(Path.Combine(folder, "inspect.json"), scenario == "gone" ? string.Empty : JsonSerializer.Serialize(new
         {
             ID = scenario == "unknown-id" ? UnrecordedId : RecordedId,
-            Names = scenario == "renamed" ? "renamed-by-user" : "passenger-session-cache",
+            Names = scenario == "renamed" ? "renamed-by-user" : "pitstop-session-cache",
             Labels = scenario == "persistent" ? "com.microsoft.developer.usvc-dev.persistent=true" : "com.microsoft.developer.usvc-dev.persistent=false",
         }) + "\n");
         File.WriteAllText(cli, string.Join('\n',

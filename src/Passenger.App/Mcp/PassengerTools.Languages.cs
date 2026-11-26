@@ -47,7 +47,7 @@ public sealed partial class PassengerTools
 
     /// <summary>What a tool says of a language that has no such command: plainly, naming the language and what it has instead.</summary>
     private static InvalidOperationException Lacks(Served served, string command, string instead) =>
-        new($"{served.Language} files have no {command} in Passenger, so {Path.GetFileName(served.Document.Path)} has none: {instead}");
+        new($"{served.Language} files have no {command} in Pitstop, so {Path.GetFileName(served.Document.Path)} has none: {instead}");
 
     private const string MSBuildHas = "definition goes to where a property, item, target, import or SDK is defined, symbol_info says a property's "
         + "value and where it was set, outline gives its elements, and diagnostics its evaluation's problems";
@@ -75,11 +75,11 @@ public sealed partial class PassengerTools
         {
             if (Session.Xaml.For(document) is not { } xaml)
             {
-                throw new InvalidOperationException($"{name} is in no C# project, so Passenger's XAML does not read it");
+                throw new InvalidOperationException($"{name} is in no C# project, so Pitstop's XAML does not read it");
             }
             XamlFile? file = await xaml.FileAsync().WaitAsync(ServerLimit, cancel);
             return file is null
-                ? throw new InvalidOperationException($"{name} is not XAML of an Avalonia or WPF project: Passenger reads the XAML of a project that references Avalonia or WPF")
+                ? throw new InvalidOperationException($"{name} is not XAML of an Avalonia or WPF project: Pitstop reads the XAML of a project that references Avalonia or WPF")
                 : new XamlServed(document, xaml, file);
         }
         if (Session.MSBuild.For(document) is { } msbuild)
@@ -127,7 +127,7 @@ public sealed partial class PassengerTools
             (_, LspDocument lsp) = await Code(path, cancel, takenIn);
             return new ServerServed(document, document.Language.Name, lsp);
         }
-        throw new InvalidOperationException($"Passenger has no code help for {LanguageOf(document)} files such as {name}: the code tools answer C#, Razor, "
+        throw new InvalidOperationException($"Pitstop has no code help for {LanguageOf(document)} files such as {name}: the code tools answer C#, Razor, "
             + "XAML, JavaScript, TypeScript, HTML, CSS, SCSS, Less, JSON, YAML, Dockerfiles, MSBuild files, Gherkin's .feature files and Godot's scenes and shaders");
     }
 
@@ -354,7 +354,7 @@ public sealed partial class PassengerTools
         }
         if (await window.Assist.Languages.Xaml.XamlRenameAsync(xaml.Document.Path, old, newName, patience) is not { } renamed)
         {
-            throw new InvalidOperationException($"{Path.GetFileName(xaml.Document.Path)} is no longer XAML Passenger reads");
+            throw new InvalidOperationException($"{Path.GetFileName(xaml.Document.Path)} is no longer XAML Pitstop reads");
         }
         if (renamed.Problem is { } refused)
         {

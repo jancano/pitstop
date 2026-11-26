@@ -617,7 +617,7 @@ public static partial class OpenApiRequests
             : parameter.Name;
 
     /// <summary>The boundary between a multipart body's parts.</summary>
-    private const string Boundary = "passenger";
+    private const string Boundary = "pitstop";
 
     /// <summary>An object schema's fields in order, those of its parts first as a body's are, each reference followed once.</summary>
     private static IEnumerable<(string Name, JsonElement Schema)> Fields(OpenApiDocument document, JsonElement written, HashSet<string> followed)

@@ -8,7 +8,7 @@ namespace Passenger.Core;
 public static class Waits
 {
     [IdentifierHome]
-    public const string ScaleVariable = "PASSENGER_WAIT_SCALE";
+    public const string ScaleVariable = "PITSTOP_WAIT_SCALE";
 
     public static double Scale => Environment.GetEnvironmentVariable(ScaleVariable) is { Length: > 0 } given
         ? double.TryParse(given, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out double scale) && scale > 0 && double.IsFinite(scale)

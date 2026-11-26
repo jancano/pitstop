@@ -19,7 +19,7 @@ public class NuGetScratchTests
                 $"{NuGetScratch.Variable} names this process's scratch, which NuGet then takes as it is, and a program is not given another");
             string taken = NuGet.Common.NuGetEnvironment.GetFolderPath(NuGet.Common.NuGetFolderPath.Temp);
             Assert.True(NuGetScratch.Shared() == taken,
-                $"A C# language server's restores would take {NuGetScratch.Shared()} for NuGet's scratch, where Passenger's own take {taken}: their extraction locks apart");
+                $"A C# language server's restores would take {NuGetScratch.Shared()} for NuGet's scratch, where Pitstop's own take {taken}: their extraction locks apart");
         }));
 
 }

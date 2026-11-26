@@ -412,7 +412,7 @@ public sealed class StateDocument<T> where T : class, IStateDocument<T>, new()
         }
         if (flushing)
         {
-            StateFile.Log($"{Path} could not be written as it was flushed ({error.Message}): it is tried again while Passenger runs, and as it ends");
+            StateFile.Log($"{Path} could not be written as it was flushed ({error.Message}): it is tried again while Pitstop runs, and as it ends");
         }
         else if (tries == 1)
         {
@@ -456,7 +456,7 @@ public sealed class StateDocument<T> where T : class, IStateDocument<T>, new()
         }
         catch (Exception error) when (StateFile.DoesNotRead(error))
         {
-            if (StateFile.SetAside(Path, error, "what this Passenger has in force is written in its place"))
+            if (StateFile.SetAside(Path, error, "what this Pitstop has in force is written in its place"))
             {
                 return ([], 0);
             }
@@ -554,7 +554,7 @@ internal static class StateFile
         }
         catch (IOException refused)
         {
-            Log($"{path} is read without its lock, which another Passenger held past {Durations.Said(HeldFor)} ({refused.Message})");
+            Log($"{path} is read without its lock, which another Pitstop held past {Durations.Said(HeldFor)} ({refused.Message})");
         }
         catch (UnauthorizedAccessException)
         {
@@ -603,7 +603,7 @@ internal static class StateFile
         }
         foreach ((string path, Action<TimeSpan> _) in Unwritten.Values)
         {
-            Log($"{path} could not be written before Passenger ended: its change is lost");
+            Log($"{path} could not be written before Pitstop ended: its change is lost");
         }
     }
 

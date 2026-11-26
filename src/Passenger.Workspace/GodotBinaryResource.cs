@@ -98,7 +98,7 @@ public sealed class GodotBinaryResource
             uint format = reader.UInt32();
             if (format is < OldestFormat or > NewestFormat || major > NewestEngine)
             {
-                unread = $"Godot {major}.{minor} wrote it in the binary format {format}, which Passenger doesn't rewrite";
+                unread = $"Godot {major}.{minor} wrote it in the binary format {format}, which Pitstop doesn't rewrite";
                 return null;
             }
             reader.Skip();
@@ -233,7 +233,7 @@ public sealed class GodotBinaryResource
         uint total = BinaryPrimitives.ReadUInt32LittleEndian(bytes[12..]);
         if (mode != Zstandard)
         {
-            unread = "it is compressed by another method than Godot's Zstandard, which Passenger doesn't read";
+            unread = "it is compressed by another method than Godot's Zstandard, which Pitstop doesn't read";
             return null;
         }
         long count = size == 0 ? 0 : total / size + 1;

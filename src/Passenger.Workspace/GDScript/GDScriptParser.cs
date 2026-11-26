@@ -19,7 +19,7 @@ internal sealed partial class GDScriptParser
 
     /// <summary>What is said where a script goes past <see cref="DeepestNesting"/> or past the stack the parse has left: no
     /// error, as Godot may well read it, and with what follows unread nothing else is said of the script but its parse's errors.</summary>
-    internal const string TooDeep = "Passenger read no deeper than this, so the rest of the script is unread and unmarked and the script's types and warnings aren't checked.";
+    internal const string TooDeep = "Pitstop read no deeper than this, so the rest of the script is unread and unmarked and the script's types and warnings aren't checked.";
 
     [Flags]
     private enum Targets

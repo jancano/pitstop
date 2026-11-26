@@ -395,8 +395,8 @@ public sealed class DebugSession
     /// under the state folder's cache/.</summary>
     public static string SymbolCache => Path.Combine(Passenger.App.State.StateStore.DefaultRoot, "cache", "symbols");
 
-    /// <summary>Where an adapter in a container keeps the engine's log while PASSENGER_ENGINE_LOG asks for one.</summary>
-    public const string ContainerEngineLog = "/tmp/passenger-engine.log";
+    /// <summary>Where an adapter in a container keeps the engine's log while PITSTOP_ENGINE_LOG asks for one.</summary>
+    public const string ContainerEngineLog = "/tmp/pitstop-engine.log";
 
     /// <summary>Starts the adapter and launches a plan's program under it (a .dll under dotnet, or an executable), with the
     /// store's breakpoints. What the program writes, and the debugger's own words ("console"), go to
@@ -513,8 +513,8 @@ public sealed class DebugSession
         {
             DapCapabilities capabilities = await session.connection.RequestAsync<DapCapabilities>(DapCommands.Initialize, new InitializeArguments
             {
-                ClientId = "passenger",
-                ClientName = "Passenger",
+                ClientId = "pitstop",
+                ClientName = "Pitstop",
                 AdapterId = engine switch { DebugEngine.GDScript => "gdscript", DebugEngine.WebAssembly => "webassembly", _ => "coreclr" },
                 LinesStartAt1 = true,
                 ColumnsStartAt1 = true,
@@ -861,17 +861,17 @@ public sealed class DebugSession
             {
                 said = string.Join('\n', errors);
             }
-            IdeErrors.Write($"Passenger's debugger ({adapter.Described}) stopped with {ExitCodes.Said(code)} debugging {Program}"
+            IdeErrors.Write($"Pitstop's debugger ({adapter.Described}) stopped with {ExitCodes.Said(code)} debugging {Program}"
                 + (said.Length > 0 ? $":\n{said}" : string.Empty));
             if (State != DebugState.Ended && !programEnded)
             {
                 Failure = $"the debugger itself stopped ({ExitCodes.Said(code)})";
-                log($"Passenger's debugger stopped unexpectedly with {ExitCodes.Said(code)}");
+                log($"Pitstop's debugger stopped unexpectedly with {ExitCodes.Said(code)}");
             }
             else if (State != DebugState.Ended)
             {
                 // Its debugging library can crash tearing down after the program has gone, whose end was told already.
-                log($"Passenger's debugger stopped with {ExitCodes.Said(code)} after the program ended");
+                log($"Pitstop's debugger stopped with {ExitCodes.Said(code)} after the program ended");
             }
         }
         EndLaunched(log);

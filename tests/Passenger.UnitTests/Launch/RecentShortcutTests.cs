@@ -25,7 +25,7 @@ public class RecentShortcutTests
         Assert.True(listed.Select(l => (l.Path, l.Shortcut.Title)).SequenceEqual(newest),
             $"The list would not keep the order and names given: {string.Join(", ", listed.Select(l => $"{l.Shortcut.Title} ({l.Path})"))}");
         Assert.True(listed.All(l => l.Shortcut.Arguments.SequenceEqual([l.Path]) && l.Shortcut.Tip == l.Path),
-            $"An entry would start Passenger on something other than its path, or tip another: {string.Join("; ", listed.Select(l => $"{string.Join(' ', l.Shortcut.Arguments)} / {l.Shortcut.Tip}"))}");
+            $"An entry would start Pitstop on something other than its path, or tip another: {string.Join("; ", listed.Select(l => $"{string.Join(' ', l.Shortcut.Arguments)} / {l.Shortcut.Tip}"))}");
     }
 
     private void One_gone_from_disk_is_left_out_and_only_those_read_are_looked_for()

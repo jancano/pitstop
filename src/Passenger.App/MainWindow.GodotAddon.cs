@@ -27,7 +27,7 @@ public partial class MainWindow
         Action<string, byte[]?, byte[]> wrote = (path, _, _) => WroteForGodot(path);
         Text.FileText.Wrote += wrote;
         Closed += (_, _) => Text.FileText.Wrote -= wrote;
-        actions!.Add(new IdeAction(AppActions.GodotAddon, "Install Passenger's Godot Addon…", "Godot", _ => IdeErrors.Observe(InstallGodotAddonAsync()))
+        actions!.Add(new IdeAction(AppActions.GodotAddon, "Install Pitstop's Godot Addon…", "Godot", _ => IdeErrors.Observe(InstallGodotAddonAsync()))
         {
             WhyNot = _ => Folder is null ? Refusals.NoFolder : GodotAtHand() is null ? Refusals.NoGodotProject : null,
             Menus = [new MenuPlace("Tools", 0, 7)],
@@ -83,26 +83,26 @@ public partial class MainWindow
         string shown = PathNames.Shown(plan.Folder, Folder);
         if (plan.Newer is { } newer)
         {
-            return Said(working, true, $"{shown} holds a newer Passenger's addon (version {newer}), left as it is");
+            return Said(working, true, $"{shown} holds a newer Pitstop's addon (version {newer}), left as it is");
         }
         if (plan.Done)
         {
-            return Said(working, true, $"Passenger's addon is installed in {shown} and enabled in {GodotProject.FileName}");
+            return Said(working, true, $"Pitstop's addon is installed in {shown} and enabled in {GodotProject.FileName}");
         }
         string listed = string.Join(Environment.NewLine, [
             .. plan.Files.Select(f => $"{PathNames.Shown(f.Path, Folder)} ({(f.Made ? "new" : "updated")})"),
             .. plan.Project is null ? [] : new[] { $"{PathNames.Shown(file, Folder)} (the addon enabled)" }]);
         if (ask)
         {
-            working.Say("Asking to install Passenger's addon");
-            if (!await ConfirmAsync("Install Passenger's Godot Addon?", $"{AddonDoes(folder)} Passenger writes these; Godot's editor takes the addon as it next opens the project.",
+            working.Say("Asking to install Pitstop's addon");
+            if (!await ConfirmAsync("Install Pitstop's Godot Addon?", $"{AddonDoes(folder)} Pitstop writes these; Godot's editor takes the addon as it next opens the project.",
                 plan.Updated ? "Update Addon" : "Install Addon", Copyable(listed)))
             {
-                return Said(working, false, "Passenger's addon was not installed");
+                return Said(working, false, "Pitstop's addon was not installed");
             }
         }
         List<string> paths = [.. plan.Files.Select(f => f.Path), .. plan.Project is null ? [] : new[] { file }];
-        string? refused = await ChangeFileAsync(plan.Updated ? "Update Passenger's Godot Addon" : "Install Passenger's Godot Addon", paths, () =>
+        string? refused = await ChangeFileAsync(plan.Updated ? "Update Pitstop's Godot Addon" : "Install Pitstop's Godot Addon", paths, () =>
         {
             // project.godot as it is once the gate is passed, with what Godot's editor or the person saved while asked.
             FileText? settings = plan.Project is null ? null : FileText.Load(file);
@@ -129,11 +129,11 @@ public partial class MainWindow
         });
         if (refused is not null)
         {
-            return Said(working, false, $"Passenger's addon could not be written: {refused}");
+            return Said(working, false, $"Pitstop's addon could not be written: {refused}");
         }
         Editors.GodotPages?.Refresh();
-        return Said(working, true, $"Passenger's addon is {(plan.Updated ? "updated" : "installed")} in {shown} and enabled in {GodotProject.FileName}: "
-            + "once Godot's editor opens the project again, its Play builds here and this Passenger debugs what it plays");
+        return Said(working, true, $"Pitstop's addon is {(plan.Updated ? "updated" : "installed")} in {shown} and enabled in {GodotProject.FileName}: "
+            + "once Godot's editor opens the project again, its Play builds here and this Pitstop debugs what it plays");
 
         // Asked beside the script editor's settings, the words are that action's to tell.
         string? Said(Working work, bool succeeded, string said)
@@ -148,9 +148,9 @@ public partial class MainWindow
 
     /// <summary>What the addon gives, said before it is written.</summary>
     private string AddonDoes(string folder) =>
-        $"With Passenger's addon in {Path.GetFileName(folder)}, Godot's Play builds the game's C# in this window, its errors in Problems; each game Play starts "
-        + "shows in the Live Visual Tree, its errors pinned to their lines, and this Passenger's debugger attaches to it, so a breakpoint set here stops it; "
-        + "Stop here lets the game go on. With Passenger closed, Godot plays as it always did.";
+        $"With Pitstop's addon in {Path.GetFileName(folder)}, Godot's Play builds the game's C# in this window, its errors in Problems; each game Play starts "
+        + "shows in the Live Visual Tree, its errors pinned to their lines, and this Pitstop's debugger attaches to it, so a breakpoint set here stops it; "
+        + "Stop here lets the game go on. With Pitstop closed, Godot plays as it always did.";
 
     /// <summary>Listens for Godot's editors on each of the open folder's Godot projects where a person's window keeps it.</summary>
     private void ListenForGodotEditors()
@@ -178,7 +178,7 @@ public partial class MainWindow
                     SelectOnConnect(editor);
                 }
                 status.Text = link.Editors.Count > 0
-                    ? $"Godot's editor on {Plural.Listed([.. link.Editors.Select(e => Path.GetFileName(e.Project)).Distinct(PathNames.Comparer)])} is connected: its Play builds here, and this Passenger shows what it plays"
+                    ? $"Godot's editor on {Plural.Listed([.. link.Editors.Select(e => Path.GetFileName(e.Project)).Distinct(PathNames.Comparer)])} is connected: its Play builds here, and this Pitstop shows what it plays"
                     : "Godot's editor let go of this window";
             }
         };

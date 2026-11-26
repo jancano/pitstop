@@ -167,7 +167,7 @@ public sealed class GDScriptTests
         if (recovering)
         {
             Ui.Hold(TimeSpan.FromSeconds(25), "the plugin's saves, as it loads and 20 s after, were it to run in the headless editor");
-            Assert.False(File.Exists(marker), "The project's editor plugin ran in Passenger's headless editor, which from Godot 4.5 runs in recovery mode");
+            Assert.False(File.Exists(marker), "The project's editor plugin ran in Pitstop's headless editor, which from Godot 4.5 runs in recovery mode");
         }
         else
         {
@@ -210,7 +210,7 @@ public sealed class GDScriptTests
         Ui.Settle();
         Assert.Null(window.OpenFile(Path.Combine(folder, "main.gd")));
         OpenDocument document = window.EditorArea.Active!;
-        Ui.PumpUntil(() => HeadlessEditorsOn(folder) > 0, "Passenger's headless Godot editor to start on the project", TimeSpan.FromSeconds(60));
+        Ui.PumpUntil(() => HeadlessEditorsOn(folder) > 0, "Pitstop's headless Godot editor to start on the project", TimeSpan.FromSeconds(60));
         Assert.True(window.Session.Web?.For(document)?.Lsp is null, "Godot's server answered before the test could write as it starts");
         // As the server starts, a checkout: a new project.godot and a file beside it, each written whole and moved into its place.
         Replace(settings, File.ReadAllText(settings) + "\n[passenger_test]\n\nchecked_out=true\n");
@@ -297,7 +297,7 @@ public sealed class GDScriptTests
         Ui.Settle();
         Assert.Null(window.OpenFile(Path.Combine(folder, "main.gd")));
         OpenDocument document = window.EditorArea.Active!;
-        Ui.PumpUntil(() => HeadlessEditorsOn(folder) > 0, "Passenger's headless Godot editor to start on the project", TimeSpan.FromSeconds(60));
+        Ui.PumpUntil(() => HeadlessEditorsOn(folder) > 0, "Pitstop's headless Godot editor to start on the project", TimeSpan.FromSeconds(60));
         Assert.True(window.Session.Web?.For(document)?.Lsp is null, "Godot's server answered before the test could write as it starts");
         return (window, document);
     }
@@ -319,7 +319,7 @@ public sealed class GDScriptTests
             Ui.WaitFor(() => MetaPort(meta) == PersonsPort, () => $"the person's editor to write its messaging file ({Shown(meta)})");
             Ui.WaitFor(Done, "the headless editor's start work done", TimeSpan.FromMinutes(2));
             Assert.True(MetaPort(meta) == PersonsPort,
-                $"The messaging file the person's own editor made as the headless editor started was taken away or written over, so Passenger would not find that editor:\n{Shown(meta)}");
+                $"The messaging file the person's own editor made as the headless editor started was taken away or written over, so Pitstop would not find that editor:\n{Shown(meta)}");
         }
         finally
         {

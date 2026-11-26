@@ -31,7 +31,7 @@ static func asked(method: String, params: Dictionary) -> Variant:
 			return _select(root, str(params.get("node", ".")), bool(params.get("front", false)))
 		"scene_change":
 			return _change(root, params)
-	return "Passenger's addon takes no %s" % method
+	return "Pitstop's addon takes no %s" % method
 
 
 static func _read(root: Node) -> Dictionary:
@@ -100,7 +100,7 @@ static func _set_properties(root: Node, node: Node, given: Variant, undo: Editor
 	if values.is_empty():
 		return "set names no property: properties gives each one's value"
 	var names := ", ".join(PackedStringArray(values.keys()))
-	undo.create_action("Passenger: set %s of %s" % [names, node.name], UndoRedo.MERGE_DISABLE, root)
+	undo.create_action("Pitstop: set %s of %s" % [names, node.name], UndoRedo.MERGE_DISABLE, root)
 	for name in values:
 		undo.add_do_property(node, name, values[name])
 		undo.add_undo_property(node, name, node.get(name))
@@ -120,7 +120,7 @@ static func _add(root: Node, parent: Node, params: Dictionary, undo: EditorUndoR
 		return values
 	for name in values:
 		made.set(name, values[name])
-	undo.create_action("Passenger: add %s" % made.name, UndoRedo.MERGE_DISABLE, root)
+	undo.create_action("Pitstop: add %s" % made.name, UndoRedo.MERGE_DISABLE, root)
 	undo.add_do_method(parent, "add_child", made, true)
 	undo.add_do_method(made, "set_owner", root)
 	if params.has("index"):
@@ -167,7 +167,7 @@ static func _move(root: Node, node: Node, params: Dictionary, undo: EditorUndoRe
 	var owned := _owned(root, node)
 	var before := _path(root, node)
 	var after := ("" if to == root else _path(root, to) + "/") + str(node.name)
-	undo.create_action("Passenger: move %s" % node.name, UndoRedo.MERGE_DISABLE, root)
+	undo.create_action("Pitstop: move %s" % node.name, UndoRedo.MERGE_DISABLE, root)
 	# The scene's paths to the node and below it, and theirs to elsewhere, as Godot's own reparent writes them again.
 	for each in _repathed(root, before, after):
 		undo.add_do_property(each[0], each[1], each[3])
@@ -308,7 +308,7 @@ static func _remove(root: Node, node: Node, undo: EditorUndoRedoManager) -> Vari
 	var parent := node.get_parent()
 	var at := node.get_index()
 	var owned := _owned(root, node)
-	undo.create_action("Passenger: remove %s" % node.name, UndoRedo.MERGE_DISABLE, root)
+	undo.create_action("Pitstop: remove %s" % node.name, UndoRedo.MERGE_DISABLE, root)
 	# The scene's paths to the node and below it are emptied, as Godot's own delete leaves them.
 	for each in _repathed(root, path, ""):
 		undo.add_do_property(each[0], each[1], each[3])
@@ -336,7 +336,7 @@ static func _connect(root: Node, node: Node, params: Dictionary, undo: EditorUnd
 	var callable := Callable(target, method_name)
 	if node.is_connected(signal_name, callable):
 		return "%s's %s already calls %s on %s" % [_path(root, node), signal_name, method_name, _path(root, target)]
-	undo.create_action("Passenger: connect %s to %s" % [signal_name, method_name], UndoRedo.MERGE_DISABLE, root)
+	undo.create_action("Pitstop: connect %s to %s" % [signal_name, method_name], UndoRedo.MERGE_DISABLE, root)
 	undo.add_do_method(node, "connect", signal_name, callable, CONNECT_PERSIST)
 	undo.add_undo_method(node, "disconnect", signal_name, callable)
 	undo.commit_action()

@@ -49,7 +49,7 @@ public sealed class FolderWatching
         long? limit = long.TryParse(Read(LimitPath), out long read) ? read : null;
         long raised = limit >= Suggested ? limit.Value * 2 : Suggested;
         string now = limit is null ? "" : $" is {limit}";
-        return "Changes made outside Passenger in some folders will go unseen: the inotify watches this user's programs share "
+        return "Changes made outside Pitstop in some folders will go unseen: the inotify watches this user's programs share "
             + $"ran out (fs.inotify.max_user_watches{now}). To raise the limit, run echo fs.inotify.max_user_watches={raised} "
             + "| sudo tee /etc/sysctl.d/90-inotify.conf && sudo sysctl --system, then open the folder again.";
     }

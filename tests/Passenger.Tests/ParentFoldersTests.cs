@@ -120,8 +120,8 @@ public sealed class ParentFoldersTests : IDisposable
             window = Open(app, "main.ts");
             try
             {
-                Ui.WaitFor(() => window.LanguageShown?.Contains("(Passenger's)", StringComparison.Ordinal) == true,
-                    () => $"the status bar to name Passenger's TypeScript under the parent another user owns ({window.LanguageShown})");
+                Ui.WaitFor(() => window.LanguageShown?.Contains("(Pitstop's)", StringComparison.Ordinal) == true,
+                    () => $"the status bar to name Pitstop's TypeScript under the parent another user owns ({window.LanguageShown})");
                 Assert.False(File.Exists(ran), $"The TypeScript in {parent}, which another user owns, ran for the folder below it");
             }
             finally
@@ -135,7 +135,7 @@ public sealed class ParentFoldersTests : IDisposable
         {
             Ui.WaitFor(() => File.Exists(ran), () => $"the TypeScript in the person's own parent folder to run ({window.LanguageShown})");
             Ui.WaitFor(() => window.LanguageShown?.Contains("TypeScript", StringComparison.Ordinal) == true
-                && !window.LanguageShown.Contains("(Passenger's)", StringComparison.Ordinal),
+                && !window.LanguageShown.Contains("(Pitstop's)", StringComparison.Ordinal),
                 () => $"the status bar to name the project's own TypeScript ({window.LanguageShown})");
         }
         finally

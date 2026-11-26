@@ -115,19 +115,19 @@ public sealed record ContainerReach(ContainerEngine Engine, string Container, st
 /// else copied to <see cref="Copied"/>. Any thread: nothing here touches the window.</summary>
 public static class ContainerTools
 {
-    public const string Executable = "passenger-tools";
+    public const string Executable = "pitstop-tools";
 
     /// <summary>Where the tools are mounted, read-only, into a container Passenger starts for debugging or profiling.</summary>
-    public const string Mounted = "/passenger/tools";
+    public const string Mounted = "/pitstop/tools";
 
     /// <summary>Where they are copied into a container Passenger did not start (or whose engine cannot see this machine's files).</summary>
-    public const string Copied = "/tmp/passenger-tools";
+    public const string Copied = "/tmp/pitstop-tools";
 
     /// <summary>Where the adapter in a container keeps the symbols it decompiles.</summary>
-    public const string SymbolCache = "/tmp/passenger-symbols";
+    public const string SymbolCache = "/tmp/pitstop-symbols";
 
     /// <summary>The release's archive of the tools for a system, by the fixed name the release workflow gives it.</summary>
-    public static string Asset(string rid) => $"Passenger-container-tools-{rid}.tar.gz";
+    public static string Asset(string rid) => $"Pitstop-container-tools-{rid}.tar.gz";
 
     /// <summary>A <c>-v</c> value (or a Compose service's <c>volumes:</c> entry) that mounts the tools' folder on this machine
     /// read-only at <see cref="Mounted"/>: what a container run configuration adds to a container it starts for Debug.</summary>
@@ -155,7 +155,7 @@ public static class ContainerTools
                 if (VersionOf(folder) is { } other && other != version)
                 {
                     stale = $"the copy at {folder} is version {other}";
-                    IdeLog.Write(IdeLog.Debugger, $"Passenger's container tools at {folder} are version {other}, not {version}: passed over");
+                    IdeLog.Write(IdeLog.Debugger, $"Pitstop's container tools at {folder} are version {other}, not {version}: passed over");
                     continue;
                 }
                 return folder;
@@ -165,6 +165,11 @@ public static class ContainerTools
         if (File.Exists(Path.Combine(cached, Executable)))
         {
             return cached;
+        }
+        if (!source.Releases.Enabled)
+        {
+            string detail = stale is null ? string.Empty : $" ({stale})";
+            throw new ContainerToolsException($"Pitstop's container tools for {rid} are unavailable{detail}. Build them with just container-tools {rid}.");
         }
         // One download a system at a time in this process; another process's is kept as it lands (DownloadAsync).
         SemaphoreSlim one = Downloads.GetOrAdd(cached, _ => new SemaphoreSlim(1, 1));
@@ -179,7 +184,7 @@ public static class ContainerTools
         }
         catch (ContainerToolsException failed) when (stale is not null)
         {
-            throw new ContainerToolsException($"{failed.Message} ({stale}, not this Passenger's {version}: just container-tools {rid} makes this version's)");
+            throw new ContainerToolsException($"{failed.Message} ({stale}, not this Pitstop's {version}: just container-tools {rid} makes this version's)");
         }
         finally
         {
@@ -207,7 +212,7 @@ public static class ContainerTools
         string unpacking = Path.Combine(parent, $".{rid}.{Guid.NewGuid():N}");
         try
         {
-            say?.Invoke($"Downloading Passenger's container tools for {rid}");
+            say?.Invoke($"Downloading Pitstop's container tools for {rid}");
             string sums = await Releases.ReadTextAsync(new ReleaseFile("SHA256SUMS", new Uri(release, "SHA256SUMS"), 0), cancel).ConfigureAwait(false);
             string? expected = sums.Split('\n').Select(line => line.Trim().Split(' ', 2, StringSplitOptions.TrimEntries))
                 .FirstOrDefault(parts => parts.Length == 2 && parts[1].TrimStart('*') == asset)?[0].ToLowerInvariant();
@@ -216,7 +221,7 @@ public static class ContainerTools
                 throw new ContainerToolsException($"The {tag} release's SHA256SUMS lists no {asset}");
             }
             string got = await Releases.DownloadAsync(new ReleaseFile(asset, new Uri(release, asset), 0), archive,
-                percent => say?.Invoke($"Downloading Passenger's container tools for {rid}: {percent}%"), cancel).ConfigureAwait(false);
+                percent => say?.Invoke($"Downloading Pitstop's container tools for {rid}: {percent}%"), cancel).ConfigureAwait(false);
             if (got != expected)
             {
                 IdeLog.Write(IdeLog.Debugger, $"{asset} of {tag} has SHA-256 {got}, where SHA256SUMS says {expected}: refused");
@@ -249,13 +254,13 @@ public static class ContainerTools
         }
         catch (Exception failed) when (failed is UpdateFailedException or UpdateRefusedException)
         {
-            throw new ContainerToolsException($"Passenger's container tools for {rid} could not be downloaded ({failed.Message})"
+            throw new ContainerToolsException($"Pitstop's container tools for {rid} could not be downloaded ({failed.Message})"
                 + (Product.Version.StartsWith("0.1.", StringComparison.Ordinal) || !File.Exists(Path.Combine(AppContext.BaseDirectory, "LICENSE.txt"))
                     ? $"; a build of your own makes them with just container-tools {rid}" : string.Empty));
         }
         catch (Exception failed) when (failed is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            throw new ContainerToolsException($"Passenger's container tools for {rid} could not be unpacked: {failed.Message}");
+            throw new ContainerToolsException($"Pitstop's container tools for {rid} could not be unpacked: {failed.Message}");
         }
         finally
         {
@@ -278,9 +283,9 @@ public static class ContainerTools
         string? tools = await InContainerAsync(engine, container, cancel).ConfigureAwait(false);
         if (tools is null)
         {
-            string rid = system.Rid ?? throw new ContainerToolsException($"{container}'s image is for {system.Architecture}, for which Passenger has no container tools");
+            string rid = system.Rid ?? throw new ContainerToolsException($"{container}'s image is for {system.Architecture}, for which Pitstop has no container tools");
             string folder = await FolderAsync(source, rid, say, cancel).ConfigureAwait(false);
-            say?.Invoke($"Copying Passenger's container tools into {container}");
+            say?.Invoke($"Copying Pitstop's container tools into {container}");
             tools = await CopyIntoAsync(engine, container, folder, cancel).ConfigureAwait(false);
         }
         return new ContainerReach(engine, container, tools, system.Architecture == architecture ? null : Emulation(system.Architecture, architecture));
@@ -428,20 +433,20 @@ public static class ContainerTools
         ChildResult copied = await engine.RunAsync(["cp", Path.Combine(folder, "."), $"{container}:{Copied}"], TimeSpan.FromMinutes(2), cancel).ConfigureAwait(false);
         if (!copied.Succeeded)
         {
-            throw new ContainerToolsException($"Could not copy Passenger's container tools into {container}: {ContainerEngine.Said(copied)}");
+            throw new ContainerToolsException($"Could not copy Pitstop's container tools into {container}: {ContainerEngine.Said(copied)}");
         }
         string executable = $"{Copied}/{Executable}";
         ChildResult said = await engine.RunAsync(["exec", .. Unheld, container, executable, Profiler.ContainerToolsWords.Version], cancel: cancel).ConfigureAwait(false);
         if (said.Output.Trim() != version)
         {
             throw new ContainerToolsException(said.Succeeded ? Mismatch(folder, said.Output.Trim())
-                : $"Passenger's container tools copied into {container} did not run: {ContainerEngine.Said(said)}");
+                : $"Pitstop's container tools copied into {container} did not run: {ContainerEngine.Said(said)}");
         }
         CopiedInto[container] = Copied;
         return executable;
 
         static string Mismatch(string folder, string other) =>
-            $"Passenger's container tools at {folder} are version {other}, and this Passenger is {Product.Version}: they were not used "
+            $"Pitstop's container tools at {folder} are version {other}, and this Pitstop is {Product.Version}: they were not used "
             + $"(just container-tools {Path.GetFileName(Path.TrimEndingDirectorySeparator(folder))} makes this version's)";
     }
 
@@ -461,19 +466,19 @@ public static class ContainerTools
         }
         catch (ChildOutputException overran)
         {
-            throw new ContainerToolsException($"Passenger's tools in {container} answered more than the {Sizes.Said(MostProcesses)} a list of programs takes, "
+            throw new ContainerToolsException($"Pitstop's tools in {container} answered more than the {Sizes.Said(MostProcesses)} a list of programs takes, "
                 + $"which was not read: {overran.Message}");
         }
         if (!listed.Succeeded)
         {
-            throw new ContainerToolsException($"Passenger's tools could not list the programs in {container}: {ContainerEngine.Said(listed)}");
+            throw new ContainerToolsException($"Pitstop's tools could not list the programs in {container}: {ContainerEngine.Said(listed)}");
         }
         try
         {
             using JsonDocument document = JsonDocument.Parse(listed.Output);
             if (document.RootElement.ValueKind != JsonValueKind.Array)
             {
-                throw new ContainerToolsException($"Passenger's tools in {container} listed no programs");
+                throw new ContainerToolsException($"Pitstop's tools in {container} listed no programs");
             }
             return [.. document.RootElement.EnumerateArray()
                 .Where(p => JsonMembers.Number(p, "id") is not null)
@@ -488,7 +493,7 @@ public static class ContainerTools
         }
         catch (JsonException unread)
         {
-            throw new ContainerToolsException($"Passenger's tools in {container} answered what is no list of programs: {unread.Message}");
+            throw new ContainerToolsException($"Pitstop's tools in {container} answered what is no list of programs: {unread.Message}");
         }
     }
 

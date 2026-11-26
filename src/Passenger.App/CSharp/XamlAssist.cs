@@ -861,7 +861,7 @@ internal sealed partial class XamlAssist : LanguageAssist
     }
 
     /// <summary>Why an element of a XAML file was not renamed where the project's XAML is not read.</summary>
-    internal static string Unread(string path) => $"{Path.GetFileName(path)} is not XAML Passenger reads";
+    internal static string Unread(string path) => $"{Path.GetFileName(path)} is not XAML Pitstop reads";
 
     /// <summary>Where the folder's C# declares the type or member a XAML name leads to; null for a name of none of it.</summary>
     internal static SourcePlace? DeclarationOf(XamlSymbol symbol) =>

@@ -19,7 +19,7 @@ namespace Passenger.Editor;
 /// <see cref="IFontCollection"/> where the collection doesn't derive from <see cref="FontCollectionBase"/>.</summary>
 public sealed class FallbackFonts : IFontCollection
 {
-    private const string Scheme = "fonts:Passenger";
+    private const string Scheme = "fonts:Pitstop";
 
     private static readonly Uri OwnKey = new(Scheme);
     private static readonly OpenTypeTag Morx = OpenTypeTag.Parse("morx");

@@ -67,7 +67,7 @@ public sealed class SolutionLaunchTests : IDisposable
         Assert.False(early.Shared);
         Assert.True(early.Projects[0].Project == At("Api", "Api.csproj"), "A project an early file names by Name is not read, so the profile starts nothing of it");
         Assert.Equal(ProjectLaunchAction.StartWithoutDebugging, early.Projects[0].Action);
-        Assert.True(early.Projects[1] is { Action: null, ActionWritten: "Profile" }, "An action Passenger does not know is read as one it does, so it would start what the file does not say");
+        Assert.True(early.Projects[1] is { Action: null, ActionWritten: "Profile" }, "An action Pitstop does not know is read as one it does, so it would start what the file does not say");
     }
 
     private void A_file_that_is_no_list_of_profiles_says_why_and_is_never_written_over(string text)
@@ -82,7 +82,7 @@ public sealed class SolutionLaunchTests : IDisposable
     [Fact]
     public void Profiles_written_back_keep_every_character_Passenger_did_not_change() => Cases.AllApart<SolutionLaunchTests>(
         ("profiles written back unchanged keep every character", test => test.Profiles_written_back_unchanged_keep_every_character()),
-        ("a changed profile is written in its place keeping what Passenger does not model and the others as they were", test => test.A_changed_profile_is_written_in_its_place_keeping_what_Passenger_does_not_model_and_the_others_as_they_were()),
+        ("a changed profile is written in its place keeping what Pitstop does not model and the others as they were", test => test.A_changed_profile_is_written_in_its_place_keeping_what_Passenger_does_not_model_and_the_others_as_they_were()),
         ("a new profile goes after the last laid out as Visual Studio writes one and a removed one goes with its lines", test => test.A_new_profile_goes_after_the_last_laid_out_as_Visual_Studio_writes_one_and_a_removed_one_goes_with_its_lines()),
         ("a new file is written as Visual Studio writes one and an item that is no profile is kept", test => test.A_new_file_is_written_as_Visual_Studio_writes_one_and_an_item_that_is_no_profile_is_kept()),
         ("a profile moved from the persons file to the teams keeps its members and both files are read beside the solution", test => test.A_profile_moved_from_the_persons_file_to_the_teams_keeps_its_members_and_both_files_are_read_beside_the_solution()),

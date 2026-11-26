@@ -8,7 +8,7 @@ internal static class Wire
 {
     /// <summary>The Unix socket Passenger listens at for the hook.</summary>
     [IdentifierHome]
-    public const string SocketVariable = "PASSENGER_UPDATE_HANDLERS";
+    public const string SocketVariable = "PITSTOP_UPDATE_HANDLERS";
 
     /// <summary>What begins <see cref="SocketVariable"/>'s value in an app on a device: an abstract socket of the name after
     /// it, which adb's reverse there carries to Passenger.</summary>
@@ -17,7 +17,7 @@ internal static class Wire
     /// <summary>The line the hook first writes where its socket is an abstract one (<see cref="Abstract"/>), by which Passenger
     /// takes it: the reverse ends at a port of this machine that any program here may reach.</summary>
     [IdentifierHome]
-    public const string TokenVariable = "PASSENGER_UPDATE_HANDLERS_TOKEN";
+    public const string TokenVariable = "PITSTOP_UPDATE_HANDLERS_TOKEN";
 
     /// <summary>Ends a batch of changed type lines: the debugger applied the update.</summary>
     public const string Updated = "updated";
@@ -42,5 +42,5 @@ internal static class Wire
     public const string Done = "done";
 
     /// <summary>The name of the hook's thread in the program, as its threads list it.</summary>
-    public const string ThreadName = "Passenger update handlers";
+    public const string ThreadName = "Pitstop update handlers";
 }

@@ -8,12 +8,12 @@ using Passenger.Terminal;
 
 namespace Passenger.App.Updates;
 
-/// <summary>Linux's update, of a Passenger the archive's install.sh installed (Passenger-linux-x64.tar.gz or -arm64):
+/// <summary>Linux's update, of a Passenger the archive's install.sh installed (Pitstop-linux-x64.tar.gz or -arm64):
 /// downloaded into the state folder's <c>updates/</c>, which only the person may write, its SHA-256 checked against the
 /// release's SHA256SUMS, unpacked and checked again (its layout and version). One person's install
-/// (~/.local/opt/passenger) has it unpacked beside it (<see cref="UpdateFolders"/>); as the process ends the two folders
+/// (~/.local/opt/pitstop) has it unpacked beside it (<see cref="UpdateFolders"/>); as the process ends the two folders
 /// trade places in one step, the release replaced kept beside until the new one starts, and the new install.sh refreshes
-/// the menu entry, icons and command as it installs them. An install for everyone (/opt/passenger) keeps the archive, which
+/// the menu entry, icons and command as it installs them. An install for everyone (/opt/pitstop) keeps the archive, which
 /// its own install.sh, as root through pkexec or by a command the person is given, checks against that SHA-256 again
 /// and unpacks where only root writes before it installs it, keeping the release replaced in the update's folder until
 /// the new one starts, as a person's does; a copy a package manager installed is left to it.</summary>
@@ -21,10 +21,10 @@ namespace Passenger.App.Updates;
 public sealed partial class LinuxUpdater : InPlaceUpdater
 {
     /// <summary>Where install.sh installs for everyone, with <c>--system</c>.</summary>
-    public const string SystemFolder = "/opt/passenger";
+    public const string SystemFolder = "/opt/pitstop";
 
     /// <summary>The id of the desktop entry install.sh puts in the applications menu, by which desktops know Passenger's icon.</summary>
-    public const string DesktopEntry = "io.github.zaneris.passenger";
+    public const string DesktopEntry = "io.github.jancano.pitstop";
 
     /// <summary>How long install.sh may take, an administrator's password asked for included.</summary>
     private static readonly TimeSpan ScriptLimit = TimeSpan.FromMinutes(10);
@@ -67,10 +67,10 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
         /// <summary>Run where its archive was unpacked, or anywhere else install.sh does not install.</summary>
         Unpacked,
 
-        /// <summary>One person's, in ~/.local/opt/passenger.</summary>
+        /// <summary>One person's, in ~/.local/opt/pitstop.</summary>
         PerUser,
 
-        /// <summary>Everyone's, in /opt/passenger, with <c>--system</c>.</summary>
+        /// <summary>Everyone's, in /opt/pitstop, with <c>--system</c>.</summary>
         System,
     }
 
@@ -92,12 +92,12 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
         string? app = Path.GetDirectoryName(executable);
         if (executable is null || app is null || Path.GetFileName(app) != "app" || Path.GetDirectoryName(app) is not { } install)
         {
-            why = $"{executable} is not in the app folder of an unpacked Passenger-linux archive, as a build from source is not";
+            why = $"{executable} is not in the app folder of an unpacked Pitstop-linux archive, as a build from source is not";
             return null;
         }
         string? home = Environment.GetEnvironmentVariable("HOME");
         InstallKind kind = PathNames.Same(install, SystemFolder) ? InstallKind.System
-            : home is { Length: > 0 } && PathNames.Same(install, PathNames.Canonical(Path.Combine(home, ".local", "opt", "passenger"))) ? InstallKind.PerUser
+            : home is { Length: > 0 } && PathNames.Same(install, PathNames.Canonical(Path.Combine(home, ".local", "opt", "pitstop"))) ? InstallKind.PerUser
             : InstallKind.Unpacked;
         why = string.Empty;
         return new LinuxUpdater(install, staging, kind);
@@ -115,18 +115,18 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
 
     private async Task<UpdatedElsewhere?> FindElsewhereAsync(CancellationToken cancel)
     {
-        string executable = Path.Combine(Folder, "app", "Passenger");
+        string executable = Path.Combine(Folder, "app", "Pitstop");
         if (await MarkOfAsync(executable, cancel).ConfigureAwait(false) is { } mark)
         {
             return Packaged(mark);
         }
         if (await PackageOfAsync(executable, cancel).ConfigureAwait(false) is { } package)
         {
-            return new UpdatedElsewhere($"This copy of Passenger is {package}: the system's package manager updates it.", Download: false);
+            return new UpdatedElsewhere($"This copy of Pitstop is {package}: the system's package manager updates it.", Download: false);
         }
         if (kind == InstallKind.Unpacked || !File.Exists(Path.Combine(Folder, "install.sh")))
         {
-            return new UpdatedElsewhere($"This copy of Passenger runs from {Folder}, where its archive was unpacked, so it is updated by hand: "
+            return new UpdatedElsewhere($"This copy of Pitstop runs from {Folder}, where its archive was unpacked, so it is updated by hand: "
                 + "a newer archive unpacked in its place, or this one installed by its install.sh, after which it updates itself.", Download: true);
         }
         return null;
@@ -193,14 +193,14 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
     private async Task<UpdateOutcome> ForOneAsync(LatestRelease release, ReleasePackage package, string folder, Action<int> progress, CancellationToken cancel)
     {
         string unpacked = UpdateFolders.Beside(Folder, release.Version);
-        string passenger = Path.Combine(unpacked, "passenger");
+        string passenger = Path.Combine(unpacked, "pitstop");
         if (Directory.Exists(passenger))
         {
             // Made ready by an earlier start: checked again rather than downloaded again.
             try
             {
                 Check(passenger, release.Version);
-                return new UpdateOutcome.Ready($"Passenger {release.Version} was unpacked before, to {passenger}, and checked again");
+                return new UpdateOutcome.Ready($"Pitstop {release.Version} was unpacked before, to {passenger}, and checked again");
             }
             catch (UpdateRefusedException)
             {
@@ -212,7 +212,7 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
         File.Delete(saved);
         Check(passenger, release.Version);
         return new UpdateOutcome.Ready(
-            $"Passenger {release.Version} downloaded to {saved} and unpacked to {passenger}: {package.Download.Name}'s SHA-256 is {ReleaseSums.Name}' {expected}");
+            $"Pitstop {release.Version} downloaded to {saved} and unpacked to {passenger}: {package.Download.Name}'s SHA-256 is {ReleaseSums.Name}' {expected}");
     }
 
     /// <summary>The release for everyone: its archive kept in <paramref name="folder"/>, for install.sh to check and
@@ -227,17 +227,17 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
             if (await Releases.Sha256Async(archive, cancel).ConfigureAwait(false) == given)
             {
                 return await MadeAsync(archive, given,
-                    $"Passenger {release.Version} was downloaded before, to {archive}, and its SHA-256 checked again", cancel).ConfigureAwait(false);
+                    $"Pitstop {release.Version} was downloaded before, to {archive}, and its SHA-256 checked again", cancel).ConfigureAwait(false);
             }
             File.Delete(archive);
         }
         (string saved, string expected) = await DownloadCheckedAsync(package, folder, progress, cancel).ConfigureAwait(false);
-        string passenger = Path.Combine(folder, "passenger");
+        string passenger = Path.Combine(folder, "pitstop");
         await UnpackAsync(saved, folder, cancel).ConfigureAwait(false);
         Check(passenger, release.Version);
         Remove(passenger);
         return await MadeAsync(saved, expected,
-            $"Passenger {release.Version} downloaded to {saved} and checked: its SHA-256 is {ReleaseSums.Name}' {expected}", cancel).ConfigureAwait(false);
+            $"Pitstop {release.Version} downloaded to {saved} and checked: its SHA-256 is {ReleaseSums.Name}' {expected}", cancel).ConfigureAwait(false);
     }
 
     /// <summary>The archive for everyone checked: ready to install as Passenger ends, by install.sh as root, through pkexec
@@ -276,7 +276,7 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
     private static async Task UnpackAsync(string archive, string unpacked, CancellationToken cancel)
     {
         // The folder may hold the archive itself, which stays.
-        Remove(Path.Combine(unpacked, "passenger"));
+        Remove(Path.Combine(unpacked, "pitstop"));
         Remove(Path.Combine(unpacked, "partial"));
         string partial = Directory.CreateDirectory(Path.Combine(unpacked, "partial")).FullName;
         try
@@ -290,11 +290,11 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
             throw new UpdateRefusedException($"{Path.GetFileName(archive)} does not unpack as a gzipped tar archive", error.Message);
         }
         string[] top = [.. Directory.EnumerateFileSystemEntries(partial).Select(Path.GetFileName).OfType<string>()];
-        if (!top.SequenceEqual(["passenger"]))
+        if (!top.SequenceEqual(["pitstop"]))
         {
-            throw new UpdateRefusedException($"{Path.GetFileName(archive)} holds {(top.Length == 0 ? "nothing" : string.Join(", ", top))}, not one passenger folder");
+            throw new UpdateRefusedException($"{Path.GetFileName(archive)} holds {(top.Length == 0 ? "nothing" : string.Join(", ", top))}, not one pitstop folder");
         }
-        Directory.Move(Path.Combine(partial, "passenger"), Path.Combine(unpacked, "passenger"));
+        Directory.Move(Path.Combine(partial, "pitstop"), Path.Combine(unpacked, "pitstop"));
         Directory.Delete(partial);
     }
 
@@ -302,23 +302,23 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
     /// the version its app's deps.json gives Passenger.</summary>
     private static void Check(string passenger, string version)
     {
-        foreach (string part in (string[])["passenger", "install.sh", "app/Passenger"])
+        foreach (string part in (string[])["pitstop", "install.sh", $"app/{Product.Name}"])
         {
             string path = Path.Combine(passenger, part);
             if (!File.Exists(path) || !File.GetUnixFileMode(path).HasFlag(UnixFileMode.UserExecute))
             {
-                throw new UpdateRefusedException($"the archive's passenger folder has no executable {part}");
+                throw new UpdateRefusedException($"the archive's pitstop folder has no executable {part}");
             }
         }
         if (!File.Exists(Path.Combine(passenger, DesktopEntry + ".desktop")))
         {
-            throw new UpdateRefusedException("the archive's passenger folder has no desktop entry");
+            throw new UpdateRefusedException("the archive's pitstop folder has no desktop entry");
         }
-        string deps = Path.Combine(passenger, "app", "Passenger.deps.json");
+        string deps = Path.Combine(passenger, "app", "Pitstop.deps.json");
         string? named = File.Exists(deps) ? UpdateFolders.AppVersion(File.ReadAllText(deps)) : null;
         if (named != version)
         {
-            throw new UpdateRefusedException($"the archive's Passenger is {(named is null ? "of no version" : named)}, not {version}");
+            throw new UpdateRefusedException($"the archive's Pitstop is {(named is null ? "of no version" : named)}, not {version}");
         }
     }
 
@@ -326,7 +326,7 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
     /// state's folder for it.</summary>
     protected override string Staged(string version) => kind == InstallKind.System
         ? Path.Combine(Staging, version, Releases.ThisSystemsAsset() ?? string.Empty)
-        : Path.Combine(UpdateFolders.Beside(Folder, version), "passenger");
+        : Path.Combine(UpdateFolders.Beside(Folder, version), "pitstop");
 
     protected override string? Replace(string staged, string version) => kind == InstallKind.System ? InstallForEveryone(staged) : Swap(staged, version);
 
@@ -441,7 +441,7 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
         }
     }
 
-    protected override IReadOnlyList<int> RunningHere() => RunningAs(Path.Combine(Folder, "app", "Passenger"));
+    protected override IReadOnlyList<int> RunningHere() => RunningAs(Path.Combine(Folder, "app", "Pitstop"));
 
     /// <summary>Whether this user can write the install and the folder it is in, as replacing it needs.</summary>
     private bool Writable() =>
@@ -451,7 +451,7 @@ public sealed partial class LinuxUpdater : InPlaceUpdater
     /// environment (its state folder, release feed and Discord as they were given).</summary>
     private static Task Launch(string install)
     {
-        ChildProcesses.StartApart(ChildProcesses.Command(Path.Combine(install, "passenger"), [], Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
+        ChildProcesses.StartApart(ChildProcesses.Command(Path.Combine(install, "pitstop"), [], Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
         return Task.CompletedTask;
     }
 

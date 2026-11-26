@@ -6,18 +6,17 @@ using Passenger.Packages;
 
 namespace Passenger.App.Updates;
 
-/// <summary>Where Passenger asks for its releases, GitHub's API's list of them unless <c>PASSENGER_RELEASES</c> names
-/// another, and how long it waits for the answer.</summary>
+/// <summary>A release feed configured for an explicit check or download. Pitstop has no active default feed.</summary>
 public sealed record ReleaseFeed(Uri Listing, TimeSpan Timeout)
 {
     [IdentifierHome]
-    public const string Variable = "PASSENGER_RELEASES";
+    public const string Variable = "PITSTOP_RELEASES";
 
     /// <summary>GitHub's list of the releases, newest first, a page of the newest 30.</summary>
-    public static readonly Uri GitHub = new("https://api.github.com/repos/Zaneris/passenger/releases");
+    public static readonly Uri GitHub = new("https://api.github.com/repos/jancano/pitstop/releases");
 
     /// <summary>The releases page, for a release that names neither its own page nor a download for this system.</summary>
-    public static readonly Uri GitHubReleases = new("https://github.com/Zaneris/passenger/releases");
+    public static readonly Uri GitHubReleases = new("https://github.com/jancano/pitstop/releases");
 
     /// <summary>Long enough for GitHub over a slow line, short enough that a network that swallows the request costs
     /// nothing a person waits on.</summary>
@@ -25,11 +24,14 @@ public sealed record ReleaseFeed(Uri Listing, TimeSpan Timeout)
 
     /// <summary>Where a release's files download from, each under its tag (v0.2.0/SHA256SUMS): GitHub's for GitHub's feed,
     /// else the same path on the feed's own host.</summary>
-    public Uri Downloads => Listing == GitHub ? new Uri("https://github.com/Zaneris/passenger/releases/download/") : new Uri(Listing, "/Zaneris/passenger/releases/download/");
+    public Uri Downloads => Listing == GitHub ? new Uri("https://github.com/jancano/pitstop/releases/download/") : new Uri(Listing, "/jancano/pitstop/releases/download/");
 
-    /// <summary>GitHub's, or the one <c>PASSENGER_RELEASES</c> names (<see cref="EnvironmentValues.Address(string, string)"/>).</summary>
-    public static ReleaseFeed Default =>
-        new(EnvironmentValues.Address(Variable, "of the releases as GitHub's API lists them") ?? GitHub, ShortTimeout);
+    public bool Enabled { get; init; } = true;
+
+    /// <summary>An explicit test or development feed, when one is configured.</summary>
+    public static ReleaseFeed Default => EnvironmentValues.Address(Variable, "of the releases as GitHub's API lists them") is { } listing
+        ? new(listing, ShortTimeout)
+        : new(GitHub, ShortTimeout) { Enabled = false };
 }
 
 /// <summary>A release newer than the running Passenger: its version ("0.2.0"), its tag ("v0.2.0"), and what its link
@@ -85,7 +87,7 @@ public static partial class Releases
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 
-    /// <summary>The download the release workflow names for this system and processor ("Passenger-macos-arm64.dmg"), the
+    /// <summary>The download the release workflow names for this system and processor ("Pitstop-macos-arm64.dmg"), the
     /// same in every release, or null for one it builds none for: a portable copy's, its portable build
     /// (<see cref="ThisCopy.Data"/>). The system's processor, not the process's: x64 Passenger under Rosetta or Windows'
     /// emulation is offered the native build.</summary>
@@ -103,9 +105,9 @@ public static partial class Releases
             _ => null,
         };
         return processor is null ? null
-            : OperatingSystem.IsMacOS() ? $"Passenger-macos-{processor}.{(portable ? "zip" : "dmg")}"
-            : OperatingSystem.IsWindows() ? (portable ? $"Passenger-windows-{processor}-portable.zip" : $"Passenger-windows-{processor}.exe")
-            : OperatingSystem.IsLinux() ? $"Passenger-linux-{processor}.tar.gz"
+            : OperatingSystem.IsMacOS() ? $"Pitstop-macos-{processor}.{(portable ? "zip" : "dmg")}"
+            : OperatingSystem.IsWindows() ? (portable ? $"Pitstop-windows-{processor}-portable.zip" : $"Pitstop-windows-{processor}.exe")
+            : OperatingSystem.IsLinux() ? $"Pitstop-linux-{processor}.tar.gz"
             : null;
     }
 
@@ -117,6 +119,10 @@ public static partial class Releases
     /// thread. Never throws: a failure, the feed's timeout and <paramref name="cancel"/> included, is an answer.</summary>
     public static async Task<ReleaseAnswer> AskAsync(ReleaseFeed feed, string running, CancellationToken cancel)
     {
+        if (!feed.Enabled)
+        {
+            return new ReleaseAnswer.Current("Pitstop has no release feed configured");
+        }
         using CancellationTokenSource limit = CancellationTokenSource.CreateLinkedTokenSource(cancel);
         limit.CancelAfter(feed.Timeout);
         try
@@ -170,7 +176,7 @@ public static partial class Releases
         string tag = release.TagName!;
         if (VersionOrder.Instance.Compare(number, running) <= 0)
         {
-            return new ReleaseAnswer.Current($"Passenger {running} is up to date: the latest release is {tag}");
+            return new ReleaseAnswer.Current($"Pitstop {running} is up to date: the latest release is {tag}");
         }
         (GitHubRelease By, string Fixes)? marked = null;
         foreach ((GitHubRelease newer, _) in offered.TakeWhile(r => VersionOrder.Instance.Compare(r.Version, running) > 0))
@@ -191,7 +197,7 @@ public static partial class Releases
             : by == release ? ", a security release"
             : $", a security update as {by.TagName} is a security release";
         return new ReleaseAnswer.Newer(new LatestRelease(number, tag, link, download is null ? null : asset) { Page = page, Files = files, Security = marked?.Fixes },
-            $"Passenger {number} is out ({tag}; this is {running}){security}: {link}");
+            $"Pitstop {number} is out ({tag}; this is {running}){security}: {link}");
     }
 
     /// <summary>A release's version where it may be offered, a release that is neither a draft nor a pre-release by GitHub's

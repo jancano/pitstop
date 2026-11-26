@@ -30,7 +30,7 @@ public sealed class FluentKeys : ResourceProvider
 
     private static Dictionary<string, string> Read()
     {
-        ResourceDictionary table = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Passenger/Theme/FluentKeys.axaml"));
+        ResourceDictionary table = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Pitstop/Theme/FluentKeys.axaml"));
         return table.ToDictionary(entry => (string)entry.Key, entry => (string)entry.Value!, StringComparer.Ordinal);
     }
 }

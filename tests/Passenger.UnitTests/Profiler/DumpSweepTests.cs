@@ -17,15 +17,15 @@ public sealed class DumpSweepTests : IDisposable
 
     [Fact]
     public void A_sweep_deletes_only_the_dumps_left_reading_the_users_own_folder_alone() => Cases.All(
-        ("a sweep deletes the dumps left and keeps those under way and a running Passenger's", () =>
+        ("a sweep deletes the dumps left and keeps those under way and a running Pitstop's", () =>
         {
             int self = Environment.ProcessId;
             string underWay = DumpTool.Named(folder, 11);
-            string mineLeft = Dump($"passenger-heap-{self}-12-aaaaaaaa.dmp");
-            string deadLeft = Dump($"passenger-heap-{Dead}-13-bbbbbbbb.dmp");
-            string living = Dump($"passenger-heap-{Live}-14-cccccccc.dmp");
-            string unnamedOld = Dump("passenger-heap-15-dddddddd.dmp", Now - TimeSpan.FromHours(2));
-            string unnamedNew = Dump("passenger-heap-16-eeeeeeee.dmp", Now - TimeSpan.FromMinutes(10));
+            string mineLeft = Dump($"pitstop-heap-{self}-12-aaaaaaaa.dmp");
+            string deadLeft = Dump($"pitstop-heap-{Dead}-13-bbbbbbbb.dmp");
+            string living = Dump($"pitstop-heap-{Live}-14-cccccccc.dmp");
+            string unnamedOld = Dump("pitstop-heap-15-dddddddd.dmp", Now - TimeSpan.FromHours(2));
+            string unnamedNew = Dump("pitstop-heap-16-eeeeeeee.dmp", Now - TimeSpan.FromMinutes(10));
             string other = Dump("other.dmp");
             File.WriteAllText(underWay, "dump");
 
@@ -45,7 +45,7 @@ public sealed class DumpSweepTests : IDisposable
             Directory.CreateDirectory(temp);
             for (int i = 0; i < 100; i++)
             {
-                File.WriteAllText(Path.Combine(temp, $"passenger-heap-{Dead}-{i}-ffffffff.dmp"), "another folder's");
+                File.WriteAllText(Path.Combine(temp, $"pitstop-heap-{Dead}-{i}-ffffffff.dmp"), "another folder's");
             }
             string own = DumpTool.FolderIn(temp);
             Assert.Equal(temp, Path.GetDirectoryName(own));
@@ -54,12 +54,12 @@ public sealed class DumpSweepTests : IDisposable
             {
                 Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, File.GetUnixFileMode(own));
             }
-            string left = Path.Combine(own, $"passenger-heap-{Dead}-17-aaaaaaaa.dmp");
+            string left = Path.Combine(own, $"pitstop-heap-{Dead}-17-aaaaaaaa.dmp");
             File.WriteAllText(left, "dump");
             Assert.Equal(own, Path.GetDirectoryName(DumpTool.Named(own, 18)));
 
             DumpTool.Sweep(own, Environment.ProcessId, _ => false, Now);
-            Assert.False(File.Exists(left), "The sweep left a dead Passenger's dump in the folder of dumps");
+            Assert.False(File.Exists(left), "The sweep left a dead Pitstop's dump in the folder of dumps");
             Assert.Equal(100, Directory.GetFiles(temp).Length);
         }));
 

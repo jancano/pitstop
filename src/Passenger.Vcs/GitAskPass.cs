@@ -227,7 +227,7 @@ public static class GitAskPass
 {
     /// <summary>The variable naming the socket of the operation git asks for.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_GIT_ASKPASS";
+    public const string Variable = "PITSTOP_GIT_ASKPASS";
 
     internal const byte Taken = (byte)'?';
     internal const byte Given = (byte)'+';
@@ -246,7 +246,7 @@ public static class GitAskPass
 
     /// <summary>How the helper's words begin where it gives none for want of the IDE, on git's errors, from which the IDE's
     /// log takes them (<see cref="Prompting.Heard"/>).</summary>
-    internal const string NoAnswer = "Passenger gave git no answer: ";
+    internal const string NoAnswer = "Pitstop gave git no answer: ";
 
     /// <summary>What Main asks before anything starts: where git runs this executable to ask (<see cref="Variable"/> set, one prompt given), the
     /// answer written for git, and the exit code; else null, and Passenger starts as itself.</summary>

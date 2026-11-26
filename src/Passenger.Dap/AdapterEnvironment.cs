@@ -8,66 +8,66 @@ public static class AdapterEnvironment
 {
     /// <summary>The variable that gives <see cref="EvaluationTimeout"/> in milliseconds.</summary>
     [IdentifierHome]
-    public const string EvaluationTimeoutVariable = "PASSENGER_EVAL_TIMEOUT_MS";
+    public const string EvaluationTimeoutVariable = "PITSTOP_EVAL_TIMEOUT_MS";
 
     /// <summary>The variable naming a file the engine's own log of every session is kept in, for a stop or an end that
     /// goes wrong.</summary>
     [IdentifierHome]
-    public const string EngineLogVariable = "PASSENGER_ENGINE_LOG";
+    public const string EngineLogVariable = "PITSTOP_ENGINE_LOG";
 
     /// <summary>The variable that, set to 1, has the engine hand over a stepping thread's leaving at an await only with its
     /// step's end, once the thread has run on, as the runtime once handed both under load: a test's hold.</summary>
     [IdentifierHome]
-    public const string LateYieldVariable = "PASSENGER_ENGINE_LATE_YIELD";
+    public const string LateYieldVariable = "PITSTOP_ENGINE_LATE_YIELD";
 
     /// <summary>The variable naming a module, by its file's name, whose load the engine takes as the runtime's word that
     /// its debugging of the program failed for good, as the runtime once said under load: a test's hold.</summary>
     [IdentifierHome]
-    public const string FailAtModuleVariable = "PASSENGER_ENGINE_FAIL_AT_MODULE";
+    public const string FailAtModuleVariable = "PITSTOP_ENGINE_FAIL_AT_MODULE";
 
     /// <summary>The variable that, set to 1, has the engine's evaluations hold no other thread, as the runtime's hold once
     /// missed one: a test's hold.</summary>
     [IdentifierHome]
-    public const string HoldNoneVariable = "PASSENGER_ENGINE_HOLD_NONE";
+    public const string HoldNoneVariable = "PITSTOP_ENGINE_HOLD_NONE";
 
     /// <summary>The variable that, set to 1, has the engine's box of each value a call returned wait first for the program's
     /// input, so its evaluation is held unfinished as one that never ends is: a test's hold.</summary>
     [IdentifierHome]
-    public const string HoldBoxVariable = "PASSENGER_ENGINE_HOLD_BOX";
+    public const string HoldBoxVariable = "PITSTOP_ENGINE_HOLD_BOX";
 
     /// <summary>The variable that, set to 1, has the async stepper wait for the program's input on a thread before it asks
     /// there where a step goes (a step out's builder, to tell of its end; which run goes on after an await), so an
     /// evaluation is held unfinished there as one that never ends is: a test's hold.</summary>
     [IdentifierHome]
-    public const string HoldAsyncStepVariable = "PASSENGER_ENGINE_HOLD_ASYNC_STEP";
+    public const string HoldAsyncStepVariable = "PITSTOP_ENGINE_HOLD_ASYNC_STEP";
 
     /// <summary>The variable naming a kind of the runtime's events, as its callback is named (Breakpoint,
     /// FunctionRemapComplete, LoadModule), whose handling the engine fails as it begins, as an error inside its handler
     /// would: a test's hold.</summary>
     [IdentifierHome]
-    public const string FailHandlingVariable = "PASSENGER_ENGINE_FAIL_HANDLING";
+    public const string FailHandlingVariable = "PITSTOP_ENGINE_FAIL_HANDLING";
 
     /// <summary>The variable naming a thread, by the name the program gives it, that the engine holds where the runtime
     /// announces it, at its first instruction, until an evaluation lets it past, as a stop once caught a thread on its way
     /// out of its announcement: a test's hold.</summary>
     [IdentifierHome]
-    public const string HoldStartVariable = "PASSENGER_ENGINE_HOLD_START";
+    public const string HoldStartVariable = "PITSTOP_ENGINE_HOLD_START";
 
     /// <summary>The variable that, set to 1, has each thread of a decompile wait after its first file until the session
     /// ends, so the decompile lasts as CoreLib's does on a slow machine, with every thread it runs on taken: a test's hold.</summary>
     [IdentifierHome]
-    public const string HoldDecompileVariable = "PASSENGER_ENGINE_HOLD_DECOMPILE";
+    public const string HoldDecompileVariable = "PITSTOP_ENGINE_HOLD_DECOMPILE";
 
     /// <summary>The variable that, set to 1, has the engine wait as long as an expression may take before it makes a session's
     /// first lambda in the program, as that making once took on a busy machine: a test's hold.</summary>
     [IdentifierHome]
-    public const string HoldLambdaVariable = "PASSENGER_ENGINE_HOLD_LAMBDA";
+    public const string HoldLambdaVariable = "PITSTOP_ENGINE_HOLD_LAMBDA";
 
     /// <summary>The variable that, set to 1, has a let-go wait, the program running, until each evaluation given up still to
     /// end has ended before it holds the program, so that end comes just before the let-go listens for it, as one once
     /// did: a test's hold.</summary>
     [IdentifierHome]
-    public const string HoldLetGoVariable = "PASSENGER_ENGINE_HOLD_LET_GO";
+    public const string HoldLetGoVariable = "PITSTOP_ENGINE_HOLD_LET_GO";
 
     /// <summary>How long an evaluation runs when nothing says otherwise.</summary>
     public static readonly TimeSpan DefaultEvaluationTimeout = TimeSpan.FromSeconds(5);

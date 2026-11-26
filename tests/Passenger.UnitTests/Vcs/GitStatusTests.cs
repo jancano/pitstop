@@ -31,7 +31,7 @@ public class GitStatusTests
             "u UU N... 100644 100644 100644 100644 b1 b2 b3 src/Both.cs",
             "u DU N... 100644 000000 100644 100644 c1 0000 c3 src/Theirs.cs",
             "? notes/todo café.txt",
-            "? src/Shop.cs.passenger-save.user",
+            "? src/Shop.cs.pitstop-save.user",
             string.Empty);
 
         Git.StatusRead read = Git.StatusOf(Encoding.UTF8.GetBytes(written), new Git.DiskNames(Root));

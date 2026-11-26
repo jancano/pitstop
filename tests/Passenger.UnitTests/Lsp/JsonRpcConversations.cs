@@ -262,7 +262,7 @@ internal static class JsonRpcConversations
         public void Progress(JsonElement partialToken, Report? partialValue) => Say("partial", new object?[] { partialToken, partialValue });
 
         [JsonRpcMethod("fails")]
-        public object Fails(JsonElement asked) => throw new LocalRpcException("Passenger has no content for it") { ErrorCode = -32603 };
+        public object Fails(JsonElement asked) => throw new LocalRpcException("Pitstop has no content for it") { ErrorCode = -32603 };
 
         [JsonRpcMethod("tokens")]
         public int Tokens(TokensResult asked)

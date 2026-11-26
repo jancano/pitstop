@@ -81,7 +81,7 @@ public sealed class BuildRunTests : IClassFixture<RestoredFolders>, IDisposable
         Flow.StepApart("a programs output and errors written into each others lines are heard a whole line of each stream at a time", () => new BuildRunTests(folders), t => t.A_programs_output_and_errors_written_into_each_others_lines_are_heard_a_whole_line_of_each_stream_at_a_time());
         Flow.StepApart("the run window shows each streams line whole whatever the other writes into it and a prompt as written", () => new BuildRunTests(folders), t => t.The_run_window_shows_each_streams_line_whole_whatever_the_other_writes_into_it_and_a_prompt_as_written());
         Flow.StepApart("a programs characters outside the systems code page reach the run window as written and the program as typed", () => new BuildRunTests(folders), t => t.A_programs_characters_outside_the_systems_code_page_reach_the_run_window_as_written_and_the_program_as_typed());
-        Flow.StepApart("Run starts the projects apphost on the dotnet passenger builds with", () => new BuildRunTests(folders), t => t.Run_starts_the_projects_apphost_on_the_dotnet_passenger_builds_with());
+        Flow.StepApart("Run starts the projects apphost on the dotnet pitstop builds with", () => new BuildRunTests(folders), t => t.Run_starts_the_projects_apphost_on_the_dotnet_passenger_builds_with());
         Flow.StepApart("a build message naming a file but no place in it links the file and opens it", () => new BuildRunTests(folders), t => t.A_build_message_naming_a_file_but_no_place_in_it_links_the_file_and_opens_it());
     }
 
@@ -918,7 +918,7 @@ public sealed class BuildRunTests : IClassFixture<RestoredFolders>, IDisposable
             Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to end", TimeSpan.FromMinutes(2));
             string output = Output(window);
             Assert.True(output.Contains("started as Hello", StringComparison.Ordinal) && output.Contains($"runtime from {Dotnet.Root()}", StringComparison.Ordinal),
-                $"Run started the program other than through its apphost on Passenger's .NET ({Dotnet.Root()}), so an app's manifest is lost or it runs on "
+                $"Run started the program other than through its apphost on Pitstop's .NET ({Dotnet.Root()}), so an app's manifest is lost or it runs on "
                 + $"another runtime: {output}");
         }
         finally
@@ -1275,7 +1275,7 @@ public sealed class BuildRunTests : IClassFixture<RestoredFolders>, IDisposable
         using OwnMSBuild msbuild = new();
         // Settling waits for the projects to load, which Roslyn says once its restore of Tools has ended.
         MainWindow window = Open();
-        string server = $"passenger-{Environment.ProcessId}-server-";
+        string server = $"pitstop-{Environment.ProcessId}-server-";
         int[] restored = [.. Processes.WindowsMSBuildNodes().Where(node => node.Value.Contains(server, StringComparison.Ordinal)).Select(node => node.Key)];
         window.Close();
         Assert.True(restored.Length > 0, "The language server's restore left no MSBuild node, so none could outlive it");
@@ -1428,7 +1428,7 @@ public sealed class BuildRunTests : IClassFixture<RestoredFolders>, IDisposable
                 all.Add((pid, parent, group, line));
             }
         }
-        string salt = $"passenger-{Environment.ProcessId}";
+        string salt = $"pitstop-{Environment.ProcessId}";
         HashSet<int> nodes = [.. Processes.MSBuildNodes().Where(n => n.Value.Contains(salt, StringComparison.Ordinal)).Select(n => n.Key)];
         groups.Add(command);
         groups.UnionWith(all.Where(p => nodes.Contains(p.Pid)).Select(p => p.Group));

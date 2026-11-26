@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Writes the .DS_Store of the macOS disk image's top folder, and checks one names its background: Finder opens the
-image as an icon window of a fixed size with no toolbar or sidebar, Passenger.app on the left and the Applications link
+image as an icon window of a fixed size with no toolbar or sidebar, Pitstop.app on the left and the Applications link
 on the right to drag it onto, over a picture of the window's size (and its 2x) of an arrow from one to the other.
 
 Written here, since Finder writes one only through AppleScript, which needs a window session and leave to automate it:
@@ -14,7 +14,7 @@ import plistlib
 import struct
 import sys
 
-APP = "Passenger.app"
+APP = "Pitstop.app"
 # x, y, width, height on the screen, the title bar included, y counted up from the screen's bottom as Cocoa counts.
 WINDOW = (200, 120, 600, 360)
 ICON_SIZE = 128

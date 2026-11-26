@@ -19,7 +19,7 @@ namespace Passenger.TestFrames;
 public static class Frames
 {
     /// <summary>What a failing test's output says when its headless app draws nothing to take a frame of.</summary>
-    internal const string Undrawn = "Passenger shows a failing test's windows only when its headless app draws them: build it with .UseSkia() and AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }.";
+    internal const string Undrawn = "Pitstop shows a failing test's windows only when its headless app draws them: build it with .UseSkia() and AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }.";
 
     /// <summary>The tests whose failure was drawn, by xunit's test, so the same exception thrown again in each of xunit's
     /// frames draws it once.</summary>

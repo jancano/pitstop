@@ -22,7 +22,7 @@ public sealed partial class PassengerTools
     private static TimeSpan GodotPlayLimit => Waits.Of(TimeSpan.FromMinutes(5));
 
     [McpServerTool(Name = McpTools.GodotEditor, Title = "Act in Godot's editor"), Description(
-        "Acts in the person's Godot editor on the folder's Godot project, through Passenger's addon there. action: open (scene), " +
+        "Acts in the person's Godot editor on the folder's Godot project, through Pitstop's addon there. action: open (scene), " +
         "read (the edited scene as the editor holds it, unsaved changes too: each node's path, type, script and the properties its " +
         "file stores, its connections and the selection), select (node), play (scene, else the main scene: played there, debugged " +
         "here, the app_ tools reaching it), and, each one step of Godot's Undo there, written to the file only as the person saves: " +

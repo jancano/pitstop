@@ -43,7 +43,7 @@ public class MacCatalystAppsTests
         string home = Path.Combine("/Users", "someone");
 
         Assert.Equal(Path.Combine(home, "Library", "Containers", "com.shop", "Data", "tmp"), MacCatalystApp.ContainerTemporary(home, "com.shop"));
-        Assert.Equal("passenger-4321-2", MacCatalystApp.CarriedName(4321, 2));
+        Assert.Equal("pitstop-4321-2", MacCatalystApp.CarriedName(4321, 2));
     }
 
     private void The_sockets_in_a_containers_folder_fit_a_sockets_address_for_a_long_home_and_the_templates_bundle_identifier()

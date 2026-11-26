@@ -221,7 +221,7 @@ public sealed class GDScriptRefactorCommandsTests
     private static void Clean(string script)
     {
         IReadOnlyList<GDScriptError> errors = GDScriptTree.Parse(script).Errors;
-        Assert.True(errors.Count == 0, $"The script no longer parses in Passenger's parser: {(errors.Count > 0 ? errors[0].Message : string.Empty)}\n{script}");
+        Assert.True(errors.Count == 0, $"The script no longer parses in Pitstop's parser: {(errors.Count > 0 ? errors[0].Message : string.Empty)}\n{script}");
     }
 
     /// <summary>The project's scripts as Godot itself parses them: imported headless (its class cache made), then each
@@ -230,7 +230,7 @@ public sealed class GDScriptRefactorCommandsTests
     {
         if (godot is not { Exists: true } found)
         {
-            TestContext.Current.TestOutputHelper?.WriteLine($"No Godot found, so only Passenger's parser read the scripts: {godot?.WhyNot}");
+            TestContext.Current.TestOutputHelper?.WriteLine($"No Godot found, so only Pitstop's parser read the scripts: {godot?.WhyNot}");
             return;
         }
         // A copy of the project, so what Godot's import writes stays out of the one the window holds.

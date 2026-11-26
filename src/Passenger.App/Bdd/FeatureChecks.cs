@@ -10,7 +10,7 @@ namespace Passenger.App.Bdd;
 /// grammar's, and the last reading kept for the editor's commands. A UI-thread object.</summary>
 internal sealed class FeatureChecks : OpenFileChecks<FeatureChecks.Kept>
 {
-    public const string Checker = "Passenger's reading of its steps";
+    public const string Checker = "Pitstop's reading of its steps";
 
     private static readonly TimeSpan Settle = TimeSpan.FromMilliseconds(250);
 

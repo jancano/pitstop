@@ -68,8 +68,8 @@ public sealed class ErrorsPopup : UserControl
                         Classes = { StyleClasses.Muted },
                         TextWrapping = TextWrapping.Wrap,
                         Text = unlisted == 0
-                            ? "Passenger caught these and kept running. Each is in the log with its details."
-                            : $"Passenger caught these and kept running. Each is in the log with its details, as are {Numbers.Said(unlisted)} more that came after the first {Numbers.Said(IdeErrors.Limit)}.",
+                            ? "Pitstop caught these and kept running. Each is in the log with its details."
+                            : $"Pitstop caught these and kept running. Each is in the log with its details, as are {Numbers.Said(unlisted)} more that came after the first {Numbers.Said(IdeErrors.Limit)}.",
                     },
                     list,
                     occurred,

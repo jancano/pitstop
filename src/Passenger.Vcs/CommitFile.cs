@@ -46,7 +46,7 @@ internal sealed class CommitFile : IDisposable
     /// thrown.</summary>
     public static CommitFile Ignoring(string relative, string lines)
     {
-        string root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"passenger-ignoring-{Guid.NewGuid():N}");
+        string root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"pitstop-ignoring-{Guid.NewGuid():N}");
         string path = System.IO.Path.Combine(root, relative.Replace('/', System.IO.Path.DirectorySeparatorChar));
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
         CommitFile file;
@@ -66,7 +66,7 @@ internal sealed class CommitFile : IDisposable
     /// <summary>A commit's message, written whole in a file of its own in the temporary folder; one whose write fails is
     /// deleted, and the failure thrown.</summary>
     public static CommitFile Message(string message) =>
-        Written(System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"passenger-message-{Guid.NewGuid():N}"), Encoding.UTF8.GetBytes(message), leftToOperation: false);
+        Written(System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"pitstop-message-{Guid.NewGuid():N}"), Encoding.UTF8.GetBytes(message), leftToOperation: false);
 
     /// <summary>The data Passenger's gpg has gpg sign, written whole beside the operation's <paramref name="socket"/>, whose
     /// end deletes it where this process could not (<see cref="DeleteSigned"/>); one whose write fails is deleted, and the
@@ -98,7 +98,7 @@ internal sealed class CommitFile : IDisposable
     /// for git to write; the lock file git writes it through goes with it.</summary>
     public static CommitFile Index(string gitDir, string kind)
     {
-        string path = System.IO.Path.Combine(gitDir, $"passenger-{kind}-{Guid.NewGuid():N}");
+        string path = System.IO.Path.Combine(gitDir, $"pitstop-{kind}-{Guid.NewGuid():N}");
         return new CommitFile(false, path, path + ".lock");
     }
 

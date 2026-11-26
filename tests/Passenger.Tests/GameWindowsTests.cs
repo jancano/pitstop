@@ -28,7 +28,7 @@ public sealed partial class GameWindowsTests
     public async Task A_games_window_is_owned_by_passengers_window_held_over_the_pane_takes_a_key_follows_the_pane_and_holds_none_of_its_moves_while_stopped()
     {
         Assert.SkipUnless(OperatingSystem.IsWindows() || OperatingSystem.IsLinux(),
-            "Passenger holds a game's window over its Game window on Windows and under X11; macOS draws an embedded game as a layer");
+            "Pitstop holds a game's window over its Game window on Windows and under X11; macOS draws an embedded game as a layer");
         Assert.SkipWhen(OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")),
             "No X11 session: DISPLAY is unset, so there is no window to hold a game's over");
         GodotFound? godot = GodotExecutables.Find(null);
@@ -118,7 +118,7 @@ public sealed partial class GameWindowsTests
             host.Raise();
             answered.Cancel();
             Assert.True(Waiting.Until(() => host.Pump() && freeing.IsCompleted, TimeSpan.FromSeconds(30)), "The wait for the host's moves never ended");
-            Assert.False(freed, "The host's coming in front waited for the game a debugger stopped until it ran again: Passenger would freeze at a "
+            Assert.False(freed, "The host's coming in front waited for the game a debugger stopped until it ran again: Pitstop would freeze at a "
                 + "breakpoint in a game its Game window holds");
 
             // Run on, it is owned again once it answers and in front of the host, and takes a key.
@@ -205,7 +205,7 @@ public sealed partial class GameWindowsTests
 
         public Win32Host()
         {
-            window = CreateWindowExW(0, "STATIC", "Passenger's game host", Overlapped | Visible, 100, 100, 1000, 700, 0, 0, 0, 0);
+            window = CreateWindowExW(0, "STATIC", "Pitstop's game host", Overlapped | Visible, 100, 100, 1000, 700, 0, 0, 0, 0);
             Assert.True(window != 0, $"The host window could not be made: {Marshal.GetLastPInvokeError()}");
         }
 

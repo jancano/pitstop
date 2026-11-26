@@ -4,7 +4,7 @@
         xmlns:docking="using:Passenger.App.Docking"
         xmlns:app="using:Passenger.App"
         x:Class="Passenger.App.MainWindow"
-        Title="Passenger"
+        Title="Pitstop"
         Width="1400" Height="900"
         MinWidth="{x:Static app:MainWindow.SmallestWidth}" MinHeight="{x:Static app:MainWindow.SmallestHeight}">
     <Window.Resources>
@@ -215,7 +215,7 @@
                         </Button>
                     </StackPanel>
                     <Button Name="ErrorsButton" Classes="statusItem" IsVisible="False" Click="OnErrorsClicked"
-                            ToolTip.Tip="IDE Internal Errors: Passenger caught these and kept running">
+                            ToolTip.Tip="IDE Internal Errors: Pitstop caught these and kept running">
                         <StackPanel Orientation="Horizontal" Spacing="{x:Static app:Gaps.Tight}">
                             <PathIcon Data="{DynamicResource Icon.Error}" Foreground="{DynamicResource Passenger.Error}" Width="14" Height="14" />
                             <TextBlock Name="ErrorsCount" Classes="status" Foreground="{DynamicResource Passenger.Error}" />
@@ -224,7 +224,7 @@
                     <!-- Agents on the window: how many, what one runs, or a question one waits on, which stands out (the
                          accent's pill with a bell) and a click brings forward, since the person may not have seen it. -->
                     <Button Name="AgentButton" Classes="statusItem" Focusable="False" IsVisible="False" Click="OnAgentClicked"
-                            ToolTip.Tip="An agent is using this window through Passenger's MCP server">
+                            ToolTip.Tip="An agent is using this window through Pitstop's MCP server">
                         <StackPanel Orientation="Horizontal" Spacing="{x:Static app:Gaps.Tight}">
                             <PathIcon Name="AgentIcon" Data="{StaticResource Icon.Notifications}" Width="12" Height="12" IsVisible="False" />
                             <TextBlock Name="AgentText" Classes="status" />

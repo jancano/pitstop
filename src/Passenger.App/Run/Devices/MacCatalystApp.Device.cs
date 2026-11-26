@@ -34,7 +34,7 @@ public sealed partial record MacCatalystApp : IDeviceApp
         string? relay = relayed ? Relay() : null;
         if (relayed && relay is null)
         {
-            return (null, null, $"This Passenger carries no debug relay for {RuntimeIdentifier} ({RelayCarried()})");
+            return (null, null, $"This Pitstop carries no debug relay for {RuntimeIdentifier} ({RelayCarried()})");
         }
         if (relayed && !SocketFolders.Fits(RelaySocket))
         {
@@ -47,7 +47,7 @@ public sealed partial record MacCatalystApp : IDeviceApp
         if (CarriedIn.Copy(Carried, files) is { } uncarried)
         {
             await EndAsync(put, stop: false);
-            return (null, null, $"What {Package} loads of Passenger's could not be put in its container ({Carried}): {uncarried}");
+            return (null, null, $"What {Package} loads of Pitstop's could not be put in its container ({Carried}): {uncarried}");
         }
         inspector?.Reach(InspectorSocket);
         if (relay is null)

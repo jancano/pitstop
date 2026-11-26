@@ -39,8 +39,8 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     /// <summary>The downloads the release workflow publishes with every release, by fixed names.</summary>
     private static readonly string[] Downloads =
     [
-        "Passenger-macos-arm64.dmg", "Passenger-macos-x64.dmg", "Passenger-windows-x64.exe", "Passenger-windows-arm64.exe",
-        "Passenger-linux-x64.tar.gz", "Passenger-linux-arm64.tar.gz",
+        "Pitstop-macos-arm64.dmg", "Pitstop-macos-x64.dmg", "Pitstop-windows-x64.exe", "Pitstop-windows-arm64.exe",
+        "Pitstop-linux-x64.tar.gz", "Pitstop-linux-arm64.tar.gz",
     ];
 
     private readonly string settings = TestFolders.Create("updates-");
@@ -82,13 +82,13 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Flow.StepApart("a release whose notes mark it a security release is named one saying what it fixes and one unmarked is said as before", () => new UpdatesTests(images), t => t.A_release_whose_notes_mark_it_a_security_release_is_named_one_saying_what_it_fixes_and_one_unmarked_is_said_as_before());
         Flow.StepApart("a release after a security release this version lacks is a security update in that releases words", () => new UpdatesTests(images), t => t.A_release_after_a_security_release_this_version_lacks_is_a_security_update_in_that_releases_words());
         await Flow.StepApartAsync("a 0 3 4 is told 0 4 1 is a security update in 0 4 0s words and a 0 4 0 that it is out", () => new UpdatesTests(images), t => t.A_0_3_4_is_told_0_4_1_is_a_security_update_in_0_4_0s_words_and_a_0_4_0_that_it_is_out());
-        Flow.StepApart("an installed Passenger offers to restart into a security release at once when it is ready", () => new UpdatesTests(images), t => t.An_installed_Passenger_offers_to_restart_into_a_security_release_at_once_when_it_is_ready());
+        Flow.StepApart("an installed Pitstop offers to restart into a security release at once when it is ready", () => new UpdatesTests(images), t => t.An_installed_Passenger_offers_to_restart_into_a_security_release_at_once_when_it_is_ready());
         Flow.StepApart("an agents click on Restart to Update in the persons window restarts nothing and is told why", () => new UpdatesTests(images), t => t.An_agents_click_on_Restart_to_Update_in_the_persons_window_restarts_nothing_and_is_told_why());
         Flow.StepApart("a newer release its download and Restart to Update are said in every window from one check and one download", () => new UpdatesTests(images), t => t.A_newer_release_its_download_and_Restart_to_Update_are_said_in_every_window_from_one_check_and_one_download());
         Flow.StepApart("a download that does not match the SHA 256 its release gives is refused and the person told why", () => new UpdatesTests(images), t => t.A_download_that_does_not_match_the_SHA_256_its_release_gives_is_refused_and_the_person_told_why());
         Flow.StepApart("with Check for updates off nothing is downloaded and turning it off drops a download made", () => new UpdatesTests(images), t => t.With_Check_for_updates_off_nothing_is_downloaded_and_turning_it_off_drops_a_download_made());
         Flow.StepApart("a copy its installer or disk image did not put in place never downloads an update", () => new UpdatesTests(images), t => t.A_copy_its_installer_or_disk_image_did_not_put_in_place_never_downloads_an_update());
-        Flow.StepApart("an installed Passenger downloads a newer release in the background checks it and offers Restart to Update", () => new UpdatesTests(images), t => t.An_installed_Passenger_downloads_a_newer_release_in_the_background_checks_it_and_offers_Restart_to_Update());
+        Flow.StepApart("an installed Pitstop downloads a newer release in the background checks it and offers Restart to Update", () => new UpdatesTests(images), t => t.An_installed_Passenger_downloads_a_newer_release_in_the_background_checks_it_and_offers_Restart_to_Update());
     }
 
     /// <summary>On macOS Restart to Update puts the disk image's app in place of the old and starts it, a disk image
@@ -131,7 +131,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 Assert.Skip("This step runs on macOS alone");
             }
         });
-        Flow.StepApart("another Passenger open from the same app holds the update back until it closes and the next start names it", () => new UpdatesTests(images), t =>
+        Flow.StepApart("another Pitstop open from the same app holds the update back until it closes and the next start names it", () => new UpdatesTests(images), t =>
         {
             if (OperatingSystem.IsMacOS())
             {
@@ -194,7 +194,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     [AvaloniaFact]
     public void A_Windows_update_is_held_back_by_another_Passenger_or_left_ready_and_said()
     {
-        Flow.StepApart("on Windows another Passenger running from the install holds the update back and the next start names it", () => new UpdatesTests(images), t =>
+        Flow.StepApart("on Windows another Pitstop running from the install holds the update back and the next start names it", () => new UpdatesTests(images), t =>
         {
             if (OperatingSystem.IsWindows())
             {
@@ -225,7 +225,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     [AvaloniaFact]
     public void A_Linux_update_replaces_its_own_install_or_leaves_it_as_it_was_and_says_why()
     {
-        Flow.StepApart("a Linux install of ones own is put in place as Passenger restarts its agents relay following and its menu entry refreshed", () => new UpdatesTests(images), t =>
+        Flow.StepApart("a Linux install of ones own is put in place as Pitstop restarts its agents relay following and its menu entry refreshed", () => new UpdatesTests(images), t =>
         {
             if (OperatingSystem.IsLinux())
             {
@@ -269,7 +269,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 Assert.Skip("This step runs on Linux alone");
             }
         });
-        Flow.StepApart("a Linux install for everyone is made ready where only the person writes and install sh takes only the archive Passenger checked", () => new UpdatesTests(images), t =>
+        Flow.StepApart("a Linux install for everyone is made ready where only the person writes and install sh takes only the archive Pitstop checked", () => new UpdatesTests(images), t =>
         {
             if (OperatingSystem.IsLinux())
             {
@@ -293,19 +293,19 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Ui.Settle();
         Assert.True(github.Requests.Count == 1, $"The window asked for the latest release {github.Requests.Count} times as it started, not once");
 
-        Assert.True(Notice(window) == $"Passenger {newer} available", $"A newer release, v{newer}, is out, but {UpdatesSaid(window)}");
-        string download = $"https://github.com/Zaneris/passenger/releases/download/v{newer}/{ThisSystemsDownload()}";
+        Assert.True(Notice(window) == $"Pitstop {newer} available", $"A newer release, v{newer}, is out, but {UpdatesSaid(window)}");
+        string download = $"https://github.com/jancano/pitstop/releases/download/v{newer}/{ThisSystemsDownload()}";
         Assert.True(window.UpdateShown?.Link.AbsoluteUri == download,
             $"The notice's link opens {window.UpdateShown?.Link}, not this system's download from the release, {download}");
         Assert.Contains(download, ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty);
         Ui.Click(window.FindControl<Button>("UpdateButton")!, settle: false);
         Assert.True(window.Browsed.LastOrDefault()?.AbsoluteUri == download, $"The notice's click opened [{string.Join(", ", window.Browsed)}], not {download} through Browse");
         Assert.True(window.Status == before, $"A check of the window's own said '{window.Status}' in the status bar's message, where it says nothing");
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} is out (v{newer}; this is {Product.Version}): {download}", StringComparison.Ordinal));
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} is out (v{newer}; this is {Product.Version}): {download}", StringComparison.Ordinal));
 
         string[] head = github.Requests[0].Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal($"GET {github.Listing.PathAndQuery} HTTP/1.1", head[0]);
-        Assert.Contains($"User-Agent: Passenger/{Product.Version}", head);
+        Assert.Contains($"User-Agent: Pitstop/{Product.Version}", head);
         string[] headers = [.. head.Skip(1).Select(h => h.Split(':')[0]).Order(StringComparer.OrdinalIgnoreCase)];
         Assert.True(headers.SequenceEqual(["Accept", "Host", "User-Agent"], StringComparer.OrdinalIgnoreCase),
             $"The request sent more than the request itself: {string.Join(", ", headers)}");
@@ -318,8 +318,8 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Assert.True(Notice(window) is null, $"v{newer} was announced already, yet the window started again announces it once more: {UpdatesSaid(window)}");
 
         CheckForUpdates(window);
-        Assert.True(Notice(window) == $"Passenger {newer} available", $"Check for Updates did not show the newer release the window had announced before: {UpdatesSaid(window)}");
-        Assert.Equal($"Passenger {newer} is available", window.Status);
+        Assert.True(Notice(window) == $"Pitstop {newer} available", $"Check for Updates did not show the newer release the window had announced before: {UpdatesSaid(window)}");
+        Assert.Equal($"Pitstop {newer} is available", window.Status);
         window.Close();
 
         string later = Bumped(1, 1);
@@ -327,7 +327,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         window = Started();
         window.WatchForUpdates();
         Ui.Settle();
-        Assert.True(Notice(window) == $"Passenger {later} available", $"v{later} came out after v{newer} was announced, but {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Pitstop {later} available", $"v{later} came out after v{newer} was announced, but {UpdatesSaid(window)}");
         window.Close();
     }
 
@@ -348,7 +348,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Assert.Null(window.Open(bank));
         Ui.Settle();
         MainWindow second = Assert.Single(PassengerApp.Windows, w => w != window);
-        Assert.True(github.Requests.Count == 1, $"Two windows of one Passenger asked for the latest release {github.Requests.Count} times, not once");
+        Assert.True(github.Requests.Count == 1, $"Two windows of one Pitstop asked for the latest release {github.Requests.Count} times, not once");
 
         window.Close();
         Ui.Settle();
@@ -472,9 +472,9 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
         github.Let();
         Ui.Settle();
-        Assert.True(Notice(window) == $"Passenger {newer} available",
+        Assert.True(Notice(window) == $"Pitstop {newer} available",
             $"v{newer} was answered 2 s after the window asked, well within its feed's limit, yet {UpdatesSaid(window)}");
-        Assert.True(shown.SequenceEqual([$"Passenger {newer} available"]),
+        Assert.True(shown.SequenceEqual([$"Pitstop {newer} available"]),
             $"The notice's button came into view {shown.Count} time(s), with [{string.Join(", ", shown.Select(words => words is null ? "no words" : $"'{words}'"))}], not once with its words");
         Assert.True(github.Requests.Count == 1, $"The window asked for the latest release {github.Requests.Count} times, not once");
         window.Close();
@@ -498,7 +498,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         // GitHub answers again: the next look asks, where a day's wait would leave the release unsaid until tomorrow.
         string newer = Bumped(1, 0);
         github.Answer = Release($"v{newer}");
-        Ui.WaitFor(() => Notice(window) == $"Passenger {newer} available",
+        Ui.WaitFor(() => Notice(window) == $"Pitstop {newer} available",
             () => $"v{newer} is out and the check before failed, yet the window's next looks did not ask again: {UpdatesSaid(window)}");
         int asked = github.Requests.Count;
 
@@ -511,7 +511,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
         // A night asleep: the wall clock passed the day while the window's timer counted nothing of it.
         clock.Advance(TimeSpan.FromHours(1));
-        Ui.WaitFor(() => Notice(window) == $"Passenger {later} available",
+        Ui.WaitFor(() => Notice(window) == $"Pitstop {later} available",
             () => $"A day passed on the wall clock since the window's last answer, yet its next looks did not ask for v{later}: {UpdatesSaid(window)}");
         Assert.True(github.Requests.Count == asked + 1, $"The window asked {github.Requests.Count - asked} times a day after its answer, not once");
         window.Close();
@@ -520,7 +520,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     /// <summary>A release's notes marked a security release's say what it fixes in their Security section's first line.</summary>
     private static string SecurityNotes(string version) =>
         $"{ReleaseNotes.SecurityMarker}\nPassenger {version} closes a hole.\n\n## Security\n\n"
-        + "- **Agents reach only the open folder** ([#1](https://github.com/Zaneris/passenger/issues/1)): a path outside it is refused.\n- Another fix.\n\n## Fixed\n\n- Something else.\n";
+        + "- **Agents reach only the open folder** ([#1](https://github.com/jancano/pitstop/issues/1)): a path outside it is refused.\n- Another fix.\n\n## Fixed\n\n- Something else.\n";
 
     /// <summary>What <see cref="SecurityNotes"/> says the release fixes, in plain words.</summary>
     private const string SecurityFixes = "Agents reach only the open folder (#1): a path outside it is refused";
@@ -533,20 +533,20 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         MainWindow window = Started();
         window.WatchForUpdates();
         Ui.Settle();
-        Assert.True(Notice(window) == $"Security update: Passenger {newer} available", $"v{newer}'s notes mark it a security release, but {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Security update: Pitstop {newer} available", $"v{newer}'s notes mark it a security release, but {UpdatesSaid(window)}");
         string tip = ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty;
-        Assert.StartsWith($"Passenger {newer} is a security update: {SecurityFixes}\nInstall it as soon as you can.\n", tip, StringComparison.Ordinal);
-        Assert.Equal($"Passenger {newer} is a security update: {SecurityFixes}. Install it soon", window.Status);
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} is out (v{newer}; this is {Product.Version}), a security release: ", StringComparison.Ordinal));
+        Assert.StartsWith($"Pitstop {newer} is a security update: {SecurityFixes}\nInstall it as soon as you can.\n", tip, StringComparison.Ordinal);
+        Assert.Equal($"Pitstop {newer} is a security update: {SecurityFixes}. Install it soon", window.Status);
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} is out (v{newer}; this is {Product.Version}), a security release: ", StringComparison.Ordinal));
         window.Close();
 
         string later = Bumped(1, 1);
-        github.Answer = Release($"v{later}", body: $"Passenger {later} fixes things.\n\n## Security\n\n- Not marked a security release.\n");
+        github.Answer = Release($"v{later}", body: $"Pitstop {later} fixes things.\n\n## Security\n\n- Not marked a security release.\n");
         window = Started();
         string? before = window.Status;
         window.WatchForUpdates();
         Ui.Settle();
-        Assert.True(Notice(window) == $"Passenger {later} available", $"v{later}'s notes carry no mark, but {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Pitstop {later} available", $"v{later}'s notes carry no mark, but {UpdatesSaid(window)}");
         Assert.DoesNotContain("security", ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(before, window.Status);
         window.Close();
@@ -564,31 +564,31 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Listed(
             Made($"v{Bumped(1, 3)}", draft: true, body: $"{ReleaseNotes.SecurityMarker}\n\n{unreleased}"),
             Made($"v{Bumped(1, 2)}-rc.1", body: $"{ReleaseNotes.SecurityMarker}\n\n{unreleased}"),
-            Made($"v{newer}", body: $"Passenger {newer} fixes what {marked} left.\n\n## Fixed\n\n- A fix.\n"),
+            Made($"v{newer}", body: $"Pitstop {newer} fixes what {marked} left.\n\n## Fixed\n\n- A fix.\n"),
             Made($"v{marked}", body: SecurityNotes(marked)),
             Made($"v{Product.Version}", body: $"{ReleaseNotes.SecurityMarker}\n\n## Security\n\n- What this version fixed.\n"));
         MainWindow window = Started();
         window.WatchForUpdates();
         Ui.Settle();
-        Assert.True(Notice(window) == $"Security update: Passenger {newer} available",
+        Assert.True(Notice(window) == $"Security update: Pitstop {newer} available",
             $"v{newer} follows v{marked}, a security release this version lacks, but {UpdatesSaid(window)}");
         string tip = ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty;
-        Assert.True(tip.StartsWith($"Passenger {newer} is a security update: {SecurityFixes}\nInstall it as soon as you can.\n", StringComparison.Ordinal),
+        Assert.True(tip.StartsWith($"Pitstop {newer} is a security update: {SecurityFixes}\nInstall it as soon as you can.\n", StringComparison.Ordinal),
             $"The notice's tip does not say what v{marked} fixes, the newest security release after this version: {tip}");
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} is out (v{newer}; this is {Product.Version}), a security update as v{marked} is a security release: ", StringComparison.Ordinal));
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} is out (v{newer}; this is {Product.Version}), a security update as v{marked} is a security release: ", StringComparison.Ordinal));
         window.Close();
 
         // This version is the newest security release: the one after it is an update like any other.
         string later = Bumped(1, 2);
         github.Answer = Listed(
-            Made($"v{later}", body: $"Passenger {later} fixes things.\n"),
+            Made($"v{later}", body: $"Pitstop {later} fixes things.\n"),
             Made($"v{Product.Version}", body: SecurityNotes(Product.Version)),
             Made("v0.0.1", body: SecurityNotes("0.0.1")));
         window = Started();
         string? before = window.Status;
         window.WatchForUpdates();
         Ui.Settle();
-        Assert.True(Notice(window) == $"Passenger {later} available", $"Only this version and older ones are security releases, but {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Pitstop {later} available", $"Only this version and older ones are security releases, but {UpdatesSaid(window)}");
         Assert.DoesNotContain("security", ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(before, window.Status);
         window.Close();
@@ -599,19 +599,19 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     private async Task A_0_3_4_is_told_0_4_1_is_a_security_update_in_0_4_0s_words_and_a_0_4_0_that_it_is_out()
     {
         github.Answer = Listed(
-            Made("v0.4.1", body: "Passenger 0.4.1 fixes what 0.4.0 left.\n\n## Fixed\n\n- A fix.\n"),
+            Made("v0.4.1", body: "Pitstop 0.4.1 fixes what 0.4.0 left.\n\n## Fixed\n\n- A fix.\n"),
             Made("v0.4.0", body: SecurityNotes("0.4.0")),
-            Made("v0.3.4", body: "Passenger 0.3.4 fixes things.\n"));
+            Made("v0.3.4", body: "Pitstop 0.3.4 fixes things.\n"));
         ReleaseFeed feed = new(github.Listing, ReleaseFeed.ShortTimeout.Scaled());
 
         ReleaseAnswer older = await Releases.AskAsync(feed, "0.3.4", TestContext.Current.CancellationToken);
         Assert.True(older is ReleaseAnswer.Newer { Release: { Version: "0.4.1", Security: SecurityFixes } },
-            $"A Passenger 0.3.4, which lacks 0.4.0's security fixes, was not told 0.4.1 brings them: {older.Said}");
-        Assert.True(github.Requests.Count == 1, $"Passenger asked {github.Requests.Count} times for the releases, not once");
+            $"A Pitstop 0.3.4, which lacks 0.4.0's security fixes, was not told 0.4.1 brings them: {older.Said}");
+        Assert.True(github.Requests.Count == 1, $"Pitstop asked {github.Requests.Count} times for the releases, not once");
 
         ReleaseAnswer current = await Releases.AskAsync(feed, "0.4.0", TestContext.Current.CancellationToken);
         Assert.True(current is ReleaseAnswer.Newer { Release: { Version: "0.4.1", Security: null } },
-            $"A Passenger 0.4.0, which has 0.4.0's security fixes, was told 0.4.1 is other than an update with none: {current.Said}");
+            $"A Pitstop 0.4.0, which has 0.4.0's security fixes, was told 0.4.1 is other than an update with none: {current.Said}");
     }
 
     private void An_installed_Passenger_offers_to_restart_into_a_security_release_at_once_when_it_is_ready()
@@ -622,10 +622,10 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Release($"v{newer}", files: copy.Update(newer), body: SecurityNotes(newer));
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to install security update Passenger {newer}", () => $"the status bar to offer the security update once v{newer} had downloaded: {UpdatesSaid(window)}");
-        Assert.Equal($"Passenger {newer} is a security update: {SecurityFixes}, downloaded and checked", window.Status);
+        Ui.WaitFor(() => Notice(window) == $"Restart to install security update Pitstop {newer}", () => $"the status bar to offer the security update once v{newer} had downloaded: {UpdatesSaid(window)}");
+        Assert.Equal($"Pitstop {newer} is a security update: {SecurityFixes}, downloaded and checked", window.Status);
         Assert.Equal("restart into it now", window.StatusPlace?.Name);
-        Assert.StartsWith($"Passenger {newer} is a security update: {SecurityFixes}\nRestart into it now rather than later.\n",
+        Assert.StartsWith($"Pitstop {newer} is a security update: {SecurityFixes}\nRestart into it now rather than later.\n",
             ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty, StringComparison.Ordinal);
         window.Close();
     }
@@ -640,7 +640,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Release($"v{newer}", files: copy.Update(newer));
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
         string folder = PathNames.Canonical(Plain("restart-agent-"));
         window.OpenFolder(folder);
         window.ApplySettings(window.Settings with { McpServer = true });
@@ -650,14 +650,14 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         try
         {
             Task<CallToolResult> clicking = Waiting.Apart(() => Result(client, McpTools.AppClick, new() { ["app"] = "ide", ["control"] = "#UpdateButton" }));
-            Press(Question(window, "the question for the agent's click in Passenger's windows"), AgentToolDialog.AllowForSession);
+            Press(Question(window, "the question for the agent's click in Pitstop's windows"), AgentToolDialog.AllowForSession);
             CallToolResult clicked = Await(clicking, "the agent's click on the status bar's Restart to Update");
             Assert.True(clicked.IsError == true && Text(clicked).Contains(Refusals.RestartIsThePersons, StringComparison.Ordinal),
                 $"The agent's click on the status bar's Restart to Update was answered: {Text(clicked)}");
             Ui.Settle();
             Assert.True(window.IsVisible, "The agent's click on Restart to Update closed the person's window");
             Assert.Equal(Refusals.RestartIsThePersons, window.Status);
-            Assert.True(Notice(window) == $"Restart to update to Passenger {newer}" && window.UpdateReady?.Version == newer,
+            Assert.True(Notice(window) == $"Restart to update to Pitstop {newer}" && window.UpdateReady?.Version == newer,
                 $"After the agent's click the update no longer waits for the person: {UpdatesSaid(window)}");
             Assert.True(copy.InstalledVersion is null || copy.InstalledVersion == Product.Version, $"The agent's click installed the update, as {copy.InstalledVersion}");
         }
@@ -680,25 +680,25 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         window.WatchForUpdates();
 
         // The stand-in holds the download half way, so its progress shows.
-        Ui.PumpUntil(() => Notice(window) is { } shown && shown.StartsWith($"Downloading Passenger {newer}: ", StringComparison.Ordinal) && shown != $"Downloading Passenger {newer}: 0%",
+        Ui.PumpUntil(() => Notice(window) is { } shown && shown.StartsWith($"Downloading Pitstop {newer}: ", StringComparison.Ordinal) && shown != $"Downloading Pitstop {newer}: 0%",
             $"the status bar to say how far v{newer}'s download has come");
         Assert.False(copy.Holds(newer), $"v{newer} was ready to install before its download had all come");
         github.Let();
 
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update once v{newer} had downloaded");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update once v{newer} had downloaded");
         Assert.True(copy.Holds(newer), $"The status bar offers Restart to Update, but v{newer} is not where it installs from");
         Assert.True(window.UpdateReady?.Version == newer, $"The window offers Restart to Update with {window.UpdateReady?.Version ?? "nothing"} ready, not {newer}");
         Assert.True(copy.InstalledVersion is null || copy.InstalledVersion == Product.Version,
-            $"The update was installed at once, as {copy.InstalledVersion}, before Passenger restarted");
+            $"The update was installed at once, as {copy.InstalledVersion}, before Pitstop restarted");
         Assert.True(window.Actions.WhyNot(AppActions.RestartToUpdate, window.Actions.Context()) is null, "Restart to Update cannot run with the update ready");
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} downloaded to ", StringComparison.Ordinal));
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} downloaded to ", StringComparison.Ordinal));
 
         foreach (string name in update.Keys)
         {
             string[] asked = github.RequestsFor(name);
             Assert.True(asked.Length == 1, $"{name} was downloaded {asked.Length} times, not once");
             string[] head = asked[0].Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
-            Assert.Contains($"User-Agent: Passenger/{Product.Version}", head);
+            Assert.Contains($"User-Agent: Pitstop/{Product.Version}", head);
             string[] headers = [.. head.Skip(1).Select(h => h.Split(':')[0]).Order(StringComparer.OrdinalIgnoreCase)];
             Assert.True(headers.SequenceEqual(["Host", "User-Agent"], StringComparer.OrdinalIgnoreCase),
                 $"The download of {name} sent more than the request itself: {string.Join(", ", headers)}");
@@ -710,7 +710,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         // Started again, as a person who closed Passenger with the update waiting: it is checked again, not downloaded again.
         window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "the window started again to offer the update made ready before");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "the window started again to offer the update made ready before");
         Assert.True(github.RequestsFor(copy.Package(newer)).Length == 1, $"The window started again downloaded {copy.Package(newer)} once more");
         window.Close();
     }
@@ -742,10 +742,10 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             MainWindow front = frontWindow = Assert.Single(PassengerApp.Windows, w => w != window);
             window.WatchForUpdates();
 
-            Ui.PumpUntil(() => Notice(front) is { } shown && shown.StartsWith($"Downloading Passenger {newer}: ", StringComparison.Ordinal),
+            Ui.PumpUntil(() => Notice(front) is { } shown && shown.StartsWith($"Downloading Pitstop {newer}: ", StringComparison.Ordinal),
                 $"the window in front, not the one watching, to say v{newer} is downloading");
             github.Let();
-            Ui.WaitFor(() => Notice(front) == $"Restart to update to Passenger {newer}",
+            Ui.WaitFor(() => Notice(front) == $"Restart to update to Pitstop {newer}",
                 () => $"the window in front to offer Restart to Update once v{newer} had downloaded, where {UpdatesSaid(front)}");
             Assert.True(Notice(window) == Notice(front), $"The window watching says '{Notice(window)}', the one in front '{Notice(front)}'");
             Assert.True(front.Actions.WhyNot(AppActions.RestartToUpdate, front.Actions.Context()) is null,
@@ -755,7 +755,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             Assert.Null(window.Open(till));
             Ui.Settle();
             MainWindow later = laterWindow = Assert.Single(PassengerApp.Windows, w => w != window && w != front);
-            Assert.True(Notice(later) == $"Restart to update to Passenger {newer}",
+            Assert.True(Notice(later) == $"Restart to update to Pitstop {newer}",
                 $"A window opened after v{newer} was made ready does not offer Restart to Update: {UpdatesSaid(later)}");
             Assert.True(later.Actions.WhyNot(AppActions.RestartToUpdate, later.Actions.Context()) is null,
                 "A window opened after the update was made ready cannot run Restart to Update");
@@ -763,7 +763,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 $"Three windows made {github.Requests.Count} requests, not one for the release and one for each of the {update.Count} files of this system's update");
 
             later.Perform(AppActions.CheckForUpdates);
-            Ui.WaitFor(() => later.Status == $"Passenger {newer} is ready: restart to update",
+            Ui.WaitFor(() => later.Status == $"Pitstop {newer} is ready: restart to update",
                 () => $"Check for Updates in the window opened later to say there that v{newer} is ready, where {UpdatesSaid(later)}");
             Assert.True(github.Requests.Count == update.Count + 2,
                 $"Check for Updates in a window that does not watch made {github.Requests.Count - update.Count - 1} requests, not one for the release alone");
@@ -794,13 +794,13 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
 
-        Ui.WaitFor(() => Notice(window) == $"Passenger {newer} not installed", $"the notice to say v{newer} was not installed once its download was refused");
+        Ui.WaitFor(() => Notice(window) == $"Pitstop {newer} not installed", $"the notice to say v{newer} was not installed once its download was refused");
         string said = window.Status ?? string.Empty;
-        Assert.True(said.StartsWith($"Passenger {newer} was not installed: {copy.Package(newer)}", StringComparison.Ordinal) && said.Contains("SHA", StringComparison.Ordinal),
+        Assert.True(said.StartsWith($"Pitstop {newer} was not installed: {copy.Package(newer)}", StringComparison.Ordinal) && said.Contains("SHA", StringComparison.Ordinal),
             $"A package that does not match its SHA-256 was refused without the person being told why: the status bar says '{said}'");
         Assert.Contains(said, ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty);
         Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: {said}", StringComparison.Ordinal));
-        string page = $"https://github.com/Zaneris/passenger/releases/tag/v{newer}";
+        string page = $"https://github.com/jancano/pitstop/releases/tag/v{newer}";
         Assert.True(window.UpdateShown?.Link.AbsoluteUri == page, $"After a refusal the notice opens {window.UpdateShown?.Link}, not the release's page, {page}");
 
         Assert.Null(window.UpdateReady);
@@ -848,7 +848,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             MainWindow window = Started(lettingGo);
             window.WatchForUpdates();
             Ui.WaitFor(() => Settled(window, newer), () => $"the update refused as it landed to be made ready or refused, where {UpdatesSaid(window)}");
-            Assert.True(Notice(window) == $"Restart to update to Passenger {newer}",
+            Assert.True(Notice(window) == $"Restart to update to Pitstop {newer}",
                 $"A disk image the Mac refused a moment after it landed was not opened once let go: {UpdatesSaid(window)}");
             Assert.True(tries.SequenceEqual([1, 2]), $"The image was tried {string.Join(", ", tries)}, not once refused and once let go");
             Assert.True(copy.Holds(newer), $"The status bar offers Restart to Update, but v{newer} is not where it installs from");
@@ -871,7 +871,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             window.WatchForUpdates();
             Ui.WaitFor(() => Settled(window, later), () => $"the update refused throughout to be refused, where {UpdatesSaid(window)}");
             string said = string.Format(System.Globalization.CultureInfo.InvariantCulture, why, refused, Path.Combine(other.Opened, later));
-            string words = $"Passenger {later} was not installed: {other.Package(later)} does not open as a disk image: {said}";
+            string words = $"Pitstop {later} was not installed: {other.Package(later)} does not open as a disk image: {said}";
             Assert.True(window.Status == words, $"An image the Mac never opened was not said in the tool's words: the status bar says '{window.Status}', not '{words}'");
             Assert.Contains(words, ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty);
             Assert.True(tries.SequenceEqual([1, 2, 3]), $"The image refused throughout was tried {string.Join(", ", tries)}, not three times");
@@ -888,7 +888,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         }
 
         static bool Settled(MainWindow window, string version) =>
-            Notice(window) == $"Restart to update to Passenger {version}" || Notice(window) == $"Passenger {version} not installed";
+            Notice(window) == $"Restart to update to Pitstop {version}" || Notice(window) == $"Pitstop {version} not installed";
     }
 
     /// <summary>A disk image whose disk another program holds open as the update lets it go (a scanner, a backup agent):
@@ -927,7 +927,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             MainWindow window = Started(lettingGo);
             window.WatchForUpdates();
             Ui.WaitFor(() => Settled(window, newer), () => $"the update whose disk was held as it was let go to be made ready or refused, where {UpdatesSaid(window)}");
-            Assert.True(Notice(window) == $"Restart to update to Passenger {newer}", $"An update whose image's disk was held a moment was not made ready: {UpdatesSaid(window)}");
+            Assert.True(Notice(window) == $"Restart to update to Pitstop {newer}", $"An update whose image's disk was held a moment was not made ready: {UpdatesSaid(window)}");
             Assert.True(tries.Take(3).SequenceEqual([1, 2, 3]),
                 $"The image was let go of at tries {string.Join(", ", tries)}, not refused twice while its disk was held and let go at the third");
             IReadOnlyList<string> left = AttachedUnder(copy.Opened);
@@ -954,7 +954,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             window = Started(neverLettingGo);
             window.WatchForUpdates();
             Ui.WaitFor(() => Settled(window, later), () => $"the update whose disk was held throughout to be made ready or refused, where {UpdatesSaid(window)}");
-            Assert.True(Notice(window) == $"Restart to update to Passenger {later}",
+            Assert.True(Notice(window) == $"Restart to update to Pitstop {later}",
                 $"An update whose app was copied out and checked was not made ready because its image's disk stayed held: {UpdatesSaid(window)}");
             Assert.True(tries.SequenceEqual([1, 2, 3, 4, 5]), $"The image held throughout was let go of at tries {string.Join(", ", tries)}, not five");
             Assert.True(AttachedUnder(other.Opened).Count > 0, "The image whose disk was held throughout is not attached, so the test held nothing");
@@ -965,12 +965,12 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
             // Dropped while still held, then let go: the same release is downloaded to the same file again and opened.
             window.ApplySettings(window.Settings with { CheckForUpdates = false });
-            Ui.WaitFor(() => !other.Holds(later) && Notice(window) == $"Passenger {later} available", () => $"the update made ready to be dropped as Check for updates went off, where {UpdatesSaid(window)}");
+            Ui.WaitFor(() => !other.Holds(later) && Notice(window) == $"Pitstop {later} available", () => $"the update made ready to be dropped as Check for updates went off, where {UpdatesSaid(window)}");
             Volatile.Write(ref holding, false);
             hold.Let();
             window.ApplySettings(window.Settings with { CheckForUpdates = true });
             Ui.WaitFor(() => Settled(window, later), () => $"the same release downloaded again to be made ready or refused, where {UpdatesSaid(window)}");
-            Assert.True(Notice(window) == $"Restart to update to Passenger {later}", $"Once its disk was let go, the same release's image did not open again: {UpdatesSaid(window)}");
+            Assert.True(Notice(window) == $"Restart to update to Pitstop {later}", $"Once its disk was let go, the same release's image did not open again: {UpdatesSaid(window)}");
             left = AttachedUnder(other.Opened);
             Assert.True(left.Count == 0, $"The same release opened again left its images attached, as {string.Join("; ", left)}");
             window.Close();
@@ -983,7 +983,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         }
 
         static bool Settled(MainWindow window, string version) =>
-            Notice(window) == $"Restart to update to Passenger {version}" || Notice(window) == $"Passenger {version} not installed";
+            Notice(window) == $"Restart to update to Pitstop {version}" || Notice(window) == $"Pitstop {version} not installed";
     }
 
     /// <summary>A disk held open as another program may hold one (a scanner, a backup agent): its raw device, read.</summary>
@@ -1061,17 +1061,17 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Assert.True(github.Requests.Count == 0, $"With Check for updates off, the window asked GitHub {github.Requests.Count} time(s)");
 
         CheckForUpdates(window);
-        Assert.True(Notice(window) == $"Passenger {newer} available", $"Check for Updates with the setting off did not show the newer release: {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Pitstop {newer} available", $"Check for Updates with the setting off did not show the newer release: {UpdatesSaid(window)}");
         Ui.Settle();
         string[] downloaded = [.. update.Keys.Where(name => github.RequestsFor(name).Length > 0)];
         Assert.True(downloaded.Length == 0, $"With Check for updates off, the window downloaded {string.Join(", ", downloaded)}");
         Assert.False(copy.Holds(newer), $"With Check for updates off, v{newer} is ready to install");
 
         window.ApplySettings(window.Settings with { CheckForUpdates = true });
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "Check for updates turned on to download the newer release");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "Check for updates turned on to download the newer release");
         window.ApplySettings(window.Settings with { CheckForUpdates = false });
         Ui.WaitFor(() => !copy.Holds(newer) && copy.Downloaded().Count == 0, "the update downloaded to be dropped as Check for updates went off");
-        Assert.True(Notice(window) == $"Passenger {newer} available", $"With the download dropped, {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Pitstop {newer} available", $"With the download dropped, {UpdatesSaid(window)}");
         Assert.Null(window.UpdateReady);
         window.Close();
         Ended(window);
@@ -1084,7 +1084,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     {
         using IDisposable theme = TestsTheme();
         // The tests' own Passenger, a build from source as `just run` and a Debug build are, is one.
-        Assert.True(Updater.OfThisCopy(settings, out string why) is null, "The tests' Passenger, a build from source, would update itself");
+        Assert.True(Updater.OfThisCopy(settings, out string why) is null, "The tests' Pitstop, a build from source, would update itself");
         Assert.False(string.IsNullOrWhiteSpace(why), "A copy that cannot update itself does not say why");
 
         string newer = Bumped(1, 0);
@@ -1098,7 +1098,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         MainWindow window = Started();
         window.WatchForUpdates();
         Ui.Settle();
-        Assert.True(Notice(window) == $"Passenger {newer} available", $"A copy that cannot update itself does not show the newer release's link: {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Pitstop {newer} available", $"A copy that cannot update itself does not show the newer release's link: {UpdatesSaid(window)}");
         Assert.True(github.Requests.Count == 1, $"A copy that cannot update itself made {github.Requests.Count} requests, not only the one for the latest release");
         CheckForUpdates(window);
         Assert.True(github.Requests.Count == 2 && files.Keys.All(name => github.RequestsFor(name).Length == 0),
@@ -1107,18 +1107,18 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         window.Close();
 
         // A portable copy, as App makes the person's window of one: it never replaces itself, and says what to put in its place.
-        string data = Path.Combine(settings, "Passenger", ThisCopy.DataName);
+        string data = Path.Combine(settings, "Pitstop", ThisCopy.DataName);
         string portableBuild = Releases.ThisSystemsAsset(portable: true)!;
         MainWindow portable = Started(elsewhere: Updater.Portable(data, portableBuild));
         portable.WatchForUpdates();
         Ui.Settle();
         // Announced once per version already, by the window before: asked, it is said again.
         CheckForUpdates(portable);
-        Assert.True(Notice(portable) == $"Passenger {newer} available", $"A portable copy does not say v{newer} is out: {UpdatesSaid(portable)}");
+        Assert.True(Notice(portable) == $"Pitstop {newer} available", $"A portable copy does not say v{newer} is out: {UpdatesSaid(portable)}");
         string tip = ToolTip.GetTip(portable.FindControl<Button>("UpdateButton")!) as string ?? string.Empty;
-        Assert.True(tip.Contains($"This copy of Passenger is portable, keeping its state in {data}, so it never replaces itself: put the release's {portableBuild} in its place", StringComparison.Ordinal),
+        Assert.True(tip.Contains($"This copy of Pitstop is portable, keeping its state in {data}, so it never replaces itself: put the release's {portableBuild} in its place", StringComparison.Ordinal),
             $"A portable copy's notice does not say to put the release's portable build in its place: '{tip}'");
-        string page = $"https://github.com/Zaneris/passenger/releases/tag/v{newer}";
+        string page = $"https://github.com/jancano/pitstop/releases/tag/v{newer}";
         Assert.True(portable.UpdateShown?.Link.AbsoluteUri == page, $"A portable copy links {portable.UpdateShown?.Link}, not the release's page, {page}");
         Assert.True(files.Keys.All(name => github.RequestsFor(name).Length == 0), "A portable copy downloaded the release");
         portable.Close();
@@ -1138,7 +1138,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Release($"v{newer}", files: copy.Update(newer));
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
 
         Ui.Click(window.FindControl<Button>("UpdateButton")!, settle: false);
         Ui.Settle();
@@ -1149,20 +1149,20 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Assert.True(copy.SignatureHolds(), $"The app put in place at {copy.Bundle} is not whole: its signature does not hold");
         Assert.True(Ui.Shared(copy.Started) == $"started {newer}\n", $"Restart to Update did not start the new version once: what started says '{Ui.Shared(copy.Started)}'");
         string[] beside = [.. Directory.EnumerateFileSystemEntries(copy.Applications).Select(p => Path.GetFileName(p))];
-        Assert.True(beside.SequenceEqual(["Passenger.app"]), $"The update left {string.Join(", ", beside)} where the app is installed");
+        Assert.True(beside.SequenceEqual(["Pitstop.app"]), $"The update left {string.Join(", ", beside)} where the app is installed");
         Assert.True(copy.Downloaded().Count == 0, $"The update installed left {string.Join(", ", copy.Downloaded())} behind");
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} installed in {copy.Bundle}, and started", StringComparison.Ordinal));
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} installed in {copy.Bundle}, and started", StringComparison.Ordinal));
 
         string later = Bumped(1, 1);
         github.Answer = Release($"v{later}", files: copy.Update(later));
         window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {later}", $"the status bar to offer Restart to Update to v{later}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {later}", $"the status bar to offer Restart to Update to v{later}");
         window.Close();
         Ended(window);
         window.InstallUpdate();
-        Assert.True(copy.InstalledVersion == later, $"Passenger closed with v{later} ready left {copy.Bundle} at {copy.InstalledVersion}");
-        Assert.True(Ui.Shared(copy.Started) == $"started {newer}\n", "Closing Passenger started the version it installed, which only Restart to Update does");
+        Assert.True(copy.InstalledVersion == later, $"Pitstop closed with v{later} ready left {copy.Bundle} at {copy.InstalledVersion}");
+        Assert.True(Ui.Shared(copy.Started) == $"started {newer}\n", "Closing Pitstop started the version it installed, which only Restart to Update does");
     }
 
     [SupportedOSPlatform("macos")]
@@ -1176,7 +1176,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Release($"v{newer}", files: copy.Update(newer));
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
 
         // The folder the app is in turned read-only meanwhile: the app cannot be replaced, and stays as it was.
         UnixFileMode was = File.GetUnixFileMode(copy.Applications);
@@ -1193,12 +1193,12 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         }
         Assert.True(copy.InstalledVersion == Product.Version, $"{copy.Bundle} is {copy.InstalledVersion} after an update that could not take its place");
         Assert.True(copy.SignatureHolds(), $"{copy.Bundle} is not whole after an update that could not take its place");
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} was not installed in {copy.Bundle}: Permission denied", StringComparison.Ordinal));
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} was not installed in {copy.Bundle}: Permission denied", StringComparison.Ordinal));
 
         window = Started(copy.Updater());
         window.WatchForUpdates();
-        Assert.Equal($"Passenger {newer} did not install: Permission denied", window.Status);
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "the update that did not install to be offered again");
+        Assert.Equal($"Pitstop {newer} did not install: Permission denied", window.Status);
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "the update that did not install to be offered again");
         Assert.True(github.RequestsFor(copy.Package(newer)).Length == 1, $"{copy.Package(newer)} was downloaded again");
         window.Close();
     }
@@ -1214,10 +1214,10 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Release($"v{newer}", files: copy.Update(newer));
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
 
         // Another Passenger runs from the same app, as `open -n` starts one: a program at its executable's path.
-        string executable = Path.Combine(copy.Bundle, "Contents", "MacOS", "Passenger");
+        string executable = Path.Combine(copy.Bundle, "Contents", "MacOS", "Pitstop");
         File.Copy("/bin/sleep", executable, overwrite: true);
         // Signed again, as Make signs the app: a bundle whose seal no longer holds starts with macOS's "damaged" dialog.
         Tool("/usr/bin/codesign", "--force", "--options", "runtime", "--sign", "-", copy.Bundle);
@@ -1227,12 +1227,12 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         {
             string? before = window.Status;
             Ui.Click(window.FindControl<Button>("UpdateButton")!);
-            Assert.True(window.IsVisible, "Restart to Update closed the window while another Passenger runs from the same app");
-            Assert.True(Notice(window) == $"Passenger {newer} waits for 1 program to close",
-                $"With another Passenger running from the app, Restart to Update does not say it waits for it: {UpdatesSaid(window)}");
+            Assert.True(window.IsVisible, "Restart to Update closed the window while another Pitstop runs from the same app");
+            Assert.True(Notice(window) == $"Pitstop {newer} waits for 1 program to close",
+                $"With another Pitstop running from the app, Restart to Update does not say it waits for it: {UpdatesSaid(window)}");
             string tip = ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty;
-            Assert.True(tip.Contains($"Passenger {newer} cannot be installed while this runs from {copy.Bundle}:", StringComparison.Ordinal)
-                && tip.Contains($"process {other.Id}: ", StringComparison.Ordinal) && tip.Contains("Passenger 120", StringComparison.Ordinal)
+            Assert.True(tip.Contains($"Pitstop {newer} cannot be installed while this runs from {copy.Bundle}:", StringComparison.Ordinal)
+                && tip.Contains($"process {other.Id}: ", StringComparison.Ordinal) && tip.Contains("Pitstop 120", StringComparison.Ordinal)
                 && tip.Contains("Quit it", StringComparison.Ordinal),
                 $"The notice does not name what holds the update back in full, with what to do: '{tip}'");
             Assert.True(window.Status == before, $"What holds the update back was said in the status bar's cut-off message: '{window.Status}'");
@@ -1240,16 +1240,16 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             window.Close();
             Ended(window);
             window.InstallUpdate();
-            Assert.True(copy.InstalledVersion == Product.Version, $"The app another Passenger runs from was replaced by {copy.InstalledVersion}");
-            Assert.True(copy.Holds(newer), $"v{newer} is no longer ready once Passenger closed without installing it");
-            Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} waits to install: another Passenger runs from {copy.Bundle}", StringComparison.Ordinal));
+            Assert.True(copy.InstalledVersion == Product.Version, $"The app another Pitstop runs from was replaced by {copy.InstalledVersion}");
+            Assert.True(copy.Holds(newer), $"v{newer} is no longer ready once Pitstop closed without installing it");
+            Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} waits to install: another Pitstop runs from {copy.Bundle}", StringComparison.Ordinal));
 
             window = Started(copy.Updater());
             window.WatchForUpdates();
-            Assert.True(window.Status?.StartsWith($"Passenger {newer} did not install: another Passenger ran from {copy.Bundle} (process {other.Id}: ", StringComparison.Ordinal) == true
-                && window.Status.Contains("Passenger 120", StringComparison.Ordinal),
-                $"The next start does not say the Passenger running from the same app held the update back: '{window.Status}'");
-            Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "the update held back to be offered again");
+            Assert.True(window.Status?.StartsWith($"Pitstop {newer} did not install: another Pitstop ran from {copy.Bundle} (process {other.Id}: ", StringComparison.Ordinal) == true
+                && window.Status.Contains("Pitstop 120", StringComparison.Ordinal),
+                $"The next start does not say the Pitstop running from the same app held the update back: '{window.Status}'");
+            Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "the update held back to be offered again");
             window.Close();
         }
         finally
@@ -1271,10 +1271,10 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Updater updater = copy.Updater();
         MainWindow window = Started(updater);
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
 
         // Another Passenger runs from current\: a program at its executable's path there, waiting.
-        string executable = Path.Combine(copy.Current, "Passenger.exe");
+        string executable = Path.Combine(copy.Current, "Pitstop.exe");
         File.Copy(Path.Combine(Environment.SystemDirectory, "PING.EXE"), executable);
         using System.Diagnostics.Process other = ChildProcesses.Start(ChildProcesses.Command(executable, ["-n", "600", "127.0.0.1"]));
         try
@@ -1284,15 +1284,15 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             window.Close();
             Ended(window);
             window.InstallUpdate();
-            Assert.True(copy.Holds(newer), $"v{newer} is no longer ready once Passenger closed without installing it");
-            Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} waits to install: another Passenger runs from {copy.Current}", StringComparison.Ordinal));
+            Assert.True(copy.Holds(newer), $"v{newer} is no longer ready once Pitstop closed without installing it");
+            Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} waits to install: another Pitstop runs from {copy.Current}", StringComparison.Ordinal));
 
             window = Started(copy.Updater());
             window.WatchForUpdates();
-            Assert.True(window.Status?.StartsWith($"Passenger {newer} did not install: another Passenger ran from {copy.Current} (process {other.Id}: ", StringComparison.Ordinal) == true
-                && window.Status.Contains("Passenger.exe", StringComparison.OrdinalIgnoreCase),
-                $"The next start does not say the Passenger running from the install held the update back: '{window.Status}'");
-            Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "the update held back to be offered again");
+            Assert.True(window.Status?.StartsWith($"Pitstop {newer} did not install: another Pitstop ran from {copy.Current} (process {other.Id}: ", StringComparison.Ordinal) == true
+                && window.Status.Contains("Pitstop.exe", StringComparison.OrdinalIgnoreCase),
+                $"The next start does not say the Pitstop running from the install held the update back: '{window.Status}'");
+            Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "the update held back to be offered again");
             window.Close();
         }
         finally
@@ -1313,19 +1313,19 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Release($"v{newer}", files: copy.Update(newer));
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
         window.Close();
         Ended(window);
         window.InstallUpdate();
         Assert.True(copy.Holds(newer), $"v{newer} is no longer ready once Update.exe did not start");
-        string started = $"Updates: Passenger {newer} was not installed: Update.exe did not start: ";
+        string started = $"Updates: Pitstop {newer} was not installed: Update.exe did not start: ";
         Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains(started, StringComparison.Ordinal));
 
         window = Started(copy.Updater());
         window.WatchForUpdates();
-        Assert.True(window.Status?.StartsWith($"Passenger {newer} did not install: Update.exe did not start: ", StringComparison.Ordinal) == true,
+        Assert.True(window.Status?.StartsWith($"Pitstop {newer} did not install: Update.exe did not start: ", StringComparison.Ordinal) == true,
             $"The next start does not say Update.exe did not start: '{window.Status}'");
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "the update that did not install to be offered again");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "the update that did not install to be offered again");
         window.Close();
     }
 
@@ -1340,7 +1340,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         using IDisposable theme = TestsTheme();
         string folder = TestFolders.Create("installed-");
         (string volume, string disk) = HfsVolume(folder);
-        AppBundle copy = new(images, folder, volume, Path.Combine(volume, "Library", "Application Support", "Passenger")) { ImageFolder = null };
+        AppBundle copy = new(images, folder, volume, Path.Combine(volume, "Library", "Application Support", "Pitstop")) { ImageFolder = null };
         string opened = copy.Opened;
         try
         {
@@ -1363,9 +1363,9 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 return Task.CompletedTask;
             }));
             window.WatchForUpdates();
-            Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}" || Notice(window) == $"Passenger {newer} not installed",
+            Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}" || Notice(window) == $"Pitstop {newer} not installed",
                 () => $"the update whose state is on another volume to be made ready or refused, where {UpdatesSaid(window)}");
-            Assert.True(Notice(window) == $"Restart to update to Passenger {newer}", $"An update whose state is on another volume was not made ready: {UpdatesSaid(window)}");
+            Assert.True(Notice(window) == $"Restart to update to Pitstop {newer}", $"An update whose state is on another volume was not made ready: {UpdatesSaid(window)}");
             string temporary = PathNames.Canonical(UserTemporary.Folder());
             Assert.True(image is not null && PathNames.IsUnder(PathNames.Canonical(image), temporary),
                 $"The disk image was opened at {image}, not in the user's temporary folder on the startup disk, {temporary}");
@@ -1378,7 +1378,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             window.Close();
             Ended(window);
             window.InstallUpdate();
-            Assert.True(copy.InstalledVersion == newer, $"Passenger on another volume with its state closed with v{newer} ready, and is {copy.InstalledVersion}");
+            Assert.True(copy.InstalledVersion == newer, $"Pitstop on another volume with its state closed with v{newer} ready, and is {copy.InstalledVersion}");
             Assert.True(copy.Downloaded().Count == 0, $"The update installed left {string.Join(", ", copy.Downloaded())} behind");
         }
         finally
@@ -1413,21 +1413,21 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 }
             }));
             window.WatchForUpdates();
-            Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+            Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
             window.Close();
             Ended(window);
             window.InstallUpdate();
 
-            string old = Path.Combine(volume, $".Passenger.app.{newer}.old");
-            string beside = Path.Combine(volume, $".Passenger.app.{newer}");
-            string notInstalled = $"Updates: Passenger {newer} was not installed in {copy.Bundle}: ";
+            string old = Path.Combine(volume, $".Pitstop.app.{newer}.old");
+            string beside = Path.Combine(volume, $".Pitstop.app.{newer}");
+            string notInstalled = $"Updates: Pitstop {newer} was not installed in {copy.Bundle}: ";
             string? said = Ui.IdeLog().Split('\n').LastOrDefault(line => line.Contains(notInstalled, StringComparison.Ordinal));
             Assert.True(said is not null, $"An install whose app's place was taken did not say it was not installed: {UpdatesSaid(window)}");
             string why = said[(said.IndexOf(notInstalled, StringComparison.Ordinal) + notInstalled.Length)..].TrimEnd();
             Assert.True(why.Contains("could not be put back", StringComparison.Ordinal) && why.Contains(old, StringComparison.Ordinal)
                 && why.Contains(beside, StringComparison.Ordinal), $"An install that could put neither app in place does not say where each was left: '{why}'");
             Assert.True(AppBundle.Version(old) == Product.Version, $"The installed app is not whole where the install says it left it, {old}");
-            Assert.True(AppBundle.Version(beside) == newer, $"Passenger {newer} is not whole where the install says it left it, {beside}");
+            Assert.True(AppBundle.Version(beside) == newer, $"Pitstop {newer} is not whole where the install says it left it, {beside}");
 
             // The person puts the app back where the words say it is.
             File.Delete(copy.Bundle);
@@ -1435,8 +1435,8 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             Assert.True(copy.SignatureHolds(), $"The app the install left in {old} is not whole once put back");
             window = Started(copy.Updater());
             window.WatchForUpdates();
-            Assert.Equal($"Passenger {newer} did not install: {why}", window.Status);
-            Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "the update that did not install to be offered again");
+            Assert.Equal($"Pitstop {newer} did not install: {why}", window.Status);
+            Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "the update that did not install to be offered again");
             window.Close();
         }
         finally
@@ -1452,7 +1452,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     {
         string volume = Directory.CreateDirectory(Path.Combine(folder, "volume")).FullName;
         string disk = Path.Combine(folder, "volume.dmg");
-        Tool("/usr/bin/hdiutil", "create", "-size", "20m", "-fs", "HFS+", "-volname", "Passenger Tests", "-ov", disk, "-quiet");
+        Tool("/usr/bin/hdiutil", "create", "-size", "20m", "-fs", "HFS+", "-volname", "Pitstop Tests", "-ov", disk, "-quiet");
         Tool("/usr/bin/hdiutil", "attach", disk, "-nobrowse", "-noautoopen", "-mountpoint", volume, "-quiet");
         // Spotlight indexes a volume whatever folder it is mounted in, unless it holds this marker (TestRun.Unindexed's why).
         File.WriteAllText(Path.Combine(volume, ".metadata_never_index"), string.Empty);
@@ -1490,13 +1490,13 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
         // The notice says, as the pointer comes to it, that the agents' connections go on.
         Button notice = window.FindControl<Button>("UpdateButton")!;
         window.MouseMove(Avalonia.VisualExtensions.TranslatePoint(notice, new Avalonia.Point(notice.Bounds.Width / 2, notice.Bounds.Height / 2), window)!.Value, Avalonia.Input.RawInputModifiers.None);
         Ui.Settle();
         string tip = ToolTip.GetTip(notice) as string ?? string.Empty;
-        Assert.True(tip.Contains("2 agents' connections to Passenger, on ", StringComparison.Ordinal) && tip.Contains("go on into the new version", StringComparison.Ordinal)
+        Assert.True(tip.Contains("2 agents' connections to Pitstop, on ", StringComparison.Ordinal) && tip.Contains("go on into the new version", StringComparison.Ordinal)
             && tip.Contains(joining, StringComparison.Ordinal) && tip.Contains(idle, StringComparison.Ordinal),
             $"Before Restart to Update, the notice does not say the two agents' connections, on {joining} and {idle}, go on into the new version: '{tip}'");
 
@@ -1508,8 +1508,8 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         // A call while Passenger restarts finds no window on its folder, and waits for the new version's, starting none.
         Heard told = new();
         Task<CallToolResult> meanwhile = Waiting.Apart(() => Result(joined, McpTools.Workspace, heard: told));
-        WaitFor(() => told.Told.Any(said => said.Message?.Contains("Waiting for Passenger to restart into its update", StringComparison.Ordinal) == true),
-            $"the agent's call made while Passenger restarts to wait for it (told {told})");
+        WaitFor(() => told.Told.Any(said => said.Message?.Contains("Waiting for Pitstop to restart into its update", StringComparison.Ordinal) == true),
+            $"the agent's call made while Pitstop restarts to wait for it (told {told})");
         // The new version's windows, as its start opens them again.
         MainWindow restarted = AgentsWindow(joining, languageServer: false);
         MainWindow restartedIdle = AgentsWindow(idle, languageServer: false);
@@ -1517,9 +1517,9 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Assert.True(copy.InstalledVersion == newer, $"Restart to Update with agents' relays running left {copy.Bundle} at {copy.InstalledVersion}, not {newer}");
         Assert.True(Ui.Shared(copy.Started) == $"started {newer}\n", $"Restart to Update did not start the new version once: what started says '{Ui.Shared(copy.Started)}'");
 
-        CallToolResult answered = Await(meanwhile, "the call made while Passenger restarted");
+        CallToolResult answered = Await(meanwhile, "the call made while Pitstop restarted");
         Assert.True(answered.IsError != true && Text(answered).Contains(joining, StringComparison.Ordinal),
-            $"The agent's call made while Passenger restarted was answered '{Text(answered)}', not by the window on {joining}");
+            $"The agent's call made while Pitstop restarted was answered '{Text(answered)}', not by the window on {joining}");
         Assert.True(DotnetProcesses.Runs(joinedRelay) && DotnetProcesses.Runs(idleRelay),
             $"An agent's relay ended with the update rather than following it: joined {(!DotnetProcesses.Runs(joinedRelay) ? "ended" : "runs")}, idle {(!DotnetProcesses.Runs(idleRelay) ? "ended" : "runs")}");
         // The updated app's executable started in each relay's own process, as each one's agent made its next call.
@@ -1528,15 +1528,15 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         foreach (Process relay in (ReadOnlySpan<Process>)[joinedRelay, idleRelay])
         {
             Assert.True(Ui.Shared(copy.Relayed).Split('\n').Contains($"relayed {newer} {relay.Id}"),
-                $"The relay {relay.Id} did not start again from Passenger {newer} in its own process: the new version's relays say '{Ui.Shared(copy.Relayed)}'");
+                $"The relay {relay.Id} did not start again from Pitstop {newer} in its own process: the new version's relays say '{Ui.Shared(copy.Relayed)}'");
         }
         string[] log = Ui.IdeLog().Split('\n');
         foreach ((string folder, Process relay) in (ReadOnlySpan<(string, Process)>)[(joining, joinedRelay), (idle, idleRelay)])
         {
-            Assert.Contains(log, line => line.Contains($"Updates: the agent's relay on {folder} (process {relay.Id}) let go of the app to install Passenger {newer}", StringComparison.Ordinal));
+            Assert.Contains(log, line => line.Contains($"Updates: the agent's relay on {folder} (process {relay.Id}) let go of the app to install Pitstop {newer}", StringComparison.Ordinal));
         }
         Assert.True(relisted == 0, $"The tools are the same in the new version, yet an agent was told {relisted} times that their list changed");
-        Assert.True(!Errors().Any(line => line.StartsWith("passenger:", StringComparison.Ordinal)), $"A relay said it ended: {string.Join(" | ", Errors())}");
+        Assert.True(!Errors().Any(line => line.StartsWith("pitstop:", StringComparison.Ordinal)), $"A relay said it ended: {string.Join(" | ", Errors())}");
         Gone(joined);
         Gone(waiting);
         // The relay writes its log a moment after, in batches.
@@ -1554,15 +1554,15 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         McpClient left = Await(Waiting.Apart(() => Connect(relayLeft, ["--mcp-attach", idle])), "an agent's session starting again");
         window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {later}", $"the status bar to offer Restart to Update to v{later}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {later}", $"the status bar to offer Restart to Update to v{later}");
         window.Close();
         Ended(window);
         window.InstallUpdate();
-        Assert.True(copy.InstalledVersion == later, $"Passenger closed with v{later} ready and an agent's relay running left {copy.Bundle} at {copy.InstalledVersion}");
+        Assert.True(copy.InstalledVersion == later, $"Pitstop closed with v{later} ready and an agent's relay running left {copy.Bundle} at {copy.InstalledVersion}");
         MainWindow opened = AgentsWindow(idle, languageServer: false);
         Unasked(opened, left, McpTools.Workspace);
         Assert.True(DotnetProcesses.Runs(relayLeft) && Ui.Shared(copy.Relayed).Split('\n').Contains($"relayed {later} {relayLeft.Id}"),
-            $"Closing Passenger to install the update did not have the agent's relay {relayLeft.Id} go on from Passenger {later}: '{Ui.Shared(copy.Relayed)}'");
+            $"Closing Pitstop to install the update did not have the agent's relay {relayLeft.Id} go on from Pitstop {later}: '{Ui.Shared(copy.Relayed)}'");
         Gone(left);
         opened.Close();
     }
@@ -1576,7 +1576,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Assert.SkipUnless(OperatingSystem.IsLinux(), LinuxAlone);
         using IDisposable theme = TestsTheme();
         LinuxInstall copy = new(TestFolders.Create("installed-"));
-        Assert.True(File.ReadAllText(copy.Entry).Contains($"X-Passenger-Release={Product.Version}", StringComparison.Ordinal),
+        Assert.True(File.ReadAllText(copy.Entry).Contains($"X-Pitstop-Release={Product.Version}", StringComparison.Ordinal),
             $"install.sh did not make the menu entry of the release it installed: {File.ReadAllText(copy.Entry)}");
         copy.Relaying();
         string newer = Bumped(1, 0);
@@ -1589,10 +1589,10 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}",
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}",
             () => $"the status bar to offer Restart to Update to v{newer}: {UpdatesSaid(window)}");
         Assert.True(copy.Holds(newer), $"Restart to Update is offered, but v{newer} is not unpacked beside {copy.Install}, where it installs from");
-        Assert.True(copy.InstalledVersion == Product.Version, $"The update was put in place at once, as {copy.InstalledVersion}, before Passenger restarted");
+        Assert.True(copy.InstalledVersion == Product.Version, $"The update was put in place at once, as {copy.InstalledVersion}, before Pitstop restarted");
 
         Ui.Click(window.FindControl<Button>("UpdateButton")!, settle: false);
         Ui.Settle();
@@ -1606,21 +1606,21 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         Assert.True(copy.InstalledVersion == newer, $"Restart to Update left {copy.Install} at {copy.InstalledVersion}, not {newer}: {said}");
         Assert.True(Ui.Shared(copy.Started) == $"started {newer}\n", $"Restart to Update did not start the new version once: what started says '{Ui.Shared(copy.Started)}'");
         string entry = File.ReadAllText(copy.Entry);
-        Assert.True(entry.Contains($"X-Passenger-Release={newer}", StringComparison.Ordinal) && entry.Contains($"Exec=\"{copy.Install}/passenger\" %f", StringComparison.Ordinal),
+        Assert.True(entry.Contains($"X-Pitstop-Release={newer}", StringComparison.Ordinal) && entry.Contains($"Exec=\"{copy.Install}/passenger\" %f", StringComparison.Ordinal),
             $"The menu entry was not refreshed from v{newer}'s install.sh, naming the install's launcher: {entry}");
         Assert.True(File.ReadAllText(copy.Icon) == $"png {newer}", $"The menu's icon is still '{File.ReadAllText(copy.Icon)}', not v{newer}'s");
-        Assert.True(new FileInfo(copy.Command).LinkTarget == Path.Combine(copy.Install, "passenger"),
+        Assert.True(new FileInfo(copy.Command).LinkTarget == Path.Combine(copy.Install, "pitstop"),
             $"The command {copy.Command} leads to {new FileInfo(copy.Command).LinkTarget}, not the install's launcher");
-        string replaced = Path.Combine(UpdateFolders.Beside(copy.Install, newer), "passenger");
+        string replaced = Path.Combine(UpdateFolders.Beside(copy.Install, newer), "pitstop");
         Assert.True(LinuxInstall.ReleaseOf(replaced) == Product.Version,
             $"The release replaced is not kept beside the install until the new one has started: {replaced} holds {LinuxInstall.ReleaseOf(replaced) ?? "nothing"}");
 
         // The agent's next call is answered by the updated app's relay, in the same process.
         Unasked(restarted, joined, McpTools.Workspace);
         Assert.True(DotnetProcesses.Runs(relay) && Ui.Shared(copy.Relayed).Split('\n').Contains($"relayed {newer} {relay.Id}"),
-            $"The agent's relay {relay.Id} did not start again from Passenger {newer} in its own process: '{Ui.Shared(copy.Relayed)}'");
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: the agent's relay on {joining} (process {relay.Id}) let go of the app to install Passenger {newer}", StringComparison.Ordinal));
-        Assert.True(!Errors().Any(line => line.StartsWith("passenger:", StringComparison.Ordinal)), $"The relay said it ended: {string.Join(" | ", Errors())}");
+            $"The agent's relay {relay.Id} did not start again from Pitstop {newer} in its own process: '{Ui.Shared(copy.Relayed)}'");
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: the agent's relay on {joining} (process {relay.Id}) let go of the app to install Pitstop {newer}", StringComparison.Ordinal));
+        Assert.True(!Errors().Any(line => line.StartsWith("pitstop:", StringComparison.Ordinal)), $"The relay said it ended: {string.Join(" | ", Errors())}");
         Gone(joined);
         restarted.Close();
 
@@ -1643,7 +1643,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         github.Answer = Release($"v{newer}", files: copy.Update(newer));
         MainWindow window = Started(copy.Updater());
         window.WatchForUpdates();
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", $"the status bar to offer Restart to Update to v{newer}");
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", $"the status bar to offer Restart to Update to v{newer}");
 
         // The folder the install is in turned read-only meanwhile: the two folders cannot trade places.
         string opt = Path.GetDirectoryName(copy.Install)!;
@@ -1661,14 +1661,14 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             File.SetUnixFileMode(opt, was);
         }
         Assert.True(copy.InstalledVersion == Product.Version, $"{copy.Install} is {copy.InstalledVersion} after an update that could not take its place");
-        Assert.True(File.Exists(Path.Combine(copy.Install, "app", "Passenger")), $"{copy.Install} is not whole after an update that could not take its place");
+        Assert.True(File.Exists(Path.Combine(copy.Install, "app", "Pitstop")), $"{copy.Install} is not whole after an update that could not take its place");
         Assert.True(copy.Holds(newer), $"v{newer} is no longer unpacked beside the install after it could not take its place");
-        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Passenger {newer} was not installed in {copy.Install}: Permission denied", StringComparison.Ordinal));
+        Assert.Contains(Ui.IdeLog().Split('\n'), line => line.Contains($"Updates: Pitstop {newer} was not installed in {copy.Install}: Permission denied", StringComparison.Ordinal));
 
         window = Started(copy.Updater());
         window.WatchForUpdates();
-        Assert.Equal($"Passenger {newer} did not install: Permission denied", window.Status);
-        Ui.WaitFor(() => Notice(window) == $"Restart to update to Passenger {newer}", "the update that did not install to be offered again");
+        Assert.Equal($"Pitstop {newer} did not install: Permission denied", window.Status);
+        Ui.WaitFor(() => Notice(window) == $"Restart to update to Pitstop {newer}", "the update that did not install to be offered again");
         Assert.True(github.RequestsFor(copy.Package(newer)).Length == 1, $"{copy.Package(newer)} was downloaded again");
         window.Close();
     }
@@ -1690,7 +1690,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             github.Answer = Release($"v{newer}", files: copy.Update(newer));
             MainWindow window = Started(copy.Updater());
             window.WatchForUpdates();
-            Ui.WaitFor(() => Notice(window) == $"Passenger {newer} ready to install",
+            Ui.WaitFor(() => Notice(window) == $"Pitstop {newer} ready to install",
                 () => $"the status bar to say v{newer} is ready to install by hand: {UpdatesSaid(window)}");
 
             string archive = copy.Archive(newer);
@@ -1700,11 +1700,11 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             Assert.True(copy.Holds(newer), $"v{newer}'s archive is not at {archive}, which the command installs");
             string tip = ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty;
             Assert.True(tip.Contains($"this user cannot write {copy.Install}", StringComparison.Ordinal) && tip.Contains(command, StringComparison.Ordinal),
-                $"The notice does not say why Passenger cannot install v{newer} and the command that does: '{tip}'");
+                $"The notice does not say why Pitstop cannot install v{newer} and the command that does: '{tip}'");
             Assert.Equal("No update is downloaded and ready to install", window.Actions.WhyNot(AppActions.RestartToUpdate, window.Actions.Context()));
 
             Ui.Click(window.FindControl<Button>("UpdateButton")!);
-            Ui.WaitFor(() => window.Status == $"Copied the command that installs Passenger {newer}: paste it into a terminal", "the notice's click to copy the command");
+            Ui.WaitFor(() => window.Status == $"Copied the command that installs Pitstop {newer}: paste it into a terminal", "the notice's click to copy the command");
             Assert.True(Ui.Clipboard(window) == command, $"The notice's click put '{Ui.Clipboard(window)}' on the clipboard, not the command");
             Assert.True(window.Browsed.Count == 0, $"The notice's click opened {string.Join(", ", window.Browsed)}, where it copies the command");
 
@@ -1735,7 +1735,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             github.Answer = Release($"v{newer}", files: copy.Update(newer));
             MainWindow window = Started(copy.Updater());
             window.WatchForUpdates();
-            Ui.WaitFor(() => Notice(window) == $"Passenger {newer} ready to install",
+            Ui.WaitFor(() => Notice(window) == $"Pitstop {newer} ready to install",
                 () => $"the status bar to say v{newer} is ready to install by hand: {UpdatesSaid(window)}");
             window.Close();
             Ended(window);
@@ -1749,18 +1749,18 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         {
             Assert.True(File.GetUnixFileMode(folder) == OwnersAlone, $"{folder}, where v{newer} is made ready, is {File.GetUnixFileMode(folder)}: others may change it before it is installed");
         }
-        Assert.False(Directory.Exists(Path.Combine(copy.Staging, newer, "passenger")), $"v{newer}'s passenger folder stays unpacked beside its archive, where install.sh never reads it");
+        Assert.False(Directory.Exists(Path.Combine(copy.Staging, newer, "pitstop")), $"v{newer}'s pitstop folder stays unpacked beside its archive, where install.sh never reads it");
 
         // The root step's check, run as the person into the test's home: the same install.sh, without --system.
         string archive = copy.Archive(newer);
         byte[] checkedBytes = File.ReadAllBytes(archive);
-        string mine = Path.Combine(copy.Home, ".local", "opt", "passenger");
-        File.AppendAllText(archive, "changed after Passenger checked it");
+        string mine = Path.Combine(copy.Home, ".local", "opt", "pitstop");
+        File.AppendAllText(archive, "changed after Pitstop checked it");
         ChildResult refused = copy.InstallArchive(archive, copy.Sum(newer));
         Assert.True(!refused.Succeeded && refused.Error.Contains($"{archive}'s SHA-256 is", StringComparison.Ordinal)
             && refused.Error.Contains($"not {copy.Sum(newer)}, the one its release gives", StringComparison.Ordinal),
-            $"install.sh did not refuse an archive changed after Passenger checked it, saying its SHA-256 differs: exit {refused.ExitCode}, {refused.Error}{refused.Output}");
-        Assert.False(Directory.Exists(mine), $"install.sh installed an archive changed after Passenger checked it, in {mine}");
+            $"install.sh did not refuse an archive changed after Pitstop checked it, saying its SHA-256 differs: exit {refused.ExitCode}, {refused.Error}{refused.Output}");
+        Assert.False(Directory.Exists(mine), $"install.sh installed an archive changed after Pitstop checked it, in {mine}");
         string[] left = Directory.Exists(Path.GetDirectoryName(mine)) ? Directory.GetFileSystemEntries(Path.GetDirectoryName(mine)!) : [];
         Assert.True(left.Length == 0, $"install.sh left what it unpacked beside {mine}: {string.Join(", ", left)}");
 
@@ -1768,7 +1768,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         File.WriteAllBytes(archive, checkedBytes);
         ChildResult installed = copy.InstallArchive(archive, copy.Sum(newer));
         Assert.True(installed.Succeeded && LinuxInstall.ReleaseOf(mine) == newer,
-            $"install.sh did not install the archive Passenger checked: exit {installed.ExitCode}, {installed.Error}{installed.Output}; {mine} holds {LinuxInstall.ReleaseOf(mine) ?? "nothing"}");
+            $"install.sh did not install the archive Pitstop checked: exit {installed.ExitCode}, {installed.Error}{installed.Output}; {mine} holds {LinuxInstall.ReleaseOf(mine) ?? "nothing"}");
     }
 
     [SupportedOSPlatform("linux")]
@@ -1778,7 +1778,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         using IDisposable theme = TestsTheme();
         LinuxInstall copy = new(TestFolders.Create("installed-"));
         // As a package says it is one, beside the app it installs, with the command that updates it.
-        File.WriteAllText(Path.Combine(copy.Install, "app", ThisCopy.PackageManagerName), "pacman\nyay -Syu passenger-ide-bin\n");
+        File.WriteAllText(Path.Combine(copy.Install, "app", ThisCopy.PackageManagerName), "pacman\nyay -Syu pitstop-ide-bin\n");
         string newer = Bumped(1, 0);
         IReadOnlyDictionary<string, byte[]> update = copy.Update(newer);
         github.Answer = Release($"v{newer}", files: update);
@@ -1786,11 +1786,11 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         window.WatchForUpdates();
         Ui.Settle();
 
-        Assert.True(Notice(window) == $"Passenger {newer} available", $"A package manager's copy does not say v{newer} is out: {UpdatesSaid(window)}");
+        Assert.True(Notice(window) == $"Pitstop {newer} available", $"A package manager's copy does not say v{newer} is out: {UpdatesSaid(window)}");
         string tip = ToolTip.GetTip(window.FindControl<Button>("UpdateButton")!) as string ?? string.Empty;
-        Assert.True(tip.Contains("This copy of Passenger is a package pacman installed: yay -Syu passenger-ide-bin updates it.", StringComparison.Ordinal),
+        Assert.True(tip.Contains("This copy of Pitstop is a package pacman installed: yay -Syu pitstop-ide-bin updates it.", StringComparison.Ordinal),
             $"The notice does not name the command the package manager's file gives, which updates this copy: '{tip}'");
-        string page = $"https://github.com/Zaneris/passenger/releases/tag/v{newer}";
+        string page = $"https://github.com/jancano/pitstop/releases/tag/v{newer}";
         Assert.True(window.UpdateShown?.Link.AbsoluteUri == page, $"A package manager's copy links {window.UpdateShown?.Link}, not only the release's page, {page}");
         string[] downloaded = [.. update.Keys.Where(name => github.RequestsFor(name).Length > 0)];
         Assert.True(downloaded.Length == 0, $"A package manager's copy downloaded {string.Join(", ", downloaded)}");
@@ -1833,7 +1833,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         {
             Assert.DoesNotContain("Check for Updates…", helpItems);
             string[] application = [.. MainWindow.ApplicationMenu!.Items.Select(i => (i as NativeMenuItem)?.Header ?? "-")];
-            Assert.Equal(["About Passenger", "Check for Updates…", "-", "Settings…"], application);
+            Assert.Equal(["About Pitstop", "Check for Updates…", "-", "Settings…"], application);
             item = MainWindow.ApplicationMenu!.Items.OfType<NativeMenuItem>().First(i => i.Header == "Check for Updates…");
         }
         else
@@ -1876,7 +1876,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     private static string ThisSystemsDownload()
     {
         string system = OperatingSystem.IsMacOS() ? "macos-{0}.dmg" : OperatingSystem.IsWindows() ? "windows-{0}.exe" : "linux-{0}.tar.gz";
-        string named = "Passenger-" + string.Format(System.Globalization.CultureInfo.InvariantCulture, system, RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant());
+        string named = "Pitstop-" + string.Format(System.Globalization.CultureInfo.InvariantCulture, system, RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant());
         Assert.Contains(named, Downloads);
         return named;
     }
@@ -1906,15 +1906,15 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             assets.Add(new JsonObject
             {
                 ["name"] = name,
-                ["browser_download_url"] = served is null ? $"https://github.com/Zaneris/passenger/releases/download/{tag}/{name}" : github.Serve(tag, name, served).AbsoluteUri,
+                ["browser_download_url"] = served is null ? $"https://github.com/jancano/pitstop/releases/download/{tag}/{name}" : github.Serve(tag, name, served).AbsoluteUri,
                 ["size"] = served?.Length ?? 1000,
             });
         }
         JsonObject release = new()
         {
             ["tag_name"] = tag,
-            ["name"] = $"Passenger {tag}",
-            ["html_url"] = $"https://github.com/Zaneris/passenger/releases/tag/{tag}",
+            ["name"] = $"Pitstop {tag}",
+            ["html_url"] = $"https://github.com/jancano/pitstop/releases/tag/{tag}",
             ["draft"] = draft,
             ["prerelease"] = prerelease,
             ["assets"] = assets,
@@ -1967,7 +1967,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         public static InstalledCopy Make(DiskImages images, string folder)
         {
             Assert.SkipUnless(OperatingSystem.IsMacOS() || OperatingSystem.IsWindows() || OperatingSystem.IsLinux(),
-                "Passenger installs updates itself on macOS, Windows and Linux alone");
+                "Pitstop installs updates itself on macOS, Windows and Linux alone");
             if (OperatingSystem.IsLinux())
             {
                 return new LinuxInstall(folder);
@@ -1995,7 +1995,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         public abstract string? InstalledVersion { get; }
     }
 
-    /// <summary>Passenger.app as the disk image puts it, in a test folder's Applications: its Info.plist and an executable
+    /// <summary>Pitstop.app as the disk image puts it, in a test folder's Applications: its Info.plist and an executable
     /// that writes down that it started, signed ad hoc under the hardened runtime as tools/package-mac.sh signs it, and a
     /// bundle identifier of its own, so nothing takes it for the person's Passenger. Restart to Update runs its executable
     /// rather than asking LaunchServices to open it.</summary>
@@ -2014,7 +2014,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             this.images = images;
             this.folder = folder;
             Applications = Directory.CreateDirectory(applications ?? Path.Combine(folder, "Applications")).FullName;
-            Bundle = Path.Combine(Applications, "Passenger.app");
+            Bundle = Path.Combine(Applications, "Pitstop.app");
             Staging = Path.Combine(state ?? Path.Combine(folder, "state"), "updates");
             ImageFolder = Path.Combine(folder, "temporary", "updates");
             Make(Bundle, Product.Version);
@@ -2024,7 +2024,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
         public string Bundle { get; }
 
-        public string Executable => Path.Combine(Bundle, "Contents", "MacOS", "Passenger");
+        public string Executable => Path.Combine(Bundle, "Contents", "MacOS", "Pitstop");
 
         public string Staging { get; }
 
@@ -2074,7 +2074,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         {
             byte[] bytes = images.Of(version);
             string sums = $"{Convert.ToHexStringLower(SHA256.HashData(bytes))}  {Package(version)}\n"
-                + $"{Convert.ToHexStringLower(SHA256.HashData((byte[])[1, 2, 3]))}  Passenger-windows-x64.exe\n";
+                + $"{Convert.ToHexStringLower(SHA256.HashData((byte[])[1, 2, 3]))}  Pitstop-windows-x64.exe\n";
             return new Dictionary<string, byte[]> { [Package(version)] = bytes, ["SHA256SUMS"] = Encoding.UTF8.GetBytes(sums) };
         }
 
@@ -2113,7 +2113,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             string macOS = Path.Combine(Bundle, "Contents", "MacOS");
             File.Delete(Executable);
             string[] build = [.. Directory.EnumerateFiles(AppContext.BaseDirectory)
-                .Where(file => Path.GetFileName(file) is "Passenger" or "Passenger.deps.json" or "Passenger.runtimeconfig.json" || file.EndsWith(".dll", StringComparison.Ordinal))];
+                .Where(file => Path.GetFileName(file) is "Pitstop" or "Pitstop.deps.json" or "Pitstop.runtimeconfig.json" || file.EndsWith(".dll", StringComparison.Ordinal))];
             // A clone where the volume makes one, as fast as a link and as much the app's own as a copy.
             if (!Ran("/bin/cp", ["-c", .. build, macOS], TimeSpan.FromMinutes(1)).Succeeded)
             {
@@ -2137,15 +2137,15 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
                 <plist version="1.0">
                 <dict>
-                    <key>CFBundleName</key><string>Passenger</string>
-                    <key>CFBundleIdentifier</key><string>io.github.zaneris.passenger.tests</string>
-                    <key>CFBundleExecutable</key><string>Passenger</string>
+                    <key>CFBundleName</key><string>Pitstop</string>
+                    <key>CFBundleIdentifier</key><string>io.github.jancano.pitstop.tests</string>
+                    <key>CFBundleExecutable</key><string>Pitstop</string>
                     <key>CFBundlePackageType</key><string>APPL</string>
                     <key>CFBundleShortVersionString</key><string>{version}</string>
                 </dict>
                 </plist>
                 """);
-            string executable = Path.Combine(macOS, "Passenger");
+            string executable = Path.Combine(macOS, "Pitstop");
             File.WriteAllText(executable, $"""
                 #!/bin/sh
                 if [ "$1" = --mcp-attach ]; then
@@ -2174,7 +2174,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         }
 
         private static async Task StartAsync(string bundle) =>
-            await ChildProcesses.RunAsync(ChildProcesses.Command(Path.Combine(bundle, "Contents", "MacOS", "Passenger"), []), limit: TimeSpan.FromSeconds(30));
+            await ChildProcesses.RunAsync(ChildProcesses.Command(Path.Combine(bundle, "Contents", "MacOS", "Pitstop"), []), limit: TimeSpan.FromSeconds(30));
     }
 
     /// <summary>The disk image of each version a test updates to, made the first time one asks for it and kept for the class:
@@ -2190,9 +2190,9 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             if (!made.TryGetValue(version, out byte[]? bytes))
             {
                 string stage = Path.Combine(folder, $"image-{version}");
-                AppBundle.Make(Path.Combine(stage, "Passenger.app"), version);
+                AppBundle.Make(Path.Combine(stage, "Pitstop.app"), version);
                 string image = Path.Combine(folder, $"image-{version}.dmg");
-                Tool("/usr/bin/hdiutil", "create", "-volname", $"Passenger {version}", "-srcfolder", stage, "-fs", "HFS+", "-format", "UDZO", "-ov", image, "-quiet");
+                Tool("/usr/bin/hdiutil", "create", "-volname", $"Pitstop {version}", "-srcfolder", stage, "-fs", "HFS+", "-format", "UDZO", "-ov", image, "-quiet");
                 bytes = made[version] = File.ReadAllBytes(image);
             }
             return bytes;
@@ -2212,7 +2212,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
         public VelopackInstall(string folder)
         {
-            root = Directory.CreateDirectory(Path.Combine(folder, "PassengerIDE")).FullName;
+            root = Directory.CreateDirectory(Path.Combine(folder, "PitstopIDE")).FullName;
             current = Directory.CreateDirectory(Path.Combine(root, "current")).FullName;
             packages = Directory.CreateDirectory(Path.Combine(root, "packages")).FullName;
         }
@@ -2223,9 +2223,9 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         public string Current => current;
 
         public override Updater Updater() =>
-            new VelopackUpdater(new TestVelopackLocator("PassengerIDE", Product.Version, packages, current, root, Path.Combine(root, "Update.exe"), channel));
+            new VelopackUpdater(new TestVelopackLocator("PitstopIDE", Product.Version, packages, current, root, Path.Combine(root, "Update.exe"), channel));
 
-        public override string Package(string version) => $"PassengerIDE-{version}-{channel}-full.nupkg";
+        public override string Package(string version) => $"PitstopIDE-{version}-{channel}-full.nupkg";
 
         public override IReadOnlyDictionary<string, byte[]> Update(string version)
         {
@@ -2234,7 +2234,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             {
                 ["Assets"] = new JsonArray(new JsonObject
                 {
-                    ["PackageId"] = "PassengerIDE",
+                    ["PackageId"] = "PitstopIDE",
                     ["Version"] = version,
                     ["Type"] = "Full",
                     ["FileName"] = Package(version),
@@ -2256,39 +2256,39 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             using MemoryStream bytes = new();
             using (ZipArchive zip = new(bytes, ZipArchiveMode.Create, leaveOpen: true))
             {
-                using (StreamWriter manifest = new(zip.CreateEntry("PassengerIDE.nuspec").Open()))
+                using (StreamWriter manifest = new(zip.CreateEntry("PitstopIDE.nuspec").Open()))
                 {
                     manifest.Write($"""
                         <?xml version="1.0" encoding="utf-8"?>
                         <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
                           <metadata>
-                            <id>PassengerIDE</id>
+                            <id>PitstopIDE</id>
                             <version>{version}</version>
                             <title>Passenger</title>
                             <authors>Passenger</authors>
                             <description>Passenger</description>
                             <channel>{channel}</channel>
-                            <mainExe>Passenger.exe</mainExe>
+                            <mainExe>Pitstop.exe</mainExe>
                           </metadata>
                         </package>
                         """);
                 }
-                using StreamWriter executable = new(zip.CreateEntry("lib/app/Passenger.exe").Open());
-                executable.Write($"Passenger {version}");
+                using StreamWriter executable = new(zip.CreateEntry("lib/app/Pitstop.exe").Open());
+                executable.Write($"Pitstop {version}");
             }
             return bytes.ToArray();
         }
     }
 
     /// <summary>Passenger as the Linux archive's install.sh installs it for one person, over a home of the test's own
-    /// (~/.local/opt/passenger, its command and its menu entry), or for everyone as a copy in an opt/ of the test's, from a
+    /// (~/.local/opt/pitstop, its command and its menu entry), or for everyone as a copy in an opt/ of the test's, from a
     /// passenger/ folder of tools/linux's own files whose app writes down that it started (and, as an agent's relay, its
     /// version and process id, becoming the build's Passenger in that process); each release's archive is made from such
     /// a folder of its version. Restart to Update runs the install's launcher and waits for it.</summary>
     [SupportedOSPlatform("linux")]
     private sealed class LinuxInstall : InstalledCopy
     {
-        private const string App = "io.github.zaneris.passenger";
+        private const string App = "io.github.jancano.pitstop";
 
         private readonly string folder;
         private readonly bool forEveryone;
@@ -2303,11 +2303,11 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             string first = Unpacked(Path.Combine(this.folder, "first"), Product.Version);
             if (forEveryone)
             {
-                Install = Path.Combine(Directory.CreateDirectory(Path.Combine(this.folder, "opt")).FullName, "passenger");
+                Install = Path.Combine(Directory.CreateDirectory(Path.Combine(this.folder, "opt")).FullName, "pitstop");
                 Tool("/bin/cp", "-R", first, Install);
                 return;
             }
-            Install = Path.Combine(Home, ".local", "opt", "passenger");
+            Install = Path.Combine(Home, ".local", "opt", "pitstop");
             ProcessStartInfo install = ChildProcesses.Command("/bin/sh", [Path.Combine(first, "install.sh")], Home);
             foreach ((string name, string? value) in Variables())
             {
@@ -2315,7 +2315,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             }
             install.Environment.Remove("SUDO_USER");
             ChildResult installed = Ran(install, TimeSpan.FromMinutes(1));
-            Assert.True(installed.Succeeded, $"install.sh did not install the test's Passenger: {installed.Error}{installed.Output}");
+            Assert.True(installed.Succeeded, $"install.sh did not install the test's Pitstop: {installed.Error}{installed.Output}");
         }
 
         public string Home { get; }
@@ -2324,10 +2324,10 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
 
         public string Staging { get; }
 
-        public string Executable => Path.Combine(Install, "app", "Passenger");
+        public string Executable => Path.Combine(Install, "app", "Pitstop");
 
         /// <summary>The command install.sh links on the PATH.</summary>
-        public string Command => Path.Combine(Home, ".local", "bin", "passenger-ide");
+        public string Command => Path.Combine(Home, ".local", "bin", "pitstop-ide");
 
         public string Entry => Path.Combine(Home, ".local", "share", "applications", App + ".desktop");
 
@@ -2360,7 +2360,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 archive = archives[version] = bytes.ToArray();
             }
             string sums = $"{Convert.ToHexStringLower(SHA256.HashData(archive))}  {Package(version)}\n"
-                + $"{Convert.ToHexStringLower(SHA256.HashData((byte[])[1, 2, 3]))}  Passenger-windows-x64.exe\n";
+                + $"{Convert.ToHexStringLower(SHA256.HashData((byte[])[1, 2, 3]))}  Pitstop-windows-x64.exe\n";
             return new Dictionary<string, byte[]> { [Package(version)] = archive, ["SHA256SUMS"] = Encoding.UTF8.GetBytes(sums) };
         }
 
@@ -2372,7 +2372,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
             {
                 return forEveryone
                     ? Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(Archive(version)))) == Sum(version)
-                    : ReleaseOf(Path.Combine(UpdateFolders.Beside(Install, version), "passenger")) == version;
+                    : ReleaseOf(Path.Combine(UpdateFolders.Beside(Install, version), "pitstop")) == version;
             }
             catch (Exception gone) when (gone is DirectoryNotFoundException or FileNotFoundException)
             {
@@ -2417,8 +2417,8 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         {
             string app = Path.Combine(Install, "app");
             File.Delete(Executable);
-            File.Delete(Path.Combine(app, "Passenger.deps.json"));
-            File.Copy(Path.Combine(AppContext.BaseDirectory, "Passenger"), Executable);
+            File.Delete(Path.Combine(app, "Pitstop.deps.json"));
+            File.Copy(Path.Combine(AppContext.BaseDirectory, "Pitstop"), Executable);
             File.SetUnixFileMode(Executable, Runnable);
             foreach (string entry in Directory.EnumerateFileSystemEntries(AppContext.BaseDirectory))
             {
@@ -2444,9 +2444,9 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         private string Unpacked(string at, string version)
         {
             string linux = Path.Combine(XamlTests.Repository, "tools", "linux");
-            string passenger = Directory.CreateDirectory(Path.Combine(at, "passenger")).FullName;
+            string passenger = Directory.CreateDirectory(Path.Combine(at, "pitstop")).FullName;
             string app = Directory.CreateDirectory(Path.Combine(passenger, "app")).FullName;
-            File.WriteAllText(Path.Combine(app, "Passenger"), $"""
+            File.WriteAllText(Path.Combine(app, "Pitstop"), $"""
                 #!/bin/sh
                 if [ "$1" = --mcp-attach ]; then
                   echo "relayed {version} $$" >> "{Relayed}"
@@ -2455,18 +2455,18 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
                 echo started {version} >> "{Started}"
 
                 """);
-            File.SetUnixFileMode(Path.Combine(app, "Passenger"), Runnable);
+            File.SetUnixFileMode(Path.Combine(app, "Pitstop"), Runnable);
             File.WriteAllText(Path.Combine(app, "release.txt"), version);
-            File.WriteAllText(Path.Combine(app, "Passenger.deps.json"), new JsonObject
+            File.WriteAllText(Path.Combine(app, "Pitstop.deps.json"), new JsonObject
             {
-                ["libraries"] = new JsonObject { [$"Passenger/{version}"] = new JsonObject { ["type"] = "project", ["serviceable"] = false } },
+                ["libraries"] = new JsonObject { [$"Pitstop/{version}"] = new JsonObject { ["type"] = "project", ["serviceable"] = false } },
             }.ToJsonString());
-            foreach (string script in (string[])["install.sh", "passenger"])
+            foreach (string script in (string[])["install.sh", "pitstop"])
             {
                 File.Copy(Path.Combine(linux, script), Path.Combine(passenger, script));
                 File.SetUnixFileMode(Path.Combine(passenger, script), Runnable);
             }
-            File.WriteAllText(Path.Combine(passenger, App + ".desktop"), File.ReadAllText(Path.Combine(linux, App + ".desktop")) + $"X-Passenger-Release={version}\n");
+            File.WriteAllText(Path.Combine(passenger, App + ".desktop"), File.ReadAllText(Path.Combine(linux, App + ".desktop")) + $"X-Pitstop-Release={version}\n");
             File.Copy(Path.Combine(linux, App + ".xml"), Path.Combine(passenger, App + ".xml"));
             File.WriteAllText(Path.Combine(passenger, App + ".png"), $"png {version}");
             File.WriteAllText(Path.Combine(passenger, App + ".svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>");
@@ -2474,7 +2474,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         }
 
         private static async Task StartAsync(string install) =>
-            await ChildProcesses.RunAsync(ChildProcesses.Command(Path.Combine(install, "passenger"), []), limit: TimeSpan.FromSeconds(30));
+            await ChildProcesses.RunAsync(ChildProcesses.Command(Path.Combine(install, "pitstop"), []), limit: TimeSpan.FromSeconds(30));
 
         private const UnixFileMode Runnable = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead
             | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute;
@@ -2485,7 +2485,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
     /// request's head kept as it came. A file held is sent half way and the rest only once the test lets it go.</summary>
     internal sealed class StandIn : IDisposable
     {
-        private const string DownloadPath = "/Zaneris/passenger/releases/download/";
+        private const string DownloadPath = "/jancano/pitstop/releases/download/";
 
         private readonly List<string> heads = [];
         private readonly ConcurrentDictionary<string, byte[]> files = new(StringComparer.Ordinal);
@@ -2497,7 +2497,7 @@ public sealed class UpdatesTests : McpRig, IClassFixture<UpdatesTests.DiskImages
         public StandIn()
         {
             http = new StandInHttp(AnswerAsync);
-            Listing = new Uri($"{http.Root}/repos/Zaneris/passenger/releases");
+            Listing = new Uri($"{http.Root}/repos/jancano/pitstop/releases");
             Downloads = new Uri(http.Root + DownloadPath);
         }
 

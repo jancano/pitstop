@@ -121,7 +121,7 @@ public partial class MainWindow
         }
         godotTemplatesStyle = Stamp(style);
         KeepWorkspace();
-        status.Say("Passenger's C# script templates for Godot no longer fit the project's style", null,
+        status.Say("Pitstop's C# script templates for Godot no longer fit the project's style", null,
             new StatusPlace("write them again", () => Request(AppActions.GodotScriptTemplates)));
     }
 
@@ -152,8 +152,8 @@ public partial class MainWindow
             string? refused = await ChangeFileAsync("Leave C# Script Templates Out of the Build", [project.Path],
                 () => ProjectEdits.RemoveCompiled(project.Path, templates));
             status.Say(refused is null
-                ? $"{name} was written again without leaving Passenger's C# script templates for Godot out of its build, so they are left out again"
-                : $"{name} builds Passenger's C# script templates for Godot as its own code, and they could not be left out again: {refused}", refused is null ? null : ProblemSeverity.Warning);
+                ? $"{name} was written again without leaving Pitstop's C# script templates for Godot out of its build, so they are left out again"
+                : $"{name} builds Pitstop's C# script templates for Godot as its own code, and they could not be left out again: {refused}", refused is null ? null : ProblemSeverity.Warning);
         }
         finally
         {

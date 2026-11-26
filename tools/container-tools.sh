@@ -1,7 +1,7 @@
 #!/bin/sh
 # Passenger's container tools for one Linux system (src/Passenger.ContainerTools), self-contained, into
 # artifacts/container-tools/<rid>/, where a dev build of the IDE finds them; --archive also packs the release's
-# artifacts/container-tools/Passenger-container-tools-<rid>.tar.gz (the folder's files at its root). With no RID, the
+# artifacts/container-tools/Pitstop-container-tools-<rid>.tar.gz (the folder's files at its root). With no RID, the
 # glibc one for the container engine's processor, else this machine's.
 #   tools/container-tools.sh [linux-x64|linux-arm64|linux-musl-x64|linux-musl-arm64] [--archive]
 set -eu
@@ -43,7 +43,7 @@ out=artifacts/container-tools/$rid
 rm -rf "$out"
 # An artifacts root of its own: a RID's publish restores what it references for that RID, which a build restores back.
 publish_project . Passenger.ContainerTools "$rid" "$version" --artifacts-path artifacts/container-tools/build -o "$out" -nologo -v:q
-test -x "$out/passenger-tools"
+test -x "$out/pitstop-tools"
 # Its licence and notices, which must name the runtime and the dbgshim it carries for its system (musl's on a musl one).
 test -s "$out/LICENSE.txt"
 for package in Microsoft.NETCore.App.Runtime.$rid Microsoft.Diagnostics.DbgShim.$rid; do
@@ -52,7 +52,7 @@ done
 echo "$out: $(du -sh "$out" | cut -f1)"
 
 if [ "$archive" = yes ]; then
-    tarball=artifacts/container-tools/Passenger-container-tools-$rid.tar.gz
+    tarball=artifacts/container-tools/Pitstop-container-tools-$rid.tar.gz
     # Owned by root, as what docker cp puts in a container is (GNU tar names it --owner, bsdtar --uid).
     tar -czf "$tarball" -C "$out" --owner=0 --group=0 . 2>/dev/null || tar -czf "$tarball" -C "$out" --uid 0 --gid 0 .
     echo "$tarball: $(du -h "$tarball" | cut -f1)"

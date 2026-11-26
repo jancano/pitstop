@@ -3,7 +3,7 @@ using Passenger.Core;
 namespace Passenger.App;
 
 /// <summary>An exception that ends Passenger, from its start on (in <c>App.Initialize</c>, a font or a theme failing before
-/// the log's handlers are in, or later), kept in the log folder's <c>crash.log</c> beside <c>passenger.log</c>: standard
+/// the log's handlers are in, or later), kept in the log folder's <c>crash.log</c> beside <c>pitstop.log</c>: standard
 /// error, where the runtime says it, is nowhere a start from the Dock, the Start menu or an application menu shows. The next
 /// start with a window lists it once among the IDE's errors, said in the status bar, its whole text written to the log, and
 /// removes the file.</summary>
@@ -26,7 +26,7 @@ public static class CrashFile
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            Console.Error.WriteLine($"passenger: what ended Passenger could not be kept in {path}: {error.Message}");
+            Console.Error.WriteLine($"pitstop: what ended Pitstop could not be kept in {path}: {error.Message}");
         }
     }
 

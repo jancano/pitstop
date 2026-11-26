@@ -44,7 +44,7 @@ public sealed class UntrustedGitPersonsFilterTests : IDisposable
     {
         await Flow.StepApartAsync("the persons own required filter and hook run at a status a commit or a rollback only once the folder is trusted", () => new UntrustedGitPersonsFilterTests(), t => t.The_persons_own_required_filter_and_hook_run_at_a_status_a_commit_or_a_rollback_only_once_the_folder_is_trusted());
         await Flow.StepApartAsync("a rollback stash unstash checkout merge or cherry pick writing out a file stored through a filter is refused until the folder is trusted", () => new UntrustedGitPersonsFilterTests(), t => t.A_rollback_stash_unstash_checkout_merge_or_cherry_pick_writing_out_a_file_stored_through_a_filter_is_refused_until_the_folder_is_trusted());
-        await Flow.StepApartAsync("a filter and hook git c gave above Passenger and the file GIT CONFIG names run none of the repositorys in a folder not trusted", () => new UntrustedGitPersonsFilterTests(), t => t.A_filter_and_hook_git_c_gave_above_Passenger_and_the_file_GIT_CONFIG_names_run_none_of_the_repositorys_in_a_folder_not_trusted());
+        await Flow.StepApartAsync("a filter and hook git c gave above Pitstop and the file GIT CONFIG names run none of the repositorys in a folder not trusted", () => new UntrustedGitPersonsFilterTests(), t => t.A_filter_and_hook_git_c_gave_above_Passenger_and_the_file_GIT_CONFIG_names_run_none_of_the_repositorys_in_a_folder_not_trusted());
     }
 
     private async Task The_persons_own_required_filter_and_hook_run_at_a_status_a_commit_or_a_rollback_only_once_the_folder_is_trusted()
@@ -281,8 +281,8 @@ public sealed class UntrustedGitPersonsFilterTests : IDisposable
             GitResult committed = await git.CommitAsync([plain], "Two");
             Assert.True(committed.Succeeded, $"The commit in a folder not trusted failed: {committed.Message}");
             Assert.False(File.Exists(Path.Combine(marks, "own")), "Git in a folder not trusted ran the repository's own filter");
-            Assert.False(File.Exists(Path.Combine(marks, "given")), "Git in a folder not trusted ran a filter git -c gave above Passenger");
-            Assert.False(File.Exists(Path.Combine(marks, "hook")), "A commit in a folder not trusted ran the hooks of the folder git -c gave above Passenger");
+            Assert.False(File.Exists(Path.Combine(marks, "given")), "Git in a folder not trusted ran a filter git -c gave above Pitstop");
+            Assert.False(File.Exists(Path.Combine(marks, "hook")), "A commit in a folder not trusted ran the hooks of the folder git -c gave above Pitstop");
         }
         Git trusted = await OpenAsync(tree);
         File.WriteAllText(plain, "three\n");

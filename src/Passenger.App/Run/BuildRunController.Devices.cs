@@ -42,7 +42,7 @@ public sealed partial class BuildRunController
         {
             return;
         }
-        work.Say($"Putting Passenger's inspector in {start.App.Package}…");
+        work.Say($"Putting Pitstop's inspector in {start.App.Package}…");
         if (await start.PutInspectorAsync(device, work.Stopping) is { } problem)
         {
             device.Unreached(problem);
@@ -57,13 +57,13 @@ public sealed partial class BuildRunController
     private async Task<(RelaySession? Relay, UpdateHandlerHook? Handlers, string? Problem)> RelayOnDeviceAsync(LaunchPlan plan, DeviceStart start, LiveApp? inspected,
         Working work)
     {
-        work.Say($"Putting Passenger's debugger in {start.App.Package} for Hot Reload…");
+        work.Say($"Putting Pitstop's debugger in {start.App.Package} for Hot Reload…");
         UpdateHandlerHook? handlers = HandlersOnDevice(plan);
         (RelaySession? relay, string? unrelayed) = await start.PutRelayAsync(inspected?.Device, handlers, work.Stopping);
         if (relay is null)
         {
             handlers?.Dispose();
-            return (null, null, unrelayed ?? "Passenger's debugger could not be put in the app");
+            return (null, null, unrelayed ?? "Pitstop's debugger could not be put in the app");
         }
         return (relay, handlers, null);
     }
@@ -106,7 +106,7 @@ public sealed partial class BuildRunController
     /// the start's first step there (<see cref="DeviceStart"/>). Null once the session is open, else why not.</summary>
     private async Task<string?> DebugOnDeviceAsync(LaunchPlan plan, IDeviceApp app, Working work, BuiltEdits? edits)
     {
-        work.Say($"Putting Passenger's debugger in {app.Package}…");
+        work.Say($"Putting Pitstop's debugger in {app.Package}…");
         // An Avalonia or MAUI app's inspector goes in beside the relay, which the Live Visual Tree reaches.
         LiveApp? inspected = session.Inspected(plan).App;
         // With Hot Reload, the hook that calls its update handlers after each update goes in too.

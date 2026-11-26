@@ -2,9 +2,9 @@
 # The site's godot-game scene (just site-shots godot-game): a real Godot game drawn in Passenger's Game window beside
 # its code, its members' values at their lines as it plays. macOS draws a game in the Game window only in a window on
 # the screen, so this one is: for each theme Passenger opens on the game in a window of its own state's
-# (PASSENGER_SETTINGS, the configuration drawing in the Game window) and runs it from its command line (--run), is
+# (PITSTOP_SETTINGS, the configuration drawing in the Game window) and runs it from its command line (--run), is
 # brought in front, and its window is taken several times by screencapture once the game draws there; then Passenger
-# ends, the game with it. Usage: game.py PASSENGER FOLDER STATE CONFIGURATION FILE CARET OUT THEME...
+# ends, the game with it. Usage: game.py PITSTOP FOLDER STATE CONFIGURATION FILE CARET OUT THEME...
 import hashlib
 import json
 import os
@@ -61,7 +61,7 @@ def logged(text):
 
 def refused():
     """The line of the IDE's log saying why --run did not start the game, if it has said."""
-    path = os.path.join(logs, "passenger.log")
+    path = os.path.join(logs, "pitstop.log")
     if os.path.isfile(path):
         with open(path, encoding="utf-8", errors="replace") as f:
             return next((line.strip() for line in f if " Launch: " in line), None)
@@ -82,16 +82,16 @@ write(os.path.join(workspace, "runConfigurations.json"),
       {"version": 3, "configurations": [], "edits": {configuration: {"godotInPane": True}}, "selected": configuration})
 
 for theme in themes:
-    write(os.path.join(state, "settings.json"), {"version": 3, "theme": theme.capitalize(), "look": "Passenger"})
+    write(os.path.join(state, "settings.json"), {"version": 3, "theme": theme.capitalize(), "look": "Pitstop"})
     shutil.rmtree(logs, ignore_errors=True)
-    with open(os.path.join(state, f"passenger-{theme}.log"), "w", encoding="utf-8") as log:
+    with open(os.path.join(state, f"pitstop-{theme}.log"), "w", encoding="utf-8") as log:
         ide = subprocess.Popen([passenger, folder, "--file", file, "--caret", caret, "--run", configuration],
-                               env=dict(os.environ, PASSENGER_SETTINGS=state), stdout=log, stderr=subprocess.STDOUT)
+                               env=dict(os.environ, PITSTOP_SETTINGS=state), stdout=log, stderr=subprocess.STDOUT)
         try:
             shown = None
             for _ in range(1200):
                 if ide.poll() is not None:
-                    fail(f"Passenger ended with exit code {ide.returncode} before the game drew (passenger-{theme}.log)")
+                    fail(f"Passenger ended with exit code {ide.returncode} before the game drew (pitstop-{theme}.log)")
                 if said := refused():
                     fail(said)
                 shown = shown or window(ide.pid, "id")

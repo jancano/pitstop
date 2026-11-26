@@ -110,7 +110,7 @@ public partial class MainWindow
             : several.Length == 1 ? several[0] : null;
         if (project is null)
         {
-            throw new InvalidOperationException(several.Length == 0 ? "No project of the folder targets more than one framework Passenger runs"
+            throw new InvalidOperationException(several.Length == 0 ? "No project of the folder targets more than one framework Pitstop runs"
                 : named is not null ? $"{named} is not a project of the folder that targets several frameworks: {Plural.Listed([.. several.Select(p => p.Name)])} do"
                 : $"Name the project before the framework, as {several[0].Name}:{framework}: {Plural.Listed([.. several.Select(p => p.Name)])} target several");
         }

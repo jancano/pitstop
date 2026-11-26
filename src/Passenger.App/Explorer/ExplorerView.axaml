@@ -9,7 +9,7 @@
             <!-- The view switch: the solution's projects, or the folder as it is on disk. Narrowed, its name gives way, down
                  to a letter or two as the toolbar's widgets do, then it goes whole. -->
             <Button Name="ViewSwitch" DockPanel.Dock="Right" Classes="widget" MinWidth="52" IsVisible="False"
-                    ToolTip.Tip="Switch between the solution and the files on disk">
+                    ToolTip.Tip="Switch Explorer view">
                 <DockPanel>
                     <PathIcon DockPanel.Dock="Right" Classes="chevron" Data="{StaticResource Icon.ChevronDown}" />
                     <TextBlock Name="ViewName" Classes="caption" Text="Solution" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />

@@ -307,7 +307,7 @@ public sealed class McpLongAnswersTests : McpRig, IClassFixture<RestoredFolders>
             + string.Concat(Enumerable.Range(0, ManyTests).Select(i => $"    [Fact]\n    public void Test_number_{i}_holds_what_it_says() => Assert.True(true);\n\n")) + "}\n");
         await TestGit.RunAsync(tests, "init", "-q", "-b", "main");
         StringBuilder history = new();
-        history.Append("commit refs/heads/main\ncommitter Passenger Tests <tests@passenger.invalid> 1700000000 +0000\ndata 10\nMany files\n");
+        history.Append("commit refs/heads/main\ncommitter Pitstop Tests <tests@passenger.invalid> 1700000000 +0000\ndata 10\nMany files\n");
         for (int file = 0; file < ManyFiles; file++)
         {
             history.Append(CultureInfo.InvariantCulture, $"M 644 inline Many/File{file}.txt\ndata 2\n{file % 10}\n");
@@ -315,7 +315,7 @@ public sealed class McpLongAnswersTests : McpRig, IClassFixture<RestoredFolders>
         for (int commit = 1; commit < 600; commit++)
         {
             string subject = $"Commit {commit} of a long history, its subject saying at some length what it changed";
-            history.Append(CultureInfo.InvariantCulture, $"\ncommit refs/heads/main\ncommitter Passenger Tests <tests@passenger.invalid> {1700000000 + commit} +0000\ndata {subject.Length}\n{subject}\n");
+            history.Append(CultureInfo.InvariantCulture, $"\ncommit refs/heads/main\ncommitter Pitstop Tests <tests@passenger.invalid> {1700000000 + commit} +0000\ndata {subject.Length}\n{subject}\n");
         }
         await TestGit.FeedAsync(tests, history.ToString(), "fast-import", "--quiet");
         await TestGit.RunAsync(tests, "reset", "-q", "--hard");

@@ -1247,7 +1247,7 @@ public sealed class ProfilerCommands
         }
         catch (Exception error) when (error is InvalidOperationException || TraceFailures.Of(error))
         {
-            parts.Say($"{Path.GetFileName(path)} is not a snapshot Passenger can read: {error.Message}");
+            parts.Say($"{Path.GetFileName(path)} is not a snapshot Pitstop can read: {error.Message}");
             return null;
         }
     }

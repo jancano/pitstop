@@ -5,7 +5,7 @@ using Passenger.Lsp;
 
 namespace Passenger.App;
 
-/// <summary>The IDE's logs folder, which Help, Show Log opens: <c>passenger.log</c>, each C# language server's own
+/// <summary>The IDE's logs folder, which Help, Show Log opens: <c>pitstop.log</c>, each C# language server's own
 /// under <c>roslyn/</c>, <c>dap.log</c> for the debugger, <c>vstest.log</c> for the test runner, and with
 /// <see cref="Traces"/> on <c>lsp.log</c> and agents' <c>mcp.log</c>. A line is queued from any thread and written by
 /// the log's own thread; each file is rotated by size, a dozen kept. The process's: every window writes the same files,
@@ -13,7 +13,7 @@ namespace Passenger.App;
 public static partial class IdeLog
 {
     /// <summary>The IDE's own log: errors, what the servers and programs it runs said went wrong, startup times.</summary>
-    public const string Ide = "passenger";
+    public const string Ide = "pitstop";
 
     /// <summary>The debugger's: each session, the adapter's own words, and with <see cref="Traces"/> its messages.</summary>
     public const string Debugger = "dap";
@@ -30,7 +30,7 @@ public static partial class IdeLog
     /// call was given.</summary>
     public const string Mcp = "mcp";
 
-    /// <summary>The rotated logs kept beside the current one, <c>passenger.1.log</c> the newest.</summary>
+    /// <summary>The rotated logs kept beside the current one, <c>pitstop.1.log</c> the newest.</summary>
     public const int Rotations = 12;
 
     /// <summary>Lines waiting for the log's thread; taken under <see cref="Writing"/> so they reach the file in order.</summary>
@@ -70,16 +70,16 @@ public static partial class IdeLog
     }
 
     /// <summary>Settings' Log every program started: each program the IDE runs, its exit code and time, in
-    /// passenger.log. Off, only those that fail or take a second are, since git's quick reads come every few seconds
+    /// pitstop.log. Off, only those that fail or take a second are, since git's quick reads come every few seconds
     /// and would bury the rest.</summary>
     public static bool Programs { get; set; }
 
     public static string PathOf(string log) => Path.Combine(Folder, $"{log}.log");
 
-    /// <summary>The process's console, its standard output and error, written to passenger.log instead: an agent's MCP
+    /// <summary>The process's console, its standard output and error, written to pitstop.log instead: an agent's MCP
     /// server has standard output for its protocol, and an agent may never read standard error (OpenCode's does not),
     /// whose pipe, once full, would stop whatever thread wrote to it. On macOS and Linux what native code writes to the
-    /// standard error itself (fontconfig's warnings, the runtime's own) is read into passenger.log too.</summary>
+    /// standard error itself (fontconfig's warnings, the runtime's own) is read into pitstop.log too.</summary>
     public static void TakeConsole()
     {
         TextWriter lines = TextWriter.Synchronized(new ConsoleLines());
@@ -91,7 +91,7 @@ public static partial class IdeLog
         }
     }
 
-    /// <summary>The process's standard error made a pipe of its own, which a thread of the log's reads into passenger.log
+    /// <summary>The process's standard error made a pipe of its own, which a thread of the log's reads into pitstop.log
     /// for as long as the process runs, so a write there never waits on whoever started it.</summary>
     private static unsafe void TakeStandardError()
     {
@@ -129,7 +129,7 @@ public static partial class IdeLog
                 // The process is ending.
             }
         })
-        { IsBackground = true, Name = "Passenger standard error" };
+        { IsBackground = true, Name = "Pitstop standard error" };
         reader.Start();
     }
 
@@ -137,7 +137,7 @@ public static partial class IdeLog
     private static int given = -1;
 
     /// <summary>The standard error the process was given made its standard error again, as a process it becomes takes it
-    /// (an agent's relay following an update); passenger.log no longer has what is written there.</summary>
+    /// (an agent's relay following an update); pitstop.log no longer has what is written there.</summary>
     public static void GiveBackStandardError()
     {
         const int StandardError = 2;
@@ -164,7 +164,7 @@ public static partial class IdeLog
             if (writer is null)
             {
                 AppDomain.CurrentDomain.ProcessExit += (_, _) => Flush();
-                writer = ApartThreads.Start("Passenger log", WriteQueued);
+                writer = ApartThreads.Start("Pitstop log", WriteQueued);
             }
             Monitor.Pulse(Queued);
         }
@@ -253,7 +253,7 @@ public static partial class IdeLog
 
     private static FileStream Open(string path) => Containers.OwnFiles.Append(path, FileShare.ReadWrite | FileShare.Delete);
 
-    /// <summary>Rotates a log: the oldest goes, each moves up one, and the log becomes <c>passenger.1.log</c>. The log
+    /// <summary>Rotates a log: the oldest goes, each moves up one, and the log becomes <c>pitstop.1.log</c>. The log
     /// is moved aside first, so one that cannot be (Windows, a reader not sharing deletion) leaves the rotated ones as
     /// they were; false then.</summary>
     private static bool Rotate(string path)
@@ -293,7 +293,7 @@ public static partial class IdeLog
         return true;
     }
 
-    /// <summary>A rotated log's path: <c>passenger.3.log</c> beside <c>passenger.log</c>.</summary>
+    /// <summary>A rotated log's path: <c>passenger.3.log</c> beside <c>pitstop.log</c>.</summary>
     private static string Rotated(string path, int number) => Rotated(path, $"{number}");
 
     private static string Rotated(string path, string part) =>
@@ -301,7 +301,7 @@ public static partial class IdeLog
 
     private sealed record LogLine(string Path, string Text);
 
-    /// <summary>What the console is given, a line at a time, as passenger.log's lines.</summary>
+    /// <summary>What the console is given, a line at a time, as pitstop.log's lines.</summary>
     private sealed class ConsoleLines : TextWriter
     {
         private readonly StringBuilder line = new();

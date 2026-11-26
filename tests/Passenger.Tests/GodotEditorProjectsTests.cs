@@ -40,7 +40,7 @@ public sealed class GodotEditorProjectsTests
                 "the server's editor to say it holds its main.tscn unsaved");
             string held = Path.Combine(server, "main.tscn");
             Ui.WaitFor(() => window.HeldByGodot(held)?.Contains("unsaved edits", StringComparison.Ordinal) == true,
-                () => $"the server's main.tscn to be held unsaved ({window.HeldByGodot(held) ?? "nothing held"}): Passenger would write over what server/'s editor holds");
+                () => $"the server's main.tscn to be held unsaved ({window.HeldByGodot(held) ?? "nothing held"}): Pitstop would write over what server/'s editor holds");
 
             Assert.True(window.HeldByGodot(Path.Combine(client, "main.tscn")) is null && window.GodotHasOpen(Path.Combine(client, "main.tscn")),
                 $"client/'s main.tscn, open and saved in its own editor, is held as {window.HeldByGodot(Path.Combine(client, "main.tscn"))}: a scene of one project was read against the other's editor");

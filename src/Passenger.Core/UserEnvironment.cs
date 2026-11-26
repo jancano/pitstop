@@ -18,7 +18,7 @@ public static partial class UserEnvironment
     /// <summary>A test's stand-in for the Path a program started now would take, read in place of the machine's and the
     /// user's: a Path as Windows writes one, ";" naming no folder.</summary>
     [IdentifierHome]
-    public const string PathNowVariable = "PASSENGER_WINDOWS_PATH";
+    public const string PathNowVariable = "PITSTOP_WINDOWS_PATH";
 
     /// <summary>The key under HKEY_LOCAL_MACHINE holding the machine's variables.</summary>
     private const string MachineKey = @"SYSTEM\CurrentControlSet\Control\Session Manager\Environment";

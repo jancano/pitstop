@@ -314,13 +314,13 @@ public sealed class LogsTests : IDisposable
                 }
                 for (int n = 0; n < rotated.Length; n++)
                 {
-                    Assert.True(Ui.Shared(rotated[n]) == before[n], $"{Path.GetFileName(rotated[n])} changed while passenger.log was held open");
+                    Assert.True(Ui.Shared(rotated[n]) == before[n], $"{Path.GetFileName(rotated[n])} changed while pitstop.log was held open");
                 }
-                Assert.True(Ui.Shared(IdeErrors.LogPath).Contains("held 19 ", StringComparison.Ordinal), "The lines written while passenger.log was held open are not in it");
+                Assert.True(Ui.Shared(IdeErrors.LogPath).Contains("held 19 ", StringComparison.Ordinal), "The lines written while pitstop.log was held open are not in it");
             }
 
             Fill("let go", IdeErrors.LogLimit / 4);
-            Assert.True(Ui.Shared(rotated[0]).Contains("held 19 ", StringComparison.Ordinal), "passenger.log, let go, was not rotated to passenger.1.log");
+            Assert.True(Ui.Shared(rotated[0]).Contains("held 19 ", StringComparison.Ordinal), "pitstop.log, let go, was not rotated to pitstop.1.log");
             for (int n = 1; n < rotated.Length; n++)
             {
                 Assert.True(Ui.Shared(rotated[n]) == before[n - 1], $"{Path.GetFileName(rotated[n])} is not what {Path.GetFileName(rotated[n - 1])} was before the rotation");

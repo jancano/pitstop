@@ -108,7 +108,7 @@ public sealed class LanguageServerPortTests
         return (header, asked);
     }
 
-    private static async Task<(string Header, string Body)> ReadAsync(NetworkStream stream)
+    internal static async Task<(string Header, string Body)> ReadAsync(NetworkStream stream)
     {
         List<byte> head = [];
         byte[] one = new byte[1];
@@ -123,7 +123,7 @@ public sealed class LanguageServerPortTests
         return (header, Encoding.UTF8.GetString(body));
     }
 
-    private static async Task WriteAsync(NetworkStream stream, string json)
+    internal static async Task WriteAsync(NetworkStream stream, string json)
     {
         byte[] body = Encoding.UTF8.GetBytes(json);
         await stream.WriteAsync(Encoding.ASCII.GetBytes($"Content-Length: {body.Length}\r\n\r\n"));

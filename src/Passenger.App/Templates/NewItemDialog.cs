@@ -418,7 +418,7 @@ public sealed class NewItemDialog : IdeWindow
 
     private void ShowCommand() =>
         command.Text = template is null ? string.Empty
-            : template.Own is { } own ? $"Passenger makes {(template.TakesName ? ItemName : template.Name)}{own.Extension}"
+            : template.Own is { } own ? $"Pitstop makes {(template.TakesName ? ItemName : template.Name)}{own.Extension}"
             : $"dotnet new {string.Join(' ', Arguments(output: false).Select(ChildProcesses.Quote))}";
 
     private void Fail(string? why) => TemplateList.Fail(problem, why);
@@ -442,8 +442,8 @@ public sealed class NewItemDialog : IdeWindow
         return item.Showing<ProjectTemplate>(row =>
         {
             name.Text = row.Name;
-            from.Text = row.Own is not null ? "Passenger" : row.ShortName;
-            ToolTip.SetTip(item, row.Own is not null ? $"{row.Name}, Passenger's own" : $"{row.Name} (dotnet new {row.ShortName})");
+            from.Text = row.Own is not null ? "Pitstop" : row.ShortName;
+            ToolTip.SetTip(item, row.Own is not null ? $"{row.Name}, Pitstop's own" : $"{row.Name} (dotnet new {row.ShortName})");
         });
     }
 

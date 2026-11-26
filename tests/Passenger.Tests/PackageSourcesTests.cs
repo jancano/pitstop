@@ -83,18 +83,18 @@ public sealed class PackageSourcesTests : NuGetFeedsFolder
         }
 
         nuget.ChosenFeed = "private";
-        Search(nuget, "passenger");
+        Search(nuget, "pitstop");
         Assert.True(Ids(nuget).SequenceEqual(["Passenger.Private"]), $"Searching the private feed found [{string.Join(", ", Ids(nuget))}]");
         Assert.True(nuget.Versions.SequenceEqual(["3.1.0", "3.0.0"]), $"The private package's versions are [{string.Join(", ", nuget.Versions)}]");
         Assert.True(feed.Requests.Any(r => r.Path.StartsWith("/query?", StringComparison.Ordinal) && r.Authorized),
             "The private feed was never searched with the credentials its nuget.config gives");
 
         nuget.ChosenFeed = "local";
-        Search(nuget, "passenger");
+        Search(nuget, "pitstop");
         Assert.True(Ids(nuget).Order().SequenceEqual(["Passenger.Other", "Passenger.Sample"]), $"Searching the folder feed found [{string.Join(", ", Ids(nuget))}]");
 
         nuget.ChosenFeed = FeedSet.All;
-        Search(nuget, "passenger");
+        Search(nuget, "pitstop");
         Assert.True(Ids(nuget).Order().SequenceEqual(["Passenger.Other", "Passenger.Private", "Passenger.Sample"]), $"All Feeds found [{string.Join(", ", Ids(nuget))}]");
         Assert.True(nuget.Rows.Single(r => r.Id == "Passenger.Private").Feeds.SequenceEqual(["private"]), "The private package is not said to come from the private feed");
 
@@ -106,7 +106,7 @@ public sealed class PackageSourcesTests : NuGetFeedsFolder
 
         nuget.ShowPackages();
         nuget.ChosenFeed = FeedSet.All;
-        Search(nuget, "passenger");
+        Search(nuget, "pitstop");
         Assert.True(Ids(nuget).SequenceEqual(["Passenger.Private"]), $"With the folder feed disabled, All Feeds found [{string.Join(", ", Ids(nuget))}]");
 
         ShowSources(nuget);
@@ -114,7 +114,7 @@ public sealed class PackageSourcesTests : NuGetFeedsFolder
         Ui.Landed(() => nuget.FeedChoices.Contains("local"), "the folder feed back in the chooser");
         Assert.DoesNotContain("<add key=\"local\" value=\"true\" />", File.ReadAllText(config), StringComparison.Ordinal);
         nuget.ShowPackages();
-        Search(nuget, "passenger");
+        Search(nuget, "pitstop");
         Assert.True(Ids(nuget).Order().SequenceEqual(["Passenger.Other", "Passenger.Private", "Passenger.Sample"]), $"With the folder feed enabled again, All Feeds found [{string.Join(", ", Ids(nuget))}]");
 
         byte[] bytes = File.ReadAllBytes(config);
@@ -248,7 +248,7 @@ public sealed class CredentialProviderTests : NuGetFeedsFolder
             MainWindow window = Open();
             NuGetView nuget = window.NuGet;
             nuget.ChosenFeed = "private";
-            Search(nuget, "passenger");
+            Search(nuget, "pitstop");
             Assert.True(Ids(nuget).SequenceEqual(["Passenger.Private"]), $"The private feed, its credentials from the provider, found [{string.Join(", ", Ids(nuget))}]; {nuget.Status}");
             Assert.True(feed.Requests.Any(r => r.Path.StartsWith("/query?", StringComparison.Ordinal) && r.Authorized),
                 "The private feed was never searched with the credentials the provider gave");
@@ -278,12 +278,12 @@ public sealed class CredentialProviderTests : NuGetFeedsFolder
             MainWindow window = Open();
             NuGetView nuget = window.NuGet;
             nuget.ChosenFeed = "private";
-            nuget.Query = "passenger";
+            nuget.Query = "pitstop";
             Task searched = nuget.RefreshAsync();
             Ui.Landed(() => searched.IsCompleted, $"the private feed searched: {nuget.Status}");
             Assert.True(nuget.Rows.Count == 0 && nuget.Status.Contains("needs credentials", StringComparison.Ordinal),
                 $"With its provider giving nothing, the private feed's search said '{nuget.Status}', not that it needs credentials");
-            string[] said = [.. Ui.IdeLog().Split('\n').Where(l => l.Contains("nuget-plugin-passenger-tests", StringComparison.Ordinal))];
+            string[] said = [.. Ui.IdeLog().Split('\n').Where(l => l.Contains("nuget-plugin-pitstop-tests", StringComparison.Ordinal))];
             Assert.True(said.Any(l => l.Contains("wrote what is no message", StringComparison.Ordinal)) && !said.Any(l => l.Contains("did not answer", StringComparison.Ordinal)),
                 $"The log says of the provider [{string.Join(" | ", said)}], where it should say the provider wrote what is no message, the cause, not that it was slow to answer");
             Assert.DoesNotContain("from-provider", Ui.IdeLog(), StringComparison.Ordinal);
@@ -301,7 +301,7 @@ public sealed class CredentialProviderTests : NuGetFeedsFolder
     private string? OnPath(string provider)
     {
         string plugins = Directory.CreateDirectory(Path.Combine(folder, "plugins")).FullName;
-        string plugin = Path.Combine(plugins, "nuget-plugin-passenger-tests");
+        string plugin = Path.Combine(plugins, "nuget-plugin-pitstop-tests");
         File.WriteAllText(plugin, provider);
         File.SetUnixFileMode(plugin, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         string? was = Environment.GetEnvironmentVariable("PATH");

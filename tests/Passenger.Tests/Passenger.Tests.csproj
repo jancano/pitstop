@@ -5,7 +5,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>Passenger.Tests</RootNamespace>
-    <!-- Passenger's own, so Windows takes the tests' process for what Passenger.exe is: one that makes a layered child
+    <!-- Passenger's own, so Windows takes the tests' process for what Pitstop.exe is: one that makes a layered child
          window (a reader's window over an editor), which a process not saying it runs on Windows 8 or later is refused. -->
     <ApplicationManifest>../../src/Passenger.App/app.manifest</ApplicationManifest>
     <!-- The rig's LibraryImports (the run's nice value), and FileTests' (a Linux file's extended attributes). -->
@@ -250,7 +250,7 @@
     </ItemGroup>
   </Target>
 
-  <!-- Passenger's themes repository as the tests read it, in its place (TestRun names it through PASSENGER_THEMES): the
+  <!-- Passenger's themes repository as the tests read it, in its place (TestRun names it through PITSTOP_THEMES): the
        themes and the code colour scheme that left the app, held to the window's rules (UiRulesTests). -->
   <ItemGroup>
     <None Include="Themes/*.json" CopyToOutputDirectory="PreserveNewest" />

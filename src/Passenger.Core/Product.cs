@@ -9,6 +9,8 @@ namespace Passenger.Core;
 /// compares its tag with <see cref="Version"/>. Its licence and notices are files beside it.</summary>
 public static class Product
 {
+    public const string Name = "Pitstop";
+
     private static readonly string Informational =
         typeof(Product).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
 
@@ -26,7 +28,7 @@ public static class Product
     public static string Program => Own.Value;
 
     private static readonly Lazy<string> Own = new(() =>
-        PathNames.Canonical(Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "Passenger.exe" : "Passenger")));
+        PathNames.Canonical(Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? Name + ".exe" : Name)));
 
     /// <summary>Passenger's licence, beside the app.</summary>
     public static string License => Path.Combine(AppContext.BaseDirectory, "LICENSE.txt");

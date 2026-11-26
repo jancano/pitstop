@@ -118,6 +118,6 @@ internal static class MauiAndroidTests
         string files = Ui.Await(Waiting.Apart(() => ChildProcesses.RunAsync(ChildProcesses.Command(tools.Adb, ["-s", serial, "shell", $"run-as {MauiApp.Package} ls -a files"]))),
             "the app's files").Output;
         return string.Join("; ", [.. running.Length > 0 ? [$"{MauiApp.Package} running as {running}"] : (string[])[],
-            .. files.Split('\n').Any(l => l.Trim() == ".passenger") ? ["the inspector's files"] : (string[])[]]);
+            .. files.Split('\n').Any(l => l.Trim() == ".pitstop") ? ["the inspector's files"] : (string[])[]]);
     }
 }

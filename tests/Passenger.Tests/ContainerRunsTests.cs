@@ -74,7 +74,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
     {
         Flow.StepApart("a service that serves HTTPS has the development certificate and the projects user secrets mounted", () => new ContainerRunsTests(folders), t => t.A_service_that_serves_HTTPS_has_the_development_certificate_and_the_projects_user_secrets_mounted());
         Flow.StepApart("a services user secrets reach it in its container from Passengers build and as deployed and only its own are mounted its backing service kept", () => new ContainerRunsTests(folders), t => t.A_services_user_secrets_reach_it_in_its_container_from_Passengers_build_and_as_deployed_and_only_its_own_are_mounted_its_backing_service_kept());
-        Flow.StepApart("containers of the project Passenger did not make are replaced only once the person says so and an orphan outlives the run", () => new ContainerRunsTests(folders), t => t.Containers_of_the_project_Passenger_did_not_make_are_replaced_only_once_the_person_says_so_and_an_orphan_outlives_the_run());
+        Flow.StepApart("containers of the project Pitstop did not make are replaced only once the person says so and an orphan outlives the run", () => new ContainerRunsTests(folders), t => t.Containers_of_the_project_Passenger_did_not_make_are_replaced_only_once_the_person_says_so_and_an_orphan_outlives_the_run());
         Flow.StepApart("a Docker Compose projects DockerComposeProjectName names the Compose project its run brings up and Stop takes down", () => new ContainerRunsTests(folders), t => t.A_Docker_Compose_projects_DockerComposeProjectName_names_the_Compose_project_its_run_brings_up_and_Stop_takes_down());
         Flow.StepApart("detach leaves a Docker Compose projects containers running until the window closes", () => new ContainerRunsTests(folders), t => t.Detach_leaves_a_Docker_Compose_projects_containers_running_until_the_window_closes());
         Flow.StepApart("leave Running leaves the person only the closing windows containers of a Compose project another folder runs too", () => new ContainerRunsTests(folders), t => t.Leave_Running_leaves_the_person_only_the_closing_windows_containers_of_a_Compose_project_another_folder_runs_too());
@@ -107,14 +107,14 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
         try
         {
             Launched(window, "the Compose application to come up");
-            Assert.StartsWith($"Running {Name}: 2 .NET services from Passenger's build, 1 other service", window.Status, StringComparison.Ordinal);
+            Assert.StartsWith($"Running {Name}: 2 .NET services from Pitstop's build, 1 other service", window.Status, StringComparison.Ordinal);
             Dictionary<string, string> states = States(project);
             Assert.Equal(["api", "cache", "web"], states.Keys.Order(StringComparer.Ordinal));
             Assert.All(states.Values, state => Assert.Equal("running", state));
             string web = Container(project, "web");
-            Assert.Equal("dotnet /passenger/app/Web.dll", Docker.WithoutInit(Docker.Run("inspect", "-f", "{{.Path}} {{join .Args \" \"}}", web)));
-            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"net.passenger-ide.state\"}}", web));
-            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"net.passenger-ide.state\"}}", Container(project, "cache")));
+            Assert.Equal("dotnet /pitstop/app/Web.dll", Docker.WithoutInit(Docker.Run("inspect", "-f", "{{.Path}} {{join .Args \" \"}}", web)));
+            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"io.github.jancano.pitstop.state\"}}", web));
+            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"io.github.jancano.pitstop.state\"}}", Container(project, "cache")));
             int webPort = Published(project, "web");
             Assert.Equal("web 1", Page(webPort));
 
@@ -179,7 +179,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
             Launched(window, "the Compose application to come up under Release");
             string mounted = Docker.Run("inspect", "-f", "{{range .Mounts}}{{.Source}} -> {{.Destination}};{{end}}", Container(project, "web")).Replace('\\', '/');
             Assert.True(mounted.Contains($"/Web/bin/Release/{TestProjects.Framework} -> {ContainerPlans.AppFolder};", StringComparison.Ordinal),
-                $"web did not run from Passenger's Release build, its container mounting {mounted}");
+                $"web did not run from Pitstop's Release build, its container mounting {mounted}");
             Assert.Equal("web 1", Page(Published(project, "web")));
             Assert.False(Directory.Exists(Path.Combine(folder, "Web", "bin", "Debug")), "The run under Release built web as Debug");
         }
@@ -344,7 +344,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
         try
         {
             Launched(window, "the cache alone to come up");
-            Assert.StartsWith("Running Cache alone: 0 .NET services from Passenger's build, 1 other service", window.Status, StringComparison.Ordinal);
+            Assert.StartsWith("Running Cache alone: 0 .NET services from Pitstop's build, 1 other service", window.Status, StringComparison.Ordinal);
             Assert.True(Builds().Length == 0, $"Cache alone, which starts no .NET service, started dotnet builds first:\n{string.Join('\n', Builds())}");
             Assert.Equal(["cache"], States(project).Keys);
             Docker.Stopped(window, project, "Stop to take the cache down");
@@ -352,7 +352,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
 
             Assert.True(window.SelectConfiguration(web.Name));
             Launched(window, "web to come up beside its cache");
-            Assert.StartsWith("Running Web and its cache: 1 .NET service from Passenger's build, 1 other service", window.Status, StringComparison.Ordinal);
+            Assert.StartsWith("Running Web and its cache: 1 .NET service from Pitstop's build, 1 other service", window.Status, StringComparison.Ordinal);
             Assert.Equal("web 1", Served(window, project, "web"));
             Assert.Equal(["cache", "web"], States(project).Keys.Order(StringComparer.Ordinal));
             Assert.True(Builds().Length == 1, $"Web and its cache was to build once, but started {Builds().Length} dotnet builds:\n{string.Join('\n', Builds())}");
@@ -646,7 +646,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
             string container = Container(project, "tool");
             image = Docker.Run("inspect", "-f", "{{.Config.Image}}", container);
             Assert.EndsWith($":{ContainerPlans.SdkImageTag}", image, StringComparison.Ordinal);
-            Assert.DoesNotContain("/passenger/app", Docker.Run("inspect", "-f", "{{range .Mounts}}{{.Destination}} {{end}}", container), StringComparison.Ordinal);
+            Assert.DoesNotContain("/pitstop/app", Docker.Run("inspect", "-f", "{{range .Mounts}}{{.Destination}} {{end}}", container), StringComparison.Ordinal);
             Assert.Equal("tool as deployed", Page(Published(project, "tool")));
         }
         finally
@@ -849,8 +849,8 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
         using X509Certificate2 throwaway = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
         (string folder, string project) = Restored("https");
         TestFolders.Write(folder, "Web/Web.csproj", $"<Project Sdk=\"Microsoft.NET.Sdk.Web\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n"
-            + "    <ImplicitUsings>enable</ImplicitUsings>\n    <UserSecretsId>passenger-test-https</UserSecretsId>\n  </PropertyGroup>\n</Project>\n");
-        TestFolders.Write(TestRun.UserSecrets, "passenger-test-https/secrets.json", "{ \"Greeting\": \"https\" }\n");
+            + "    <ImplicitUsings>enable</ImplicitUsings>\n    <UserSecretsId>pitstop-test-https</UserSecretsId>\n  </PropertyGroup>\n</Project>\n");
+        TestFolders.Write(TestRun.UserSecrets, "pitstop-test-https/secrets.json", "{ \"Greeting\": \"https\" }\n");
         File.WriteAllText(Path.Combine(folder, "compose.yaml"), File.ReadAllText(Path.Combine(folder, "compose.yaml"))
             .Replace("    ports: [\"8080\"]\n    depends_on", "    ports: [\"8081\"]\n    environment: { ASPNETCORE_HTTPS_PORTS: \"8081\", ASPNETCORE_HTTP_PORTS: \"\" }\n    depends_on", StringComparison.Ordinal));
         // The dev-certs stand-in answers trusted, and its PEM export writes the test's certificate and key.
@@ -1076,7 +1076,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
                 Assert.True(Exported() == again, $"With dev-certs naming {thumbprint[..4]}…, the certificate was {(again ? "not exported again" : "exported again")}: {Asked()}");
                 Assert.Contains("ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pem", Env(), StringComparison.Ordinal);
                 Assert.False(File.Exists(Path.Combine(https, "aspnetapp.pfx")) || File.Exists(Path.Combine(https, "password")),
-                    "An earlier Passenger's .pfx and password are still in the folder the container mounts");
+                    "An earlier Pitstop's .pfx and password are still in the folder the container mounts");
                 if (again && !OperatingSystem.IsWindows())
                 {
                     Assert.Equal("drwx------", File.ReadAllText(Path.Combine(standIn, "folder")).Trim());
@@ -1130,7 +1130,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
     {
         Assert.SkipWhen(Docker.WhyNot is not null, Docker.WhyNot ?? string.Empty);
         (string folder, string project) = Restored("secrets");
-        string id = $"passenger-test-{project}";
+        string id = $"pitstop-test-{project}";
         TestFolders.Write(folder, "Web/Web.csproj", $"<Project Sdk=\"Microsoft.NET.Sdk.Web\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n"
             + $"    <ImplicitUsings>enable</ImplicitUsings>\n    <UserSecretsId>{id}</UserSecretsId>\n  </PropertyGroup>\n</Project>\n");
         TestFolders.Write(folder, "Web/Program.cs", "WebApplication app = WebApplication.Create(args);\napp.MapGet(\"/\", () => app.Configuration[\"Greeting\"] ?? \"no secret\");\napp.Run();\n");
@@ -1153,7 +1153,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
         MainWindow window = Open(folder);
         RunConfiguration fast = window.Configurations.First(c => c.Kind == RunKind.Compose).Copied() with
         {
-            Name = "Web from Passenger's build",
+            Name = "Web from Pitstop's build",
             Services = ["web"],
             KeepBackingServices = true,
             Generated = false,
@@ -1226,7 +1226,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
             Assert.Contains($"{project}-cache-1", listed, StringComparison.Ordinal);
             Assert.DoesNotContain(own, listed, StringComparison.Ordinal);
             Press(asked.CancelButton);
-            Assert.Equal($"Cache was not run: {project}-cache-1 of {project}, which Passenger did not make for this folder, were left as they are", Ui.Await(running, "Run to end once Cancel was answered", TimeSpan.FromMinutes(1)));
+            Assert.Equal($"Cache was not run: {project}-cache-1 of {project}, which Pitstop did not make for this folder, were left as they are", Ui.Await(running, "Run to end once Cancel was answered", TimeSpan.FromMinutes(1)));
             Assert.Equal(theirs, Container(project, "cache"));
             Assert.Equal("running", Docker.State(theirs));
 
@@ -1391,7 +1391,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
             IReadOnlyList<string> persons = ContainerLabels.LeftIn(TestRun.Settings);
             Assert.Contains(left, persons);
             Assert.False(persons.Contains(right), $"Leave Running in {first}'s window left {project}-right-1, the run of {second}'s window, to the person: "
-                + "the end of this Passenger and the next one's clean-up would pass it over");
+                + "the end of this Pitstop and the next one's clean-up would pass it over");
             Assert.Equal("running", Docker.State($"{project}-left-1"));
             Docker.Stopped(staying, project, "the other window's Stop to take its own container down", $"{ComposeLabels.Service}=right");
         }
@@ -1421,7 +1421,7 @@ public sealed class ContainerRunsTests(RestoredFolders folders) : IClassFixture<
             Assert.True(taking.ReplaceQuestion is not null,
                 $"The run took {project}-cache-1 from the other window's run asking nothing: {(started.IsCompleted ? started.Result : null)}");
             Press(DialogButtonsTests.Check(taking.ReplaceQuestion!).CancelButton);
-            Assert.Equal($"Compose: compose.yaml was not run: {project}-cache-1 of {project}, which Passenger did not make for this folder, were left as they are",
+            Assert.Equal($"Compose: compose.yaml was not run: {project}-cache-1 of {project}, which Pitstop did not make for this folder, were left as they are",
                 Ui.Await(started, "Run to end once Cancel was answered", TimeSpan.FromMinutes(1)));
             Assert.Equal(theirs, Container(project, "cache"));
             Assert.Equal("running", Docker.State(theirs));

@@ -1,11 +1,11 @@
 extends Node
 ## Passenger's helper in a game it debugs: where the nodes are, input given as a person gives it, the frames the game
 ## has run, and the values of its scripts' members. Each call comes through asked, its first argument its ask, answered by
-## a passenger:said message of the ask, whether it was done, and what it came to.
+## a pitstop:said message of the ask, whether it was done, and what it came to.
 
-const SAID := "passenger:said"
-const GONE := "passenger:gone"
-const HERE := "passenger:here"
+const SAID := "pitstop:said"
+const GONE := "pitstop:gone"
+const HERE := "pitstop:here"
 const SHIFT := 1
 const CTRL := 2
 const ALT := 4
@@ -93,7 +93,7 @@ func _input(event: InputEvent) -> void:
     var modifiers := (SHIFT if pressed_key.shift_pressed else 0) | (CTRL if pressed_key.ctrl_pressed else 0) | (ALT if pressed_key.alt_pressed else 0) | (META if pressed_key.meta_pressed else 0)
     if modifiers == _keys_back_modifiers:
         get_viewport().set_input_as_handled()
-        EngineDebugger.send_message("passenger:keys", [])
+        EngineDebugger.send_message("pitstop:keys", [])
 
 
 ## Said as the helper leaves the game's tree, freed or taken out: what it was asked and has yet to answer, it never will.

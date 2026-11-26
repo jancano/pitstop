@@ -168,7 +168,7 @@ public partial class MainWindow
         }, w == this))];
 
     /// <summary>The window as a list of windows names it: its solution (or project, or folder), else the Welcome window's.</summary>
-    public string SolutionTitle => Folder is null ? "Welcome to Passenger" : session.Workspace?.Name ?? Path.GetFileName(Folder);
+    public string SolutionTitle => Folder is null ? "Welcome to Pitstop" : session.Workspace?.Name ?? Path.GetFileName(Folder);
 
     /// <summary>The workspace just opened is marked open among the recent ones, and the one it replaced in this window no
     /// longer is.</summary>

@@ -925,7 +925,7 @@ public sealed class NewProjectDialog : IdeWindow
         {
             return null;
         }
-        return $"{godot.Editor} builds and runs a game here on .NET {newest.Major} at most, that of {PathNames.Shown(newest.Root, null)}, older than Passenger's .NET {own}";
+        return $"{godot.Editor} builds and runs a game here on .NET {newest.Major} at most, that of {PathNames.Shown(newest.Root, null)}, older than Pitstop's .NET {own}";
     }
 
     /// <summary>Once the Godot is found, the runtimes read and what it builds and runs, the Godot game listed again on the
@@ -1597,7 +1597,7 @@ public sealed class NewProjectDialog : IdeWindow
         languageRow.IsVisible = template.Languages.Count > 1;
         heading.Text = template.Name;
         description.Text = Variant().Description;
-        windowsNote.Text = template.WindowsOnly is { } desktop ? $"{desktop} runs only on Windows: Passenger builds the project here for its code help, and Run, Debug and Profile need Windows"
+        windowsNote.Text = template.WindowsOnly is { } desktop ? $"{desktop} runs only on Windows: Pitstop builds the project here for its code help, and Run, Debug and Profile need Windows"
             : GodotWhyNot() ?? (template.GodotGame && !ScriptGame ? GodotTargets?.WhyNot(Framework) : null);
         windowsNote.IsVisible = windowsNote.Text is not null;
         frameworkNote.Text = GodotDotnetSaid();
@@ -1709,7 +1709,7 @@ public sealed class NewProjectDialog : IdeWindow
     /// <summary>The command line Create runs, as the dialog shows it.</summary>
     private void ShowCommand() =>
         command.Text = template is null ? string.Empty
-            : template.GodotGame ? $"Passenger writes {Plural.Listed([.. GodotGames.Files(NameGiven, !ScriptGame, GodotVersion ?? "4").Select(f => f.Path)])}"
+            : template.GodotGame ? $"Pitstop writes {Plural.Listed([.. GodotGames.Files(NameGiven, !ScriptGame, GodotVersion ?? "4").Select(f => f.Path)])}"
                 + (ScriptGame ? string.Empty : $", the project on Godot.NET.Sdk/{GodotVersion ?? "the Godot found's version"}")
             : $"dotnet new {string.Join(' ', Arguments(null).Select(ChildProcesses.Quote))}";
 
@@ -1755,7 +1755,7 @@ public sealed class NewProjectDialog : IdeWindow
         {
             string? whyNot = pack.WhyNotFor(chosen.Name);
             offerText.Text = whyNot ?? pack.Offer;
-            offerCommand.Text = whyNot is not null ? $"{char.ToUpperInvariant(pack.Named[0])}{pack.Named[1..]} is not installed, and Passenger offers no install of it here."
+            offerCommand.Text = whyNot is not null ? $"{char.ToUpperInvariant(pack.Named[0])}{pack.Named[1..]} is not installed, and Pitstop offers no install of it here."
                 : Offered(pack);
             install.IsVisible = whyNot is null;
             installOutput.IsVisible = false;
@@ -1947,7 +1947,7 @@ public sealed class NewProjectDialog : IdeWindow
 
         public string Detail => missing ?? File switch
         {
-            RepositoryFile.GitIgnore => "dotnet new gitignore's, with what Passenger's runs leave",
+            RepositoryFile.GitIgnore => "dotnet new gitignore's, with what Pitstop's runs leave",
             RepositoryFile.GitAttributes => "LF line breaks on every system, binary files marked",
             _ => "dotnet new editorconfig's, with LF line breaks and UTF-8",
         };

@@ -191,7 +191,7 @@ public static partial class ThemeFiles
         }
         if (format is not { ValueKind: JsonValueKind.Number } number || !number.TryGetInt32(out int which) || which != Format)
         {
-            throw new FormatException($"is format {ThemeJson.Shown(format.Value)}, which this Passenger does not read: it reads format {Format}");
+            throw new FormatException($"is format {ThemeJson.Shown(format.Value)}, which this Pitstop does not read: it reads format {Format}");
         }
     }
 
@@ -244,7 +244,7 @@ public static partial class ThemeFiles
                 if (!tokens.TryGetValue(token.Name, out ThemeTokenKind kind))
                 {
                     string hint = token.Name.StartsWith("Passenger.", StringComparison.Ordinal) ? " (a token is named without \"Passenger.\")" : string.Empty;
-                    problems.Add($"{file}: {token.Name} in {Sections[i]}{inLanguage} is no token this Passenger knows{hint}, so it was passed over");
+                    problems.Add($"{file}: {token.Name} in {Sections[i]}{inLanguage} is no token this Pitstop knows{hint}, so it was passed over");
                     continue;
                 }
                 if (code && !IsCode(token.Name))
@@ -465,7 +465,7 @@ public static partial class ThemeFiles
         {
             if (!known.Contains(member.Name, StringComparer.Ordinal))
             {
-                problems.Add($"{file}: {member.Name} is no member of {what} this Passenger knows, so it was passed over");
+                problems.Add($"{file}: {member.Name} is no member of {what} this Pitstop knows, so it was passed over");
             }
         }
     }

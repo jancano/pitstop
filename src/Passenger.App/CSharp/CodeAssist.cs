@@ -436,6 +436,19 @@ public sealed class CodeAssist
         set => context.Web = value;
     }
 
+    public Func<CppLanguageService?>? Cpp
+    {
+        get => context.Cpp;
+        set => context.Cpp = value;
+    }
+
+    internal void CppContextChanged()
+    {
+        completion.Close();
+        quickInfo.Hide();
+        parameterInfo.Hide();
+    }
+
     /// <summary>The window's XAML, for a XAML file shown.</summary>
     public Func<XamlService?>? Xaml
     {
@@ -735,6 +748,12 @@ public sealed class CodeAssist
         });
         Code(AppActions.GoToDeclaration, "Go to Declaration", context => IdeErrors.Observe(navigation.GoToDefinition(Caret)), new("Navigate", 2, 0), xaml: true, msbuild: true, http: true,
             godot: true, shader: true, gherkin: true, link: true, config: true);
+        registry.Add(new IdeAction(AppActions.GoToCppDefinition, "Go to Definition", "Code", _ => IdeErrors.Observe(navigation.GoToCppDefinition(Caret)))
+        {
+            WhyNot = action => action.File is { } file && this.context.ServerOf(file) is CppEditorDocument { Lsp: { } cpp }
+                && cpp.Supports("definitionProvider") ? null : "Go to Definition needs an active clangd document",
+            Menus = [new("Navigate", 2, 10)],
+        });
         Code(AppActions.DerivedSymbols, "Derived Symbols", context => IdeErrors.Observe(navigation.GoToDerivedSymbols(Caret)), new("Navigate", 2, 1));
         Code(AppActions.GoToImplementation, "Go to Implementation", context => IdeErrors.Observe(navigation.GoToImplementation(Caret)), new("Navigate", 2, 2));
         Code(AppActions.GoToTypeDeclaration, "Go to Type Declaration", context => IdeErrors.Observe(navigation.GoToTypeDeclaration(Caret)), new("Navigate", 2, 3));

@@ -45,7 +45,7 @@ public sealed class GitStatusBarTests : IDisposable
         TestGit.Init(origin);
         TestGit.Run(origin, "clone", "-q", "-c", "core.autocrlf=false", origin, clone);
         TestGit.Run(clone, "config", Passenger.Vcs.GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        TestGit.Run(clone, "config", "user.name", "Passenger Tests");
+        TestGit.Run(clone, "config", "user.name", "Pitstop Tests");
         foreach (string added in new[] { "Price", "Stock" })
         {
             File.WriteAllText(Path.Combine(origin, $"{added}.cs"), $"class {added}\n{{\n}}\n");

@@ -65,7 +65,7 @@ public sealed class StepConversionsTests
                 differ.Add(Shrunk(reqnroll, name, type, found.Text, culture));
             }
         }
-        Assert.True(differ.Count == 0, $"Seed {Seed}: Passenger takes a step's argument otherwise than Reqnroll's converter:\n{string.Join("\n", differ)}");
+        Assert.True(differ.Count == 0, $"Seed {Seed}: Pitstop takes a step's argument otherwise than Reqnroll's converter:\n{string.Join("\n", differ)}");
         Assert.True(refused > Drawn / 5 && refused < Drawn * 4 / 5, $"Reqnroll's converter refused {refused} of {Drawn} cases, too few or too many for the cases to tell its rules apart");
     }
 
@@ -131,7 +131,7 @@ public sealed class StepConversionsTests
             }
         }
         (string _, bool passenger, bool reference) = Differs(reqnroll, name, type, text, culture)!.Value;
-        return $"\"{text}\" as {name} in {(culture.Name.Length > 0 ? culture.Name : "the invariant culture")}: Passenger {(passenger ? "takes" : "refuses")} it, Reqnroll {(reference ? "takes" : "refuses")} it";
+        return $"\"{text}\" as {name} in {(culture.Name.Length > 0 ? culture.Name : "the invariant culture")}: Pitstop {(passenger ? "takes" : "refuses")} it, Reqnroll {(reference ? "takes" : "refuses")} it";
     }
 
     /// <summary>Reqnroll's converter over a registry holding the one transformation, ToMoney.</summary>

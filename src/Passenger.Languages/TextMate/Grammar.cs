@@ -129,7 +129,7 @@ internal sealed class Grammar
 
     private static string ThemeText()
     {
-        StringBuilder json = new("{\"name\":\"Passenger\",\"settings\":[{\"settings\":{\"foreground\":\"#000000\"}}");
+        StringBuilder json = new("{\"name\":\"Pitstop\",\"settings\":[{\"settings\":{\"foreground\":\"#000000\"}}");
         foreach ((string selector, TokenKind kind) in ScopeColours.Rules)
         {
             json.Append(CultureInfo.InvariantCulture, $",{{\"scope\":\"{selector}\",\"settings\":{{\"foreground\":\"#{(int)kind:X6}\"}}}}");

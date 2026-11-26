@@ -344,7 +344,7 @@ public sealed class McpAvaloniaAppTests : McpRig, IClassFixture<AgentAppFolder>
         elsewhere.MouseMove(new Avalonia.Point(50, 50));
         Ui.Settle();
         elsewhere.Close();
-        Ui.Collected(weak, "the window an agent inspected Passenger's own windows in to be let go once closed: held by the inspection the agent's call "
+        Ui.Collected(weak, "the window an agent inspected Pitstop's own windows in to be let go once closed: held by the inspection the agent's call "
             + "started, which lasts the process, that window would be kept for as long as the process ran", TimeSpan.FromSeconds(30));
     }
 
@@ -374,20 +374,20 @@ public sealed class McpAvaloniaAppTests : McpRig, IClassFixture<AgentAppFolder>
             TextBlock project = window.FindControl<TextBlock>("ProjectName")!;
             // The tree names an element by its type, #name, any .classes, then its text.
             Assert.Matches($"TextBlock#ProjectName(\\.[\\w-]+)* \"{System.Text.RegularExpressions.Regex.Escape(project.Text!)}\"",
-                Text(Await(Waiting.Apart(() => Call(agent, McpTools.AppTree, new() { ["app"] = "ide", ["filter"] = "#ProjectName" })), "Passenger's tree")));
+                Text(Await(Waiting.Apart(() => Call(agent, McpTools.AppTree, new() { ["app"] = "ide", ["filter"] = "#ProjectName" })), "Pitstop's tree")));
             // Input to Passenger's own windows is asked apart from the app's, which the session allows.
             Task<JsonElement> clickingOwn = Waiting.Apart(() => Call(agent, McpTools.AppClick, new() { ["app"] = "ide", ["control"] = "#RunConfigButton" }));
-            Window own = Question(window, "the question for the agent's click in Passenger's windows");
-            Assert.Contains("Allow app_click in Passenger's windows?", Texts(own));
+            Window own = Question(window, "the question for the agent's click in Pitstop's windows");
+            Assert.Contains("Allow app_click in Pitstop's windows?", Texts(own));
             Press(own, AgentToolDialog.AllowForSession);
-            Await(clickingOwn, "the click on Passenger's run configurations");
+            Await(clickingOwn, "the click on Pitstop's run configurations");
             Dictionary<string, object?> menu = new() { ["app"] = "ide", ["filter"] = "MenuItem \"AgentApp\"" };
             Assert.Contains("MenuItem \"AgentApp\"", Text(Await(Waiting.Apart(() => Call(agent, McpTools.AppTree, menu)), "the run configurations' menu")), StringComparison.Ordinal);
             Task<JsonElement> escaping = Waiting.Apart(() => Call(agent, McpTools.AppKey, new() { ["app"] = "ide", ["keys"] = "Escape" }));
             Press(Question(window, "the question for the agent's keys"), AgentToolDialog.AllowForSession);
             string escaped = Text(Await(escaping, "the Escape"));
             string after = Text(Await(Waiting.Apart(() => Call(agent, McpTools.AppTree, menu)), "the menu closed"));
-            Assert.True(after.StartsWith("Nothing in Passenger matches", StringComparison.Ordinal), $"Escape ({escaped}) left the menu open: {after}");
+            Assert.True(after.StartsWith("Nothing in Pitstop matches", StringComparison.Ordinal), $"Escape ({escaped}) left the menu open: {after}");
 
             Task<CallToolResult> building = Waiting.Apart(() => Result(agent, McpTools.Build));
             Window question = Question(window, "the question for the agent's build");

@@ -2,9 +2,9 @@ using Passenger.Core;
 
 namespace Passenger.App;
 
-/// <summary>The passenger-ide command on macOS (<see cref="PassengerCommand"/>), read off the UI thread as the window opens
-/// and comes in front: Add the passenger-ide Command… says what it changes and asks, then links it in ~/.local/bin and puts
-/// that folder on the shell's PATH where nothing does; Remove the passenger-ide Command… asks, then removes the link. Only
+/// <summary>The pitstop-ide command on macOS (<see cref="PassengerCommand"/>), read off the UI thread as the window opens
+/// and comes in front: Add the pitstop-ide Command… says what it changes and asks, then links it in ~/.local/bin and puts
+/// that folder on the shell's PATH where nothing does; Remove the pitstop-ide Command… asks, then removes the link. Only
 /// the person does either: an agent's is refused, and no agent's input into the window does either or answers its question
 /// (<see cref="RefusedToAgentsInput"/>). Windows' installer and Linux's install.sh make the command there.</summary>
 public partial class MainWindow
@@ -91,7 +91,7 @@ public partial class MainWindow
         macCommand = read;
     }
 
-    /// <summary>Add the passenger-ide Command: read again, said and asked, then made; it says what it came to.</summary>
+    /// <summary>Add the pitstop-ide Command: read again, said and asked, then made; it says what it came to.</summary>
     private async Task AddCommandAsync()
     {
         UiThread.Check();
@@ -111,11 +111,11 @@ public partial class MainWindow
             }
             string link = PathNames.Shown(read.Link, null);
             string folder = PathNames.Shown(PassengerCommand.Folder, null);
-            string replacing = read.Held == CommandHeld.Passengers ? ", in place of the link there to another Passenger's" : string.Empty;
+            string replacing = read.Held == CommandHeld.Passengers ? ", in place of the link there to another Pitstop's" : string.Empty;
             string path = read.OnPath is { } change ? $" It then {change.Shown}: a terminal open now finds the command once it reads that file again."
                 : $" {folder} is on your shell's PATH already.";
-            string text = $"Passenger links {link} to the {PassengerCommand.Name} script it carries{replacing}, so in a terminal {PassengerCommand.Name} opens a folder, a solution "
-                + $"or a file in Passenger, the Passenger running taking it where one is.{path} No administrator is asked; Tools, Remove the {PassengerCommand.Name} Command… takes it away.";
+            string text = $"Pitstop links {link} to the {PassengerCommand.Name} script it carries{replacing}, so in a terminal {PassengerCommand.Name} opens a folder, a solution "
+                + $"or a file in Pitstop, the Pitstop running taking it where one is.{path} No administrator is asked; Tools, Remove the {PassengerCommand.Name} Command… takes it away.";
             if (!await ConfirmAsync($"Add the {PassengerCommand.Name} command?", text, "Add Command", null, Refusals.CommandIsThePersons))
             {
                 Told(adding, false, $"The {PassengerCommand.Name} command was not added");
@@ -129,11 +129,11 @@ public partial class MainWindow
             }
             Took(made);
             string onPath = read.OnPath?.File is { } file ? $"; {PathNames.Shown(file, null)} puts {folder} on the PATH of shells started from now on" : string.Empty;
-            Told(adding, true, $"{link} leads to this Passenger{onPath}");
+            Told(adding, true, $"{link} leads to this Pitstop{onPath}");
         }
     }
 
-    /// <summary>Remove the passenger-ide Command: read again, asked, then the link removed; it says what it came to.</summary>
+    /// <summary>Remove the pitstop-ide Command: read again, asked, then the link removed; it says what it came to.</summary>
     private async Task RemoveCommandAsync()
     {
         UiThread.Check();
@@ -152,7 +152,7 @@ public partial class MainWindow
                 return;
             }
             string link = PathNames.Shown(read.Link, null);
-            string text = $"Passenger removes {link}, which leads to {(read.Held == CommandHeld.This ? "this Passenger" : "another Passenger")}. "
+            string text = $"Pitstop removes {link}, which leads to {(read.Held == CommandHeld.This ? "this Passenger" : "another Passenger")}. "
                 + $"{PathNames.Shown(PassengerCommand.Folder, null)} stays on your shell's PATH, where other programs' commands may be.";
             if (!await ConfirmAsync($"Remove the {PassengerCommand.Name} command?", text, "Remove Command", null, Refusals.CommandIsThePersons))
             {

@@ -19,10 +19,10 @@ namespace Passenger.App.Containers;
 /// the IDE has them.</summary>
 public static partial class ContainerLabels
 {
-    public const string State = "net.passenger-ide.state";
-    public const string Process = "net.passenger-ide.process";
-    public const string Folder = "net.passenger-ide.folder";
-    public const string Machine = "net.passenger-ide.machine";
+    public const string State = "io.github.jancano.pitstop.state";
+    public const string Process = "io.github.jancano.pitstop.process";
+    public const string Folder = "io.github.jancano.pitstop.folder";
+    public const string Machine = "io.github.jancano.pitstop.machine";
 
     /// <summary>The last command the watchdog was given, told again when the engine it reaches or what it removes changes.</summary>
     private static string? toldWatchdog;
@@ -397,7 +397,7 @@ public static partial class ContainerLabels
             }
             catch (Exception failed)
             {
-                IdeErrors.Write($"Containers: what an earlier Passenger left could not be looked for: {failed}");
+                IdeErrors.Write($"Containers: what an earlier Pitstop left could not be looked for: {failed}");
             }
         }));
 
@@ -440,7 +440,7 @@ public static partial class ContainerLabels
             }
             if (removed.Count > 0)
             {
-                IdeErrors.Write($"Containers: removed {Plural.Of(removed.Count, "container")} and networks an earlier Passenger left");
+                IdeErrors.Write($"Containers: removed {Plural.Of(removed.Count, "container")} and networks an earlier Pitstop left");
             }
         }
         catch (Exception failed) when (failed is ContainerCommandException or JsonException || ChildFailures.Of(failed))

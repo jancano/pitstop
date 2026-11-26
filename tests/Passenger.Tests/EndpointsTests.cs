@@ -205,7 +205,7 @@ public sealed class EndpointsTests : IDisposable
 
         EndpointResponse answer = window.Endpoints.Response.Response!;
         Assert.True(answer.Error is null, $"The huge answer failed: {answer.Error}");
-        Assert.True(answer.Cut, "An answer longer than Passenger reads was read whole");
+        Assert.True(answer.Cut, "An answer longer than Pitstop reads was read whole");
         Assert.Equal(EndpointClient.MostRead, answer.Size);
         Assert.Contains("the rest unread", window.Endpoints.Response.Summary);
         Assert.EndsWith("more characters not shown", window.Endpoints.Response.Shown);
@@ -246,8 +246,8 @@ public sealed class EndpointsTests : IDisposable
         Ui.Click(RowButton(window, whoami, "endpointTest"));
         EndpointQuestionDialog question = DialogButtonsTests.Check(window.Endpoints.Question ?? throw new Xunit.Sdk.XunitException("A request reading the person's environment was sent unasked"));
         Assert.Contains($"127.0.0.1:{api.Port}", question.Title);
-        Assert.Equal([new EndpointRead(false, "PASSENGER_ENDPOINTS_UNSET", Missing: true), new EndpointRead(false, StateStore.Variable)], question.Reads);
-        Assert.Contains(question.GetVisualDescendants().OfType<TextBlock>(), t => t.Text?.Contains("PASSENGER_ENDPOINTS_UNSET, which is not set", StringComparison.Ordinal) == true);
+        Assert.Equal([new EndpointRead(false, "PITSTOP_ENDPOINTS_UNSET", Missing: true), new EndpointRead(false, StateStore.Variable)], question.Reads);
+        Assert.Contains(question.GetVisualDescendants().OfType<TextBlock>(), t => t.Text?.Contains("PITSTOP_ENDPOINTS_UNSET, which is not set", StringComparison.Ordinal) == true);
         Ui.Click(question.DontAllowButton);
         Assert.Null(window.Endpoints.Question);
         Assert.Empty(api.Received);
@@ -286,7 +286,7 @@ public sealed class EndpointsTests : IDisposable
         window.Close();
         Ui.Settle();
         string kept = File.ReadAllText(Assert.Single(Directory.GetFiles(Path.Combine(settings, "workspaces"), "endpoints.json", SearchOption.AllDirectories)));
-        Assert.Contains($"127.0.0.1:{api.Port} env PASSENGER_SETTINGS", kept);
+        Assert.Contains($"127.0.0.1:{api.Port} env PITSTOP_SETTINGS", kept);
 
         MainWindow again = Open(folder, settings);
         again.ShowToolWindow(ToolWindowIds.Endpoints);
@@ -297,10 +297,10 @@ public sealed class EndpointsTests : IDisposable
 
         // The env files are read as a request is sent.
         File.WriteAllText(Path.Combine(folder, "http-client.env.json"),
-            $$$"""{ "dev": { "base": "{{{api.Root}}}", "token": "{{$processEnv PASSENGER_SETTINGS}}{{$env.PASSENGER_ENDPOINTS_OTHER}}" } }""");
+            $$$"""{ "dev": { "base": "{{{api.Root}}}", "token": "{{$processEnv PITSTOP_SETTINGS}}{{$env.PITSTOP_ENDPOINTS_OTHER}}" } }""");
         Ui.Click(RowButton(again, again.Endpoints.Requests.Single(r => r.Name == "Who am I"), "endpointTest"));
         question = again.Endpoints.Question ?? throw new Xunit.Sdk.XunitException("A variable the folder never allowed was sent unasked");
-        Assert.Contains(question.Reads, r => r.Name == "PASSENGER_ENDPOINTS_OTHER");
+        Assert.Contains(question.Reads, r => r.Name == "PITSTOP_ENDPOINTS_OTHER");
         Ui.Click(question.DontAllowButton);
         Assert.Equal(2, api.Received.Count);
         again.Close();
@@ -419,7 +419,7 @@ public sealed class EndpointsTests : IDisposable
         using StandInApi other = new();
         api.RedirectRoot = other.Root;
         string folder = Folder();
-        File.AppendAllText(Path.Combine(folder, "api.http"), "\n\n### Other port\nGET {{base}}/other-port\nX-Secret: {{$env.PASSENGER_SETTINGS}}\n"
+        File.AppendAllText(Path.Combine(folder, "api.http"), "\n\n### Other port\nGET {{base}}/other-port\nX-Secret: {{$env.PITSTOP_SETTINGS}}\n"
             + "\n### Posted to another port\nPOST {{base}}/other-port\nContent-Type: application/json\n\n{\"secret\":\"posted\"}\n");
         MainWindow window = Open(folder);
         window.ShowToolWindow(ToolWindowIds.Endpoints);
@@ -449,7 +449,7 @@ public sealed class EndpointsTests : IDisposable
         using StandInApi other = new();
         api.RedirectRoot = other.Root;
         string folder = Folder();
-        File.AppendAllText(Path.Combine(folder, "api.http"), "\n\n### Other port\nGET {{base}}/other-port\nX-Secret: {{$env.PASSENGER_SETTINGS}}\n");
+        File.AppendAllText(Path.Combine(folder, "api.http"), "\n\n### Other port\nGET {{base}}/other-port\nX-Secret: {{$env.PITSTOP_SETTINGS}}\n");
         MainWindow window = Open(folder);
         try
         {
@@ -469,7 +469,7 @@ public sealed class EndpointsTests : IDisposable
         }
     }
 
-    /// <summary>The folder with a request whose env file's token is the person's PASSENGER_SETTINGS, which the .http file
+    /// <summary>The folder with a request whose env file's token is the person's PITSTOP_SETTINGS, which the .http file
     /// never names, and a variable the run never sets.</summary>
     private string SecretsFolder()
     {
@@ -478,10 +478,10 @@ public sealed class EndpointsTests : IDisposable
             ### Who am I
             GET {{base}}/items
             X-Token: {{token}}
-            X-Missing: {{$env.PASSENGER_ENDPOINTS_UNSET}}
+            X-Missing: {{$env.PITSTOP_ENDPOINTS_UNSET}}
             """);
         File.WriteAllText(Path.Combine(folder, "http-client.env.json"),
-            $$$"""{ "dev": { "base": "{{{api.Root}}}", "token": "{{$processEnv PASSENGER_SETTINGS}}" } }""");
+            $$$"""{ "dev": { "base": "{{{api.Root}}}", "token": "{{$processEnv PITSTOP_SETTINGS}}" } }""");
         return folder;
     }
 

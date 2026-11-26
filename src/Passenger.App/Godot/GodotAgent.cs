@@ -11,22 +11,22 @@ namespace Passenger.App.Godot;
 public static partial class GodotAgent
 {
     /// <summary>Its node's name under the game's root.</summary>
-    public const string NodeName = "PassengerAgent";
+    public const string NodeName = "PitstopAgent";
 
     /// <summary>The message each of its answers comes in: the ask it answers, whether it was done, then what it came to,
     /// or why not.</summary>
-    public const string Said = "passenger:said";
+    public const string Said = "pitstop:said";
 
     /// <summary>The message it sends as it leaves the game's tree, freed by the game or taken out of it: it answers nothing
     /// it was asked and has yet to answer, nor anything sent to it after.</summary>
-    public const string Gone = "passenger:gone";
+    public const string Gone = "pitstop:gone";
 
     /// <summary>The message it sends as its script is set on its node, which Godot has then taken into the game's tree.</summary>
-    public const string Here = "passenger:here";
+    public const string Here = "pitstop:here";
 
     /// <summary>The message it sends as the game, holding the keys in Passenger's Game window, hears the keys that hand them
     /// back (<see cref="KeysBack"/>'s call set them).</summary>
-    public const string KeysAsked = "passenger:keys";
+    public const string KeysAsked = "pitstop:keys";
 
     /// <summary>Its call that sets the keys it hears for <see cref="KeysAsked"/>: a key's Godot name and its modifier flags.</summary>
     public const string KeysBack = "keys_back";
@@ -39,7 +39,7 @@ public static partial class GodotAgent
     public const string Asked = "asked";
 
     /// <summary>The name of its script's file.</summary>
-    private const string FileName = "passenger_agent.gd";
+    private const string FileName = "pitstop_agent.gd";
 
     /// <summary>Its modifier flags, as its calls take them.</summary>
     public const int Shift = 1;
@@ -62,7 +62,7 @@ public static partial class GodotAgent
 
     /// <summary>What a call on the helper says once Godot refused the helper's node.</summary>
     public static string NotPlaced(string game) => $"{game} was setting up the nodes under its root (running a node's _ready, or a call through them) as "
-        + "Passenger's helper came in, and Godot adds no node to a parent then: the helper comes in on a later call, once the game runs on";
+        + "Pitstop's helper came in, and Godot adds no node to a parent then: the helper comes in on a later call, once the game runs on";
 
     /// <summary>Whether a script's file, as Godot names it, is the helper's.</summary>
     public static bool IsScript(string file) => file.EndsWith(FileName, StringComparison.Ordinal);

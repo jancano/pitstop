@@ -20,7 +20,7 @@ namespace Passenger.App.Xaml;
 public sealed class XamlDocument : IDisposable
 {
     /// <summary>Who checks the file, as an agent is told while its check is under way.</summary>
-    internal const string Checker = "Passenger's XAML";
+    internal const string Checker = "Pitstop's XAML";
 
     private readonly XamlService service;
     private readonly Debounce analysing;

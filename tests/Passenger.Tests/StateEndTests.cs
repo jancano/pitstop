@@ -30,7 +30,7 @@ public sealed class StateEndTests : IDisposable
             layout.Set(layout.Value with { Windows = new(layout.Value.Windows) { ["closing"] = new DockedWindow(ToolAnchor.LeftTop, 1, Shown: true) } });
             store.Release();
             Assert.True(Ui.IdeLog().Contains($"{layout.Path} could not be written as it was flushed", StringComparison.Ordinal),
-                "The flush as Passenger closed went ahead though layout.json was read-only, so nothing here was refused");
+                "The flush as Pitstop closed went ahead though layout.json was read-only, so nothing here was refused");
             TimeSpan took;
             using (new FileStream(layout.Path + ".lock", FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
@@ -39,8 +39,8 @@ public sealed class StateEndTests : IDisposable
                 took = Stopwatch.GetElapsedTime(began);
             }
             Assert.True(took < TimeSpan.FromSeconds(5),
-                $"Passenger's end waited {took.TotalSeconds:0.0} s for a change whose lock another Passenger held, as long as a write waits for the lock, where it gives up within 2 s");
-            Assert.Contains($"{layout.Path} could not be written before Passenger ended", Ui.IdeLog(), StringComparison.Ordinal);
+                $"Pitstop's end waited {took.TotalSeconds:0.0} s for a change whose lock another Pitstop held, as long as a write waits for the lock, where it gives up within 2 s");
+            Assert.Contains($"{layout.Path} could not be written before Pitstop ended", Ui.IdeLog(), StringComparison.Ordinal);
         }
         finally
         {

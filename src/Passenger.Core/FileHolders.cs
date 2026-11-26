@@ -11,7 +11,7 @@ namespace Passenger.Core;
 public static partial class FileHolders
 {
     /// <summary>What this process is called among the programs <see cref="Named"/> names.</summary>
-    public const string Itself = "Passenger itself";
+    public const string Itself = "Pitstop itself";
 
     /// <summary>The most files one question of <see cref="Named"/> names: the Restart Manager answers 100 in about 25 ms,
     /// 3,000 in about a second.</summary>

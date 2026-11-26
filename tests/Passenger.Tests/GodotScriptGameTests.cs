@@ -303,10 +303,10 @@ public sealed class GodotScriptGameTests : IClassFixture<GodotScriptGameTests.Ga
             Passenger.App.Workspace.OpenDocument script = window.EditorArea.Active!;
             int member = LineOf(editor, "var total");
             Ui.WaitFor(() => script.LiveValues.Any(a => a.Line == member && a.Text.Contains("44850", StringComparison.Ordinal)),
-                () => $"the open script's total read through Passenger's helper once the game ran on ({string.Join("; ", script.LiveValues.Select(a => $"{a.Line + 1}: {a.Text}"))}; "
+                () => $"the open script's total read through Pitstop's helper once the game ran on ({string.Join("; ", script.LiveValues.Select(a => $"{a.Line + 1}: {a.Text}"))}; "
                     + $"the last read: {window.GodotValues.Unread ?? "answered"})", TimeSpan.FromMinutes(1));
             Assert.True(!Console(window).Contains("busy setting up", StringComparison.Ordinal),
-                $"Passenger's helper was brought into the game as its tree was set up, where Godot refused it, saying so as the game's error: {Console(window)}");
+                $"Pitstop's helper was brought into the game as its tree was set up, where Godot refused it, saying so as the game's error: {Console(window)}");
             Ui.Run(window, AppActions.Stop);
             Ui.WaitFor(() => !window.Debugger.IsDebugging && window.Session.Games.Count == 0, () => $"the game to end with its session ({Sessions(window)})", TimeSpan.FromMinutes(1));
         }

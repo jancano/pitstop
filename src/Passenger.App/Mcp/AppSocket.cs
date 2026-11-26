@@ -58,7 +58,7 @@ internal sealed class AppSocket : IDisposable
         catch (Exception error) when (error is IOException or SocketException or UnauthorizedAccessException or ArgumentException)
         {
             listener.Dispose();
-            IdeErrors.Write($"Agents: Passenger cannot listen for agents asking it to open a folder, nor for launches: {error.Message}");
+            IdeErrors.Write($"Agents: Pitstop cannot listen for agents asking it to open a folder, nor for launches: {error.Message}");
             return;
         }
         open = new AppSocket(path, listener);
@@ -126,9 +126,9 @@ internal sealed class AppSocket : IDisposable
     }
 
     private Task AcceptAsync() =>
-        Accepting.EachAsync(stop => listener.AcceptAsync(stop), client => IdeErrors.Observe(AnswerAsync(client)), listener.Dispose, "The socket asking this Passenger to open a folder or a launch", closed.Token);
+        Accepting.EachAsync(stop => listener.AcceptAsync(stop), client => IdeErrors.Observe(AnswerAsync(client)), listener.Dispose, "The socket asking this Pitstop to open a folder or a launch", closed.Token);
 
-    private static readonly string Refused = new JsonObject { ["refused"] = "Passenger takes {\"open\": FOLDER} or {\"launch\": ...} here and nothing else" }.ToJsonString();
+    private static readonly string Refused = new JsonObject { ["refused"] = "Pitstop takes {\"open\": FOLDER} or {\"launch\": ...} here and nothing else" }.ToJsonString();
 
     private async Task AnswerAsync(Socket client)
     {
@@ -170,10 +170,10 @@ internal sealed class AppSocket : IDisposable
         }
         if (PassengerApp.Front is not { IsStarted: true, AgentsAllowed: true } from)
         {
-            return new JsonObject { ["refused"] = "Passenger has no window ready to open it from" };
+            return new JsonObject { ["refused"] = "Pitstop has no window ready to open it from" };
         }
         string folder = Core.PathNames.Canonical(path);
-        IdeErrors.Write($"Agents: an agent asked Passenger to open {folder}");
+        IdeErrors.Write($"Agents: an agent asked Pitstop to open {folder}");
         MainWindow into = PassengerApp.OpenProject(folder, OpenTarget.NewWindow, from);
         return new JsonObject { ["opened"] = into.Folder ?? folder };
     }

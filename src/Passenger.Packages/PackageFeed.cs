@@ -283,7 +283,7 @@ public sealed class FeedClient
         // A URL off the feed's host comes from the feed's own answers, which may name any host: never one to give credentials.
         if (!own)
         {
-            throw new HttpRequestException($"{url.Authority}, where {Name} sent Passenger, asks for credentials (401 Unauthorized); {Name}'s go only to {Index.Authority}",
+            throw new HttpRequestException($"{url.Authority}, where {Name} sent Pitstop, asks for credentials (401 Unauthorized); {Name}'s go only to {Index.Authority}",
                 null, HttpStatusCode.Unauthorized);
         }
         FeedCredentials? retry = Volatile.Read(ref credentials);

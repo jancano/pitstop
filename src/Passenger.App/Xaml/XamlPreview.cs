@@ -613,7 +613,7 @@ public sealed class XamlPreview : IDisposable
     }
 
     /// <summary>What a previewer's process last said, its last five lines, heard on any thread, with the exception it ended
-    /// on (<see cref="LastLines"/>): once it ends, they go to passenger.log with its end, and the pane says that exception, else
+    /// on (<see cref="LastLines"/>): once it ends, they go to pitstop.log with its end, and the pane says that exception, else
     /// its last line.</summary>
     /// <param name="previewer">Whose previewer it is, as the log names it: Avalonia, WPF or MAUI.</param>
     internal sealed class PreviewerLog(XamlPreview preview, string previewer)
@@ -633,7 +633,7 @@ public sealed class XamlPreview : IDisposable
             }
         }
 
-        /// <summary>The previewer ended by itself: its exit code and last lines written to passenger.log, the preview let go
+        /// <summary>The previewer ended by itself: its exit code and last lines written to pitstop.log, the preview let go
         /// of it, and its exit code and the exception it ended on, else its last line, said in the pane.</summary>
         public void Ended(IPreviewHost host, int exitCode)
         {

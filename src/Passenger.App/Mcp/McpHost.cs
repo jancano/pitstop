@@ -27,7 +27,7 @@ public static partial class McpHost
     /// <summary>The variable that, set to <c>off</c>, has an <c>--mcp</c> Passenger start no C# language server
     /// (<see cref="MainWindow.StartsLanguageServer"/>), for an agent that asks nothing of C#.</summary>
     [IdentifierHome]
-    public const string LanguageServerVariable = "PASSENGER_MCP_LANGUAGE_SERVER";
+    public const string LanguageServerVariable = "PITSTOP_MCP_LANGUAGE_SERVER";
 
     /// <summary>Whether <c>--mcp</c>'s IDE starts the C# language server: always, unless <see cref="LanguageServerVariable"/>
     /// says <c>off</c>; a value other than <c>off</c> or <c>on</c> is fatal as Passenger starts, as a malformed flag is.</summary>
@@ -54,7 +54,7 @@ public static partial class McpHost
     /// <summary>What an agent is told as it connects: how to begin and find its way, what a person's window asks, and what
     /// it refuses while its folder is not trusted (<see cref="McpTools.Untrusted"/>).</summary>
     internal static readonly string Instructions =
-        "Passenger is a C# IDE (with XAML, MSBuild files and the web languages). These tools act on its open workspace as its user would. " +
+        "Pitstop is a C# IDE (with XAML, MSBuild files and the web languages). These tools act on its open workspace as its user would. " +
         "Lines and columns count from 1; relative paths are the open folder's; a file outside it, but in a project a trusted solution or AppHost names beside it, is read only where definition and usages lead (a package's file, generated or decompiled code) and never changed. Parameters several tools share: configuration, a run " +
         "configuration (the chosen one by default); arguments, a command line in place of its own; waitSeconds, how long a call " +
         "waits for the program to stop, end or show its UI; session, a debugged program as debug_state's sessions name it (by " +
@@ -80,16 +80,16 @@ public static partial class McpHost
         "build, run, tests_list and tests_run build (and publish), run and test. To debug: breakpoint_set, then debug_start (or debug_attach), debug_step, " +
         "debug_evaluate, debug_state and debug_continue, each waiting for the program to stop and saying where, with the locals " +
         "where it stopped. An Avalonia, WPF or MAUI app that run or debug_start starts is looked at and used as a person tests it: app_windows, app_tree, " +
-        "app_screenshot, app_click, app_type, app_key, app_scroll, app_binding_errors. A Godot game the same, Passenger its remote debugger: its " +
-        "nodes are the elements, input reaching it through a helper node Passenger adds under its root; ide_action app.godot.pauseLoop " +
+        "app_screenshot, app_click, app_type, app_key, app_scroll, app_binding_errors. A Godot game the same, Pitstop its remote debugger: its " +
+        "nodes are the elements, input reaching it through a helper node Pitstop adds under its root; ide_action app.godot.pauseLoop " +
         "and app.godot.nextFrame pause its loop and step it a frame, and with app.liveTree.selectElement on, app_click picks the node at " +
         "a point. Also version control (vcs_status, " +
         "vcs_commit), NuGet (nuget_search, nuget_install), Problems and Local History (diagnostics with no path, local_history), the settings (settings, " +
-        "settings_set), the container engine (containers, container_exec, container_action) and Passenger's own " +
+        "settings_set), the container engine (containers, container_exec, container_action) and Pitstop's own " +
         "window (the app_ tools with app ide, ide_action).\n\n" +
-        "Attached to a person's Passenger (--mcp-attach), the first call joins the Passenger window open on the agent's folder (the folder " +
-        "after --mcp-attach, else the agent's working folder). With none open, it has the running Passenger open that folder, or starts " +
-        "Passenger on it, in a window the person sees, and waits for it. Unless the person has turned on Enable MCP Server, or let agents " +
+        "Attached to a person's Pitstop (--mcp-attach), the first call joins the Pitstop window open on the agent's folder (the folder " +
+        "after --mcp-attach, else the agent's working folder). With none open, it has the running Pitstop open that folder, or starts " +
+        "Pitstop on it, in a window the person sees, and waits for it. Unless the person has turned on Enable MCP Server, or let agents " +
         "into that folder always, the window asks them to let the agent in. The person is also asked before a call of a tool that " +
         "changes something (edit, rename, build, run, debug_start, breakpoint_set, debug_evaluate, vcs_commit, the app_ tools' input and the " +
         "like; reading, save_all, stop and stepping never ask), allowing that call alone or the tool until the agent disconnects, an app_ " +
@@ -100,15 +100,15 @@ public static partial class McpHost
         "Where the person has not trusted the folder, none of its code runs and none of the feeds it names is asked until they trust it: " +
         $"{Plural.Listed([.. McpTools.Untrusted.Keys])} are refused at once, as are ide_action's actions that would run its code (building it " +
         "among them) and C# answers, as its C# language server does not start. " +
-        "Passenger --mcp FOLDER is an agent's own IDE with no window, which asks nothing, trusts the folder it was started on (the agent " +
+        "Pitstop --mcp FOLDER is an agent's own IDE with no window, which asks nothing, trusts the folder it was started on (the agent " +
         "runs there already), and runs apps where nobody sees them (an Avalonia app on its headless platform), saying so when one cannot " +
         "run there.";
 
     /// <summary>The server as an agent sees it, whichever way it is reached.</summary>
     internal static Implementation ServerInfo => new()
     {
-        Name = "passenger",
-        Title = "Passenger",
+        Name = "pitstop",
+        Title = "Pitstop",
         Version = Product.Version,
     };
 
@@ -183,7 +183,7 @@ public static partial class McpHost
     internal static IReadOnlyList<McpServerTool> Tools => made.Value;
 
     private static readonly Lazy<McpServerTool[]> made = new(() => [.. ToolMethods().Select(method =>
-        Lean(McpServerTool.Create(method, _ => Serving.Value ?? throw new InvalidOperationException("A Passenger tool ran outside an agent's call"), ToolCreateOptions())))]);
+        Lean(McpServerTool.Create(method, _ => Serving.Value ?? throw new InvalidOperationException("A Pitstop tool ran outside an agent's call"), ToolCreateOptions())))]);
 
     /// <summary>The tools as one connection reaches them (<see cref="ConnectedTool"/>), made of <see cref="Tools"/>: call off
     /// the UI thread, which the first connection's would hold while every tool's schema is made.</summary>
@@ -284,7 +284,7 @@ public static partial class McpHost
         {
             try
             {
-                McpServer server = McpServer.Create(new PeerTransport(new StreamServerTransport(input, output, "passenger")), Options(ready.Task, connection));
+                McpServer server = McpServer.Create(new PeerTransport(new StreamServerTransport(input, output, "pitstop")), Options(ready.Task, connection));
                 await server.RunAsync(done.Token);
             }
             finally
@@ -298,7 +298,7 @@ public static partial class McpHost
 
         // The agent's own IDE, which no other agent joins.
         MainWindow window = new() { Width = 1600, Height = 1000, AgentsAllowed = false, AgentsOwn = true, TakesLaunches = false, StartsLanguageServer = StartsLanguageServer, HeadStart = ahead };
-        IdeErrors.Write($"Passenger {Product.Version} ({Product.Commit ?? "no commit"}) for an agent, with no window shown: its window built "
+        IdeErrors.Write($"Pitstop {Product.Version} ({Product.Commit ?? "no commit"}) for an agent, with no window shown: its window built "
             + $"{Durations.Said(System.Diagnostics.Stopwatch.GetElapsedTime(Program.StartedAt))} after launch");
         window.OpenOnNamedSettings(launch, named);
         window.SetRenderScaling(2);

@@ -20,7 +20,7 @@ namespace Passenger.Tests;
 /// end without its own end (<see cref="RemoveDeadRuns"/>). Tiny public images only: busybox.</summary>
 internal static class Docker
 {
-    private const string RunKey = "net.passenger-ide.test-run";
+    private const string RunKey = "io.github.jancano.pitstop.test-run";
 
     /// <summary>The run's label, its machine's and process's (its id and start): everything a test makes carries it, the
     /// run's end removes whatever carries it, and a later run what carries a run's of this machine whose process is gone.</summary>
@@ -36,7 +36,7 @@ internal static class Docker
     /// <summary>Set to <c>never</c> where the images the tests run on are pulled before the run (CI's test.yml): no test
     /// pulls one there, and a missing one skips every container test, saying which. Unset, a test pulls what it needs.</summary>
     [IdentifierHome]
-    public const string PullVariable = "PASSENGER_TEST_PULL";
+    public const string PullVariable = "PITSTOP_TEST_PULL";
 
     /// <summary>Every image the container tests run on, Image's and .NET's, as ContainerImages.txt lists them for CI to pull.</summary>
     public static IReadOnlyList<string> Images { get; } =
@@ -501,7 +501,7 @@ public sealed class ContainersTests
         Flow.StepApart<ContainersTests>("detach lets go of a Docker Compose projects run and the windows close asks and stops its containers", t => t.Detach_lets_go_of_a_Docker_Compose_projects_run_and_the_windows_close_asks_and_stops_its_containers());
         Flow.StepApart<ContainersTests>("leave Running keeps a runs containers let go of as the solution closes and records them as the persons", t => t.Leave_Running_keeps_a_runs_containers_let_go_of_as_the_solution_closes_and_records_them_as_the_persons());
         Flow.StepApart<ContainersTests>("a quit over a run let go of asks Cancel gives it up and Stop carries it on taking its containers down", t => t.A_quit_over_a_run_let_go_of_asks_Cancel_gives_it_up_and_Stop_carries_it_on_taking_its_containers_down());
-        Flow.StepApart<ContainersTests>("a Passenger nobody sees asks nothing and its close stops a runs containers let go of", t => t.A_Passenger_nobody_sees_asks_nothing_and_its_close_stops_a_runs_containers_let_go_of());
+        Flow.StepApart<ContainersTests>("a Pitstop nobody sees asks nothing and its close stops a runs containers let go of", t => t.A_Passenger_nobody_sees_asks_nothing_and_its_close_stops_a_runs_containers_let_go_of());
     }
 
     /// <summary>The Containers window over a real engine as one flow, every step needing a Linux container engine, each
@@ -514,12 +514,12 @@ public sealed class ContainersTests
     {
         Flow.StepApart<ContainersTests>("a compose project is listed with its services ports and health and its logs stream with links and merge its services", t => t.A_compose_project_is_listed_with_its_services_ports_and_health_and_its_logs_stream_with_links_and_merge_its_services());
         Flow.StepApart<ContainersTests>("a containers stats show its numbers its files open read only and stop start restart and remove act on it", t => t.A_containers_stats_show_its_numbers_its_files_open_read_only_and_stop_start_restart_and_remove_act_on_it());
-        Flow.StepApart<ContainersTests>("a folders end removes what passenger started of a compose project and leaves the persons own of it", t => t.A_folders_end_removes_what_passenger_started_of_a_compose_project_and_leaves_the_persons_own_of_it());
+        Flow.StepApart<ContainersTests>("a folders end removes what pitstop started of a compose project and leaves the persons own of it", t => t.A_folders_end_removes_what_passenger_started_of_a_compose_project_and_leaves_the_persons_own_of_it());
         Flow.StepApart<ContainersTests>("removing a volume asks first since its data goes with it", t => t.Removing_a_volume_asks_first_since_its_data_goes_with_it());
         Flow.StepApart<ContainersTests>("a memory snapshot a containers tools send that does not hold together is refused saying so", t => t.A_memory_snapshot_a_containers_tools_send_that_does_not_hold_together_is_refused_saying_so());
         Flow.StepApart<ContainersTests>("attaching in a container never uses tools of another version nor a list of programs that is none", t => t.Attaching_in_a_container_never_uses_tools_of_another_version_nor_a_list_of_programs_that_is_none());
         Flow.StepApart<ContainersTests>("open shell runs a command in the container in a terminal tab", t => t.Open_shell_runs_a_command_in_the_container_in_a_terminal_tab());
-        Flow.StepApart<ContainersTests>("the next starts clean up passes over what the person chose to leave running just before Passenger ended", t => t.The_next_starts_clean_up_passes_over_what_the_person_chose_to_leave_running_just_before_Passenger_ended());
+        Flow.StepApart<ContainersTests>("the next starts clean up passes over what the person chose to leave running just before Pitstop ended", t => t.The_next_starts_clean_up_passes_over_what_the_person_chose_to_leave_running_just_before_Passenger_ended());
         Flow.StepApart<ContainersTests>("a stopped containers log stays as it was read while the window reads the engine again", t => t.A_stopped_containers_log_stays_as_it_was_read_while_the_window_reads_the_engine_again());
     }
 
@@ -724,7 +724,7 @@ public sealed class ContainersTests
             string db = $"{project}-db-1";
             Assert.Null(window.CloseSolution());
             Ui.Settle();
-            Ui.WaitFor(() => Docker.State(web) is null, $"{web}, which Passenger's labels are on, removed as the folder ended");
+            Ui.WaitFor(() => Docker.State(web) is null, $"{web}, which Pitstop's labels are on, removed as the folder ended");
             Assert.Equal("running", Docker.State(db));
             window.Close();
         }
@@ -936,7 +936,7 @@ public sealed class ContainersTests
 
             // Asked for by its path all the same (as a test or a stale row could), it is refused and nothing is written.
             Assert.NotNull(Ui.Await(view.Files.OpenAsync("/" + made), "the made-up path's answer"));
-            Assert.False(File.Exists(escaped), $"A container's made-up file name had Passenger write {escaped}, outside its cache");
+            Assert.False(File.Exists(escaped), $"A container's made-up file name had Pitstop write {escaped}, outside its cache");
 
             Assert.Equal("/big is larger than 16 MB", Ui.Await(view.Files.OpenAsync("/big"), "the large file's answer"));
             string cache = Path.Combine(window.StateFolder, "cache", "containers");
@@ -1000,11 +1000,11 @@ public sealed class ContainersTests
             // Tools that never send the fourth: the snapshot given up (an agent's call) ends them there, saying so.
             using CancellationTokenSource givingUp = new();
             Task<Passenger.Profiler.MemorySnapshot?> never = window.MemorySnapshotAsync(givingUp.Token);
-            Ui.PumpUntil(() => Docker.Ask(["exec", name, "ps"]).Contains("passenger-tools heap", StringComparison.Ordinal), "the tools to be asked for a snapshot they never send");
+            Ui.PumpUntil(() => Docker.Ask(["exec", name, "ps"]).Contains("pitstop-tools heap", StringComparison.Ordinal), "the tools to be asked for a snapshot they never send");
             givingUp.Cancel();
             Assert.Null(Ui.Await(never, "the given-up snapshot's answer"));
             Assert.Contains("was stopped", window.Status, StringComparison.Ordinal);
-            Ui.PumpUntil(() => !Docker.Ask(["exec", name, "ps"]).Contains("passenger-tools heap", StringComparison.Ordinal), "the tools there to end with the snapshot given up");
+            Ui.PumpUntil(() => !Docker.Ask(["exec", name, "ps"]).Contains("pitstop-tools heap", StringComparison.Ordinal), "the tools there to end with the snapshot given up");
         }
         finally
         {
@@ -1093,7 +1093,7 @@ public sealed class ContainersTests
             File.Copy(Path.Combine(StandInTools("[]"), ContainerTools.Executable), Path.Combine(folder, ContainerTools.Executable));
             File.Copy(typeof(Assert).Assembly.Location, Path.Combine(folder, $"{ContainerTools.Executable}.dll"));
         }
-        ContainerToolsSource source = new([stale], new Passenger.App.Updates.ReleaseFeed(new Uri("http://127.0.0.1:9/repos/Zaneris/passenger/releases"),
+        ContainerToolsSource source = new([stale], new Passenger.App.Updates.ReleaseFeed(new Uri("http://127.0.0.1:9/repos/jancano/pitstop/releases"),
             TimeSpan.FromSeconds(5)), TestFolders.Create("ctr-tools-cache-"));
         string bare = Docker.Container("bare", "sleep 600");
         List<string> made = [bare];
@@ -1104,7 +1104,7 @@ public sealed class ContainersTests
         try
         {
             string? refused = Ui.Await(window.AttachAsync(new DotnetProcess(0, "Spins", "dotnet /app/Spins.dll", "root", true) { Container = bare }), "the attach's answer");
-            Assert.True(refused?.Contains("is version", StringComparison.Ordinal) == true && refused.Contains($"not this Passenger's {Product.Version}", StringComparison.Ordinal),
+            Assert.True(refused?.Contains("is version", StringComparison.Ordinal) == true && refused.Contains($"not this Pitstop's {Product.Version}", StringComparison.Ordinal),
                 $"Attaching with only another version's tools here answered: {refused}");
             Assert.Contains("absent", Docker.Run("exec", bare, "sh", "-c", $"test -e {ContainerTools.Copied} && echo there || echo absent"), StringComparison.Ordinal);
 
@@ -1462,7 +1462,7 @@ public sealed class ContainersTests
             Ui.WaitFor(() => window.Folder is null, "the solution to close once Leave Running was chosen");
             IReadOnlyList<string> written = LeftOnDisk(TestRun.Settings);
             Assert.True(written.Contains("c0ffee000001") && written.Contains("beef00000001"),
-                $"Leave Running's record was not on disk once the solution closed, so a Passenger quitting then leaves the next start to remove the containers: [{string.Join(", ", written)}]");
+                $"Leave Running's record was not on disk once the solution closed, so a Pitstop quitting then leaves the next start to remove the containers: [{string.Join(", ", written)}]");
             Assert.False(TakenDown(engineFolder), "Leave Running took the containers down");
             Assert.Contains("c0ffee000001", ContainerLabels.LeftIn(TestRun.Settings));
             Assert.Contains("beef00000001", ContainerLabels.LeftIn(TestRun.Settings));
@@ -1488,7 +1488,7 @@ public sealed class ContainersTests
         {
             Ui.CloseAsQuit(window);
             ChoiceDialog asked = AskedOfLetGo(window);
-            Assert.Contains("as Passenger quits", Said(asked), StringComparison.Ordinal);
+            Assert.Contains("as Pitstop quits", Said(asked), StringComparison.Ordinal);
             Ui.ClickButton(asked, "Cancel");
             Assert.True(window.IsVisible, "Cancel carried the quit on");
             Assert.False(TakenDown(engineFolder), "Cancel took the containers down");
@@ -1545,9 +1545,9 @@ public sealed class ContainersTests
         {
             Ui.Await(ContainerLabels.LeaveToPersonAsync(ContainerEngine.Shared, [Docker.Run("inspect", "-f", "{{.Id}}", kept)[..12]]), "the choice to leave a container running");
             File.Copy(Path.Combine(TestRun.Settings, ContainersFile), Path.Combine(next, ContainersFile));
-            IReadOnlyList<string> cleaned = Ui.Await(Waiting.Apart(() => ContainerLabels.RemoveLeftoversAsync(ContainerEngine.Shared, next)), "the clean-up of what a gone Passenger left");
+            IReadOnlyList<string> cleaned = Ui.Await(Waiting.Apart(() => ContainerLabels.RemoveLeftoversAsync(ContainerEngine.Shared, next)), "the clean-up of what a gone Pitstop left");
             Assert.True(Docker.State(kept) == "running",
-                $"The next start's clean-up removed {kept}, which the person chose to leave running just before Passenger ended: it removed [{string.Join(", ", cleaned)}]");
+                $"The next start's clean-up removed {kept}, which the person chose to leave running just before Pitstop ended: it removed [{string.Join(", ", cleaned)}]");
             Assert.True(Docker.State(removed) is null, $"The clean-up left {removed}, which nobody chose to leave running: it removed [{string.Join(", ", cleaned)}]");
         }
         finally
@@ -1566,7 +1566,7 @@ public sealed class ContainersTests
         string file = Path.Combine(TestRun.Settings, ContainersFile);
         Ui.Await(ContainerLabels.LeaveToPersonAsync(ContainerEngine.Shared, ["17580a000001"]), "the choice to leave a container running");
         Assert.True(LeftOnDisk(TestRun.Settings).Contains("17580a000001"),
-            $"The choice to leave a container running was not on disk once made, so a Passenger ending then has the next start remove it: [{string.Join(", ", LeftOnDisk(TestRun.Settings))}]");
+            $"The choice to leave a container running was not on disk once made, so a Pitstop ending then has the next start remove it: [{string.Join(", ", LeftOnDisk(TestRun.Settings))}]");
 
         // Another Passenger over the same state leaves one of its own, writing the record before this one's next choice.
         System.Text.Json.Nodes.JsonObject other = (System.Text.Json.Nodes.JsonObject)System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!;

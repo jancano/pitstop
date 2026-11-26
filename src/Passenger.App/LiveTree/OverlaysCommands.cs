@@ -42,7 +42,7 @@ public sealed class OverlaysCommands
         }
     }
 
-    private const string NoApp = "No Avalonia app with Passenger's inspector in it is running: Run, Debug or Profile one";
+    private const string NoApp = "No Avalonia app with Pitstop's inspector in it is running: Run, Debug or Profile one";
 
     /// <summary>The window follows a session from now: the apps its launches inspect, and when they come and go.</summary>
     public void Bind(ProjectSession next)

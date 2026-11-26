@@ -58,7 +58,7 @@ internal sealed class Driver(Inspector inspector) : Driving<DependencyObject, Vi
                 took = Menu(took ?? element, at, top);
                 break;
             default:
-                throw new Refusal(action.Button == "middle" ? "A WPF app takes a left or right click from Passenger, not a middle one" : $"A button is left, right or middle, not '{action.Button}'");
+                throw new Refusal(action.Button == "middle" ? "A WPF app takes a left or right click from Pitstop, not a middle one" : $"A button is left, right or middle, not '{action.Button}'");
         }
         DependencyObject? shows = element ?? hit;
         return Done(top, at, took, shows is null ? null : Shown.TextOf(shows));

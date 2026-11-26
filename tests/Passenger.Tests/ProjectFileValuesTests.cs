@@ -15,7 +15,7 @@ public sealed class ProjectFileValuesTests
     [Fact]
     public void A_project_files_values_offer_what_the_SDKs_take_and_the_newest_before_an_evaluation()
     {
-        Flow.StepApart<ProjectFileValuesTests>("analysis level offers the levels of the sdks passenger supports", t => t.Analysis_level_offers_the_levels_of_the_sdks_passenger_supports());
+        Flow.StepApart<ProjectFileValuesTests>("analysis level offers the levels of the sdks pitstop supports", t => t.Analysis_level_offers_the_levels_of_the_sdks_passenger_supports());
         Flow.StepApart<ProjectFileValuesTests>("a project with no evaluation yet is offered the newest dotnets values (\"TargetFramework\", \"net11.0\")", t => t.A_project_with_no_evaluation_yet_is_offered_the_newest_dotnets_values("TargetFramework", "net11.0"));
     }
 

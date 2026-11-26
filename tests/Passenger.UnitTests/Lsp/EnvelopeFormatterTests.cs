@@ -23,7 +23,7 @@ public class EnvelopeFormatterTests
     public Task Every_message_is_read_and_written_as_StreamJsonRpcs_own_formatter_does_however_the_pipe_cuts_it() => Cases.AllAsync(
         ("a peer's requests and notifications reach their handlers and are answered as before", () =>
             Cases.EachAsync(PipePieces, A_peers_requests_and_notifications_reach_their_handlers_and_are_answered_as_before)),
-        ("Passenger's own requests are written and their answers and errors read as before", () =>
+        ("Pitstop's own requests are written and their answers and errors read as before", () =>
             Cases.EachAsync(PipePieces, Passengers_own_requests_are_written_and_their_answers_and_errors_read_as_before)),
         ("a message cut into pieces of a byte reads as it does whole", () =>
         {

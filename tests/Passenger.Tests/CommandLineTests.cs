@@ -40,8 +40,8 @@ public sealed class CommandLineTests : IDisposable
     [AvaloniaFact]
     public async Task The_gates_malformed_flags_and_variables_hold_as_one_table()
     {
-        await Flow.StepAsync("a malformed value or a flag its mode does not take ends Passenger with exit code 2 and the reason", () => Cases.EachAsync<(string, string)>([("--screenshot out.png --scale NaN", "--scale takes a number from 0.5 to 8, not 'NaN'"), ("--screenshot out.png --size 400x300", "--size is at least the window's smallest, 640x500, not '400x300'"), ("--screenshot out.png --size 3000x3000 --scale 8", "--size 3000x3000 at --scale 8 is 24000x24000 pixels, more than 16384 a side"), ("--screenshot out.png --crop 0,0,2000,100", "--crop 0,0,2000,100 reaches past the 1600x1000 window"), ("--screenshot out.png --key 1000", "--key takes a keystroke such as cmd+shift+L, not '1000': unknown key '1000'"), ("--screenshot out.png --file Typo.cs", "--file 'Typo.cs' does not exist"), ("--screenshot missing/out.png", "--screenshot 'missing/out.png' would be written to a folder that does not exist"), ("notes.txt --caret +2:1 --screenshot out.png", "--caret takes LINE or LINE:COLUMN from 1, not '+2:1'"), (". notes.txt --screenshot out.png", "'notes.txt' would be a second folder or file after '.'; Passenger opens one, and more files with --file"), ("--screenshot out.png --theme dark --theme light", "--theme is given twice"), ("--screenshot out.png --file-icons default", "unknown flag '--file-icons'"), ("--no-mcp --screenshot out.png", "--no-mcp stops a window listening for agents, and --screenshot's lets in only its own --agent"), ("--screenshot out.png --agent no-agent-by-this-name", "--agent's program 'no-agent-by-this-name' is neither a file nor on the PATH"), ("--mcp --size 1600x1000", "--size is for a --screenshot, and none is asked for"), ("--mcp --mcp-attach", "--mcp starts a Passenger of its own and --mcp-attach joins a running one; give one of them"), ("--mcp-attach . --file notes.txt", "--mcp-attach joins a running Passenger's window and takes only its process id and a folder, not --file"), ("--mcp-attach 99999999999 .", "--mcp-attach takes the process id of a running Passenger, not '99999999999'"), ("--headless --mcp", "--headless is a person's window with nobody at it, a test run's"), (". --new-window", "--new-window opens a window with nothing open, and takes nothing else, not ."), ("--screenshot out.png --look sakura", "--look takes passenger, cubicle, high contrast, harbour"), ("--screenshot out.png --scheme relative/../folder::Dusk", "--scheme 'relative/../folder::Dusk' names no source Passenger reads")], row => Flow.StepApartAsync($"a malformed value or a flag its mode does not take ends Passenger with exit code 2 and the reason ({row})", () => new CommandLineTests(), t => t.A_malformed_value_or_a_flag_its_mode_does_not_take_ends_Passenger_with_exit_code_2_and_the_reason(row.Item1, row.Item2))));
-        await Flow.StepAsync("a malformed variable ends Passenger with exit code 2 and the reason before anything starts", () => Cases.EachAsync<(string, string, string)>([(global::Passenger.Dap.AdapterEnvironment.EvaluationTimeoutVariable, "3s", Milliseconds), (global::Passenger.App.Mcp.AgentCall.EveryVariable, "-1000", Milliseconds), (global::Passenger.App.Mcp.McpHost.LanguageServerVariable, "no", "off or on"), (global::Passenger.Core.Waits.ScaleVariable, "0", "a number above 0")], row => Flow.StepApartAsync($"a malformed variable ends Passenger with exit code 2 and the reason before anything starts ({row})", () => new CommandLineTests(), t => t.A_malformed_variable_ends_Passenger_with_exit_code_2_and_the_reason_before_anything_starts(row.Item1, row.Item2, row.Item3))));
+        await Flow.StepAsync("a malformed value or a flag its mode does not take ends Pitstop with exit code 2 and the reason", () => Cases.EachAsync<(string, string)>([("--screenshot out.png --scale NaN", "--scale takes a number from 0.5 to 8, not 'NaN'"), ("--screenshot out.png --size 400x300", "--size is at least the window's smallest, 640x500, not '400x300'"), ("--screenshot out.png --size 3000x3000 --scale 8", "--size 3000x3000 at --scale 8 is 24000x24000 pixels, more than 16384 a side"), ("--screenshot out.png --crop 0,0,2000,100", "--crop 0,0,2000,100 reaches past the 1600x1000 window"), ("--screenshot out.png --key 1000", "--key takes a keystroke such as cmd+shift+L, not '1000': unknown key '1000'"), ("--screenshot out.png --file Typo.cs", "--file 'Typo.cs' does not exist"), ("--screenshot missing/out.png", "--screenshot 'missing/out.png' would be written to a folder that does not exist"), ("notes.txt --caret +2:1 --screenshot out.png", "--caret takes LINE or LINE:COLUMN from 1, not '+2:1'"), (". notes.txt --screenshot out.png", "'notes.txt' would be a second folder or file after '.'; Pitstop opens one, and more files with --file"), ("--screenshot out.png --theme dark --theme light", "--theme is given twice"), ("--screenshot out.png --file-icons default", "unknown flag '--file-icons'"), ("--no-mcp --screenshot out.png", "--no-mcp stops a window listening for agents, and --screenshot's lets in only its own --agent"), ("--screenshot out.png --agent no-agent-by-this-name", "--agent's program 'no-agent-by-this-name' is neither a file nor on the PATH"), ("--mcp --size 1600x1000", "--size is for a --screenshot, and none is asked for"), ("--mcp --mcp-attach", "--mcp starts a Pitstop of its own and --mcp-attach joins a running one; give one of them"), ("--mcp-attach . --file notes.txt", "--mcp-attach joins a running Pitstop's window and takes only its process id and a folder, not --file"), ("--mcp-attach 99999999999 .", "--mcp-attach takes the process id of a running Pitstop, not '99999999999'"), ("--headless --mcp", "--headless is a person's window with nobody at it, a test run's"), (". --new-window", "--new-window opens a window with nothing open, and takes nothing else, not ."), ("--screenshot out.png --look sakura", "--look takes pitstop, cubicle, high contrast, harbour"), ("--screenshot out.png --scheme relative/../folder::Dusk", "--scheme 'relative/../folder::Dusk' names no source Pitstop reads")], row => Flow.StepApartAsync($"a malformed value or a flag its mode does not take ends Pitstop with exit code 2 and the reason ({row})", () => new CommandLineTests(), t => t.A_malformed_value_or_a_flag_its_mode_does_not_take_ends_Passenger_with_exit_code_2_and_the_reason(row.Item1, row.Item2))));
+        await Flow.StepAsync("a malformed variable ends Pitstop with exit code 2 and the reason before anything starts", () => Cases.EachAsync<(string, string, string)>([(global::Passenger.Dap.AdapterEnvironment.EvaluationTimeoutVariable, "3s", Milliseconds), (global::Passenger.App.Mcp.AgentCall.EveryVariable, "-1000", Milliseconds), (global::Passenger.App.Mcp.McpHost.LanguageServerVariable, "no", "off or on"), (global::Passenger.Core.Waits.ScaleVariable, "0", "a number above 0")], row => Flow.StepApartAsync($"a malformed variable ends Pitstop with exit code 2 and the reason before anything starts ({row})", () => new CommandLineTests(), t => t.A_malformed_variable_ends_Passenger_with_exit_code_2_and_the_reason_before_anything_starts(row.Item1, row.Item2, row.Item3))));
     }
 
     /// <summary>The gate's screenshot steps and a double-clicked solution as one flow: a crop and a click at the
@@ -65,9 +65,9 @@ public sealed class CommandLineTests : IDisposable
     public async Task A_caret_a_run_or_a_variable_given_wrongly_ends_Passenger_with_exit_code_2_saying_why()
     {
         await Flow.StepAsync("a caret counted from zero takes zero based and one without it is refused with exit code 2", () => Cases.EachAsync<(string, string)>([("--screenshot out.png --zero-based", "--zero-based says --caret counts its line and column from 0, and no --caret is given"), ("notes.txt --caret 0:0 --screenshot out.png", "--caret takes LINE or LINE:COLUMN from 1, not '0:0'")], row => Flow.StepApartAsync($"a caret counted from zero takes zero based and one without it is refused with exit code 2 ({row})", () => new CommandLineTests(), t => t.A_caret_counted_from_zero_takes_zero_based_and_one_without_it_is_refused_with_exit_code_2(row.Item1, row.Item2))));
-        await Flow.StepAsync("Run or debug with no folder before it or in a mode with no window of its own ends Passenger with exit code 2 and the reason", () => Cases.EachAsync<(string, string)>([("--run", "--run starts a run configuration of the folder Passenger opens, and none is given: passenger FOLDER --run [NAME], the folder first"), (". --run --debug", "--run and --debug each start a run configuration; give one of them"), ("--mcp . --run", "--mcp does not take --run; its agent starts a configuration with its run"), ("--mcp-attach . --debug", "--mcp-attach joins a running Passenger's window and takes only its process id and a folder, not --debug")], row => Flow.StepApartAsync($"Run or debug with no folder before it or in a mode with no window of its own ends Passenger with exit code 2 and the reason ({row})", () => new CommandLineTests(), t => t.Run_or_debug_with_no_folder_before_it_or_in_a_mode_with_no_window_of_its_own_ends_Passenger_with_exit_code_2_and_the_reason(row.Item1, row.Item2))));
-        await Flow.StepAsync("a malformed variable of the language server's load or of a typing pause ends Passenger with exit code 2 and the reason", () => Cases.EachAsync<(string, string, string)>([(global::Passenger.App.CSharp.CSharpService.SlowLoadVariable, "5m", Milliseconds), (global::Passenger.App.Editors.TypingPauses.Variable, "0", Milliseconds)], row => Flow.StepApartAsync($"a malformed variable of the language server's load or of a typing pause ends Passenger with exit code 2 and the reason ({row})", () => new CommandLineTests(), t => t.A_malformed_variable_ends_Passenger_with_exit_code_2_and_the_reason_before_anything_starts(row.Item1, row.Item2, row.Item3))));
-        await Flow.StepAsync("a variable naming no https address for a host ends Passenger with exit code 2 and the reason before anything starts", () => Cases.EachAsync<(string, string)>([(global::Passenger.Core.DotnetReleases.Variable, "releases"), (global::Passenger.App.Updates.ReleaseFeed.Variable, "http://192.0.2.10/repos/Zaneris/passenger/releases")], row => Flow.StepApartAsync($"a variable naming no https address for a host ends Passenger with exit code 2 and the reason before anything starts ({row})", () => new CommandLineTests(), t => t.A_variable_naming_no_https_address_for_a_host_ends_Passenger_with_exit_code_2_and_the_reason_before_anything_starts(row.Item1, row.Item2))));
+        await Flow.StepAsync("Run or debug with no folder before it or in a mode with no window of its own ends Pitstop with exit code 2 and the reason", () => Cases.EachAsync<(string, string)>([("--run", "--run starts a run configuration of the folder Pitstop opens, and none is given: pitstop FOLDER --run [NAME], the folder first"), (". --run --debug", "--run and --debug each start a run configuration; give one of them"), ("--mcp . --run", "--mcp does not take --run; its agent starts a configuration with its run"), ("--mcp-attach . --debug", "--mcp-attach joins a running Pitstop's window and takes only its process id and a folder, not --debug")], row => Flow.StepApartAsync($"Run or debug with no folder before it or in a mode with no window of its own ends Pitstop with exit code 2 and the reason ({row})", () => new CommandLineTests(), t => t.Run_or_debug_with_no_folder_before_it_or_in_a_mode_with_no_window_of_its_own_ends_Passenger_with_exit_code_2_and_the_reason(row.Item1, row.Item2))));
+        await Flow.StepAsync("a malformed variable of the language server's load or of a typing pause ends Pitstop with exit code 2 and the reason", () => Cases.EachAsync<(string, string, string)>([(global::Passenger.App.CSharp.CSharpService.SlowLoadVariable, "5m", Milliseconds), (global::Passenger.App.Editors.TypingPauses.Variable, "0", Milliseconds)], row => Flow.StepApartAsync($"a malformed variable of the language server's load or of a typing pause ends Pitstop with exit code 2 and the reason ({row})", () => new CommandLineTests(), t => t.A_malformed_variable_ends_Passenger_with_exit_code_2_and_the_reason_before_anything_starts(row.Item1, row.Item2, row.Item3))));
+        await Flow.StepAsync("a variable naming no https address for a host ends Pitstop with exit code 2 and the reason before anything starts", () => Cases.EachAsync<(string, string)>([(global::Passenger.Core.DotnetReleases.Variable, "releases"), (global::Passenger.App.Updates.ReleaseFeed.Variable, "http://192.0.2.10/repos/jancano/pitstop/releases")], row => Flow.StepApartAsync($"a variable naming no https address for a host ends Pitstop with exit code 2 and the reason before anything starts ({row})", () => new CommandLineTests(), t => t.A_variable_naming_no_https_address_for_a_host_ends_Passenger_with_exit_code_2_and_the_reason_before_anything_starts(row.Item1, row.Item2))));
     }
 
     /// <summary>A screenshot wears the look named, types a key as the character it makes, opens on the settings kept
@@ -76,7 +76,7 @@ public sealed class CommandLineTests : IDisposable
     [AvaloniaFact]
     public async Task A_screenshot_wears_its_look_types_its_keys_on_the_settings_kept_and_writes_only_what_it_saves()
     {
-        await Flow.StepApartAsync("look names a theme Passenger carries by its word and a screenshot wears it", () => new CommandLineTests(), t => t.Look_names_a_theme_Passenger_carries_by_its_word_and_a_screenshot_wears_it());
+        await Flow.StepApartAsync("look names a theme Pitstop carries by its word and a screenshot wears it", () => new CommandLineTests(), t => t.Look_names_a_theme_Passenger_carries_by_its_word_and_a_screenshot_wears_it());
         await Flow.StepApartAsync("a crop reaching past the dialog the steps left in front ends the screenshot with exit code 2 saying so", () => new CommandLineTests(), t => t.A_crop_reaching_past_the_dialog_the_steps_left_in_front_ends_the_screenshot_with_exit_code_2_saying_so());
         await Flow.StepApartAsync("a screenshot s key takes a key as the character it types so meta comma opens settings", () => new CommandLineTests(), t => t.A_screenshot_s_key_takes_a_key_as_the_character_it_types_so_meta_comma_opens_settings());
         await Flow.StepApartAsync("a screenshot opens on the settings kept where its state is named and its keys type shifted characters", () => new CommandLineTests(), t => t.A_screenshot_opens_on_the_settings_kept_where_its_state_is_named_and_its_keys_type_shifted_characters());
@@ -90,7 +90,7 @@ public sealed class CommandLineTests : IDisposable
     public async Task A_start_that_fails_says_why_once_and_a_relative_state_folder_is_where_it_started()
     {
         await Flow.StepApartAsync("a start failing before its log is set up leaves why in the log folder and the next start says it once", () => new CommandLineTests(), t => t.A_start_failing_before_its_log_is_set_up_leaves_why_in_the_log_folder_and_the_next_start_says_it_once());
-        await Flow.StepApartAsync("a relative state folder is named from where Passenger started and one that cannot be made ends the start saying so", () => new CommandLineTests(), t => t.A_relative_state_folder_is_named_from_where_Passenger_started_and_one_that_cannot_be_made_ends_the_start_saying_so());
+        await Flow.StepApartAsync("a relative state folder is named from where Pitstop started and one that cannot be made ends the start saying so", () => new CommandLineTests(), t => t.A_relative_state_folder_is_named_from_where_Passenger_started_and_one_that_cannot_be_made_ends_the_start_saying_so());
         await Flow.StepApartAsync("a portable copy keeps its state in its data folder and writes nothing outside it but the temporary folder", () => new CommandLineTests(), t => t.A_portable_copy_keeps_its_state_in_its_data_folder_and_writes_nothing_outside_it_but_the_temporary_folder());
     }
 
@@ -98,16 +98,16 @@ public sealed class CommandLineTests : IDisposable
     {
         (int code, string error) = await Run(arguments);
 
-        Assert.True(code == 2 && error.StartsWith($"passenger: {reason}", StringComparison.Ordinal),
-            $"'passenger {arguments}' was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
+        Assert.True(code == 2 && error.StartsWith($"pitstop: {reason}", StringComparison.Ordinal),
+            $"'pitstop {arguments}' was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
     }
 
     private async Task A_caret_counted_from_zero_takes_zero_based_and_one_without_it_is_refused_with_exit_code_2(string arguments, string reason)
     {
         (int code, string error) = await Run(arguments);
 
-        Assert.True(code == 2 && error.StartsWith($"passenger: {reason}", StringComparison.Ordinal),
-            $"'passenger {arguments}' was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
+        Assert.True(code == 2 && error.StartsWith($"pitstop: {reason}", StringComparison.Ordinal),
+            $"'pitstop {arguments}' was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
     }
 
     /// <summary>A run configuration started from the command line needs the folder it is of, given first, and a mode with a
@@ -116,8 +116,8 @@ public sealed class CommandLineTests : IDisposable
     {
         (int code, string error) = await Run(arguments);
 
-        Assert.True(code == 2 && error.StartsWith($"passenger: {reason}", StringComparison.Ordinal),
-            $"'passenger {arguments}' was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
+        Assert.True(code == 2 && error.StartsWith($"pitstop: {reason}", StringComparison.Ordinal),
+            $"'pitstop {arguments}' was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
     }
 
     private const string Milliseconds = "a whole number of milliseconds above 0";
@@ -128,9 +128,9 @@ public sealed class CommandLineTests : IDisposable
     {
         (int code, string error) = await Run(["--mcp", "."], settings, new Dictionary<string, string> { [variable] = value });
 
-        string reason = $"passenger: {variable} takes {takes}, not '{value}'";
+        string reason = $"pitstop: {variable} takes {takes}, not '{value}'";
         Assert.True(code == 2 && error.StartsWith(reason, StringComparison.Ordinal),
-            $"Passenger with {variable}={value} was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
+            $"Pitstop with {variable}={value} was to be refused with exit code 2 saying \"{reason}\"; it exited {code} and wrote:\n{error}");
     }
 
     /// <summary>A variable naming a stand-in for a host Passenger asks is checked as Passenger starts: an address that is
@@ -139,9 +139,9 @@ public sealed class CommandLineTests : IDisposable
     {
         (int code, string error) = await Run(["--mcp", "."], settings, new Dictionary<string, string> { [variable] = value });
 
-        string reason = $"passenger: {variable} takes the https address (http on this machine) ";
+        string reason = $"pitstop: {variable} takes the https address (http on this machine) ";
         Assert.True(code == 2 && error.StartsWith(reason, StringComparison.Ordinal) && error.Contains($", not '{value}'", StringComparison.Ordinal),
-            $"Passenger with {variable}={value} was to be refused with exit code 2 saying \"{reason}…, not '{value}'\"; it exited {code} and wrote:\n{error}");
+            $"Pitstop with {variable}={value} was to be refused with exit code 2 saying \"{reason}…, not '{value}'\"; it exited {code} and wrote:\n{error}");
     }
 
     private async Task A_screenshot_named_with_the_file_before_its_folder_and_a_click_at_the_corner_is_taken_at_its_crop()
@@ -272,7 +272,7 @@ public sealed class CommandLineTests : IDisposable
         {
             string script = Path.Combine(agent, "agent.ps1");
             await File.WriteAllTextAsync(script, $$"""
-                $start = New-Object System.Diagnostics.ProcessStartInfo $env:PASSENGER, "--mcp-attach $env:PASSENGER_PID"
+                $start = New-Object System.Diagnostics.ProcessStartInfo $env:PITSTOP, "--mcp-attach $env:PITSTOP_PID"
                 $start.UseShellExecute = $false
                 $start.RedirectStandardInput = $true
                 $start.RedirectStandardOutput = $true
@@ -298,7 +298,7 @@ public sealed class CommandLineTests : IDisposable
             await File.WriteAllTextAsync(script, $$"""
                 cd '{{agent}}'
                 mkfifo calls
-                "$PASSENGER" --mcp-attach "$PASSENGER_PID" < calls > answers.txt &
+                "$PITSTOP" --mcp-attach "$PITSTOP_PID" < calls > answers.txt &
                 exec 3> calls
                 answered() { until grep -q "\"id\":$1" answers.txt; do sleep 0.1; done; }
                 echo '{{Initialize}}' >&3
@@ -336,7 +336,7 @@ public sealed class CommandLineTests : IDisposable
     }
 
     /// <summary>A screenshot's --key presses a key as a keyboard does, the character it types with it: Shift+4 types "$" in
-    /// the editor. Run where PASSENGER_SETTINGS names a folder whose settings.json turns Vim mode on, the window opens on
+    /// the editor. Run where PITSTOP_SETTINGS names a folder whose settings.json turns Vim mode on, the window opens on
     /// those settings, so the same Shift+4 is Vim's "$", to the line's end, where x deletes the line's last letter.</summary>
     private async Task A_screenshot_opens_on_the_settings_kept_where_its_state_is_named_and_its_keys_type_shifted_characters()
     {
@@ -433,7 +433,7 @@ public sealed class CommandLineTests : IDisposable
         (int code, string error) = await Run([".", "--size", "800x500", "--scale", "1", "--screenshot", "out.png"], state,
             new Dictionary<string, string> { ["SHELL"] = shell }, unset: ["TERM"]);
         Assert.True(code == 0, $"The screenshot with the failing login shell was not taken: exit code {code}\n{error}");
-        string log = await File.ReadAllTextAsync(Path.Combine(state, "logs", "passenger.log"), TestContext.Current.CancellationToken);
+        string log = await File.ReadAllTextAsync(Path.Combine(state, "logs", "pitstop.log"), TestContext.Current.CancellationToken);
         string? unread = log.Split('\n').FirstOrDefault(l => l.Contains("The login shell's environment was not read", StringComparison.Ordinal));
         Assert.True(unread?.Contains($"{shell} -l -i: it ended with exit code 1", StringComparison.Ordinal) == true,
             $"The log does not say the login shell's environment was not read for its exit code 1:\n{log}");
@@ -491,11 +491,11 @@ public sealed class CommandLineTests : IDisposable
                 new Dictionary<string, string> { ["FONTCONFIG_FILE"] = configuration });
 
             Assert.True(code == 0 && File.Exists(Path.Combine(folder, "out.png")),
-                $"With fontconfig listing no font, Passenger did not start: it exited {code}, saying: {error}");
-            Assert.True(error.Contains($"passenger: {NoSystemFont.Said}", StringComparison.Ordinal),
-                $"With fontconfig listing no font, Passenger did not say why on standard error: {error}");
-            string log = await File.ReadAllTextAsync(Path.Combine(settings, "logs", "passenger.log"), TestContext.Current.CancellationToken);
-            Assert.True(log.Contains($"Fonts: {NoSystemFont.Said}", StringComparison.Ordinal), "With fontconfig listing no font, Passenger's log did not say why");
+                $"With fontconfig listing no font, Pitstop did not start: it exited {code}, saying: {error}");
+            Assert.True(error.Contains($"pitstop: {NoSystemFont.Said}", StringComparison.Ordinal),
+                $"With fontconfig listing no font, Pitstop did not say why on standard error: {error}");
+            string log = await File.ReadAllTextAsync(Path.Combine(settings, "logs", "pitstop.log"), TestContext.Current.CancellationToken);
+            Assert.True(log.Contains($"Fonts: {NoSystemFont.Said}", StringComparison.Ordinal), "With fontconfig listing no font, Pitstop's log did not say why");
             Assert.Contains("fc-cache -f", NoSystemFont.Said, StringComparison.Ordinal);
         }
         finally
@@ -527,7 +527,7 @@ public sealed class CommandLineTests : IDisposable
         (code, error) = await Run(look, settings);
         Assert.True(code == 0, $"The start after the failed one did not show the IDE's errors' mark for a click: it exited {code}, saying: {error}");
         Assert.False(File.Exists(crash), $"The start that said the crash left {CrashFile.Name} to say it again");
-        string log = await File.ReadAllTextAsync(Path.Combine(settings, "logs", "passenger.log"), TestContext.Current.CancellationToken);
+        string log = await File.ReadAllTextAsync(Path.Combine(settings, "logs", "pitstop.log"), TestContext.Current.CancellationToken);
         Assert.True(log.Contains("ended on this error:", StringComparison.Ordinal) && log.Contains(Failure, StringComparison.Ordinal),
             "The start that said the crash did not write it to the log, which keeps it once its file is gone");
 
@@ -556,7 +556,7 @@ public sealed class CommandLineTests : IDisposable
             string? working = null;
             bool moved = await Waiting.UntilAsync(async () => (working = await WorkingFolderAsync(passenger.Id)) is { } now && PathNames.Same(now, home),
                 TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken, TimeSpan.FromMilliseconds(100));
-            Assert.True(moved, $"Passenger started in {folder} works in {working ?? "a folder lsof did not tell"}, not the home folder {home}");
+            Assert.True(moved, $"Pitstop started in {folder} works in {working ?? "a folder lsof did not tell"}, not the home folder {home}");
         }
         finally
         {
@@ -572,7 +572,7 @@ public sealed class CommandLineTests : IDisposable
         Assert.True(code == 0 && File.Exists(Path.Combine(folder, "out.png")), $"The screenshot named from the folder it was started in was not written there: exit code {code}\n{error}");
     }
 
-    /// <summary>A state folder PASSENGER_SETTINGS names by a relative path is the one it names from the folder Passenger was
+    /// <summary>A state folder PITSTOP_SETTINGS names by a relative path is the one it names from the folder Passenger was
     /// started in, not from the home folder it works in once its command line is read; one that cannot be made ends the
     /// start saying so, as a malformed value does, never with a crash.</summary>
     private async Task A_relative_state_folder_is_named_from_where_Passenger_started_and_one_that_cannot_be_made_ends_the_start_saying_so()
@@ -580,7 +580,7 @@ public sealed class CommandLineTests : IDisposable
         string[] screenshot = [".", "--size", "800x500", "--scale", "1", "--screenshot", "out.png"];
         (int code, string error) = await Run(screenshot, "kept-here");
         Assert.True(code == 0 && Directory.Exists(Path.Combine(folder, "kept-here", "logs")),
-            $"PASSENGER_SETTINGS=kept-here, started in {folder}, did not keep the state there: exit code {code}\n{error}");
+            $"PITSTOP_SETTINGS=kept-here, started in {folder}, did not keep the state there: exit code {code}\n{error}");
 
         File.WriteAllText(Path.Combine(folder, "a-file"), "not a folder\n");
         (code, error) = await Run(screenshot, Path.Combine("a-file", "state"));
@@ -595,12 +595,12 @@ public sealed class CommandLineTests : IDisposable
     /// Passenger gains nothing. A data folder that is a file ends the start saying why, as a malformed flag does.</summary>
     private async Task A_portable_copy_keeps_its_state_in_its_data_folder_and_writes_nothing_outside_it_but_the_temporary_folder()
     {
-        string copy = PortableCopy(Path.Combine(folder, "Passenger"));
+        string copy = PortableCopy(Path.Combine(folder, "Pitstop"));
         string program = Path.Combine(copy, Path.GetFileName(Passenger));
         string data = Directory.CreateDirectory(Path.Combine(copy, ThisCopy.DataName)).FullName;
         string home = Directory.CreateDirectory(Path.Combine(folder, "home")).FullName;
         string opened = Directory.CreateDirectory(Path.Combine(folder, "opened")).FullName;
-        string installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Passenger");
+        string installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pitstop");
         HashSet<string> before = Entries(installed);
         Dictionary<string, string> apart = new() { ["HOME"] = home };
         string[] unset = [StateStore.Variable, XdgFolders.ConfigVariable, XdgFolders.DataVariable, XdgFolders.CacheVariable];
@@ -622,7 +622,7 @@ public sealed class CommandLineTests : IDisposable
                 said.Add(line);
             }
         });
-        string log = Path.Combine(data, "logs", "passenger.log");
+        string log = Path.Combine(data, "logs", "pitstop.log");
         try
         {
             bool opening = await Waiting.UntilAsync(() => File.Exists(log) && Ui.Shared(log).Contains($"Opened {PathNames.Canonical(opened)}", StringComparison.Ordinal),
@@ -650,8 +650,8 @@ public sealed class CommandLineTests : IDisposable
         File.WriteAllText(data, "not a folder\n");
         (int code, string error) = await Run([".", "--size", "800x500", "--scale", "1", "--screenshot", "out.png"], settings, unset: [StateStore.Variable], program: program);
         // The copy says its data by its own real path, where the test's folder may be reached through a link (macOS's /var).
-        string? named = error.StartsWith("passenger: ", StringComparison.Ordinal) && error.IndexOf(" is no folder", StringComparison.Ordinal) is > 0 and int end
-            ? error["passenger: ".Length..end] : null;
+        string? named = error.StartsWith("pitstop: ", StringComparison.Ordinal) && error.IndexOf(" is no folder", StringComparison.Ordinal) is > 0 and int end
+            ? error["pitstop: ".Length..end] : null;
         Assert.True(code == 2 && named is not null && PathNames.SameFile(named, data),
             $"A data file beside a copy did not end its start saying so, as a malformed flag does: exit code {code}\n{error}");
     }
@@ -741,7 +741,7 @@ public sealed class CommandLineTests : IDisposable
         {
             // Not the runtime's tree kill of this process's own child, which can hang it (ChildProcesses.Kill says why).
             global::Passenger.Core.ChildProcesses.Kill(process);
-            Assert.Fail($"'passenger {string.Join(' ', arguments)}' was still running after two minutes rather than refused");
+            Assert.Fail($"'pitstop {string.Join(' ', arguments)}' was still running after two minutes rather than refused");
         }
         await output;
         return (process.ExitCode, (await error).Trim());

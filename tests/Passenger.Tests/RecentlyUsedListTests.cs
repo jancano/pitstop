@@ -15,7 +15,7 @@ public sealed class RecentlyUsedListTests
 
     private static readonly XNamespace Mime = "http://www.freedesktop.org/standards/shared-mime-info";
 
-    private static readonly RecentlyUsed.Program Installed = new("io.github.zaneris.passenger", "\"/opt/passenger/passenger\" %f");
+    private static readonly RecentlyUsed.Program Installed = new("io.github.jancano.pitstop", "\"/opt/pitstop/passenger\" %f");
 
     /// <summary>A text editor's bookmark as GLib writes one.</summary>
     private const string TextEditors = """
@@ -62,9 +62,9 @@ public sealed class RecentlyUsedListTests
 
             Dictionary<string, (string? Mime, string Programs)> listed = Listed(file);
             Assert.True(listed.Count == 3 && listed.GetValueOrDefault("/home/me/notes.txt") == ("text/plain", "org.gnome.TextEditor×1")
-                && listed.GetValueOrDefault(solution) == ("application/x-ms-slnx", "io.github.zaneris.passenger×1")
-                && listed.GetValueOrDefault(shop) == ("inode/directory", "io.github.zaneris.passenger×1"),
-                $"The recently used list holds {Said(listed)}, where KDE was to find the solution and the folder opened under Passenger's icon and the text editor's file kept");
+                && listed.GetValueOrDefault(solution) == ("application/x-ms-slnx", "io.github.jancano.pitstop×1")
+                && listed.GetValueOrDefault(shop) == ("inode/directory", "io.github.jancano.pitstop×1"),
+                $"The recently used list holds {Said(listed)}, where KDE was to find the solution and the folder opened under Pitstop's icon and the text editor's file kept");
             Assert.True(OperatingSystem.IsWindows() || File.GetUnixFileMode(file) == (UnixFileMode.UserRead | UnixFileMode.UserWrite),
                 $"The list was written with mode {(OperatingSystem.IsWindows() ? null : File.GetUnixFileMode(file))}, so another user may read what the person opened");
 

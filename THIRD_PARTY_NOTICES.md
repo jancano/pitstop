@@ -1079,6 +1079,15 @@ Microsoft Corporation), unchanged, from the project its header names:
   (https://github.com/MagicStack/MagicPython) at commit 7d0f2b22, its 1.1.1, MIT, Copyright (c) 2015-present MagicStack
   Inc.
 
+- `c.tmLanguage.json`, `cpp.tmLanguage.json`, and `cpp.embedded.macro.tmLanguage.json` (VS Code commit
+  cdd865e1cab16622ca82fa94cf97e5586dbb5386, `extensions/cpp`) come from [better-c-syntax](https://github.com/jeff-hykin/better-c-syntax)
+  and [better-cpp-syntax](https://github.com/jeff-hykin/better-cpp-syntax), MIT, Copyright (c) 2019 Jeff Hykin.
+  These grammars derive from atom/language-c, MIT, Copyright (c) 2014 GitHub Inc., and the [C TextMate bundle](https://github.com/textmate/c.tmbundle)
+  under the TextMate bundle licence below. Copyright (c) textmate-c.tmbundle authors.
+- `lua.tmLanguage.json` (same VS Code commit, `extensions/lua`) comes from the [Lua TextMate bundle](https://github.com/sumneko/lua.tmbundle/tree/b295d83bf0e91b5d3a69eb097f9ed351623b95be),
+  MIT, Copyright (c) 2022 最萌小汐. The VS Code manifest also records the original TextMate bundle licence below,
+  Copyright (c) sumneko-lua.tmbundle project authors.
+
 And two that colour Razor's .razor and .cshtml files before the language server answers, files of Razor's tooling in
 dotnet/roslyn (https://github.com/dotnet/roslyn, where Razor's tooling moved from dotnet/razor; MIT, Copyright (c) .NET
 Foundation and Contributors) at the 5.11.0 server's commit (dc1db3e7), unchanged, under

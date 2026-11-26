@@ -34,7 +34,7 @@ public static class TestApp
 }
 
 /// <summary>What the whole run shares, set before anything reads it and never changed: a folder of the run's own in the
-/// system's temporary folder, holding the IDE's state (<c>PASSENGER_SETTINGS</c>: its log, the language servers' logs,
+/// system's temporary folder, holding the IDE's state (<c>PITSTOP_SETTINGS</c>: its log, the language servers' logs,
 /// the profiler's snapshots; the agents' sockets go in a folder named for it), every test's folders, the shells' history,
 /// Godot's and Biome's user folders, and an empty Git configuration in place of the person's and the system's, which every git
 /// the tests and the IDE run inherits. So a run never writes to the person's own state, log, history, Godot (<see cref="PersonsGodot"/>) or Biome,
@@ -42,7 +42,7 @@ public static class TestApp
 /// The folder goes when the run ends; one a run that was killed left goes when the next begins.</summary>
 public sealed class TestRun : IAsyncDisposable
 {
-    internal const string Prefix = "passenger-run-";
+    internal const string Prefix = "pitstop-run-";
 
     /// <summary>What ends the run's folder's name: Spotlight indexes the system's temporary folder but passes over a folder
     /// so named, so it reads none of a run's thousands of files, nor the stand-in apps whose seals tests break.</summary>
@@ -95,7 +95,7 @@ public sealed class TestRun : IAsyncDisposable
     /// what a container run mounts.</summary>
     public static string UserSecrets => Path.Combine(Root, "usersecrets");
 
-    /// <summary>What every wall-clock limit of a test is multiplied by (<see cref="Limits.Scaled"/>): <c>PASSENGER_TEST_TIME_SCALE</c>,
+    /// <summary>What every wall-clock limit of a test is multiplied by (<see cref="Limits.Scaled"/>): <c>PITSTOP_TEST_TIME_SCALE</c>,
     /// read once, 1 when unset, as on a developer's machine, for whose times each limit is written; CI sets it for each
     /// system from how much slower its runners are. A value that is no number above 0 fails every test of the run, saying
     /// so (<see cref="TestRun()"/>), the run's own clean-up beforehand taking 1.</summary>
@@ -103,7 +103,7 @@ public sealed class TestRun : IAsyncDisposable
 
     [IdentifierHome]
 
-    public const string TimeScaleVariable = "PASSENGER_TEST_TIME_SCALE";
+    public const string TimeScaleVariable = "PITSTOP_TEST_TIME_SCALE";
 
     private static readonly Lazy<(double Scale, string? Problem)> ReadTimeScale = new(() =>
     {
@@ -128,7 +128,7 @@ public sealed class TestRun : IAsyncDisposable
         }
     }
 
-    /// <summary>Where the run's windows look for Discord (<c>PASSENGER_DISCORD_IPC</c>): a place nothing listens.</summary>
+    /// <summary>Where the run's windows look for Discord (<c>PITSTOP_DISCORD_IPC</c>): a place nothing listens.</summary>
     public static string DiscordNowhere => OperatingSystem.IsWindows()
         ? $"{Prefix}{Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture)}-discord-ipc"
         : Path.Combine(Root, "discord-ipc");
@@ -202,7 +202,7 @@ public sealed class TestRun : IAsyncDisposable
         NuGetHome();
         RunFiles.Begin();
         // No test reaches GitHub: a Passenger that checks for updates without a stand-in asks where nothing listens.
-        Environment.SetEnvironmentVariable(Passenger.App.Updates.ReleaseFeed.Variable, "http://127.0.0.1:9/repos/Zaneris/passenger/releases");
+        Environment.SetEnvironmentVariable(Passenger.App.Updates.ReleaseFeed.Variable, "http://127.0.0.1:9/repos/jancano/pitstop/releases");
         // Nor any host a browser Passenger starts asks of its own accord (its updates, its services): they go where nothing listens.
         Environment.SetEnvironmentVariable(Passenger.App.Debugging.BrowserRun.ProxyVariable, "127.0.0.1:9");
         // Nor Microsoft's .NET release metadata: Install .NET SDK without a stand-in asks where nothing listens.
@@ -2983,7 +2983,7 @@ public static class TestGit
     {
         await RunAsync(folder, "init", "-q", "-b", "main");
         await RunAsync(folder, "config", Passenger.Vcs.GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        await RunAsync(folder, "config", "user.name", "Passenger Tests");
+        await RunAsync(folder, "config", "user.name", "Pitstop Tests");
         await RunAsync(folder, "config", "core.autocrlf", "false");
         await RunAsync(folder, "add", "-A");
         await RunAsync(folder, "commit", "-q", "-m", "First");
@@ -3107,7 +3107,7 @@ public static class TestGpgKeys
     /// <summary>The carried key of <paramref name="user"/> (tests@passenger.invalid's where none is given) guarded by
     /// <paramref name="passphrase"/>, put in the run's keyring and trusted there as gpg trusts a key it makes; its id, the
     /// agent ended after, so the passphrase is asked for as a person's first signature asks it.</summary>
-    public static async Task<string> PutAsync(string passphrase, string? gpg = null, string user = "Passenger Tests <tests@passenger.invalid>")
+    public static async Task<string> PutAsync(string passphrase, string? gpg = null, string user = "Pitstop Tests <tests@passenger.invalid>")
     {
         gpg ??= Gpg!;
         string log = AgentLogged(gpg);
@@ -3385,7 +3385,7 @@ public static partial class Processes
     }
 
     /// <summary>The MSBuild worker nodes and servers, and the compiler and Razor servers their builds started, running now
-    /// under a handshake salt that names <paramref name="salt"/> (a Passenger's, passenger-ID: a person's salt before it, a
+    /// under a handshake salt that names <paramref name="salt"/> (a Passenger's, pitstop-ID: a person's salt before it, a
     /// language server's after), by id, each with its command line and salt. Each takes its environment from what started it.</summary>
     public static IReadOnlyDictionary<int, string> SaltedBuilds(string salt)
     {

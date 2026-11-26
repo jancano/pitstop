@@ -19,6 +19,9 @@ public static class FileIcons
         {
             NodeKind.SolutionFolder => node.IsExpanded ? IconKeys.SolutionFolderOpen : IconKeys.SolutionFolder,
             NodeKind.Framework => IconKeys.Reference,
+            NodeKind.XmakeWorkspace => node.IsExpanded ? IconKeys.FolderOpen : IconKeys.Explorer,
+            NodeKind.XmakeTarget => IconKeys.ClassLibrary,
+            NodeKind.XmakeConfiguration or NodeKind.XmakeDependency or NodeKind.XmakeStatus => IconKeys.Reference,
             _ => node.SdkFolder switch
             {
                 SdkFolder.Properties => IconKeys.PropertiesFolder,
@@ -86,7 +89,8 @@ public static class FileIcons
     private static FileIconLook? Look(ExplorerNode node) => node.Kind switch
     {
         NodeKind.Folder => FileIconSet.ForFolder(node.Name),
-        NodeKind.SolutionFolder or NodeKind.Framework => null,
+        NodeKind.SolutionFolder or NodeKind.Framework or NodeKind.XmakeWorkspace or NodeKind.XmakeTarget
+            or NodeKind.XmakeConfiguration or NodeKind.XmakeDependency or NodeKind.XmakeStatus => null,
         NodeKind.Dependencies or NodeKind.Package => FileIconSet.Packages,
         NodeKind.ProjectReference or NodeKind.SharedProject => FileIconSet.ForFile(Path.GetFileName(node.Referenced ?? node.Name)),
         _ => FileIconSet.ForFile(Path.GetFileName(node.Path ?? node.Name)),

@@ -160,7 +160,7 @@ internal sealed class DiscordConnection : IAsyncDisposable
         }
         catch (Exception) when (ending.IsCancellationRequested)
         {
-            why = $"Passenger closed the connection to {Where}";
+            why = $"Pitstop closed the connection to {Where}";
         }
         catch (EndOfStreamException)
         {

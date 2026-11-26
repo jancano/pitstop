@@ -605,7 +605,7 @@ public sealed class AspireCodeHelpTests : IClassFixture<AspireCodeHelpTests.Proj
             Ui.Run(window, AppActions.GoToDeclaration);
             Ui.WaitFor(() => editor.Document.Snapshot.GetLineText(editor.CaretPosition.Line).Contains("int value", StringComparison.Ordinal),
                 "Go to Declaration to reach the local in a file no AppHost involves");
-            Assert.False(asked.IsCompleted, "Completion, Show Context Actions or Go to Declaration in a file no AppHost involves asked Passenger's extension for Aspire's help");
+            Assert.False(asked.IsCompleted, "Completion, Show Context Actions or Go to Declaration in a file no AppHost involves asked Pitstop's extension for Aspire's help");
         }
         finally
         {
@@ -696,7 +696,7 @@ public sealed class AspireCodeHelpTests : IClassFixture<AspireCodeHelpTests.Proj
             """;
 
         /// <summary>The Host's UserSecretsId: its user secrets are kept under the run's own folder (TestRun.UserSecrets).</summary>
-        internal const string SecretsId = "passenger-aspire-help-host";
+        internal const string SecretsId = "pitstop-aspire-help-host";
 
         internal const string Worker = "var builder = WebApplication.CreateBuilder(args);\nvar client = new HttpClient();\nclient.BaseAddress = new Uri(\"https+http://api\");\nbuilder.Build().Run();\n";
 

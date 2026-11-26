@@ -7,7 +7,7 @@ namespace Passenger.App;
 /// theme is Tokens.axaml, under every other, so this lists only themes beside it. Called on any thread.</summary>
 public static class BuiltInThemes
 {
-    private static readonly Uri Root = new("avares://Passenger/Theme/BuiltIn/");
+    private static readonly Uri Root = new("avares://Pitstop/Theme/BuiltIn/");
     private static readonly Lazy<ThemeRead<ThemeIndex>> index = new(() => ThemeFiles.ReadIndex(ThemeFiles.IndexFile, Read(ThemeFiles.IndexFile)));
 
     /// <summary>The built-in source's index, as read.</summary>

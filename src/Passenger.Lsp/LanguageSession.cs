@@ -38,13 +38,11 @@ public sealed class LanguageSession : IAsyncDisposable, IDocumentHost
             {
                 return open;
             }
-        }
-        LspDocument document = new(this, DocumentUris.FromPath(canonical), text, languageId);
-        lock (documents)
-        {
+            // A push answering didOpen can arrive as it is sent. Its handler waits for the document to be registered.
+            LspDocument document = new(this, DocumentUris.FromPath(canonical), text, languageId);
             documents[canonical] = document;
+            return document;
         }
-        return document;
     }
 
     void IDocumentHost.Forget(LspDocument document)

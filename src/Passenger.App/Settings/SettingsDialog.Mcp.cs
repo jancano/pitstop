@@ -72,11 +72,11 @@ public sealed partial class SettingsDialog
             Children =
             {
                 new TextBlock { Classes = { StyleClasses.PaneTitle }, Text = "Set up an agent" },
-                MutedText.Wrapped("Each runs this copy of Passenger, by its own path, with --mcp-attach. An agent has Passenger's tools from its "
-                    + "start; its first call joins the window open on the folder it works in, or opens that folder in Passenger, "
+                MutedText.Wrapped("Each runs this copy of Pitstop, by its own path, with --mcp-attach. An agent has Pitstop's tools from its "
+                    + "start; its first call joins the window open on the folder it works in, or opens that folder in Pitstop, "
                     + "starting it if need be, in a window you see. That window asks you before it lets the agent in and before "
                     + "the agent first makes each kind of change, saving, stopping and stepping aside, and a call waits 2 minutes at most for each answer, telling the agent so."),
-                MutedText.Wrapped("For an agent working on its own, put --mcp and the folder in place of --mcp-attach: a Passenger of the "
+                MutedText.Wrapped("For an agent working on its own, put --mcp and the folder in place of --mcp-attach: a Pitstop of the "
                     + "agent's own, with no window, which asks nothing."),
             },
         });
@@ -101,11 +101,11 @@ public sealed partial class SettingsDialog
             "desktop app config claude_desktop_config.json folder");
         Setup("OpenCode", setup.OpenCode,
             "OpenCode 1, in opencode.json at your project's root, or ~/.config/opencode/opencode.json for every project. The "
-            + "timeout gives a call 10 minutes, and Passenger tells OpenCode its progress meanwhile.",
+            + "timeout gives a call 10 minutes, and Pitstop tells OpenCode its progress meanwhile.",
             "opencode.json sst anomaly");
         Setup("OpenCode 2", setup.OpenCode2,
             "OpenCode 2 lists servers under mcp.servers, in opencode.jsonc or opencode.json. With Code Mode off it calls "
-            + "Passenger's tools itself, as Code Mode's permission prompts can leave a call waiting, and a call that never "
+            + "Pitstop's tools itself, as Code Mode's permission prompts can leave a call waiting, and a call that never "
             + "came back would end after 30 minutes rather than 12 hours: OpenCode 2 counts a call's whole time, its progress or not, so a long build or test run needs the room.",
             "opencode.jsonc codemode code mode execution timeout");
         AgentSetups = setups;

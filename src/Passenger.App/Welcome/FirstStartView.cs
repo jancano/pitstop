@@ -47,7 +47,7 @@ public sealed class FirstStartView : UserControl, IOwnKeys
         KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
         Looks = [.. Carried()];
 
-        Image mark = new() { Classes = { StyleClasses.WelcomeMark }, Source = new Bitmap(AssetLoader.Open(new Uri("avares://Passenger/Assets/passenger.png"))) };
+        Image mark = new() { Classes = { StyleClasses.WelcomeMark }, Source = new Bitmap(AssetLoader.Open(new Uri("avares://Pitstop/Assets/pitstop.png"))) };
         RenderOptions.SetBitmapInterpolationMode(mark, BitmapInterpolationMode.HighQuality);
         Grid hero = new() { Classes = { StyleClasses.WelcomeHero }, ColumnDefinitions = new ColumnDefinitions("Auto,*") };
         hero.Children.Add(mark);
@@ -116,7 +116,7 @@ public sealed class FirstStartView : UserControl, IOwnKeys
     public sealed record Look(SourcedTheme? Theme, string Name, string Words)
     {
         /// <summary>Its picture in dark or light, among the app's resources.</summary>
-        public Uri Picture(bool dark) => new($"avares://Passenger/Assets/FirstStart/{FirstStartPictures.FileOf(Name, dark)}");
+        public Uri Picture(bool dark) => new($"avares://Pitstop/Assets/FirstStart/{FirstStartPictures.FileOf(Name, dark)}");
     }
 
     /// <summary>The themes offered, in the order shown: Passenger's own, then each it carries that has its pictures.</summary>
@@ -142,7 +142,7 @@ public sealed class FirstStartView : UserControl, IOwnKeys
     /// <summary>Passenger's own theme and every theme it carries whose pictures it carries too.</summary>
     private static IEnumerable<Look> Carried()
     {
-        yield return new Look(null, "Passenger", "Roomy and rounded, in deep blues");
+        yield return new Look(null, "Pitstop", "Roomy and rounded, in deep blues");
         foreach (ListedTheme listed in BuiltInThemes.Listed(ThemeResources.Kinds).Listed)
         {
             if (!listed.Code && listed.Read.Read is { } theme && listed.Named is { } named)
@@ -193,7 +193,7 @@ public sealed class FirstStartView : UserControl, IOwnKeys
         tiles.ColumnDefinitions.Clear();
         if (Shown == Screen.Theme)
         {
-            title.Text = "Welcome to Passenger";
+            title.Text = "Welcome to Pitstop";
             about.Text = Themes.InHighContrast
                 ? $"Your system asks for high contrast, so {ThemeSource.HighContrast} shows while it does. Choose the theme for when it no longer asks, "
                     + $"then dark or light. {SettingsDialog.PlaceOfPage(SettingsDialog.Appearance)} changes either at any time."

@@ -85,7 +85,7 @@ public static class AndroidDevices
         }
         if (await AdbAsync(adb, ["start-server"], cancel) is { Succeeded: false } unserved)
         {
-            IdeLog.Write(IdeLog.Ide, $"adb's server did not start in Passenger's folder, so the workload's adb may start it in the project's: {unserved.Said}");
+            IdeLog.Write(IdeLog.Ide, $"adb's server did not start in Pitstop's folder, so the workload's adb may start it in the project's: {unserved.Said}");
         }
     }
 

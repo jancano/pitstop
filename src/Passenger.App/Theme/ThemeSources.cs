@@ -39,7 +39,7 @@ public sealed partial record ThemeSource(ThemeSourceKind Kind, string Name)
     /// <summary>The variable naming the place Passenger's themes repository is read from in its own place: a folder, a
     /// repository or an address, as a source is written.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_THEMES";
+    public const string Variable = "PITSTOP_THEMES";
 
     /// <summary>Where a GitHub repository's files are read, each under <c>owner/name/HEAD/</c>.</summary>
     public static readonly Uri GitHubRaw = new("https://raw.githubusercontent.com/");
@@ -54,10 +54,13 @@ public sealed partial record ThemeSource(ThemeSourceKind Kind, string Name)
     /// <summary>Passenger's themes repository.</summary>
     public static readonly ThemeSource Repository = new(ThemeSourceKind.GitHub, RepositoryName);
 
+    internal static IReadOnlyList<ThemeSource> ConfiguredSources =>
+        Environment.GetEnvironmentVariable(Variable) is { Length: > 0 } ? [Repository] : [];
+
     /// <summary>How a person sees it named.</summary>
     public string Shown => Kind switch
     {
-        ThemeSourceKind.BuiltIn => "Passenger",
+        ThemeSourceKind.BuiltIn => "Pitstop",
         ThemeSourceKind.Added => "added from a file",
         ThemeSourceKind.OpenVsx => "Open VSX",
         _ => Name,

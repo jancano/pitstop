@@ -93,7 +93,7 @@ public class MobileHeadsTests
         Assert.True(manifest is { Now: "15.0", Was: "13.0", SceneSdk: "27.2", Scenes: SceneDelegation.AppDelegate, DelegateFile: null }, $"The plist's edits: {manifest}");
         Assert.True(edits is { ByHand: null, Makes: true }, $"The template's head was not offered its edits: {edits}");
         Assert.Equal([Project, Manifest], edits.Files);
-        Assert.Equal("XApp.iOS needs edits to build and run here: net11.0-ios in place of net10.0-ios, whose iOS apps run on Mono (Passenger builds, runs and debugs mobile "
+        Assert.Equal("XApp.iOS needs edits to build and run here: net11.0-ios in place of net10.0-ios, whose iOS apps run on Mono (Pitstop builds, runs and debugs mobile "
             + "apps from .NET 11, on CoreCLR); iOS 15.0 at the least, the least .NET 11's iOS workload builds for, in place of 13.0 in its project and Info.plist; "
             + "and a scene manifest (UIApplicationSceneManifest) in Info.plist, which the iOS 27.2 SDK asks of every app", edits.Said);
 
@@ -163,7 +163,7 @@ public class MobileHeadsTests
             FrameworkNames.Android, Rooted("/src/XApp.Android"));
         HeadEdits edits = MobileHeads.Edits(android, "XApp.Android", [answer], path => path == android ? AndroidText : null)!;
 
-        Assert.Equal("XApp.Android needs edits to build and run here: net11.0-android in place of net10.0-android, whose Android apps run on Mono (Passenger builds, runs and "
+        Assert.Equal("XApp.Android needs edits to build and run here: net11.0-android in place of net10.0-android, whose Android apps run on Mono (Pitstop builds, runs and "
             + "debugs mobile apps from .NET 11, on CoreCLR); and Android API 24 at the least, the least .NET 11's Android workload builds for, in place of 23 in its project", edits.Said);
         Assert.Equal([android], edits.Files);
         Assert.Equal(AndroidText.Replace("net10.0-android", "net11.0-android", StringComparison.Ordinal).Replace(">23<", ">24<", StringComparison.Ordinal),
@@ -219,7 +219,7 @@ public class MobileHeadsTests
         Assert.Equal([MauiProject, MauiIos, MauiCatalyst, Rooted("/src/M10/Platforms/iOS/SceneDelegate.cs"),
             Rooted("/src/M10/Platforms/MacCatalyst/SceneDelegate.cs")], edits.Files);
         Assert.Equal("M10 needs edits to build and run here: net11.0-android, net11.0-ios, net11.0-maccatalyst and net11.0-windows10.0.19041.0 in place of net10.0-android, "
-            + "net10.0-ios, net10.0-maccatalyst and net10.0-windows10.0.19041.0, whose mobile apps run on Mono (Passenger builds, runs and debugs mobile apps from .NET 11, "
+            + "net10.0-ios, net10.0-maccatalyst and net10.0-windows10.0.19041.0, whose mobile apps run on Mono (Pitstop builds, runs and debugs mobile apps from .NET 11, "
             + "on CoreCLR); Android API 24 at the least, the least .NET 11's Android workload builds for, in place of 21 in its project; a scene manifest "
             + "(UIApplicationSceneManifest) in Platforms/iOS/Info.plist, which the iOS 27.2 SDK asks of every app, naming a SceneDelegate of MAUI's MauiUISceneDelegate "
             + "written beside it; and a scene manifest (UIApplicationSceneManifest) in Platforms/MacCatalyst/Info.plist, which the Mac Catalyst 27.2 SDK asks of every app, "

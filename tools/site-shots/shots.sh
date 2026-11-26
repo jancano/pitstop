@@ -12,7 +12,7 @@
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/../.." && pwd -P)
-passenger="$repo/artifacts/bin/Passenger.App/debug/Passenger"
+passenger="$repo/artifacts/bin/Passenger.App/debug/Pitstop"
 work="$repo/artifacts/site-shots"
 images="$repo/site/images"
 # About 100–150 KB a picture at 2400x1500: this quality, or the most bytes when a busy one would take more.
@@ -70,7 +70,7 @@ export TZ=UTC
 
 # A canonical path, since MSBuild and Roslyn report resolved ones (macOS's TMPDIR is under the /var symbolic link).
 tmp=$(realpath "${TMPDIR:-/tmp}")
-folder="$tmp/passenger-site-shots/Greenhouse"
+folder="$tmp/pitstop-site-shots/Greenhouse"
 
 # One commit of the sample's history, at a fixed time.
 history() {
@@ -120,9 +120,9 @@ if [[ -z ${SITE_SHOTS_REUSE:-} || ! -d "$folder/.git" ]]; then
 fi
 
 # The aspire and requests scenes' solution, services/ beside this script, copied beside the sample's copy.
-services="$tmp/passenger-site-shots/GreenhouseServices"
+services="$tmp/pitstop-site-shots/GreenhouseServices"
 # The AppHost's home of its own, short as macOS's socket paths ask, since its record of itself is a socket there.
-aspire_home=/private/tmp/passenger-site-shots-aspire
+aspire_home=/private/tmp/pitstop-site-shots-aspire
 services_prepared=
 # The services (an Aspire AppHost over a web API on EF Core and SQLite and a worker that calls it each second) with a
 # history of their own, built once, when a scene first asks; the AppHost asks the window nothing
@@ -162,9 +162,9 @@ EOF
 }
 
 # The Godot scenes' game (godot/), on the Godot found, its settings and user:// under artifacts/site-shots, run headless.
-game="$tmp/passenger-site-shots/GreenhouseGame"
+game="$tmp/pitstop-site-shots/GreenhouseGame"
 game_prepared=
-export PASSENGER_GODOT_HOME="$work/godot-home"
+export PITSTOP_GODOT_HOME="$work/godot-home"
 # The Godot .NET build the Godot scenes run on, exported as GODOT.
 godot_found() {
     local godot=${GODOT:-}
@@ -188,10 +188,10 @@ game_ready() {
     fi
     godot_found
     local godot=$GODOT version packages
-    version=$(HOME="$PASSENGER_GODOT_HOME" "$godot" --version | grep -Eo '^[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+    version=$(HOME="$PITSTOP_GODOT_HOME" "$godot" --version | grep -Eo '^[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
     packages=$(cd "$(dirname "$godot")/../Resources/GodotSharp/Tools/nupkgs" && pwd -P)
     rm -rf "$game"
-    mkdir -p "$game" "$PASSENGER_GODOT_HOME"
+    mkdir -p "$game" "$PITSTOP_GODOT_HOME"
     cp -R "$repo/tools/site-shots/godot/." "$game/"
     sed "s/@FEATURES@/${version%.*}/" "$game/project.godot.in" > "$game/project.godot"
     sed "s/@VERSION@/$version/" "$game/Greenhouse.csproj.in" > "$game/Greenhouse.csproj"
@@ -210,7 +210,7 @@ game_ready() {
 }
 
 # The gdscript, godot-shader and godot-tests scenes' game, with GUT 9.6.1 (MIT) at its commit.
-more_game="$tmp/passenger-site-shots/more/GreenhouseGame"
+more_game="$tmp/pitstop-site-shots/more/GreenhouseGame"
 more_prepared=
 gut_commit=cf45f668709d988346e766afee916d4169a9283b
 # The game given godot-more/ (a script, a shader and GUT tests) and GUT's addon, in a copy of its own, so the other
@@ -251,7 +251,7 @@ more_ready() {
 }
 
 # The godot-game scene's game: Squash the Creeps (3D) with C#, of godot-demo-projects (MIT, its art too), at its commit.
-creeps="$tmp/passenger-site-shots/SquashTheCreeps"
+creeps="$tmp/pitstop-site-shots/SquashTheCreeps"
 creeps_commit=b761b4cd5718a7118f2c95eb55f181d0a5f004f1
 # The game copied out of its clone, outside any repository as MSBuild asks, on the Godot found's GodotSharp and
 # nuget.org's reference packs, built and imported once.
@@ -260,7 +260,7 @@ creeps_ready() {
     if [[ -n ${SITE_SHOTS_REUSE:-} && -d "$creeps/.git" ]]; then
         return
     fi
-    local clone="$tmp/passenger-site-shots/clones/godot-demo-projects" version
+    local clone="$tmp/pitstop-site-shots/clones/godot-demo-projects" version
     if [[ ! -f "$clone/mono/squash_the_creeps/project.godot" ]] \
         || [[ $(git -C "$clone" rev-parse HEAD) != "$creeps_commit" ]]; then
         rm -rf "$clone"
@@ -270,7 +270,7 @@ creeps_ready() {
             "$creeps_commit"
         git -C "$clone" checkout -q FETCH_HEAD
     fi
-    version=$(HOME="$PASSENGER_GODOT_HOME" "$GODOT" --version | grep -Eo '^[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+    version=$(HOME="$PITSTOP_GODOT_HOME" "$GODOT" --version | grep -Eo '^[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
     rm -rf "$creeps"
     mkdir -p "$creeps"
     cp -R "$clone/mono/squash_the_creeps/." "$creeps/"
@@ -301,13 +301,13 @@ EOF3
         GIT_AUTHOR_DATE="2026-10-25T09:00:00+00:00" GIT_COMMITTER_DATE="2026-10-25T09:00:00+00:00" \
         git -C "$creeps" commit -q -m "Squash the Creeps (3D) with C#, godot-demo-projects at ${creeps_commit:0:9}"
     dotnet build "$creeps/Squash the Creeps (3D).csproj" -nologo -v:q -clp:ErrorsOnly
-    HOME="$PASSENGER_GODOT_HOME" XDG_CONFIG_HOME="$PASSENGER_GODOT_HOME/.config" \
-        XDG_DATA_HOME="$PASSENGER_GODOT_HOME/.local/share" XDG_CACHE_HOME="$PASSENGER_GODOT_HOME/.cache" SDL_JOYSTICK_HIDAPI=0 \
+    HOME="$PITSTOP_GODOT_HOME" XDG_CONFIG_HOME="$PITSTOP_GODOT_HOME/.config" \
+        XDG_DATA_HOME="$PITSTOP_GODOT_HOME/.local/share" XDG_CACHE_HOME="$PITSTOP_GODOT_HOME/.cache" SDL_JOYSTICK_HIDAPI=0 \
         "$GODOT" --headless --path "$creeps" --import > "$work/creeps-import.log" 2>&1
 }
 
 # The blazor-wasm scene's app: a WebAssembly Blazor Web App given blazor/'s page, debugged in a headless Chromium.
-web_app="$tmp/passenger-site-shots/GreenhouseWeb"
+web_app="$tmp/pitstop-site-shots/GreenhouseWeb"
 web_app_prepared=
 web_app_ready() {
     if [[ -n $web_app_prepared ]] || [[ -n ${SITE_SHOTS_REUSE:-} && -d "$web_app/.git" ]]; then
@@ -344,7 +344,7 @@ EOF2
 }
 
 # The maui scene's app: a page of the greenhouse's plants on a phone.
-maui_app="$tmp/passenger-site-shots/GreenhouseMobile"
+maui_app="$tmp/pitstop-site-shots/GreenhouseMobile"
 maui_prepared=
 # .NET MAUI's template given maui/'s page, restored and left unbuilt, as the scene's Build for XAML Preview builds it for
 # no platform; for iOS and Mac Catalyst alone, since its Android head would need a JDK, whose lack a banner would say
@@ -381,7 +381,7 @@ maui_ready() {
 shot() {
     local name=$1 theme=$2
     shift 2
-    local state="$tmp/passenger-site-shots/state/$name-$theme" png="$work/png/$name-$theme.png"
+    local state="$tmp/pitstop-site-shots/state/$name-$theme" png="$work/png/$name-$theme.png"
     if [[ $name == agent ]]; then
         # The window's agent socket is in its state's mcp/, and macOS keeps a socket's path to 103 bytes.
         state="$tmp/pss-$name-$theme"
@@ -392,7 +392,7 @@ shot() {
     rm -rf "$state"
     mkdir -p "$state"
     # The sample's solution, unless the scene names another (solution=…, the services scenes').
-    PASSENGER_SETTINGS="$state" "$passenger" "${solution:-$folder/Greenhouse.slnx}" --theme "$theme" --look passenger \
+    PITSTOP_SETTINGS="$state" "$passenger" "${solution:-$folder/Greenhouse.slnx}" --theme "$theme" --look pitstop \
         --size 1200x750 --scale 2 ${extra[@]+"${extra[@]}"} "$@" --screenshot "$png"
     encode "$png" "$images/$name-$theme.webp"
 }
@@ -408,7 +408,7 @@ encode() {
 }
 
 # Every look, in the picker's order (passenger-themes' as tests/Passenger.Tests/Themes lists them); those with no light look.
-looks=(Passenger Cubicle Harbour Sorbet Nocturne Saffron Bonbon Ledger Slate Orbit Nightjar Moss Phosphor)
+looks=(Pitstop Cubicle Harbour Sorbet Nocturne Saffron Bonbon Ledger Slate Orbit Nightjar Moss Phosphor)
 dark_only=(Nocturne Slate Nightjar)
 # The themes scene: the same window in every look, each over a copy of the solution file named after its look, so its
 # title bar and Solution view name it; then those frames as one animated picture, Passenger's own first, every frame a
@@ -424,12 +424,12 @@ themes() {
     done
     for look in "${shown[@]}"; do
         lower=$(tr '[:upper:]' '[:lower:]' <<< "$look")
-        state="$tmp/passenger-site-shots/state/themes-$lower-$theme"
+        state="$tmp/pitstop-site-shots/state/themes-$lower-$theme"
         rm -rf "$state"
         mkdir -p "$state"
         cp "$folder/Greenhouse.slnx" "$folder/$look.slnx"
         # The class's doc comment, keywords, types, a lambda and numbers in the editor, the Explorer beside it.
-        if ! PASSENGER_SETTINGS="$state" "$passenger" "$folder/$look.slnx" --theme "$theme" --look "$lower" \
+        if ! PITSTOP_SETTINGS="$state" "$passenger" "$folder/$look.slnx" --theme "$theme" --look "$lower" \
             --size 932x530 --scale 2 ${extra[@]+"${extra[@]}"} --file src/Greenhouse.Core/WateringPlan.cs \
             --caret 4:21 --screenshot "$work/png/themes/$lower-$theme.png"; then
             rm -f "$folder/$look.slnx"
@@ -444,7 +444,7 @@ themes() {
     done
     img2webp -loop 0 -kmin 0 -kmax 1 -lossy -q 78 -m 6 -d 1800 "${frames[@]}" -o "$images/themes-$theme.webp" > /dev/null
     echo "site-shots: $images/themes-$theme.webp ($(($(wc -c < "$images/themes-$theme.webp") / 1024)) KB)"
-    encode "$work/png/themes/passenger-$theme.png" "$images/themes-still-$theme.webp"
+    encode "$work/png/themes/pitstop-$theme.png" "$images/themes-still-$theme.webp"
 }
 
 # The first start's tiles (src/Passenger.App/Assets/FirstStart): the sample's window in Passenger's own theme and in each
@@ -456,16 +456,16 @@ first_start() {
     # Each theme's name in lower case, as --look takes it, and its pictures' name, a space a hyphen (FirstStartPictures).
     while IFS= read -r look; do
         file=${look// /-}
-        state="$tmp/passenger-site-shots/state/first-start-$file-$theme"
+        state="$tmp/pitstop-site-shots/state/first-start-$file-$theme"
         rm -rf "$state"
         mkdir -p "$state"
         # The class's doc comment, keywords, types, a lambda and numbers in the editor, the theme's own layout round it.
-        PASSENGER_SETTINGS="$state" "$passenger" "$folder/Greenhouse.slnx" --theme "$theme" --look "$look" \
+        PITSTOP_SETTINGS="$state" "$passenger" "$folder/Greenhouse.slnx" --theme "$theme" --look "$look" \
             --size 936x585 --scale 1.5 --file src/Greenhouse.Core/WateringPlan.cs --caret 4:21 \
             --screenshot "$work/png/first-start/$file-$theme.png"
         cwebp -quiet -lossless -z 9 "$work/png/first-start/$file-$theme.png" -o "$out/$file-$theme.webp"
         echo "site-shots: $out/$file-$theme.webp ($(($(wc -c < "$out/$file-$theme.webp") / 1024)) KB)"
-    done < <(echo passenger; python3 -I - "$repo/src/Passenger.App/Theme/BuiltIn" <<'EOF2'
+    done < <(echo pitstop; python3 -I - "$repo/src/Passenger.App/Theme/BuiltIn" <<'EOF2'
 import json, os, sys
 folder = sys.argv[1]
 with open(os.path.join(folder, "passenger-themes.json"), encoding="utf-8") as f:

@@ -30,7 +30,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
 {
     /// <summary>The variable that gives <see cref="ServerLimit"/> in milliseconds.</summary>
     [IdentifierHome]
-    public const string ServerLimitVariable = "PASSENGER_MCP_SERVER_WAIT_MS";
+    public const string ServerLimitVariable = "PITSTOP_MCP_SERVER_WAIT_MS";
 
     /// <summary>How long a code tool waits for its language server to be ready for its question before it refuses: 2
     /// minutes, made longer on a slower machine as the IDE's other waits on what it started are (<see cref="Waits"/>), or
@@ -79,7 +79,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
                 {
                     throw new InvalidOperationException(said switch
                     {
-                        Admission.NotAllowed => $"The person at this Passenger window did not let {connection.Agent} open {full} in place of {open}. Ask them, or work in {open}.",
+                        Admission.NotAllowed => $"The person at this Pitstop window did not let {connection.Agent} open {full} in place of {open}. Ask them, or work in {open}.",
                         Admission.FolderChanged => Refusals.FolderChanged(open),
                         _ => $"Nobody at {AgentConnection.Where(window)} answered within {AgentConnection.Limit(window)} whether {connection.Agent} may open {full} in place of {open}. A later call asks again.",
                     });
@@ -401,7 +401,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
             if (Session.ChecksOf(marked).Count == 0)
             {
                 // No marks from no check would read as a file found clean.
-                throw new InvalidOperationException($"No check of Passenger's reads {LanguageOf(marked)} files such as {Path.GetFileName(marked.Path)}: diagnostics answers C#, "
+                throw new InvalidOperationException($"No check of Pitstop's reads {LanguageOf(marked)} files such as {Path.GetFileName(marked.Path)}: diagnostics answers C#, "
                     + "Razor, a C# project's XAML, MSBuild files, JSON, YAML, HTML, CSS, SCSS, Less, JavaScript, TypeScript, Dockerfiles and compose files, "
                     + "Godot's scenes, shaders and scripts, and .editorconfig, .slnx and .http files");
             }
@@ -578,7 +578,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
             {
                 return ByFile(inside, from, null, await Places(scriptUses, cancel)) with
                 {
-                    Note = unsure.Count > 0 ? $"May use it where Passenger can't see whose member is read: {Passenger.Workspace.GDScript.GDScriptRefactorings.Places(unsure)}" : null,
+                    Note = unsure.Count > 0 ? $"May use it where Pitstop can't see whose member is read: {Passenger.Workspace.GDScript.GDScriptRefactorings.Places(unsure)}" : null,
                 };
             }
         }
@@ -596,7 +596,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
                 throw Lacks(served, "Find Usages", GodotHas);
             case ScriptServed script:
                 script.Web.AskServer?.Invoke();
-                throw new InvalidOperationException($"No member or local of a script is at {place} as Passenger reads the project's scripts, and no Godot server serves "
+                throw new InvalidOperationException($"No member or local of a script is at {place} as Pitstop reads the project's scripts, and no Godot server serves "
                     + $"{Path.GetFileName(script.Document.Path)} yet to be asked: one is starting for it");
             case ShaderServed shader:
                 return await window.Assist.Languages.Shaders.UsesAsync(shader.Document, offset) is (_, { } shaderUses)
@@ -832,7 +832,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
         "a XAML element's name with its code-behind's uses; a Reqnroll step (from a step, or its definition's expression: newName " +
         "the new expression, its parameters as they were), in its attribute and every step; a JSON property (in " +
         "package.json's scripts, every npm run of one); a compose file's names, its override's too. MSBuild files have none. " +
-        "force renames a GDScript member where uses Passenger can't see remain, leaving them.")]
+        "force renames a GDScript member where uses Pitstop can't see remain, leaving them.")]
     public Task<string> Rename(string newName, string? path = null, int? line = null, int? column = null, string? symbol = null,
         bool renameFiles = true, bool force = false,
         CancellationToken cancel = default) => OnUi(cancel, () => Patience.RunAsync(Editors.Commands, () => Session.CSharp?.Session, async patience =>
@@ -926,7 +926,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
                 throw new InvalidOperationException($"No step one step definition binds is at {Relative(feature.Document.Path)}:{at.Line}:{at.Column}");
             case ScriptServed script:
                 script.Web.AskServer?.Invoke();
-                throw new InvalidOperationException($"No member or local of a script is at {Relative(script.Document.Path)}:{at.Line}:{at.Column} as Passenger reads the "
+                throw new InvalidOperationException($"No member or local of a script is at {Relative(script.Document.Path)}:{at.Line}:{at.Column} as Pitstop reads the "
                     + $"project's scripts, and no Godot server serves it yet to be asked: one is starting for it");
         }
         ServerServed server = (ServerServed)served;
@@ -994,7 +994,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
     [McpServerTool(Name = McpTools.CodeActions, Title = "Fixes and refactorings", ReadOnly = true), Description(
         "The fixes and refactorings offered at a position (Show Context Actions), or over a selection to endLine:endColumn (Extract " +
         "Method, Introduce Variable), as 'title [kind]' with the choices each offers (nested actions, a Fix All's scopes, where " +
-        "a XAML resource goes), which apply_code_action takes: Passenger's own fixes first (a GDScript's are all Passenger's), then " +
+        "a XAML resource goes), which apply_code_action takes: Pitstop's own fixes first (a GDScript's are all Pitstop's), then " +
         "the folder's linters' (ESLint's, Oxlint's, Biome's), then the language server's; in XAML, the line's problems' fixes (a binding's missing property or command, a missing converter), Extract " +
         "Resource and Extract Style. A Suppress or Configure action's choices are counted, and listed when title names it.")]
     public Task<IReadOnlyList<string>> CodeActions(string path, int line, int column, int? endLine = null, int? endColumn = null, string? title = null,
@@ -1145,7 +1145,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
         {
             return await ApplyByCommand(lsp, chosen, run, title, what, asked, patience, cancel);
         }
-        string unrun = chosen.Command is { } command ? $", but not {command.Command}, which Passenger cannot run" : string.Empty;
+        string unrun = chosen.Command is { } command ? $", but not {command.Command}, which Pitstop cannot run" : string.Empty;
         if (chosen.Edit is not { } edit)
         {
             return $"{what} changes nothing it can apply{unrun}";
@@ -1851,7 +1851,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
             }
             Aspire.AspireSelection target = (await window.ResolveOwnedAspireResourceAsync(resource, null, cancel))!;
             Aspire.AspireResourceRun service = Session.Aspire.FindService(target)
-                ?? throw new InvalidOperationException($"{resource} is no .NET service Passenger runs for its AppHost; telemetry reads its logs");
+                ?? throw new InvalidOperationException($"{resource} is no .NET service Pitstop runs for its AppHost; telemetry reads its logs");
             service.Console.Flush();
             return Tail(service.Console.Document.Snapshot, lines);
         }
@@ -2491,7 +2491,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
             : "its UI up") + ": app_windows, app_screenshot and app_click look at it and use it";
 
     /// <summary>What an answer says of a Godot game once it has connected to Passenger, its remote debugger.</summary>
-    private const string GameUp = "Passenger its remote debugger: app_tree, app_details and app_click look at its nodes and use them";
+    private const string GameUp = "Pitstop its remote debugger: app_tree, app_details and app_click look at its nodes and use them";
 
     /// <summary>How long a launched app whose UI is up is watched for a stop in its first layout.</summary>
     private static readonly TimeSpan LaunchSettle = TimeSpan.FromSeconds(2);
@@ -2774,7 +2774,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
         "Binding Errors), each with whether the debugger took it; while Mute Breakpoints (ide_action " +
         "app.debug.muteBreakpoints) is on, none stops. of processes: the .NET programs here and in running containers the " +
         "debugger can attach to, program being the .dll the dotnet host runs (a container's id 0 until debug_attach puts " +
-        "Passenger's tools in).")]
+        "Pitstop's tools in).")]
     public async Task<object> GetDebugState(string? session = null, string? of = null, int? reference = null, CancellationToken cancel = default) => (of, reference) switch
     {
         (null or "stop", int members) => await DebugVariables(members, session, cancel),
@@ -3133,7 +3133,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
     }
 
     /// <summary>How an answer begins when a tool met a fault of the IDE's own, never one of the refusals an agent can act on.</summary>
-    public const string Faulted = "Passenger failed: ";
+    public const string Faulted = "Pitstop failed: ";
 
     /// <summary>Sets the paused program going as the window's keys do, its tab chosen and the edits made while it was paused
     /// applied first.</summary>
@@ -4226,11 +4226,11 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
     private string? SdkMissingSaid(ProjectSession session) =>
         window.DotnetWant is { Installs: not null } wanted && Refusals.Dotnet(wanted, session.Folder) is { } lacking
             ? window.AgentsOwn
-                ? $"{lacking}. This Passenger, an agent's own, installs nothing: the person installs it with Install .NET SDK in the banner over their Passenger's window"
-                : $"{lacking}. Install .NET SDK installs it: the person's, from the banner over Passenger's window, or an agent's ide_action {AppActions.InstallDotnetSdk}, which asks them first"
+                ? $"{lacking}. This Pitstop, an agent's own, installs nothing: the person installs it with Install .NET SDK in the banner over their Pitstop's window"
+                : $"{lacking}. Install .NET SDK installs it: the person's, from the banner over Pitstop's window, or an agent's ide_action {AppActions.InstallDotnetSdk}, which asks them first"
             : window.DotnetWant is { Lack: DotnetLack.OtherProcessor } or { Translated: true, Install: not null } && Refusals.Dotnet(window.DotnetWant, session.Folder) is { } loadsNone
                 ? $"{loadsNone}{(window.DotnetWant.Install is null ? string.Empty : $". {Refusals.InstallsOnlyNative}")}. "
-                    + $"The person downloads the Passenger built for this computer from {Updates.Releases.ThisSystemsDownload}"
+                    + $"The person downloads the Pitstop built for this computer from {Updates.Releases.ThisSystemsDownload}"
             : session.Models.MissingSdk is { } missing ? Refusals.NoSdk(missing, session.Folder) : null;
 
     /// <summary>Why the folder's projects cannot load for the C# code tools to search: they have no .NET SDK to load with,

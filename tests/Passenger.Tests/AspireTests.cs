@@ -343,7 +343,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
                     {
                         total += Math.Sqrt(i);
                     }
-                    Console.WriteLine($"Passenger first turn {total}");
+                    Console.WriteLine($"Pitstop first turn {total}");
                 }
             }
             """);
@@ -363,7 +363,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             int apiPid = Service(window, Resource(window, "apiservice")).ProcessId!.Value;
             int webPid = Service(window, Resource(window, "webfrontend")).ProcessId!.Value;
             Ui.WaitFor(() => window.Profiling?.ProcessId == apiPid, "the requested API's startup recording");
-            Ui.WaitFor(() => Service(window, Resource(window, "apiservice")).Console.Document.Snapshot.ToString().Contains("Passenger first turn", StringComparison.Ordinal),
+            Ui.WaitFor(() => Service(window, Resource(window, "apiservice")).Console.Document.Snapshot.ToString().Contains("Pitstop first turn", StringComparison.Ordinal),
                 "the profiled API to complete its first hot turn");
             Passenger.App.Profiling.SnapshotRead read = Ui.Await(window.SnapshotAsync(), "the startup profile snapshot", TimeSpan.FromMinutes(2));
             Assert.NotNull(read.Snapshot);
@@ -418,9 +418,9 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             Assert.Equal("5", Ui.Await(http.GetStringAsync(request), "the frontend's cross-service HTTP response"));
             Ui.WaitFor(() => window.AspireWindow.Console.Document.Snapshot.ToString().Contains("[apiservice]", StringComparison.Ordinal)
                 && window.AspireWindow.Console.Document.Snapshot.ToString().Contains("[webfrontend]", StringComparison.Ordinal), "both service prefixes in the merged console");
-            Ui.WaitFor(() => window.AspireWindow.Console.Document.Snapshot.ToString().Contains("Passenger request", StringComparison.Ordinal), "the API's live console output");
+            Ui.WaitFor(() => window.AspireWindow.Console.Document.Snapshot.ToString().Contains("Pitstop request", StringComparison.Ordinal), "the API's live console output");
             FindAction(window, "Find in Aspire Logs");
-            window.KeyTextInput("Passenger request");
+            window.KeyTextInput("Pitstop request");
             Ui.WaitFor(() => window.AspireWindow.Find.IsEffectivelyVisible && window.AspireWindow.Find.CountText.Contains("/", StringComparison.Ordinal)
                 && !window.AspireWindow.Find.CountText.StartsWith("0", StringComparison.Ordinal),
                 "real Find to select a merged console match");
@@ -430,9 +430,9 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             Roomy(window);
             FindAction(window, "Show Aspire Structured logs");
             RefreshUntil(window, () => window.AspireWindow.Telemetry.Logs
-                .Any(log => log.Data.GetRawText().Contains("Passenger request", StringComparison.Ordinal)), "the API's structured request log");
+                .Any(log => log.Data.GetRawText().Contains("Pitstop request", StringComparison.Ordinal)), "the API's structured request log");
             AspireStructuredLog log = window.AspireWindow.Telemetry.Logs
-                .First(item => item.Data.GetRawText().Contains("Passenger request", StringComparison.Ordinal));
+                .First(item => item.Data.GetRawText().Contains("Pitstop request", StringComparison.Ordinal));
             ClickListItem(window, window.AspireWindow.StructuredLogs, log);
             Assert.False(string.IsNullOrWhiteSpace(log.TraceId), "The structured log must retain its trace correlation");
             Assert.False(string.IsNullOrWhiteSpace(log.SpanId), "The structured log must retain its span correlation");
@@ -457,9 +457,9 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
 
             File.Delete(project.InteractionAnswer);
             ChooseResource(window, "apiservice");
-            Ui.WaitFor(() => window.Aspire.SelectedResource?.Commands.Any(command => command.DisplayName == "Passenger interaction") == true,
+            Ui.WaitFor(() => window.Aspire.SelectedResource?.Commands.Any(command => command.DisplayName == "Pitstop interaction") == true,
                 "the real AppHost's advertised command");
-            RunCommand(window, "Passenger interaction");
+            RunCommand(window, "Pitstop interaction");
             AspireInteractionDialog confirmation = Prompt(window, "Restart API?");
             Ui.Click(confirmation.Secondary);
             AspireInteractionDialog form = Prompt(window, "API settings");
@@ -480,7 +480,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             Assert.Equal("latest value", File.ReadAllText(project.InteractionAnswer));
             // The form alone: the AppHost may say other things meanwhile, as that the development certificate is not trusted.
             Ui.WaitFor(() => !window.OwnedWindows.OfType<AspireInteractionDialog>().Contains(form), "the completed form to close");
-            Ui.WaitFor(() => AppHostSaid(window).Contains("passenger-interaction: Succeeded", StringComparison.Ordinal),
+            Ui.WaitFor(() => AppHostSaid(window).Contains("pitstop-interaction: Succeeded", StringComparison.Ordinal),
                 "the command's result in the AppHost's console");
 
             AspireResourceCommand restart = Assert.Single(Resource(window, "apiservice").Commands, command => command.Name is "restart" or "resource-restart");
@@ -528,7 +528,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             Assert.Equal("5", Ui.Await(http.GetStringAsync(new Uri(HttpUrl(Resource(window, "webfrontend")), "/passenger-test")), "the frontend's cross-service HTTP response"));
             Roomy(window);
             FindAction(window, "Show Aspire Structured logs");
-            RefreshUntil(window, () => window.AspireWindow.Telemetry.Logs.Any(log => log.Data.GetRawText().Contains("Passenger request", StringComparison.Ordinal)),
+            RefreshUntil(window, () => window.AspireWindow.Telemetry.Logs.Any(log => log.Data.GetRawText().Contains("Pitstop request", StringComparison.Ordinal)),
                 "the API's structured request log, read where the dashboard was placed");
             int[] owned = OwnedPids(window);
             window.Perform(AppActions.Stop);
@@ -554,7 +554,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
         Directory.CreateDirectory(project.PathOf("Loose"));
         string loose = PathNames.Canonical(project.Write("Loose/apphost.cs", $"#:sdk Aspire.AppHost.Sdk@{AspireApp.TemplatesVersion}\nvar builder = DistributedApplication.CreateBuilder(args);\nbuilder.Build().Run();\n"));
         project.Write("Loose/Sibling.csproj", TestProjects.Library());
-        string file = PathNames.Canonical(project.Write("apphost.cs", $"#:sdk Aspire.AppHost.Sdk@{AspireApp.TemplatesVersion}\n#:property AspireUseCliBundle=false\nusing Aspire.Hosting;\nusing Microsoft.Extensions.Hosting;\nSystem.Console.WriteLine(\"passenger-profile-port: \" + System.Environment.GetEnvironmentVariable(\"PASSENGER_PROFILE_PORT\"));\nvar builder = DistributedApplication.CreateBuilder(args);\nbuilder.Build().Run();\n"));
+        string file = PathNames.Canonical(project.Write("apphost.cs", $"#:sdk Aspire.AppHost.Sdk@{AspireApp.TemplatesVersion}\n#:property AspireUseCliBundle=false\nusing Aspire.Hosting;\nusing Microsoft.Extensions.Hosting;\nSystem.Console.WriteLine(\"pitstop-profile-port: \" + System.Environment.GetEnvironmentVariable(\"PITSTOP_PROFILE_PORT\"));\nvar builder = DistributedApplication.CreateBuilder(args);\nbuilder.Build().Run();\n"));
         project.Write("apphost.run.json", JsonSerializer.Serialize(new Dictionary<string, object>
         {
             ["$schema"] = "https://json.schemastore.org/launchsettings.json",
@@ -577,12 +577,12 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
                     environmentVariables = new Dictionary<string, object>
                     {
                         // A number, which dotnet run passes as its JSON.
-                        ["PASSENGER_PROFILE_PORT"] = 5000,
+                        ["PITSTOP_PROFILE_PORT"] = 5000,
                         [AspNetCoreVariables.AspNetCoreEnvironment] = "Development",
                         [AspNetCoreVariables.DotnetEnvironment] = "Development",
                         [AspireVariables.DashboardOtlpEndpoint] = $"http://localhost:{AspireApp.FreePort()}",
                         [AspireVariables.ResourceServiceEndpoint] = $"http://localhost:{AspireApp.FreePort()}",
-                        [AspireVariables.DashboardResourceServiceKey] = "passenger-single-file-profile-key",
+                        [AspireVariables.DashboardResourceServiceKey] = "pitstop-single-file-profile-key",
                         [AspireVariables.AllowUnsecuredTransport] = "true",
                         ["ASPIRE_VERSION_CHECK_DISABLED"] = "true",
                         ["ASPIRE_DASHBOARD_DATA_DIRECTORY"] = project.PathOf("single-file-dashboard"),
@@ -628,7 +628,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             string built = window.BottomPanel.Build.Document.Snapshot.ToString();
             Assert.True(built.Contains($"build {file}", StringComparison.Ordinal) && built.Contains("--output", StringComparison.Ordinal),
                 $"The single-file AppHost was not built in the Build window:\n{built}");
-            Ui.WaitFor(() => AppHostSaid(window).Contains("passenger-profile-port: 5000", StringComparison.Ordinal),
+            Ui.WaitFor(() => AppHostSaid(window).Contains("pitstop-profile-port: 5000", StringComparison.Ordinal),
                 () => $"the single-file AppHost given its profile's number value, which it said as:\n{Redacted(AppHostSaid(window))}");
             FindAction(window, "Show Aspire Resources");
             Ui.WaitFor(() => window.Aspire.ResourceSnapshots.Any(resource => resource.DisplayName == "aspire-dashboard" && resource.State == AspireStates.Running), "the single-file AppHost's native resource stream");
@@ -817,7 +817,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
         Assert.False(File.Exists(project.FileServiceRan));
         Assert.True(Processes.IsRunning(pid));
 
-        const string Foreign = "passenger-tests-abcdefghijkl";
+        const string Foreign = "pitstop-tests-abcdefghijkl";
         using (ClientWebSocket socket = Notifications(endpoint, Foreign, "a foreign instance's real notification connection"))
         {
             using HttpResponseMessage foreignDelete = Send(http, root, HttpMethod.Delete, $"/run_session/{service.Id}?api-version=2024-03-03", endpoint.Token, Foreign);
@@ -828,11 +828,11 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
         }
 
         int services = app.Services.Count;
-        using (ClientWebSocket notifications = Notifications(endpoint, "passenger-review-abcdefghijkl", "the failed-launch instance's notification subscription"))
+        using (ClientWebSocket notifications = Notifications(endpoint, "pitstop-review-abcdefghijkl", "the failed-launch instance's notification subscription"))
         {
             using HttpClient quick = Client();
             quick.Timeout = TimeSpan.FromSeconds(15).Scaled();
-            using HttpResponseMessage failed = Send(quick, root, HttpMethod.Put, "/run_session?api-version=2024-03-03", endpoint.Token, "passenger-review-abcdefghijkl",
+            using HttpResponseMessage failed = Send(quick, root, HttpMethod.Put, "/run_session?api-version=2024-03-03", endpoint.Token, "pitstop-review-abcdefghijkl",
                 JsonSerializer.Serialize(new
                 {
                     launch_configurations = new[] { new { type = "project", project_path = project.ApiProject, mode = "NoDebug", launch_profile = "missing-folder" } },
@@ -843,8 +843,8 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             Assert.All(app.Services, running => Assert.True(Processes.IsRunning(running.ProcessId!.Value)));
 
             // A startup hook from a folder another user may write, as one who had the token could ask for, starts nothing.
-            string elsewhere = Path.Join(Path.GetPathRoot(Path.GetFullPath(project.ApiProject)), "passenger-elsewhere", "hook.dll");
-            using HttpResponseMessage hooked = Send(quick, root, HttpMethod.Put, "/run_session?api-version=2024-03-03", endpoint.Token, "passenger-review-abcdefghijkl",
+            string elsewhere = Path.Join(Path.GetPathRoot(Path.GetFullPath(project.ApiProject)), "pitstop-elsewhere", "hook.dll");
+            using HttpResponseMessage hooked = Send(quick, root, HttpMethod.Put, "/run_session?api-version=2024-03-03", endpoint.Token, "pitstop-review-abcdefghijkl",
                 JsonSerializer.Serialize(new
                 {
                     launch_configurations = new[] { new { type = "project", project_path = project.ApiProject, mode = "NoDebug", disable_launch_profile = true } },
@@ -855,7 +855,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             notifications.Abort();
         }
 
-        const string Flooding = "passenger-flood-abcdefghijkl";
+        const string Flooding = "pitstop-flood-abcdefghijkl";
         int[] siblings = [.. app.Services.Select(running => running.ProcessId).OfType<int>().Where(Processes.IsRunning)];
         Assert.True(siblings.Length >= 2, "The official starter's API and frontend must be running before queue pressure");
         using (ClientWebSocket unread = Notifications(endpoint, Flooding, "the deliberately unread DCP notification socket"))
@@ -880,7 +880,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
             Assert.All(siblings, id => Assert.True(Processes.IsRunning(id), "Disconnecting the foreign DCP instance must leave the starter's services alive"));
         }
 
-        const string Instance = "passenger-cancel-abcdefghijkl";
+        const string Instance = "pitstop-cancel-abcdefghijkl";
         string marker = project.PathOf("canceled-dcp-request.pid");
         using ClientWebSocket held = Notifications(endpoint, Instance, "the request-cancellation instance's notification connection");
         HashSet<int> lateProcesses = [];
@@ -896,7 +896,7 @@ public sealed class AspireTests : IClassFixture<AspireApp>, IDisposable
                 new { name = OtelVariables.ServiceName, value = "canceled-at-boundary" },
                 new { name = AspNetCoreVariables.Urls, value = serviceAddress.ToString() },
                 new { name = AspNetCoreVariables.DotnetEnvironment, value = "Development" },
-                new { name = "PASSENGER_CANCELED_DCP_PID", value = marker },
+                new { name = "PITSTOP_CANCELED_DCP_PID", value = marker },
             },
         });
         Task disconnect = Waiting.Apart(async () =>

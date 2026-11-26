@@ -1,4 +1,4 @@
-# Passenger's recipes. `just --list` shows them all.
+# Pitstop's recipes. `just --list` shows them all.
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
@@ -20,7 +20,7 @@ build:
     dotnet build -nodeReuse:false
 
 # The suite dealt to several test processes at once, then the Alone classes in one (tools/test-run.py; results in
-# artifacts/test-results/local). PROCESSES is PASSENGER_TEST_PROCESSES by default, else a quarter of the processors, at
+# artifacts/test-results/local). PROCESSES is PITSTOP_TEST_PROCESSES by default, else a quarter of the processors, at
 # most 4, and 1 runs one dotnet test in xunit's own order; --gate or --report runs that lane alone (the gate: the [Gate]
 # tests and the unit tests); --plan shows the deal and runs nothing. A flag may stand in either argument's place.
 # Every test, headless: just test [FILTER] [PROCESSES] [--gate | --report] [--plan]
@@ -71,9 +71,9 @@ publish rid:
 publish rid:
     $sh = (Get-Command sh -ErrorAction SilentlyContinue).Source; if (-not $sh) { $sh = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin\sh.exe' }; & $sh -c '. tools/release-common.sh && version=$(release_version .) && publish_app . $1 $version' publish {{rid}}
 
-# Passenger's container tools (its debug adapter and process lister, run inside a Linux container) self-contained for one
+# Pitstop's container tools (its debug adapter and process lister, run inside a Linux container) self-contained for one
 # system into artifacts/container-tools/<rid>/, where a dev build finds them; --archive also packs the release's
-# Passenger-container-tools-<rid>.tar.gz. No RID: the glibc one for the container engine's processor.
+# Pitstop-container-tools-<rid>.tar.gz. No RID: the glibc one for the container engine's processor.
 # just container-tools [linux-x64|linux-arm64|linux-musl-x64|linux-musl-arm64] [--archive]
 [unix]
 container-tools *args:
@@ -89,25 +89,25 @@ container-tools *args:
 vim:
     tools/vim.sh
 
-# Passenger's debug relay for Android (arm64, x64) and iOS (devices, Apple Silicon simulators) into
+# Pitstop's debug relay for Android (arm64, x64) and iOS (devices, Apple Silicon simulators) into
 # artifacts/debug-relay/<rid>/, which the app carries under debugger/relay/; macOS with Xcode and the Android workload.
 # just debug-relay [android] [apple]
 [unix]
 debug-relay *args:
     tools/debug-relay.sh {{args}}
 
-# The app signed ad hoc, or with PASSENGER_SIGN_IDENTITY and then, with PASSENGER_NOTARY_PROFILE, the app and the image
+# The app signed ad hoc, or with PITSTOP_SIGN_IDENTITY and then, with PITSTOP_NOTARY_PROFILE, the app and the image
 # notarized and stapled, and checked mounted; --dry-run writes what those two would run instead.
-# The macOS disk image, artifacts/package/Passenger-macos-arm64.dmg (Apple Silicon) or -x64.dmg (Intel, checked under
+# The macOS disk image, artifacts/package/Pitstop-macos-arm64.dmg (Apple Silicon) or -x64.dmg (Intel, checked under
 # Rosetta on Apple Silicon), and its app zipped beside it as the portable build, run as a portable copy:
 # just package-mac [osx-arm64|osx-x64] [--dry-run]
 package-mac *args:
     tools/package-mac.sh {{args}}
 
-# Passenger's Windows installer, packed by Velopack's vpk (dotnet-tools.json): it installs per user with no
-# administrator, adds a Start menu entry, opens .sln, .slnx and .csproj in Passenger, and uninstalls from Settings > Apps.
-# Signed on Windows by PASSENGER_SIGNTOOL_PARAMS or PASSENGER_ARTIFACT_SIGNING_METADATA (tools/package-win.sh).
-# The Windows installer, artifacts/package/Passenger-windows-x64.exe or -arm64.exe, and beside it the portable build,
+# Pitstop's Windows installer, packed by Velopack's vpk (dotnet-tools.json): it installs per user with no
+# administrator, adds a Start menu entry, opens .sln, .slnx and .csproj in Pitstop, and uninstalls from Settings > Apps.
+# Signed on Windows by PITSTOP_SIGNTOOL_PARAMS or PITSTOP_ARTIFACT_SIGNING_METADATA (tools/package-win.sh).
+# The Windows installer, artifacts/package/Pitstop-windows-x64.exe or -arm64.exe, and beside it the portable build,
 # -x64-portable.zip or -arm64-portable.zip, run as a portable copy on Windows: just package-win [win-x64|win-arm64]
 [unix]
 package-win rid="win-x64":
@@ -118,19 +118,19 @@ package-win rid="win-x64":
 package-win rid="win-x64":
     $sh = (Get-Command sh -ErrorAction SilentlyContinue).Source; if (-not $sh) { $sh = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'bin\sh.exe' }; & $sh tools/package-win.sh {{rid}}
 
-# Passenger for Linux: one passenger/ folder (the app, its launcher, install.sh and the desktop entry with its icon) in
-# artifacts/package/Passenger-linux-x64.tar.gz or -arm64.tar.gz, unpacked and checked, as installed and as a portable copy.
+# Pitstop for Linux: one pitstop/ folder (the app, its launcher, install.sh and the desktop entry with its icon) in
+# artifacts/package/Pitstop-linux-x64.tar.gz or -arm64.tar.gz, unpacked and checked, as installed and as a portable copy.
 # On Linux or macOS: just package-linux [linux-x64|linux-arm64]
 [unix]
 package-linux rid="linux-x64":
     tools/package-linux.sh {{rid}}
 
-# Passenger's own icons (Passenger.icns, passenger.png, Passenger.ico) from Assets/passenger.svg; macOS, by sips.
+# Pitstop's own icons (Pitstop.icns, pitstop.png, Pitstop.ico) from Assets/pitstop.svg; macOS, by sips.
 app-icon:
     tools/app-icon.sh
 
 # Rewrite the generated themes (Sorbet.json and the rest) from the palettes in tools/themes.py, contrast checked, into a
-# source's folder, their pictures too: a checkout of Zaneris/passenger-themes, or the tests' copy (tests/Passenger.Tests/Themes);
+# source's folder, their pictures too: a checkout of Zaneris/pitstop-themes, or the tests' copy (tests/Passenger.Tests/Themes);
 # and the themes Passenger carries (Cubicle) into its built-in source.
 themes folder="tests/Passenger.Tests/Themes":
     python3 -I tools/themes.py {{ quote(folder) }}
@@ -178,8 +178,8 @@ unicode-widths:
 unicode-identifiers:
     python3 -I tools/unicode-identifiers.py
 
-# Run from a clone of the last build, so rebuilding Passenger never changes the files under it (tools/mcp.sh).
-# Passenger as an MCP server over a folder, its tools on standard input and output: just mcp [FOLDER]
+# Run from a clone of the last build, so rebuilding Pitstop never changes the files under it (tools/mcp.sh).
+# Pitstop as an MCP server over a folder, its tools on standard input and output: just mcp [FOLDER]
 mcp folder="":
     @tools/mcp.sh {{ quote(folder) }}
 
@@ -191,7 +191,7 @@ mcp-call folder tool="" arguments="":
     @python3 -I tools/mcp-call.py --from {{ quote(invocation_directory()) }} {{ quote(folder) }} {{ quote(tool) }} {{ quote(arguments) }}
 
 # Clones the real Godot projects of tools/godot-projects.json outside the repository and sweeps each through a headless
-# Passenger after just build, writing a report (tools/godot-sweep.py): just godot-sweep [--godot GODOT] [NAME...]
+# Pitstop after just build, writing a report (tools/godot-sweep.py): just godot-sweep [--godot GODOT] [NAME...]
 [unix]
 godot-sweep *args:
     @python3 -I tools/godot-sweep.py {{args}}

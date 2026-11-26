@@ -318,7 +318,7 @@ public sealed class TestFinder
             TestsCache? kept = cache;
             await BackgroundWork.Run(() =>
             {
-                ApartScheduler.ForEach("Passenger test reader", reads, 0, CancellationToken.None, read => ReadFile(read.Path, read.With, kept));
+                ApartScheduler.ForEach("Pitstop test reader", reads, 0, CancellationToken.None, read => ReadFile(read.Path, read.With, kept));
                 kept?.Save();
             });
             Tell([.. projects.Where(Projects.Contains)]);
@@ -478,7 +478,7 @@ public sealed class TestFinder
         }
         if (all.Count > 0)
         {
-            using ApartScheduler readers = new("Passenger test reader", Math.Min(Environment.ProcessorCount, all.Count));
+            using ApartScheduler readers = new("Pitstop test reader", Math.Min(Environment.ProcessorCount, all.Count));
             for (int at = 0; at < all.Count; at += ReadsCounted)
             {
                 readers.ForEach(all.GetRange(at, Math.Min(ReadsCounted, all.Count - at)), serverLoading ? ReadersWhileLoading : 0, CancellationToken.None,

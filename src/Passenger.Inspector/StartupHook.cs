@@ -62,7 +62,7 @@ internal static class StartupHook
             }
             AppContext.SetSwitch(AvaloniaDiagnostics, true);
             string self = typeof(StartupHook).Assembly.Location;
-            Assembly inside = new AppAvaloniaContext("Passenger inspector", self).LoadFromAssemblyPath(self);
+            Assembly inside = new AppAvaloniaContext("Pitstop inspector", self).LoadFromAssemblyPath(self);
             // An evaluation of BindingValues.Read finds this copy first: it hands the read to the one that inspects.
             BindingValues.Live = inside.GetType("Passenger.Inspector.BindingValues", throwOnError: true)!
                 .GetMethod(nameof(BindingValues.Read), BindingFlags.Public | BindingFlags.Static)!
@@ -131,7 +131,7 @@ internal static class StartupHook
     /// own console, which outlasts a socket the app's end may close unread.</summary>
     private static void End(string socket, Version? avalonia, string why, string when = "before its Main")
     {
-        string said = $"{why}. It was ended {when}, as a Passenger nobody sees opens no window on the person's screen";
+        string said = $"{why}. It was ended {when}, as a Pitstop nobody sees opens no window on the person's screen";
         Console.Error.WriteLine(said);
         if (told is { } say)
         {

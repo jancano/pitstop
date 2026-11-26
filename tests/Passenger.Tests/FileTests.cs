@@ -406,7 +406,7 @@ public sealed partial class FileTests : IDisposable
         hash is not null && history.Content(hash) is { } bytes ? Encoding.UTF8.GetString(bytes) : null;
 
     /// <summary>A save writes its temporary file under a name of its own, made new, so a link a cloned repository
-    /// carries under a fixed name (One.cs.passenger-save.user) never takes the save elsewhere.</summary>
+    /// carries under a fixed name (One.cs.pitstop-save.user) never takes the save elsewhere.</summary>
     private void A_save_never_writes_through_a_link_left_where_its_temporary_file_would_go()
     {
         string path = Path.Combine(folder, "One.cs");
@@ -493,7 +493,7 @@ public sealed partial class FileTests : IDisposable
         Assert.SkipUnless(OperatingSystem.IsLinux(), "user.* attributes, and a POSIX ACL as an extended attribute, are Linux's");
         string path = Path.Combine(folder, "Noted.cs");
         File.WriteAllText(path, "class Noted { }\n");
-        Assert.SkipWhen(SetAttribute(path, "user.passenger.note", "kept"u8.ToArray()) != 0,
+        Assert.SkipWhen(SetAttribute(path, "user.pitstop.note", "kept"u8.ToArray()) != 0,
             $"The test folder's volume takes no user.* attribute (errno {System.Runtime.InteropServices.Marshal.GetLastPInvokeError()})");
         byte[]? acl = SetAttribute(path, PosixAcl, ReadableBy(65534)) == 0 ? Attribute(path, PosixAcl) : null;
         string? group = Run("id", "-G").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -508,7 +508,7 @@ public sealed partial class FileTests : IDisposable
 
         Assert.Equal("public class Noted { }\n", File.ReadAllText(path));
         Assert.False(window.EditorArea.Active!.IsModified, $"The noted file was not saved: {window.Status}");
-        Assert.True(Attribute(path, "user.passenger.note") is { } note && note.AsSpan().SequenceEqual("kept"u8), "The save took the file's user.passenger.note attribute away");
+        Assert.True(Attribute(path, "user.pitstop.note") is { } note && note.AsSpan().SequenceEqual("kept"u8), "The save took the file's user.pitstop.note attribute away");
         Assert.True(acl is null || Attribute(path, PosixAcl) is { } kept && kept.AsSpan().SequenceEqual(acl),
             "The save took the file's own ACL away, which let user 65534 read it");
         Assert.True(group is null || Run("stat", "-c", "%g", path).Trim() == group, $"The save gave the file the person's own group, not its {group}");

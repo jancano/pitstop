@@ -219,9 +219,9 @@ public sealed class ServedPageTests : IDisposable
     private static void An_address_of_anywhere_else_names_no_file() => Cases.EachApart<ServedPageTests, string>(
     [
         "https://example.com/index.html",
-        "http://preview.passenger.invalid/index.html",
-        "https://preview.passenger.invalid:8443/index.html",
-        "https://preview.passenger.invalid.example.com/index.html",
+        "http://preview.pitstop.invalid/index.html",
+        "https://preview.pitstop.invalid:8443/index.html",
+        "https://preview.pitstop.invalid.example.com/index.html",
         "file:///index.html",
     ], (test, row) => test.An_address_of_anywhere_else_names_no_file(row));
 

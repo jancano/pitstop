@@ -230,7 +230,7 @@ public sealed class LiveTreeTests : IClassFixture<RestoredFolders>, IDisposable
             Assert.Contains("a Unix socket's address holds", window.LiveApp!.Problem, StringComparison.Ordinal);
             Ui.WaitFor(() => window.LiveTree.PlaceholderText?.Contains("runs uninspected", StringComparison.Ordinal) == true,
                 () => $"the Live Visual Tree saying why it has no tree, where it says {window.LiveTree.PlaceholderText}");
-            Ui.WaitFor(() => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("Passenger's inspector is not in this app", StringComparison.Ordinal),
+            Ui.WaitFor(() => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("Pitstop's inspector is not in this app", StringComparison.Ordinal),
                 () => $"the app's own output saying the inspector is not in it: {window.BottomPanel.Debug.Console.Document.Snapshot}", TimeSpan.FromMinutes(1));
             Ui.Hold(TimeSpan.FromSeconds(2), "the app a moment to run on past its start");
             Assert.True(window.Debugger.Session is { State: DebugState.Running }, $"The app did not run on without its inspector: {window.Debugger.Session?.State} ({window.Status})");

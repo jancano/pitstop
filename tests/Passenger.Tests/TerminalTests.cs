@@ -76,8 +76,8 @@ public sealed class TerminalTests
     public void Nothing_reaches_a_terminals_shell_to_run_that_the_person_did_not_type()
     {
         Flow.StepApart<TerminalTests>("a file dropped on the terminal whose name holds a command is read as its name and nothing runs", t => t.A_file_dropped_on_the_terminal_whose_name_holds_a_command_is_read_as_its_name_and_nothing_runs());
-        Flow.StepApart<TerminalTests>("what Passenger takes out of its environment as it starts reaches no shell in its terminal", t => t.What_Passenger_takes_out_of_its_environment_as_it_starts_reaches_no_shell_in_its_terminal());
-        Flow.StepApart<TerminalTests>("a tmux or screen Passenger was started in reaches no shell or run in its terminal", t => t.A_tmux_or_screen_Passenger_was_started_in_reaches_no_shell_or_run_in_its_terminal());
+        Flow.StepApart<TerminalTests>("what Pitstop takes out of its environment as it starts reaches no shell in its terminal", t => t.What_Passenger_takes_out_of_its_environment_as_it_starts_reaches_no_shell_in_its_terminal());
+        Flow.StepApart<TerminalTests>("a tmux or screen Pitstop was started in reaches no shell or run in its terminal", t => t.A_tmux_or_screen_Passenger_was_started_in_reaches_no_shell_or_run_in_its_terminal());
     }
 
     /// <summary>A program run in the terminal reads a key and a line typed there and draws in colour where it puts the
@@ -659,11 +659,11 @@ public sealed class TerminalTests
                 : $"env | grep -e '^{takenOut[0]}=' -e '^{takenOut[1]}=' -e '^TERM_PROGRAM='; echo listed-929");
             WaitForLine(shell, "listed-929", "the shell's environment listed");
             List<string> listed = Lines(shell.Screen);
-            Assert.True(listed.Contains("TERM_PROGRAM=Passenger"), $"The shell's environment was not listed:\n{Screen(shell)}");
+            Assert.True(listed.Contains("TERM_PROGRAM=Pitstop"), $"The shell's environment was not listed:\n{Screen(shell)}");
             foreach (string variable in takenOut)
             {
                 Assert.False(listed.Any(line => line.StartsWith(variable + "=", StringComparison.Ordinal)),
-                    $"{variable}, taken out as Passenger started, reached the Terminal's shell and every program run there:\n{Screen(shell)}");
+                    $"{variable}, taken out as Pitstop started, reached the Terminal's shell and every program run there:\n{Screen(shell)}");
             }
             window.Close();
         }
@@ -709,7 +709,7 @@ public sealed class TerminalTests
                 : "env | grep -e '^TMUX' -e '^STY=' -e '^WINDOW=' -e '^TERM_PROGRAM='; echo listed-933");
             WaitForLine(shell, "listed-933", "the shell's environment listed");
             List<string> listed = Lines(shell.Screen);
-            Assert.True(listed.Contains("TERM_PROGRAM=Passenger"), $"The shell's environment was not listed:\n{Screen(shell)}");
+            Assert.True(listed.Contains("TERM_PROGRAM=Pitstop"), $"The shell's environment was not listed:\n{Screen(shell)}");
             foreach (string variable in outer.Keys)
             {
                 Assert.False(listed.Any(line => line.StartsWith(variable + "=", StringComparison.Ordinal)),
@@ -1292,7 +1292,7 @@ public sealed class TerminalTests
     {
         string folder = TestFolders.Create("terminal-unset-");
         // GIT_PREFIX: of a git hook's variables, the one git itself never reads, should anything else started meanwhile get it.
-        string[] takenAway = [GitVariables.Prefix, "PASSENGER_RUN_TAKEN_AWAY"];
+        string[] takenAway = [GitVariables.Prefix, "PITSTOP_RUN_TAKEN_AWAY"];
         try
         {
             foreach (string variable in takenAway)
@@ -1308,10 +1308,10 @@ public sealed class TerminalTests
                 Project = PathNames.Canonical(project),
                 Program = OperatingSystem.IsWindows() ? "cmd.exe" : "/bin/sh",
                 Arguments = OperatingSystem.IsWindows()
-                    ? "/c \"set GIT_PREFIX& set PASSENGER_RUN_& echo listed-932\""
-                    : "-c \"env | grep -e '^GIT_PREFIX=' -e '^PASSENGER_RUN_'; echo listed-932\"",
+                    ? "/c \"set GIT_PREFIX& set PITSTOP_RUN_& echo listed-932\""
+                    : "-c \"env | grep -e '^GIT_PREFIX=' -e '^PITSTOP_RUN_'; echo listed-932\"",
                 WorkingDirectory = folder,
-                Environment = { [takenAway[1]] = string.Empty, ["PASSENGER_RUN_GIVEN"] = "given" },
+                Environment = { [takenAway[1]] = string.Empty, ["PITSTOP_RUN_GIVEN"] = "given" },
                 BuildBeforeLaunch = false,
                 Console = ConsoleKind.Terminal,
             }], "Variables");
@@ -1319,7 +1319,7 @@ public sealed class TerminalTests
             TerminalSession program = Assert.IsType<TerminalRun>(window.RunInTerminal).Session;
             WaitForLine(program, "listed-932", "the program's environment listed");
             List<string> listed = Lines(program.Screen);
-            Assert.True(listed.Contains("PASSENGER_RUN_GIVEN=given"), $"The program's environment was not listed:\n{Screen(program)}");
+            Assert.True(listed.Contains("PITSTOP_RUN_GIVEN=given"), $"The program's environment was not listed:\n{Screen(program)}");
             foreach (string variable in takenAway)
             {
                 Assert.False(listed.Any(line => line.StartsWith(variable + "=", StringComparison.Ordinal)),
@@ -1420,7 +1420,7 @@ public sealed class TerminalTests
             Assert.False(listed.Any(line => line.StartsWith("TMUX=", StringComparison.Ordinal)),
                 $"The outer tmux's TMUX reached the program, so its run took nothing away through env:\n{Screen(program)}");
             Assert.True(listed.Contains($"DYLD_FALLBACK_LIBRARY_PATH={inherited}"),
-                $"DYLD_FALLBACK_LIBRARY_PATH, which Passenger inherited, never reached the program run in the terminal:\n{Screen(program)}");
+                $"DYLD_FALLBACK_LIBRARY_PATH, which Pitstop inherited, never reached the program run in the terminal:\n{Screen(program)}");
             Assert.True(listed.Contains($"DYLD_LIBRARY_PATH={given}"),
                 $"DYLD_LIBRARY_PATH, which the run configuration gives, never reached the program run in the terminal:\n{Screen(program)}");
             Assert.False(listed.Any(line => line.StartsWith(carried + "=", StringComparison.Ordinal)),

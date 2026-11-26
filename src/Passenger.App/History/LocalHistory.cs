@@ -1374,7 +1374,7 @@ public sealed class LocalHistory
         }
         catch (IOException refused)
         {
-            IdeErrors.Write($"Local History of {Folder}: another Passenger on the same state held {held}.lock past {Durations.Said(HeldFor)}: {refused.Message}");
+            IdeErrors.Write($"Local History of {Folder}: another Pitstop on the same state held {held}.lock past {Durations.Said(HeldFor)}: {refused.Message}");
             return null;
         }
     }
@@ -1396,7 +1396,7 @@ public sealed class LocalHistory
             catch (IOException refused) when (State.StateFile.HeldElsewhere(refused))
             {
                 heldElsewhere = true;
-                IdeErrors.Write($"Local History of {Folder}: another Passenger on the same state has held {held}.lock for {Durations.Said(System.Diagnostics.Stopwatch.GetElapsedTime(began))}, and what this one keeps waits for it");
+                IdeErrors.Write($"Local History of {Folder}: another Pitstop on the same state has held {held}.lock for {Durations.Said(System.Diagnostics.Stopwatch.GetElapsedTime(began))}, and what this one keeps waits for it");
             }
         }
     }

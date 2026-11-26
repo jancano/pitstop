@@ -8,8 +8,8 @@ namespace Passenger.App;
 /// scaled down would blur and fringe. On Linux a window's icon is the file's largest picture; macOS shows none.</summary>
 public static class AppIcon
 {
-    /// <summary>The icon file, Passenger.exe's too (tools/app-icon.sh).</summary>
-    public static Uri File { get; } = new("avares://Passenger/Assets/Passenger.ico");
+    /// <summary>The icon file, Pitstop.exe's too (tools/app-icon.sh).</summary>
+    public static Uri File { get; } = new("avares://Pitstop/Assets/Pitstop.ico");
 
     /// <summary>The one icon every window wears, made once.</summary>
     public static WindowIcon Window { get; } = Made();

@@ -41,7 +41,7 @@ internal sealed record ContainerTrace(Process Tools, Task Heard)
         }
         catch (Exception error) when (ChildFailures.Of(error))
         {
-            throw new ProfilingException($"Could not start Passenger's tools in {place.Where} to {to}: {error.Message}", error);
+            throw new ProfilingException($"Could not start Pitstop's tools in {place.Where} to {to}: {error.Message}", error);
         }
         TaskCompletionSource recording = new(TaskCreationOptions.RunContinuationsAsynchronously);
         // The last line the tools said, all that is kept of what a container writes there.
@@ -71,7 +71,7 @@ internal sealed record ContainerTrace(Process Tools, Task Heard)
         tools.Dispose();
         cancel.ThrowIfCancellationRequested();
         throw new ProfilingException(ended
-            ? Volatile.Read(ref said) ?? $"Passenger's tools in {place.Where} could not {to}"
-            : $"Passenger's tools in {place.Where} did not begin {doing} in {Durations.Said(Limit)}");
+            ? Volatile.Read(ref said) ?? $"Pitstop's tools in {place.Where} could not {to}"
+            : $"Pitstop's tools in {place.Where} did not begin {doing} in {Durations.Said(Limit)}");
     }
 }

@@ -255,7 +255,7 @@ public sealed class BranchesTests : IDisposable
         string clone = TestFolders.Create("branches-clone-");
         TestGit.Run(clone, "clone", "-q", "-b", "feature", origin, ".");
         TestGit.Run(clone, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        TestGit.Run(clone, "config", "user.name", "Passenger Tests");
+        TestGit.Run(clone, "config", "user.name", "Pitstop Tests");
         File.WriteAllText(Path.Combine(clone, "Feature.cs"), "class Feature { int more; }\n");
         TestGit.Run(clone, "commit", "-q", "-am", "More");
         TestGit.Run(clone, "push", "-q", "origin", "feature");
@@ -346,7 +346,7 @@ public sealed class BranchesTests : IDisposable
         string clone = TestFolders.Create("branches-clone-");
         TestGit.Run(clone, "clone", "-q", "-b", "feature", origin, ".");
         TestGit.Run(clone, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-        TestGit.Run(clone, "config", "user.name", "Passenger Tests");
+        TestGit.Run(clone, "config", "user.name", "Pitstop Tests");
         File.WriteAllText(Path.Combine(clone, "Feature.cs"), "class Feature { int more; }\n");
         TestGit.Run(clone, "commit", "-q", "-am", "More");
         TestGit.Run(clone, "push", "-q", "origin", "feature");
@@ -664,7 +664,7 @@ public sealed class BranchesTests : IDisposable
         for (int i = 1; i <= 12; i++)
         {
             recent.Append(CultureInfo.InvariantCulture,
-                $"commit refs/heads/recent-{i:00}\ncommitter Passenger Tests <tests@passenger.invalid> {later + (i * 60)} +0000\ndata <<END\nRecent {i}\nEND\nfrom {head}\n\n");
+                $"commit refs/heads/recent-{i:00}\ncommitter Pitstop Tests <tests@passenger.invalid> {later + (i * 60)} +0000\ndata <<END\nRecent {i}\nEND\nfrom {head}\n\n");
         }
         TestGit.Feed(made, recent.ToString(), "fast-import", "--quiet");
         StringBuilder rest = new();

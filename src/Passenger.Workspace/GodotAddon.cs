@@ -4,7 +4,7 @@ namespace Passenger.Workspace;
 public sealed record GodotAddonFile(string Path, string Text, bool Made);
 
 /// <summary>What installing Passenger's addon in a Godot project writes: its files where they differ from Passenger's, in
-/// the folder an earlier copy sits in (else <c>addons/passenger</c>, or a folder beside it where another addon's files hold
+/// the folder an earlier copy sits in (else <c>addons/pitstop</c>, or a folder beside it where another addon's files hold
 /// that one), and project.godot's text enabling it (null where it is enabled already); none of either where the copy there
 /// is a newer Passenger's (<see cref="Newer"/>).</summary>
 public sealed record GodotAddonInstall(string Folder, string Res, IReadOnlyList<GodotAddonFile> Files, string? Project, bool Updated, string? Newer)
@@ -19,16 +19,16 @@ public sealed record GodotAddonInstall(string Folder, string Res, IReadOnlyList<
 public static class GodotAddon
 {
     /// <summary>The name its plugin.cfg gives it.</summary>
-    public const string Name = "Passenger";
+    public const string Name = "Pitstop";
 
     /// <summary>The author its plugin.cfg names.</summary>
-    public const string Author = "Passenger";
+    public const string Author = "Pitstop";
 
     /// <summary>The script its plugin.cfg names.</summary>
-    public const string Script = "passenger.gd";
+    public const string Script = "pitstop.gd";
 
     /// <summary>Its folder under <c>addons/</c> where no copy is there yet.</summary>
-    public const string FolderName = "passenger";
+    public const string FolderName = "pitstop";
 
     /// <summary>Whether a project's plugin is Passenger's addon.</summary>
     public static bool Is(GodotPlugin plugin) => plugin.Name == Name && plugin.Author == Author && plugin.Script == Script;
@@ -60,7 +60,7 @@ public static class GodotAddon
         return new GodotAddonInstall(folder, res, files, Enabling(projectText, res), had is not null, null);
     }
 
-    /// <summary>The folder under <c>addons/</c> a first copy goes in: <see cref="FolderName"/>, else <c>passenger_2</c> and on,
+    /// <summary>The folder under <c>addons/</c> a first copy goes in: <see cref="FolderName"/>, else <c>pitstop_2</c> and on,
     /// the first where no file has one of the addon's names and other words, which are another addon's to keep.</summary>
     private static string FreeFolder(string project, IReadOnlyList<(string Name, string Text)> carried, Func<string, string?> read)
     {

@@ -1,7 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                    xmlns:read="urn:passenger:contrast"
+                    xmlns:read="urn:pitstop:contrast"
                     mc:Ignorable="read">
     <!-- Passenger's own theme, the default: every colour the IDE paints, once in Dark and once in Light, and the few shapes
          a theme may draw its own way. A control names a token, never a colour, and every other theme gives every token

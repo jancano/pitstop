@@ -129,7 +129,7 @@ public static class LinuxRecentlyUsed
         {
             return null;
         }
-        string launcher = PathNames.Canonical(Path.Combine(install, "passenger"));
+        string launcher = PathNames.Canonical(Path.Combine(install, "pitstop"));
         foreach (string folder in (string[])[Path.GetDirectoryName(file)!, "/usr/local/share", "/usr/share"])
         {
             string entry = Path.Combine(folder, "applications", LinuxUpdater.DesktopEntry + ".desktop");
@@ -147,7 +147,7 @@ public static class LinuxRecentlyUsed
                 IdeErrors.Write($"Recently used: {entry} could not be read: {error.Message}");
             }
         }
-        IdeErrors.Write($"Recently used: no desktop entry runs {launcher}, so this Passenger, not one install.sh installed, lists nothing as recently used");
+        IdeErrors.Write($"Recently used: no desktop entry runs {launcher}, so this Pitstop, not one install.sh installed, lists nothing as recently used");
         return null;
     }
 

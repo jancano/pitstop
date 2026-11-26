@@ -167,7 +167,7 @@ internal sealed class DotnetMerge(string version, Action<string> stage, TimeSpan
     /// first.</summary>
     internal static string Carried(string folder, string target, Action<string> beside)
     {
-        string coming = Path.Combine(Path.GetDirectoryName(target)!, $".passenger-install-{Guid.NewGuid():N}");
+        string coming = Path.Combine(Path.GetDirectoryName(target)!, $".pitstop-install-{Guid.NewGuid():N}");
         beside(coming);
         FolderMoves.Carry(folder, coming);
         return coming;

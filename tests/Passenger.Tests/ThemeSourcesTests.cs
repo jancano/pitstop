@@ -199,7 +199,7 @@ public sealed class ThemeSourcesTests : IDisposable
             Ui.Click(dialog.AddThemeSourceButton);
             Ui.Settle();
             Assert.Empty(dialog.Working.ThemeSources);
-            Assert.True(dialog.ThemeSourceWords.Text?.Contains("is format 2, which this Passenger does not read", StringComparison.Ordinal) == true,
+            Assert.True(dialog.ThemeSourceWords.Text?.Contains("is format 2, which this Pitstop does not read", StringComparison.Ordinal) == true,
                 $"A source whose index is a later format is refused without saying so: {dialog.ThemeSourceWords.Text}");
             dialog.ThemeSourceBox.Text = "not a source";
             Ui.Click(dialog.AddThemeSourceButton);
@@ -228,7 +228,7 @@ public sealed class ThemeSourcesTests : IDisposable
             picker.Box.IsDropDownOpen = true;
             Ui.WaitFor(() => picker.Problems?.Contains($"{address}'s Huge.json", StringComparison.Ordinal) == true, () => $"the address's file past the most said, where it says {picker.Problems}");
             picker.Box.IsDropDownOpen = false;
-            Assert.True(picker.Problems?.Contains($"{address}'s Huge.json is 1.2 MB, more than the 1 MB Passenger reads", StringComparison.Ordinal) == true,
+            Assert.True(picker.Problems?.Contains($"{address}'s Huge.json is 1.2 MB, more than the 1 MB Pitstop reads", StringComparison.Ordinal) == true,
                 $"The address's file past the most a theme file holds is not said in the sizes the IDE says: {picker.Problems}");
 
             SourcedTheme? before = dialog.Working.Look;
@@ -240,7 +240,7 @@ public sealed class ThemeSourcesTests : IDisposable
             Assert.Null(Ui.Await(picker.AddFileAsync(mine), "a theme file added"));
             Assert.Equal(new SourcedTheme(ThemeSource.Added.Name, "Mine of the test"), dialog.Working.Look);
             Assert.Contains($"Mine of the test ({ThemeSource.Added.Shown})", picker.Listed);
-            Assert.True(picker.Problems?.Contains("fram is no member of a theme this Passenger knows", StringComparison.Ordinal) == true, $"A member the file gives that no theme has is not named: {picker.Problems}");
+            Assert.True(picker.Problems?.Contains("fram is no member of a theme this Pitstop knows", StringComparison.Ordinal) == true, $"A member the file gives that no theme has is not named: {picker.Problems}");
             Ui.Settle();
             Assert.Equal(window.ActualThemeVariant == ThemeVariant.Dark ? Color.Parse("#203040") : Color.Parse("#E0E8F0"), Drawn(window));
             dialog.Close();
@@ -321,7 +321,7 @@ public sealed class ThemeSourcesTests : IDisposable
     /// <summary>Passenger's own frame colour in the window's variant, read from Tokens.axaml under every theme.</summary>
     private static Color Token(string key, MainWindow window)
     {
-        Avalonia.Controls.ResourceDictionary tokens = (Avalonia.Controls.ResourceDictionary)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(new Uri("avares://Passenger/Theme/Tokens.axaml"));
+        Avalonia.Controls.ResourceDictionary tokens = (Avalonia.Controls.ResourceDictionary)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(new Uri("avares://Pitstop/Theme/Tokens.axaml"));
         ((Avalonia.Controls.ResourceDictionary)tokens.ThemeDictionaries[window.ActualThemeVariant]).TryGetValue(key, out object? value);
         return ((ISolidColorBrush)value!).Color;
     }

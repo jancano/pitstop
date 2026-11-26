@@ -414,7 +414,7 @@ public sealed class TestingPlatformRunner : ITestRunner
                 JsonObject initialize = new()
                 {
                     ["processId"] = Environment.ProcessId,
-                    ["clientInfo"] = new JsonObject { ["name"] = "Passenger", ["version"] = Product.Version },
+                    ["clientInfo"] = new JsonObject { ["name"] = "Pitstop", ["version"] = Product.Version },
                     // Stateful, as an IDE's test window is, which the frameworks run in their design mode for.
                     ["capabilities"] = new JsonObject { ["testing"] = new JsonObject { ["debuggerProvider"] = false, ["isStateful"] = true } },
                 };

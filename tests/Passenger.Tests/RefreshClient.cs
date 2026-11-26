@@ -79,7 +79,7 @@ internal sealed class RefreshClient : IAsyncDisposable
             using JsonDocument first = JsonDocument.Parse(await client.ReceiveAsync() ?? "{}");
             Assert.Equal("InitializeSession", first.RootElement.GetProperty("type").GetString());
             Assert.True(first.RootElement.GetProperty("sharedSecret").GetString() == Convert.ToBase64String(secret),
-                "Passenger did not read back the page's secret: the page would take it for another");
+                "Pitstop did not read back the page's secret: the page would take it for another");
             await client.socket.SendAsync(Encoding.UTF8.GetBytes("{\"success\":true,\"log\":[]}"), WebSocketMessageType.Text, true, CancellationToken.None);
         }
         client.listening = client.ListenAsync();

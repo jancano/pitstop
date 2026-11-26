@@ -184,7 +184,7 @@ public static class GodotEditorSettings
         string text => GodotWrites.Quoted(text),
         bool flag => flag ? "true" : "false",
         IFormattable number => number.ToString(null, CultureInfo.InvariantCulture),
-        _ => throw new ArgumentException($"Godot's settings take no {value.GetType().Name} from Passenger", nameof(value)),
+        _ => throw new ArgumentException($"Godot's settings take no {value.GetType().Name} from Pitstop", nameof(value)),
     };
 
     private static object ValueOf(GodotFile file, GodotValue value)

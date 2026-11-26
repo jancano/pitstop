@@ -52,7 +52,7 @@ public class DevelopmentAssetsTests
         DevelopmentAssets? read = DevelopmentAssets.Read(manifest);
         Assert.NotNull(read);
         Assert.True(read.BrowserTools == Path.TrimEndingDirectorySeparator(tools),
-            $"The browser tools were taken to be in {read.BrowserTools}, not the client's {tools}, so Passenger would prove itself to the page with no key or another");
+            $"The browser tools were taken to be in {read.BrowserTools}, not the client's {tools}, so Pitstop would prove itself to the page with no key or another");
     }
 
     /// <summary>Bell's own wwwroot, Kit's (a Razor class library it references) under _content/Kit, and Kit's bundled scoped

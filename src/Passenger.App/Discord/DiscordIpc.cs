@@ -2,11 +2,11 @@ namespace Passenger.App.Discord;
 
 /// <summary>Where Passenger looks for the Discord app on this computer and how often: the places Discord's own libraries
 /// look, each with <c>-0</c> to <c>-9</c> after it (a Unix socket's path, or a named pipe's name on Windows), or the one
-/// <c>PASSENGER_DISCORD_IPC</c> names in their stead.</summary>
+/// <c>PITSTOP_DISCORD_IPC</c> names in their stead.</summary>
 public sealed record DiscordIpc(IReadOnlyList<string> Places)
 {
     [IdentifierHome]
-    public const string Variable = "PASSENGER_DISCORD_IPC";
+    public const string Variable = "PITSTOP_DISCORD_IPC";
 
     /// <summary>How long Passenger waits before looking for Discord again.</summary>
     public TimeSpan Retry { get; init; } = TimeSpan.FromSeconds(20);
@@ -18,7 +18,11 @@ public sealed record DiscordIpc(IReadOnlyList<string> Places)
     /// <summary>How long Discord has to answer the handshake, or to take the last update as Passenger closes.</summary>
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(3);
 
-    /// <summary>The system's places, or the one <c>PASSENGER_DISCORD_IPC</c> names; a value there that is no absolute
+    internal static bool Configured => Environment.GetEnvironmentVariable(Variable) is { Length: > 0 };
+
+    public string? ApplicationId { get; init; }
+
+    /// <summary>The system's places, or the one <c>PITSTOP_DISCORD_IPC</c> names; a value there that is no absolute
     /// path (a pipe's name with no backslash, on Windows) is fatal.</summary>
     public static DiscordIpc Default => Environment.GetEnvironmentVariable(Variable) is { Length: > 0 } named
         ? new DiscordIpc([Parse(named)])

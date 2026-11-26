@@ -23,8 +23,8 @@ public sealed class AgentAdmissionDialog : IdeWindow
         string where = folder is null ? "this window" : Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         DialogFooter.Question(this, $"{agent} wants to work in this window",
         [
-            DialogFooter.Paragraph($"It asked through Passenger's MCP server. Allowed, it can read and search {where}, see the window, save files, stop "
-                + "what runs and step through what is debugged; Passenger asks you before each other kind of change, such as an edit, a "
+            DialogFooter.Paragraph($"It asked through Pitstop's MCP server. Allowed, it can read and search {where}, see the window, save files, stop "
+                + "what runs and step through what is debugged; Pitstop asks you before each other kind of change, such as an edit, a "
                 + "build, a run, a breakpoint or code run in the debugged program, which you allow once or for its session, or every "
                 + "tool at once when it asks. Enable MCP Server in Settings lets agents in without asking, and Settings' MCP Server page "
                 + "lists the folders allowed always, each to take back."),

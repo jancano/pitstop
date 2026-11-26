@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Sweeps the real Godot projects of tools/godot-projects.json through Passenger before a release (`just godot-sweep`):
-each cloned at its commit outside any repository (passenger-godot-sweep.noindex in the temporary folder), imported by
+each cloned at its commit outside any repository (pitstop-godot-sweep.noindex in the temporary folder), imported by
 Godot, then read by a headless Passenger (mcp-call, a state of its own): diagnostics of every scene, resource, script
 and shader, the main scene run and debugged headless, the project's files compared with before, and Godot's own load of
 every resource beside each mark. Every .gd is parsed by Passenger's own parser (Passenger.GodotSweep). Every Godot has a
@@ -282,7 +282,7 @@ def sweep_project(entry, clone_folder, relative, run_folder, godot, environment,
     result["import"] = {"code": code, "errors": godot_errors(out)}
     before = snapshot(project)
 
-    passenger = Passenger(project, environment["passenger"])
+    passenger = Passenger(project, environment["pitstop"])
     passenger.fresh()
     began = time.monotonic()
     step = passenger.call("workspace", {})
@@ -326,7 +326,7 @@ def sweep_project(entry, clone_folder, relative, run_folder, godot, environment,
         if stop and stop[1]:
             result["steps"].append(passenger.call("breakpoint_set", {"path": stop[0], "line": stop[1], "remove": True}))
     passenger.stop()
-    result["times"]["passenger"] = round(time.monotonic() - began, 1)
+    result["times"]["pitstop"] = round(time.monotonic() - began, 1)
     result["files changed"] = changed(before, snapshot(project))
 
     log(f"{name}: Godot's own check")
@@ -373,7 +373,7 @@ def unexplained_parse_errors(parsed, results):
 
 def flagged(result):
     """The error and warning marks to review, each with whose it is and whether Godot's own load of the file gave an error:
-    "passenger" for Passenger's own checks (every mark in a scene, resource or project.godot, and a C# file's mark with
+    "pitstop" for Passenger's own checks (every mark in a scene, resource or project.godot, and a C# file's mark with
     no compiler's code), "compiler" for a C# compiler error, "godot" for Godot's server's errors on a GDScript (its
     warnings, named by their code, are Godot's own and left out); Roslyn's style marks are left out."""
     check = result.get("godot check", {}).get("errors", {})
@@ -384,7 +384,7 @@ def flagged(result):
         code = mark.get("code") or ""
         path = mark["path"]
         if path.endswith((".tscn", ".tres", ".godot", ".gdshader")) or path.endswith(".cs") and not code:
-            whose = "passenger"
+            whose = "pitstop"
         elif path.endswith(".cs") and code.startswith("CS") and mark["severity"] == "error":
             whose = "compiler"
         elif path.endswith(".gd") and mark["severity"] == "error":
@@ -407,8 +407,8 @@ def report(run_folder, godot_version, results, parsed, unexplained):
         run_said = steps.get("run", {}).get("answer", "-")[:60].replace("\n", " ").replace("|", "/")
         debug_said = steps.get("debug_start", {}).get("answer", "-")[:60].replace("\n", " ").replace("|", "/")
         files = sum(v["files"] for v in r["times"].get("diagnostics by kind", {}).values())
-        lines.append(f"| {r['name']} | {files} | {errors}/{warnings} | {sum(1 for m in flagged(r) if m['whose'] == 'passenger')} | {len(r.get('files changed', []))} | {run_said} | {debug_said} "
-                     f"| {r['times'].get('import')} | {r['times'].get('diagnostics')} | {r['times'].get('passenger')} |")
+        lines.append(f"| {r['name']} | {files} | {errors}/{warnings} | {sum(1 for m in flagged(r) if m['whose'] == 'pitstop')} | {len(r.get('files changed', []))} | {run_said} | {debug_said} "
+                     f"| {r['times'].get('import')} | {r['times'].get('diagnostics')} | {r['times'].get('pitstop')} |")
     for r in results:
         lines += ["", f"## {r['name']}", "", f"Times: {json.dumps(r['times'])}", ""]
         if r["import"]["errors"]:
@@ -416,7 +416,7 @@ def report(run_folder, godot_version, results, parsed, unexplained):
         if r.get("diagnostics failed"):
             lines += ["Diagnostics that failed:", ""] + [f"- {f['path']}: {f['answer'][:200]}" for f in r["diagnostics failed"]] + [""]
         rows = flagged(r)
-        for whose, title in (("passenger", "Passenger's own marks, which Godot does not give"), ("compiler", "C# compiler errors"),
+        for whose, title in (("pitstop", "Passenger's own marks, which Godot does not give"), ("compiler", "C# compiler errors"),
                              ("godot", "Godot's server's errors on its scripts")):
             these = [m for m in rows if m["whose"] == whose]
             if these:
@@ -453,7 +453,7 @@ def report(run_folder, godot_version, results, parsed, unexplained):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--godot", help="the Godot executable (or .app) to sweep with; else GODOT's, else /Applications/Godot_mono.app")
-    parser.add_argument("--folder", default=os.path.join(tempfile.gettempdir(), "passenger-godot-sweep.noindex"),
+    parser.add_argument("--folder", default=os.path.join(tempfile.gettempdir(), "pitstop-godot-sweep.noindex"),
                         help="where the clones and runs go, outside any repository (MSBuild takes in a Directory.Build.props above a project)")
     parser.add_argument("--skip-run", action="store_true", help="read diagnostics only, running and debugging nothing")
     parser.add_argument("--parse-only", action="store_true", help="only parse every .gd of the clones")
@@ -479,9 +479,9 @@ def main():
     with open(os.path.join(run_folder, "check_res.gd"), "w") as written:
         written.write(CHECK_SCRIPT)
     godot_env = {**os.environ, **homes(os.path.join(run_folder, "home", "godot")), "SDL_JOYSTICK_HIDAPI": "0"}
-    passenger_home = os.path.join(run_folder, "home", "passenger")
+    passenger_home = os.path.join(run_folder, "home", "pitstop")
     os.makedirs(passenger_home, exist_ok=True)
-    passenger_env = {**os.environ, "GODOT": godot, "PASSENGER_GODOT_HOME": passenger_home}
+    passenger_env = {**os.environ, "GODOT": godot, "PITSTOP_GODOT_HOME": passenger_home}
     log(f"sweeping {len(chosen)} sets with {version} into {run_folder}")
     results, parsed = [], {}
     for entry in chosen:
@@ -490,7 +490,7 @@ def main():
             log(f"{entry['name']}: its LFS files are not fetched (no git lfs), so Godot imports their pointers")
         if not given.parse_only:
             for relative in entry["projects"]:
-                results.append(sweep_project(entry, folder, relative, run_folder, godot, {"godot": godot_env, "passenger": passenger_env}, given.skip_run))
+                results.append(sweep_project(entry, folder, relative, run_folder, godot, {"godot": godot_env, "pitstop": passenger_env}, given.skip_run))
                 with open(os.path.join(run_folder, "results.json"), "w") as written:
                     json.dump(results, written, indent=1)
         parsed[entry["name"]] = parse_check(folder, run_folder, entry["name"])

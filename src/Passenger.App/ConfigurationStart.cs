@@ -17,7 +17,7 @@ public sealed record ConfigurationStart(string? Name, bool Debug)
     /// <summary>Why it cannot start where Passenger opens no folder: the configuration's name, if any, comes after the flag
     /// and the folder before it, so a folder given only after the flag was taken for the name.</summary>
     public string NoFolder =>
-        $"{Flag} starts a run configuration of the folder Passenger opens, and none is given: passenger FOLDER {Flag} [NAME], the folder first";
+        $"{Flag} starts a run configuration of the folder Pitstop opens, and none is given: pitstop FOLDER {Flag} [NAME], the folder first";
 
     /// <summary>Why a configuration (by its name) did not start: greyed, or begun and come to nothing; a failed build's first
     /// error beside its count, for a log or a shell that shows no Problems window.</summary>

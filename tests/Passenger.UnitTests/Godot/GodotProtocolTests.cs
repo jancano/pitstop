@@ -49,7 +49,7 @@ public class GodotProtocolTests
         Assert.DoesNotContain(ours, GodotLiveEditIds.IsEditors);
         // The editor counts its ids up from one, as far as an int goes.
         Assert.True(GodotLiveEditIds.IsEditors(1) && GodotLiveEditIds.IsEditors(int.MaxValue) && ours.All(id => id >= int.MinValue),
-            "Passenger's ids are to fit the int the game reads them as, below every id the editor gives");
+            "Pitstop's ids are to fit the int the game reads them as, below every id the editor gives");
     }
 
     private const string Tree =

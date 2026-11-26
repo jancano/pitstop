@@ -64,9 +64,9 @@ public sealed class McpIosSimulatorTests : McpRig
                 out int said) ? said : 0;
             Assert.True(launched > 0, $"run did not say the app's process on {target.Name}: {ran}");
             app = launched;
-            string log = Path.Combine(OwnState, "logs", "passenger.log");
+            string log = Path.Combine(OwnState, "logs", "pitstop.log");
             await Until(() => File.Exists(log) && Ui.Shared(log).Contains($"Process {launched} started", StringComparison.Ordinal),
-                "Passenger to take the app on, as its log says");
+                "Pitstop to take the app on, as its log says");
 
             System.Diagnostics.Process passenger = LastPassenger();
             int[] killed = [.. Processes.Descendants(passenger.Id).Reverse(), passenger.Id];
@@ -74,9 +74,9 @@ public sealed class McpIosSimulatorTests : McpRig
             {
                 OwnProcess.Of(id).Kill(alone: true);
             }
-            await Until(() => killed.All(id => !Processes.IsRunning(id)), "Passenger and every process of its tree killed");
-            await Until(() => !Processes.IsRunning(launched), $"the app (process {launched}) to end on {target.Name} with the Passenger that ran it");
-            await Until(async () => !await UpAsync(target, tools), $"{target.Name}, which the killed Passenger booted, to be shut down");
+            await Until(() => killed.All(id => !Processes.IsRunning(id)), "Pitstop and every process of its tree killed");
+            await Until(() => !Processes.IsRunning(launched), $"the app (process {launched}) to end on {target.Name} with the Pitstop that ran it");
+            await Until(async () => !await UpAsync(target, tools), $"{target.Name}, which the killed Pitstop booted, to be shut down");
         }
         finally
         {

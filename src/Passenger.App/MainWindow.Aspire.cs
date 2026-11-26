@@ -353,7 +353,7 @@ public partial class MainWindow
         {
             if (advertised.HasArguments)
             {
-                throw new InvalidOperationException("Run this AppHost through Passenger to use native command input dialogs");
+                throw new InvalidOperationException("Run this AppHost through Pitstop to use native command input dialogs");
             }
             await AspireCli().ExecuteCommandAsync(selection.AppHostPath, selection.Resource, command, cancel);
             return "Resource command completed";

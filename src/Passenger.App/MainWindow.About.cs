@@ -3,15 +3,14 @@ using Avalonia.Controls;
 
 namespace Passenger.App;
 
-/// <summary>About Passenger: the application menu's first item on macOS, Help's last elsewhere, after Check for
-/// Updates.</summary>
+/// <summary>The About dialog and the application menu on macOS.</summary>
 public partial class MainWindow
 {
     /// <summary>The actions of macOS's application menu, in order, a separator where null.</summary>
     private static readonly string?[] ApplicationActions = [AppActions.About, AppActions.CheckForUpdates, null, AppActions.ShowSettings];
 
     private void AddAbout() =>
-        actions!.Add(new IdeAction(AppActions.About, OperatingSystem.IsMacOS() ? "About Passenger" : "About", "Help", _ => ShowAbout())
+        actions!.Add(new IdeAction(AppActions.About, OperatingSystem.IsMacOS() ? "About Pitstop" : "About", "Help", _ => ShowAbout())
         {
             Menus = OperatingSystem.IsMacOS() ? [] : [new MenuPlace("Help", 3, 2)],
         });
@@ -42,9 +41,14 @@ public partial class MainWindow
         }
         if (!menu.Items.OfType<NativeMenuItem>().Any(OfApplication))
         {
-            for (int at = 0; at < ApplicationActions.Length; at++)
+            int at = 0;
+            foreach (string? action in ApplicationActions)
             {
-                menu.Items.Insert(at, ApplicationActions[at] is { } id ? new NativeMenuItem(NativeWords(actions![id]!.Title))
+                if (action is not null && actions![action] is null)
+                {
+                    continue;
+                }
+                menu.Items.Insert(at++, action is { } id ? new NativeMenuItem(NativeWords(actions![id]!.Title))
                 {
                     Command = new MenuCommand(() => RunInFront(id)),
                     CommandParameter = id,
@@ -55,7 +59,13 @@ public partial class MainWindow
         foreach (NativeMenuItem item in menu.Items.OfType<NativeMenuItem>().Where(OfApplication))
         {
             string id = (string)item.CommandParameter!;
-            item.Header = NativeWords(actions[id]!.TitleWhere(context));
+            if (actions[id] is not { } action)
+            {
+                item.IsVisible = false;
+                continue;
+            }
+            item.IsVisible = true;
+            item.Header = NativeWords(action.TitleWhere(context));
             item.Gesture = actions.MenuBarGesture(id);
         }
 

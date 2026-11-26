@@ -22,7 +22,7 @@ public sealed class MachineDotnetTests : IDisposable
 {
     /// <summary>A folder holding the .NET 8 SDK alone (Microsoft's archive unpacked), for the test of a machine with it only.</summary>
     [IdentifierHome]
-    private const string Dotnet8Variable = "PASSENGER_TEST_DOTNET8";
+    private const string Dotnet8Variable = "PITSTOP_TEST_DOTNET8";
 
     private static readonly string DotnetName = OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet";
 
@@ -61,9 +61,9 @@ public sealed class MachineDotnetTests : IDisposable
     public void The_language_server_and_a_translated_Passenger_need_only_the_dotnet_they_can_load()
     {
         Flow.StepApart<MachineDotnetTests>("with no dotnet found the language server starts and colours a lone cs file", t => t.With_no_dotnet_found_the_language_server_starts_and_colours_a_lone_cs_file());
-        Flow.StepApart<MachineDotnetTests>("a translated passenger whose only sdk is the systems own says in the window that it needs an x64 one", t => t.A_translated_passenger_whose_only_sdk_is_the_systems_own_says_in_the_window_that_it_needs_an_x64_one());
-        Flow.StepApart<MachineDotnetTests>("a translated passenger whose x64 dotnet holds a runtime alone beside the systems own sdk offers this computers download", t => t.A_translated_passenger_whose_x64_dotnet_holds_a_runtime_alone_beside_the_systems_own_sdk_offers_this_computers_download());
-        Flow.StepApart<MachineDotnetTests>("a translated passenger with no dotnet offers this computers download and installs no sdk it cannot load", t => t.A_translated_passenger_with_no_dotnet_offers_this_computers_download_and_installs_no_sdk_it_cannot_load());
+        Flow.StepApart<MachineDotnetTests>("a translated pitstop whose only sdk is the systems own says in the window that it needs an x64 one", t => t.A_translated_passenger_whose_only_sdk_is_the_systems_own_says_in_the_window_that_it_needs_an_x64_one());
+        Flow.StepApart<MachineDotnetTests>("a translated pitstop whose x64 dotnet holds a runtime alone beside the systems own sdk offers this computers download", t => t.A_translated_passenger_whose_x64_dotnet_holds_a_runtime_alone_beside_the_systems_own_sdk_offers_this_computers_download());
+        Flow.StepApart<MachineDotnetTests>("a translated pitstop with no dotnet offers this computers download and installs no sdk it cannot load", t => t.A_translated_passenger_with_no_dotnet_offers_this_computers_download_and_installs_no_sdk_it_cannot_load());
     }
 
     private void With_no_dotnet_found_the_language_server_starts_and_colours_a_lone_cs_file()
@@ -170,9 +170,9 @@ public sealed class MachineDotnetTests : IDisposable
             Assert.True(told is not null && told.StartsWith(Refusals.OnlyNativeSdk, StringComparison.Ordinal) && told.Contains(Releases.ThisSystemsDownload.AbsoluteUri, StringComparison.Ordinal),
                 $"An agent's workspace said of .NET: {told}");
 
-            Ui.ClickButton(window, OperatingSystem.IsMacOS() ? "Download Passenger for Apple Silicon" : "Download Passenger for Arm64");
+            Ui.ClickButton(window, OperatingSystem.IsMacOS() ? "Download Pitstop for Apple Silicon" : "Download Pitstop for Arm64");
             Assert.Equal(Releases.ThisSystemsDownload, Assert.Single(window.Browsed));
-            Assert.Equal("download the Passenger built for this computer", window.StatusPlace?.Name);
+            Assert.Equal("download the Pitstop built for this computer", window.StatusPlace?.Name);
             window.StatusPlace!.Go();
             Assert.Equal([Releases.ThisSystemsDownload, Releases.ThisSystemsDownload], window.Browsed);
         }
@@ -203,7 +203,7 @@ public sealed class MachineDotnetTests : IDisposable
             window.OpenFolder(app);
             string said = Refusals.TranslatedWithoutSdk(null);
             Ui.WaitFor(() => window.DotnetSaid == said && window.Status == said,
-                () => $"the banner and the status bar to say Passenger for this computer suits it; the banner says \"{window.DotnetSaid}\" and the status bar \"{window.Status}\"");
+                () => $"the banner and the status bar to say Pitstop for this computer suits it; the banner says \"{window.DotnetSaid}\" and the status bar \"{window.Status}\"");
             Assert.True(window.DotnetWant is { Lack: DotnetLack.OtherProcessor, Install: null, Root: null, SystemsOwn: null },
                 $"The window took the want for {window.DotnetWant.Lack} of {window.DotnetWant.Root}, the system's own SDK in {window.DotnetWant.SystemsOwn}, with {window.DotnetWant.Install} to install");
             string[] links = BannerLinks(window);
@@ -227,7 +227,7 @@ public sealed class MachineDotnetTests : IDisposable
 
             Ui.ClickButton(window, SystemsOwnLink);
             Assert.Equal(Releases.ThisSystemsDownload, Assert.Single(window.Browsed));
-            Assert.Equal("download the Passenger built for this computer", window.StatusPlace?.Name);
+            Assert.Equal("download the Pitstop built for this computer", window.StatusPlace?.Name);
             window.StatusPlace!.Go();
             Assert.Equal([Releases.ThisSystemsDownload, Releases.ThisSystemsDownload], window.Browsed);
         }
@@ -238,7 +238,7 @@ public sealed class MachineDotnetTests : IDisposable
     }
 
     /// <summary>The banner's link to Passenger for the system's own processor.</summary>
-    private static string SystemsOwnLink => OperatingSystem.IsMacOS() ? "Download Passenger for Apple Silicon" : "Download Passenger for Arm64";
+    private static string SystemsOwnLink => OperatingSystem.IsMacOS() ? "Download Pitstop for Apple Silicon" : "Download Pitstop for Arm64";
 
     /// <summary>The words of every button the window shows, the banner's links among them.</summary>
     private static string[] BannerLinks(MainWindow window) =>

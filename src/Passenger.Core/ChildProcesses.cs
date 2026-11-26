@@ -183,7 +183,7 @@ public static class ChildProcesses
     }
 
     /// <summary>The helper host carried beside the app (src/Passenger.Helper), by its name.</summary>
-    public const string HelperHost = "passenger-helper";
+    public const string HelperHost = "pitstop-helper";
 
     /// <summary>One of Passenger's own helper programs (an assembly the app carries: Roslyn's server, the project host, the
     /// debug adapter) with these arguments, on the runtime Passenger itself runs on, never the person's dotnet: run by the
@@ -206,7 +206,7 @@ public static class ChildProcesses
         }
         if (!File.Exists(program) || !File.Exists(helper))
         {
-            throw new FileNotFoundException($"Passenger's helper host is missing from {beside}", program);
+            throw new FileNotFoundException($"Pitstop's helper host is missing from {beside}", program);
         }
         return AsDotnet(Command(program, [.. words, assembly, .. arguments], folder), sdk: false);
     }
@@ -278,7 +278,7 @@ public static class ChildProcesses
         start.Environment[MSBuildNames.UseServer] = "0";
         // No other build takes up a node of the IDE's, to have it ended under it when the IDE ends.
         start.Environment.TryGetValue(MSBuildNames.NodeHandshakeSalt, out string? salt);
-        start.Environment[MSBuildNames.NodeHandshakeSalt] = $"{salt}passenger-{Environment.ProcessId}";
+        start.Environment[MSBuildNames.NodeHandshakeSalt] = $"{salt}pitstop-{Environment.ProcessId}";
         // Set by dotnet test for what it runs: each node would hold the command's output open as its own.
         start.Environment.Remove(MSBuildNames.EnsureStdOutForTaskProcesses);
         // An SDK's own, from a Passenger started under one (dotnet run, dotnet test): the command finds the SDK its folder picks.

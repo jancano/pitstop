@@ -198,7 +198,7 @@ public sealed class McpAttachTimingTests : McpRig, IClassFixture<RestoredFolders
                 window.ApplySettings(window.Settings with { McpServer = false });
                 CallToolResult refused = Ui.AwaitPumped(diagnostic, "the shut-out agent's diagnostic to return", TimeSpan.FromSeconds(10));
                 Assert.True(refused.IsError == true, Text(refused));
-                Assert.Contains("connection to the Passenger window ended", Text(refused), StringComparison.Ordinal);
+                Assert.Contains("connection to the Pitstop window ended", Text(refused), StringComparison.Ordinal);
                 Ui.PumpUntil(() => window.Agents == 0, "the still-open window to let the agent go", TimeSpan.FromSeconds(10));
                 Assert.True(window.IsVisible, "Shutting out an agent closed the person's window");
             }
@@ -286,7 +286,7 @@ public sealed class McpAttachTimingTests : McpRig, IClassFixture<RestoredFolders
         window.OpenFolder(unattended);
         Ui.Settle();
         window.ApplySettings(window.Settings with { TraceProtocols = true });
-        string where = $"the Passenger window on {window.Folder}";
+        string where = $"the Pitstop window on {window.Folder}";
         McpClient client = Await(Waiting.Apart(() => Start(["--mcp-attach", ProcessId])), "the agent attaching");
         try
         {
@@ -312,7 +312,7 @@ public sealed class McpAttachTimingTests : McpRig, IClassFixture<RestoredFolders
                 "the window to ask whether the agent may build");
             Assert.Equal("Test Agent waits for you: allow build?", said);
             Assert.Contains(Texts(window.OwnedWindows.OfType<AgentToolDialog>().Single(d => d.IsVisible)),
-                t => t.StartsWith("Test Agent, connected through Passenger's MCP server, wants to build", StringComparison.Ordinal));
+                t => t.StartsWith("Test Agent, connected through Pitstop's MCP server, wants to build", StringComparison.Ordinal));
             CallToolResult notAllowed = Await(unallowed, "the build nobody allowed");
             Assert.True(notAllowed.IsError == true && Text(notAllowed).Contains($"Nobody at {where} answered within {Durations.Said(limit)} whether Test Agent may use build. A later call asks again.", StringComparison.Ordinal),
                 $"The build nobody allowed was answered: {Text(notAllowed)}");
@@ -365,7 +365,7 @@ public sealed class McpAttachTimingTests : McpRig, IClassFixture<RestoredFolders
         window.Show();
         window.OpenFolder(unattended);
         Ui.Settle();
-        string where = $"the Passenger window on {window.Folder}";
+        string where = $"the Pitstop window on {window.Folder}";
         McpClient client = Await(Waiting.Apart(() => Start(["--mcp-attach", ProcessId])), "the agent attaching");
         Heard told = new();
         IAsyncDisposable hearing = Heard.All(client, told);

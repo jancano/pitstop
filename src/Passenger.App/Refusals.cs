@@ -43,7 +43,7 @@ public static class Refusals
     public const string UntrustedFeeds = $"The folder is not trusted: an agent's {Mcp.McpTools.NugetSearch} asks none of the feeds its nuget.config names until the person trusts it";
 
     /// <summary>What trusting a folder lets Passenger run, as the trust question and the banner say it.</summary>
-    public const string TrustLets = "Trusted, Passenger runs its code as it works: design-time builds and restore as it opens, the analyzers and "
+    public const string TrustLets = "Trusted, Pitstop runs its code as it works: design-time builds and restore as it opens, the analyzers and "
         + "source generators its projects name, builds, runs, tests and debugging, its own TypeScript, ESLint, Prettier, Oxlint, Oxfmt and Biome, and the programs its "
         + "Git configuration names.";
 
@@ -142,13 +142,13 @@ public static class Refusals
     public const string CSharpNotRunning = "the C# language server is not running";
 
     /// <summary>A C# file nested past what Passenger reads, which the C# language server is never given.</summary>
-    public static string TooDeep(string file) => $"{file} is nested too deeply for Passenger to read, so the C# language server is not given it";
+    public static string TooDeep(string file) => $"{file} is nested too deeply for Pitstop to read, so the C# language server is not given it";
 
     /// <summary>What the Game window shows while it holds no game: which game draws there, and the keys that take the keys
     /// back from a game that has them.</summary>
     public static string NoGameInWindow(string keys) =>
-        "A Godot game whose run configuration starts it in Passenger's Game window draws here (Run › Edit Configurations, Starts). "
-        + $"While the game has the keys, {keys} or a click anywhere in Passenger takes them back";
+        "A Godot game whose run configuration starts it in Pitstop's Game window draws here (Run › Edit Configurations, Starts). "
+        + $"While the game has the keys, {keys} or a click anywhere in Pitstop takes them back";
 
     /// <summary>No game draws in the Game window for the keys to be handed to.</summary>
     public const string NoGameInPane = "No Godot game draws in the Game window: run one whose configuration starts it there";
@@ -161,7 +161,7 @@ public static class Refusals
         $"Godot {version ?? "of no version said"} draws a game only in a window of its own: the Game window takes Godot 4.4 or newer";
 
     /// <summary>The Game window holds a game on Windows, on macOS and under X11 alone.</summary>
-    public const string GameNotEmbeddedHere = "Passenger draws a game in its Game window on Windows, on macOS and on Linux under X11 (XWayland too); "
+    public const string GameNotEmbeddedHere = "Pitstop draws a game in its Game window on Windows, on macOS and on Linux under X11 (XWayland too); "
         + "here a game draws in a window of its own";
 
     /// <summary>On macOS a game draws in the Game window through Godot's embedded display, from Godot 4.5.</summary>
@@ -261,7 +261,7 @@ public static class Refusals
     /// <summary>A C# code tool asked while what a restore brought, or a load again, is still to reach the language server
     /// after the wait: <paramref name="coming"/> says what, as the agent was told it waited for.</summary>
     public static string StillComing(TimeSpan waited, string coming) =>
-        $"Passenger waited {Durations.Said(waited)} for {coming}, which has not come, so the answer would be of the code before it: ask again in a moment";
+        $"Pitstop waited {Durations.Said(waited)} for {coming}, which has not come, so the answer would be of the code before it: ask again in a moment";
 
     /// <summary>An x64 Passenger the system translates found only a .NET SDK of the system's own processor, whose MSBuild it
     /// cannot load (<see cref="MissingSdk.ForOtherProcessor"/>).</summary>
@@ -280,7 +280,7 @@ public static class Refusals
         + $"{SystemsOwnPassenger}, or install the x64 .NET SDK yourself";
 
     /// <summary>An x64 build of Passenger, as the system translating it runs it.</summary>
-    private static string TranslatedBuild => OperatingSystem.IsMacOS() ? "Intel build of Passenger, run by Rosetta" : "x64 build of Passenger, run by emulation";
+    private static string TranslatedBuild => OperatingSystem.IsMacOS() ? "Intel build of Pitstop, run by Rosetta" : "x64 build of Pitstop, run by emulation";
 
     private static string X64Sdk => OperatingSystem.IsMacOS() ? "an Intel (x64) .NET SDK" : "an x64 .NET SDK";
 
@@ -289,7 +289,7 @@ public static class Refusals
     private static string SystemsProcessor => OperatingSystem.IsMacOS() ? "Apple Silicon" : "Arm64";
 
     /// <summary>The way on for an x64 Passenger the system translates: the build for the system's own processor.</summary>
-    private static string SystemsOwnPassenger => $"download Passenger for {SystemsProcessor}, which suits {ThisComputer}";
+    private static string SystemsOwnPassenger => $"download Pitstop for {SystemsProcessor}, which suits {ThisComputer}";
 
     /// <summary>No dotnet at all, runtime or SDK, was found.</summary>
     public const string NoDotnet = $"{NoneOfDotnet}: files open and edit, and Git and the terminal work, but {NeedsTheSdk}";
@@ -316,60 +316,60 @@ public static class Refusals
                 : $"no .NET SDK installed builds .NET {want.Newer.Value.Framework}: install the .NET {want.Newer.Value.Framework} SDK, and have global.json ask for it"),
         DotnetLack.OlderThanProject => $"{want.Newer!.Value.Project} targets .NET {want.Newer.Value.Framework}, which the .NET SDK {want.Sdk} does not build: "
             + $"it needs the .NET {want.Newer.Value.Framework} SDK",
-        DotnetLack.OffPath => $"Passenger uses the .NET SDK {want.Sdk} in {PathNames.Shown(want.Root!, null)}, which your shell's PATH does not name, "
-            + "so a terminal outside Passenger finds no dotnet",
+        DotnetLack.OffPath => $"Pitstop uses the .NET SDK {want.Sdk} in {PathNames.Shown(want.Root!, null)}, which your shell's PATH does not name, "
+            + "so a terminal outside Pitstop finds no dotnet",
         _ => null,
     };
 
     /// <summary>What an agent's ide_action of Install .NET SDK or Add .NET to the Shell's PATH is refused with.</summary>
-    public const string AgentInstalls = "An agent's own Passenger, which nobody is at, never installs software: ask the person, who does it with the banner over "
-        + "Passenger's window, or Tools, Install .NET SDK…";
+    public const string AgentInstalls = "An agent's own Pitstop, which nobody is at, never installs software: ask the person, who does it with the banner over "
+        + "Pitstop's window, or Tools, Install .NET SDK…";
 
     /// <summary>An agent's input into Passenger's window asking to install the .NET SDK, or answering the person's question
     /// whether to: only the person installs it there, an agent asking them through ide_action.</summary>
-    public const string InstallIsThePersons = "Only the person installs the .NET SDK by Passenger's window, never an agent's input: "
+    public const string InstallIsThePersons = "Only the person installs the .NET SDK by Pitstop's window, never an agent's input: "
         + "an agent's ide_action of Install .NET SDK… asks the person at their window";
 
     /// <summary>An agent's Add .NET to the Shell's PATH: the person's shell is theirs to change.</summary>
-    public const string AgentChangesPath = "An agent never changes the person's shell PATH: ask the person, who does it with the banner over Passenger's window, "
+    public const string AgentChangesPath = "An agent never changes the person's shell PATH: ask the person, who does it with the banner over Pitstop's window, "
         + "or Tools, Add .NET to the Shell's PATH…";
 
-    /// <summary>An agent's Add or Remove the passenger-ide Command, or its input answering the person's question of it: the
+    /// <summary>An agent's Add or Remove the pitstop-ide Command, or its input answering the person's question of it: the
     /// person's shell is theirs to change.</summary>
     public static readonly string CommandIsThePersons = $"An agent never adds or removes the person's {PassengerCommand.Name} command: ask the person, who does it "
         + $"with Tools, Add the {PassengerCommand.Name} Command… or Remove the {PassengerCommand.Name} Command…";
 
-    /// <summary>Add or Remove the passenger-ide Command where Passenger's installer makes the command (Windows) or
+    /// <summary>Add or Remove the pitstop-ide Command where Passenger's installer makes the command (Windows) or
     /// install.sh does (Linux); null on macOS, where the person does.</summary>
     public static string? CommandMadeElsewhere =>
-        OperatingSystem.IsWindows() ? $"On Windows, Passenger's installer puts the {PassengerCommand.Name} command on your Path, and uninstalling takes it off"
+        OperatingSystem.IsWindows() ? $"On Windows, Pitstop's installer puts the {PassengerCommand.Name} command on your Path, and uninstalling takes it off"
         : OperatingSystem.IsMacOS() ? null
         : $"On Linux, install.sh links the {PassengerCommand.Name} command, and install.sh --uninstall removes it";
 
-    /// <summary>The passenger-ide command while the window has not yet read what stands at its place.</summary>
-    public static readonly string CommandStillRead = $"Passenger is still reading where the {PassengerCommand.Name} command stands";
+    /// <summary>The pitstop-ide command while the window has not yet read what stands at its place.</summary>
+    public static readonly string CommandStillRead = $"Pitstop is still reading where the {PassengerCommand.Name} command stands";
 
-    /// <summary>The passenger-ide command of a Passenger in no app bundle, as a build from source is not.</summary>
-    public static readonly string CommandOfNoBundle = $"This Passenger is in no app bundle, as a build from source is not, so it carries no {PassengerCommand.Name} command";
+    /// <summary>The pitstop-ide command of a Passenger in no app bundle, as a build from source is not.</summary>
+    public static readonly string CommandOfNoBundle = $"This Pitstop is in no app bundle, as a build from source is not, so it carries no {PassengerCommand.Name} command";
 
-    /// <summary>The passenger-ide command of a Passenger macOS runs from a copy of its own, which goes as it ends.</summary>
+    /// <summary>The pitstop-ide command of a Passenger macOS runs from a copy of its own, which goes as it ends.</summary>
     public static string CommandOfTranslocated(string bundle) =>
-        $"macOS runs this Passenger from a copy of its own ({bundle}), which goes as it ends: once Passenger is in Applications, its {PassengerCommand.Name} command can be added";
+        $"macOS runs this Pitstop from a copy of its own ({bundle}), which goes as it ends: once Pitstop is in Applications, its {PassengerCommand.Name} command can be added";
 
-    /// <summary>The passenger-ide command of a Passenger on a disk image, which goes as the image is ejected.</summary>
+    /// <summary>The pitstop-ide command of a Passenger on a disk image, which goes as the image is ejected.</summary>
     public static string CommandOfDiskImage(string bundle) =>
-        $"This Passenger runs from {bundle}, on a disk image or a disk it cannot write: drag it onto Applications, then add its {PassengerCommand.Name} command";
+        $"This Pitstop runs from {bundle}, on a disk image or a disk it cannot write: drag it onto Applications, then add its {PassengerCommand.Name} command";
 
-    /// <summary>The passenger-ide command where the app's bundle carries no launcher for it.</summary>
-    public static string CommandNotCarried(string launcher) => $"This Passenger carries no {PassengerCommand.Name} command at {launcher}";
+    /// <summary>The pitstop-ide command where the app's bundle carries no launcher for it.</summary>
+    public static string CommandNotCarried(string launcher) => $"This Pitstop carries no {PassengerCommand.Name} command at {launcher}";
 
-    /// <summary>The passenger-ide command's place held by another program, a folder, or a link to one: the person's own.</summary>
-    public static string CommandOthers(string link) => $"{PathNames.Shown(link, null)} is another program's, not Passenger's: move it away, then add the command again";
+    /// <summary>The pitstop-ide command's place held by another program, a folder, or a link to one: the person's own.</summary>
+    public static string CommandOthers(string link) => $"{PathNames.Shown(link, null)} is another program's, not Pitstop's: move it away, then add the command again";
 
-    /// <summary>Add the passenger-ide Command where it is there, leading to this Passenger, its folder on the PATH.</summary>
-    public static string CommandThere(string link) => $"{PathNames.Shown(link, null)} is there already, leading to this Passenger";
+    /// <summary>Add the pitstop-ide Command where it is there, leading to this Passenger, its folder on the PATH.</summary>
+    public static string CommandThere(string link) => $"{PathNames.Shown(link, null)} is there already, leading to this Pitstop";
 
-    /// <summary>Remove the passenger-ide Command where nothing is at its place.</summary>
+    /// <summary>Remove the pitstop-ide Command where nothing is at its place.</summary>
     public static string NoCommand(string link) => $"There is no {PassengerCommand.Name} command at {PathNames.Shown(link, null)} to remove";
 
     /// <summary>The banner's word of a C# file of no project shown while the machine has no .NET SDK: what Roslyn's server
@@ -383,7 +383,7 @@ public static class Refusals
         want.Lack == DotnetLack.OtherProcessor || want is { Translated: true, Install: not null } ? InstallsOnlyNative
         : machine?.NewestSdk is { } sdk && machine.Found is { } found
             ? $"The .NET SDK {want.Sdk ?? sdk} is installed, in {PathNames.Shown(found.Root, null)}: nothing is missing"
-            : "Passenger is still looking for .NET";
+            : "Pitstop is still looking for .NET";
 
     /// <summary>Add .NET to the Shell's PATH where the shell's PATH has it already.</summary>
     public static string OnPathAlready(string root) => $"{PathNames.Shown(root, null)} is on your shell's PATH already";
@@ -436,7 +436,7 @@ public static class Refusals
 
     /// <summary>Debug or Profile asked of a configuration running a Node package's script, which Run alone starts.</summary>
     public static string ScriptOnlyRuns(string name) =>
-        $"{name} runs a package.json script with its package manager, which Run starts: Passenger debugs and profiles .NET programs";
+        $"{name} runs a package.json script with its package manager, which Run starts: Pitstop debugs and profiles .NET programs";
 
     /// <summary>A build asked of a folder whose one kind of project is a Godot project of GDScript alone, which builds nothing.</summary>
     public const string NothingToBuildOfScripts = "The open folder's Godot project is GDScript alone, which Godot runs as it is: there is nothing to build (Run, Debug and Profile start its game)";
@@ -520,7 +520,7 @@ public static class Refusals
     /// <summary>An agent's call whose question the window took away as it left the folder it was asked in (<paramref
     /// name="left"/>), for another or none, before the person answered: an answer would have allowed it where it no longer is.</summary>
     public static string FolderChanged(string? left) =>
-        $"The folder changed while the person was asked: the Passenger window left {left ?? "the folder it had open"} before they answered, so nothing "
+        $"The folder changed while the person was asked: the Pitstop window left {left ?? "the folder it had open"} before they answered, so nothing "
         + "was done. A later call is asked about the folder open now";
 
     /// <summary>Neither a selection nor a name is at the caret for the debugger to evaluate.</summary>
@@ -709,7 +709,7 @@ public static class Refusals
         + "only the folder's files and, where it is trusted, those of the projects its solution and AppHosts name beside it"
         + (changes ? string.Empty
             : ", and read outside them only what Go to Declaration leads to: the packages its projects restore, the SDK's MSBuild files, "
-            + "and the copies Passenger makes to be read (a source generator's code, a library's decompiled or linked source)");
+            + "and the copies Pitstop makes to be read (a source generator's code, a library's decompiled or linked source)");
 
     /// <summary>A path an agent named that is never asked of the disk (<see cref="FoundPaths"/>), as asking would reach
     /// another machine, open a device or mount a folder.</summary>
@@ -758,7 +758,7 @@ public static class Refusals
 
     /// <summary>Why edits found in a file as Passenger read it are not made once the file is another text.</summary>
     public static string ChangedSinceRead(string file) =>
-        $"{file} changed after Passenger read it, so the places found there may be where they were before: nothing was changed; try again in a moment";
+        $"{file} changed after Pitstop read it, so the places found there may be where they were before: nothing was changed; try again in a moment";
 
     /// <summary>Why a rename renamed nothing: <paramref name="why"/>, said as a clause.</summary>
     public static string NotRenamed(string old, string why) => $"{old} was not renamed: {why}";
@@ -767,14 +767,14 @@ public static class Refusals
     public static string ChangedAsRead(string old, string file) => NotRenamed(old, $"{file} changed as it was read");
 
     /// <summary>An agent's act in Godot's editor from its own Passenger (<c>--mcp</c>), which no editor of the person's reaches.</summary>
-    public const string GodotEditorOfPerson = $"{Mcp.McpTools.GodotEditor} acts in the person's own Godot editor, which connects to the Passenger window they use, never to an agent's own: attach to that window (--mcp-attach)";
+    public const string GodotEditorOfPerson = $"{Mcp.McpTools.GodotEditor} acts in the person's own Godot editor, which connects to the Pitstop window they use, never to an agent's own: attach to that window (--mcp-attach)";
 
     /// <summary>An agent's act in Godot's editor on a project whose editor is not connected: what puts Passenger's addon in the
     /// project (<paramref name="addon"/> false), or what opens the editor, a configuration of the folder's where one does.</summary>
     public static string NoGodotEditor(string project, bool addon, string? opens) =>
-        !addon ? $"Passenger's addon is not in {project}: Install Passenger's Godot Addon… puts it there (asking the person), and Godot's editor connects as it opens the project"
-        : opens is not null ? $"No Godot editor on {project} is connected: run {opens} to open one, whose Passenger's addon connects to this window"
-        : $"No Godot editor on {project} is connected: open the project in Godot's editor, whose Passenger's addon connects to this window";
+        !addon ? $"Pitstop's addon is not in {project}: Install Pitstop's Godot Addon… puts it there (asking the person), and Godot's editor connects as it opens the project"
+        : opens is not null ? $"No Godot editor on {project} is connected: run {opens} to open one, whose Pitstop's addon connects to this window"
+        : $"No Godot editor on {project} is connected: open the project in Godot's editor, whose Pitstop's addon connects to this window";
 
     /// <summary>An agent's act in Godot's editor naming no scene by its path in the folder, which holds several Godot projects
     /// whose editors each take such an act: the project is told by the scene's path alone.</summary>
@@ -783,7 +783,7 @@ public static class Refusals
 
     /// <summary>An agent's act in Godot's editor whose addon is older than one that takes it.</summary>
     public static string GodotAddonOlder(string project, int version) =>
-        $"Passenger's addon in {project} is version {version}, which takes no agent's acts: Install Passenger's Godot Addon… updates it, and Godot's editor takes it as it next opens the project";
+        $"Pitstop's addon in {project} is version {version}, which takes no agent's acts: Install Pitstop's Godot Addon… updates it, and Godot's editor takes it as it next opens the project";
 
     /// <summary>A change an agent asked for that would write over what the person's Godot editor holds of a file
     /// (<see cref="Passenger.Workspace.GodotHolds"/>), which only the person may choose to.</summary>
@@ -819,11 +819,11 @@ public static class Refusals
 
     /// <summary>A file whose grammar failed as it read it, and stopped, so the lines inside its strings will never be known.</summary>
     public static string GrammarFailed(string name, string language, string why) =>
-        $"Passenger can't tell which lines of {name} begin inside a string: its {language} grammar failed reading it ({why})";
+        $"Pitstop can't tell which lines of {name} begin inside a string: its {language} grammar failed reading it ({why})";
 
     /// <summary>A file in a language with no parse or grammar here, whose lines may begin inside a string that converting
     /// their indentation would change.</summary>
-    public static string UnreadStrings(string name) => $"Passenger can't tell which lines of {name} begin inside a string, whose text a conversion would change";
+    public static string UnreadStrings(string name) => $"Pitstop can't tell which lines of {name} begin inside a string, whose text a conversion would change";
 
     /// <summary>A file of a language tabs can't indent, which a conversion to them would break.</summary>
     public static string SpacesAlone(string name, string language) => $"{language} takes no tabs in its indentation, so {name} would no longer read as {language}";
@@ -854,7 +854,7 @@ public static class Refusals
 
     /// <summary>A target of a platform Passenger does not run apps on yet.</summary>
     public static string NotYetOn(string target) =>
-        $"Passenger does not run apps on {target} yet: it runs them on Android devices and emulators and on iOS simulators";
+        $"Pitstop does not run apps on {target} yet: it runs them on Android devices and emulators and on iOS simulators";
 
     /// <summary>An iOS app's simulators asked for on a system other than macOS.</summary>
     public const string IosOnMacAlone = "iOS apps run on simulators only on a Mac, with Xcode";
@@ -866,7 +866,7 @@ public static class Refusals
 
     /// <summary>A Mac Catalyst app profiled, whose sandbox keeps the profiler's port out of its reach.</summary>
     public static string MacCatalystUnprofiled(string app) =>
-        $"Passenger's profiler does not record a Mac Catalyst app yet, so {app} cannot be profiled: Run starts it";
+        $"Pitstop's profiler does not record a Mac Catalyst app yet, so {app} cannot be profiled: Run starts it";
 
     /// <summary>A program built for 32-bit x86 debugged (by its build, or a test host's or a process's own processor), which
     /// Passenger's debugger cannot follow (<see cref="DotnetProcesses.Undebugged32Bit"/>): Run starts it, and built for
@@ -878,7 +878,7 @@ public static class Refusals
     public static string X86Unattached(string name) => $"Cannot attach to {name}: {DotnetProcesses.Undebugged32Bit}";
 
     /// <summary>A 32-bit x86 program run with Hot Reload, which reaches it only through the debugger.</summary>
-    public const string X86Unreloaded = $"it {DotnetProcesses.RunsAs32Bit}, and Hot Reload reaches it only through Passenger's debugger, a 64-bit program";
+    public const string X86Unreloaded = $"it {DotnetProcesses.RunsAs32Bit}, and Hot Reload reaches it only through Pitstop's debugger, a 64-bit program";
 
     /// <summary>A program built for 32-bit x86 run off Windows, the one system .NET runs x86 programs on.</summary>
     public const string X86OnWindowsAlone = "it is built for 32-bit x86 (its PlatformTarget), which .NET runs only on Windows";
@@ -913,12 +913,12 @@ public static class Refusals
 
     /// <summary>An agent's Restart to Update, by its ide_action or its input into Passenger's window: the person restarts
     /// Passenger, which closes their windows.</summary>
-    public const string RestartIsThePersons = "Only the person restarts Passenger into its update, which closes their windows and ends what runs there: "
+    public const string RestartIsThePersons = "Only the person restarts Pitstop into its update, which closes their windows and ends what runs there: "
         + "ask them to, with the update's notice in the status bar";
 
     /// <summary>An attached agent's Exit, by its ide_action or its input into Passenger's window, or its close of the person's
     /// last window: the person quits Passenger, which ends what runs there.</summary>
-    public const string QuitIsThePersons = "Only the person quits Passenger or closes its last window, which ends what runs there and installs an update made ready: "
+    public const string QuitIsThePersons = "Only the person quits Pitstop or closes its last window, which ends what runs there and installs an update made ready: "
         + "ask them to";
 
     /// <summary>An agent's Close Solution, by its ide_action or its input into Passenger's window, attached or in its own
@@ -927,12 +927,12 @@ public static class Refusals
 
     /// <summary>An attached agent's input closing a window that Settings' Confirm before closing asks the person about, or
     /// answering that question: the person closes it.</summary>
-    public const string CloseIsThePersons = "Only the person closes this window, which Passenger asks them about first as Settings says (Confirm before closing): "
+    public const string CloseIsThePersons = "Only the person closes this window, which Pitstop asks them about first as Settings says (Confirm before closing): "
         + "ask them to";
 
     /// <summary>An agent's install of what a mobile project needs: the person installs it, accepting what it asks.</summary>
     public const string AgentInstallsMobile = "Only the person installs what a mobile project needs (a workload downloads from NuGet, the Android SDK asks them to accept "
-        + "its licences): ask them to, with the banner over Passenger's window";
+        + "its licences): ask them to, with the banner over Pitstop's window";
 
     /// <summary>Install Workloads with every workload the projects need installed.</summary>
     public const string NoWorkloadLacking = "No project of the folder lacks a .NET workload";
@@ -944,7 +944,7 @@ public static class Refusals
     public const string NothingTrimmed = "No Mac Catalyst head of the folder has a Debug build that trims .NET's own assemblies";
 
     /// <summary>Make the Mobile Edits with no mobile head needing an edit Passenger makes.</summary>
-    public const string NoMobileEdits = "No mobile app's head of the folder needs an edit Passenger makes";
+    public const string NoMobileEdits = "No mobile app's head of the folder needs an edit Pitstop makes";
 
     /// <summary>A .NET installed for every user that installs workloads into itself, not each user's own folder, which takes
     /// an administrator's rights: <paramref name="command"/> as an administrator runs it (<see cref="WorkloadInstalls.AsAdministrator"/>).</summary>
@@ -990,10 +990,10 @@ public static class Refusals
     /// <summary>Profile of a Functions app (its own project's, or an AppHost's), whose worker func starts and the profiler
     /// does not reach.</summary>
     public static string FunctionsUnprofiled(string service) =>
-        $"{service} is an Azure Functions app, whose worker Azure Functions Core Tools start: Passenger does not profile it yet";
+        $"{service} is an Azure Functions app, whose worker Azure Functions Core Tools start: Pitstop does not profile it yet";
 
     /// <summary>Run with Hot Reload of a Functions app, whose worker func starts, which runs on without it.</summary>
-    public const string FunctionsUnreloaded = "Passenger does not apply Hot Reload to an Azure Functions app's worker, which Azure Functions Core Tools start, yet";
+    public const string FunctionsUnreloaded = "Pitstop does not apply Hot Reload to an Azure Functions app's worker, which Azure Functions Core Tools start, yet";
 
     /// <summary>A debugged Functions app whose host started no worker within its time.</summary>
     public static string NoFunctionsWorker(TimeSpan limit) =>

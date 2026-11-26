@@ -36,7 +36,7 @@ public static class GodotIdeMessaging
     public const string Version = "1.1.2";
 
     /// <summary>The name a client gives itself in its handshake.</summary>
-    public const string Identity = "Passenger";
+    public const string Identity = "Pitstop";
 
     /// <summary>The status of a message answered as asked.</summary>
     public const string Ok = "Ok";

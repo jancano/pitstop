@@ -89,7 +89,7 @@ public sealed record ShellPath(string Root, string? File, string Lines, string S
     /// PATH with it first.</summary>
     public static (string File, string Lines) Of(ShellKind shell, string home, string root, bool macOS, string? zdotdir, Func<string, bool> exists)
     {
-        const string Said = "# The .NET SDK Passenger installed";
+        const string Said = "# The .NET SDK Pitstop installed";
         return shell == ShellKind.Fish
             ? (Startup(shell, home, macOS, zdotdir, exists, "dotnet"), $"{Said}\nset -gx DOTNET_ROOT \"{Inside(root, home, FishRead)}\"\nset -gx PATH \"$DOTNET_ROOT\" $PATH\n")
             : (Startup(shell, home, macOS, zdotdir, exists, "dotnet"), $"{Said}\nexport DOTNET_ROOT=\"{Inside(root, home, PosixRead)}\"\nexport PATH=\"$DOTNET_ROOT:$PATH\"\n");
@@ -100,7 +100,7 @@ public sealed record ShellPath(string Root, string? File, string Lines, string S
     /// command.</summary>
     public static (string File, string Lines) CommandsOf(ShellKind shell, string home, string folder, string command, bool macOS, string? zdotdir, Func<string, bool> exists)
     {
-        string said = $"# Where Passenger's {command} command is";
+        string said = $"# Where Pitstop's {command} command is";
         return shell == ShellKind.Fish
             ? (Startup(shell, home, macOS, zdotdir, exists, command), $"{said}\nset -gx PATH \"{Inside(folder, home, FishRead)}\" $PATH\n")
             : (Startup(shell, home, macOS, zdotdir, exists, command), $"{said}\nexport PATH=\"{Inside(folder, home, PosixRead)}:$PATH\"\n");

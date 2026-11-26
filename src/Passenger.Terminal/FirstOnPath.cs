@@ -14,33 +14,33 @@ public sealed record FirstOnPath(string Folder, string Variable, string Value, s
 {
     /// <summary>The folder, for what gives it again after the startup files.</summary>
     [IdentifierHome]
-    public const string FolderVariable = "PASSENGER_FIRST_ON_PATH";
+    public const string FolderVariable = "PITSTOP_FIRST_ON_PATH";
 
     /// <summary>The variable's value, for what gives it again after the startup files.</summary>
     [IdentifierHome]
-    public const string ValueVariable = "PASSENGER_FIRST_VALUE";
+    public const string ValueVariable = "PITSTOP_FIRST_VALUE";
 
     /// <summary>What gives them again, run once at the first prompt.</summary>
     [IdentifierHome]
-    public const string AgainVariable = "PASSENGER_FIRST_AGAIN";
+    public const string AgainVariable = "PITSTOP_FIRST_AGAIN";
 
     /// <summary>The person's own ZDOTDIR, while Passenger's names zsh's first startup file.</summary>
     [IdentifierHome]
-    public const string ZdotdirVariable = "PASSENGER_ZDOTDIR";
+    public const string ZdotdirVariable = "PITSTOP_ZDOTDIR";
 
     /// <summary>The folder put first on the PATH, every other place of it on the PATH left out, and the variable given its
     /// value, in sh's words (bash's and zsh's too); bash's PROMPT_COMMAND then loses what ran it, or goes where nothing else is in it.</summary>
     private string Again => $$"""
         if [ -n "${{{FolderVariable}}+x}" ]; then
-        __passenger_rest=${PATH:+$PATH:}
+        __pitstop_rest=${PATH:+$PATH:}
         PATH=${{FolderVariable}}
-        while [ -n "$__passenger_rest" ]; do
-        __passenger_at=${__passenger_rest%%:*}
-        __passenger_rest=${__passenger_rest#*:}
-        [ "$__passenger_at" = "${{FolderVariable}}" ] || PATH=$PATH:$__passenger_at
+        while [ -n "$__pitstop_rest" ]; do
+        __pitstop_at=${__pitstop_rest%%:*}
+        __pitstop_rest=${__pitstop_rest#*:}
+        [ "$__pitstop_at" = "${{FolderVariable}}" ] || PATH=$PATH:$__pitstop_at
         done
         export PATH {{Variable}}="${{ValueVariable}}"
-        unset __passenger_rest __passenger_at {{FolderVariable}} {{ValueVariable}}
+        unset __pitstop_rest __pitstop_at {{FolderVariable}} {{ValueVariable}}
         fi
         if [ -n "${BASH_VERSION-}" ]; then
         {{ShellMarks.BashTakeOut(AgainVariable)}}[ -n "$PROMPT_COMMAND" ] || unset PROMPT_COMMAND
@@ -56,12 +56,12 @@ public sealed record FirstOnPath(string Folder, string Variable, string Value, s
         if [ -n "${{{ZdotdirVariable}}+x}" ]; then ZDOTDIR=${{ZdotdirVariable}}; else unset ZDOTDIR; fi
         unset {{ZdotdirVariable}}
         if [ -f "${ZDOTDIR:-$HOME}/.zshenv" ]; then . "${ZDOTDIR:-$HOME}/.zshenv"; fi
-        {{ShellMarks.ZshHooks}}__passenger_first() {
-        precmd_functions=(${${precmd_functions-}:#__passenger_first})
+        {{ShellMarks.ZshHooks}}__pitstop_first() {
+        precmd_functions=(${${precmd_functions-}:#__pitstop_first})
         {{ShellMarks.ZshFirst}}eval "${{{AgainVariable}}-}"
-        unfunction __passenger_first
+        unfunction __pitstop_first
         }
-        precmd_functions+=(__passenger_first)
+        precmd_functions+=(__pitstop_first)
 
         """;
 

@@ -17,7 +17,7 @@ public sealed partial class VimTests
 {
     /// <summary>The Vim compared with, where given; else tools/vim.sh's build in artifacts/vim/.</summary>
     [IdentifierHome]
-    public const string VimVariable = "PASSENGER_VIM";
+    public const string VimVariable = "PITSTOP_VIM";
 
     /// <summary>The cases a run makes.</summary>
     private const int Count = 4000;
@@ -27,7 +27,7 @@ public sealed partial class VimTests
 
     /// <summary>The seed a run makes its cases from, where given; else a new one, which the run says.</summary>
     [IdentifierHome]
-    public const string SeedVariable = "PASSENGER_VIM_SEED";
+    public const string SeedVariable = "PITSTOP_VIM_SEED";
 
     private static readonly TimeSpan VimLimit = TimeSpan.FromMinutes(2);
 
@@ -83,7 +83,7 @@ public sealed partial class VimTests
             (VimCase smallest, string differs) = await ShrinkAsync(vim, folder, first);
             shrunk.Add($"{smallest.Shown()}\n  {differs}");
         }
-        Assert.Fail($"Seed {seed}: Passenger's Vim mode left what Vim {Version} does not in {differing.Count} of {cases.Count} cases, so a "
+        Assert.Fail($"Seed {seed}: Pitstop's Vim mode left what Vim {Version} does not in {differing.Count} of {cases.Count} cases, so a "
             + $"person whose fingers know Vim finds it otherwise. The smallest case of the first {shrunk.Count}:\n" + string.Join("\n", shrunk));
     }
 
@@ -161,15 +161,15 @@ public sealed partial class VimTests
         List<string> differences = [];
         if (!vim.Lines.SequenceEqual(passenger.Lines))
         {
-            differences.Add($"the text: Vim's {JsonSerializer.Serialize(vim.Lines)}, Passenger's {JsonSerializer.Serialize(passenger.Lines)}");
+            differences.Add($"the text: Vim's {JsonSerializer.Serialize(vim.Lines)}, Pitstop's {JsonSerializer.Serialize(passenger.Lines)}");
         }
         if (vim.Cursor != passenger.Cursor)
         {
-            differences.Add($"the cursor: Vim's at {vim.Cursor}, Passenger's at {passenger.Cursor}");
+            differences.Add($"the cursor: Vim's at {vim.Cursor}, Pitstop's at {passenger.Cursor}");
         }
         if (vim.Visual != passenger.Visual)
         {
-            differences.Add($"the visual stretch: Vim's {Said(vim.Visual)}, Passenger's {Said(passenger.Visual)}");
+            differences.Add($"the visual stretch: Vim's {Said(vim.Visual)}, Pitstop's {Said(passenger.Visual)}");
         }
         foreach (char name in Registers)
         {
@@ -177,7 +177,7 @@ public sealed partial class VimTests
             (string Text, string Kind) theirs = passenger.Registers[name];
             if (mine.Text != theirs.Text || (mine.Text.Length > 0 && mine.Kind != theirs.Kind))
             {
-                differences.Add($"the register {name}: Vim's {JsonSerializer.Serialize(mine.Text)} ({mine.Kind}), Passenger's {JsonSerializer.Serialize(theirs.Text)} ({theirs.Kind})");
+                differences.Add($"the register {name}: Vim's {JsonSerializer.Serialize(mine.Text)} ({mine.Kind}), Pitstop's {JsonSerializer.Serialize(theirs.Text)} ({theirs.Kind})");
             }
         }
         return differences.Count == 0 || Kept.Any(kept => kept.Holds(vimCase, vim, passenger)) ? null : string.Join("; ", differences);
@@ -218,7 +218,7 @@ public sealed partial class VimTests
                 && (made.command.Keys.Contains("$") || (made.at > 0 && vimCase.Commands[made.at - 1].Keys[^1] == "$"))
                 && vimCase.Commands.Skip(made.at).SelectMany(after => after.Keys).Contains("."))),
         ("A block's < leaves Vim's cursor at the block's top left even past the end of a top line nothing shifted, where no "
-            + "normal-mode cursor of Vim mode stands: Passenger's settles on that line's last character",
+            + "normal-mode cursor of Vim mode stands: Pitstop's settles on that line's last character",
             (vimCase, vim, _) => vimCase.Commands.Any(command => command.Keys[0] == VimKeys.CtrlV && command.Keys.Contains("<"))
                 && vim.Cursor.Column > Math.Max(1, vim.Lines[vim.Cursor.Line - 1].Length)),
     ];

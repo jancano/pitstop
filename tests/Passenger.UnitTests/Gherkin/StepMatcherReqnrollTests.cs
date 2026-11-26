@@ -70,10 +70,10 @@ public sealed class StepMatcherReqnrollTests
             seen.Add(theirs.Split(':')[0]);
             if (ours != theirs)
             {
-                differ.Add($"{kind} \"{text}\" tagged [{string.Join(", ", tags)}] in {feature}: Passenger {ours}, Reqnroll {theirs}");
+                differ.Add($"{kind} \"{text}\" tagged [{string.Join(", ", tags)}] in {feature}: Pitstop {ours}, Reqnroll {theirs}");
             }
         }
-        Assert.True(differ.Count == 0, $"Seed {Seed}: Passenger binds steps otherwise than Reqnroll's matcher:\n{string.Join("\n", differ)}");
+        Assert.True(differ.Count == 0, $"Seed {Seed}: Pitstop binds steps otherwise than Reqnroll's matcher:\n{string.Join("\n", differ)}");
         Assert.True(seen.IsSupersetOf(["Defined", "Ambiguous", "Undefined", "Refused", "Miscounted"]),
             $"The steps drawn came only to {string.Join(", ", seen)} in Reqnroll's matcher, too few outcomes to tell its rules apart");
     }

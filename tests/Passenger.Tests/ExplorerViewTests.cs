@@ -51,7 +51,7 @@ public sealed class ExplorerViewTests : IDisposable
     {
         Flow.StepApart<ExplorerViewTests>("the files view chosen by the switch comes back as the folder opens again and after a restart", t => t.The_files_view_chosen_by_the_switch_comes_back_as_the_folder_opens_again_and_after_a_restart());
         Flow.StepApart<ExplorerViewTests>("each folder opens in the view chosen last in it and one never switched in the solution view", t => t.Each_folder_opens_in_the_view_chosen_last_in_it_and_one_never_switched_in_the_solution_view());
-        Flow.StepApart<ExplorerViewTests>("a folders state an older passenger wrote without the view opens in the solution view", t => t.A_folders_state_an_older_passenger_wrote_without_the_view_opens_in_the_solution_view());
+        Flow.StepApart<ExplorerViewTests>("a folders state an older pitstop wrote without the view opens in the solution view", t => t.A_folders_state_an_older_passenger_wrote_without_the_view_opens_in_the_solution_view());
     }
 
     private void The_files_view_chosen_by_the_switch_comes_back_as_the_folder_opens_again_and_after_a_restart()
@@ -109,10 +109,10 @@ public sealed class ExplorerViewTests : IDisposable
             godotEditorOffered = false,
         }));
         MainWindow window = Keeping(shop);
-        Assert.True(Shown(window) == ExplorerViewKind.Solution, "A folder whose state an older Passenger wrote, with no view in it, opened in the Files view");
+        Assert.True(Shown(window) == ExplorerViewKind.Solution, "A folder whose state an older Pitstop wrote, with no view in it, opened in the Files view");
         Ui.Click(window.ExplorerView.ViewSwitchButton);
         Reopen(window);
-        Assert.True(Shown(window) == ExplorerViewKind.Files, "A folder whose state an older Passenger wrote did not keep the view switched to since");
+        Assert.True(Shown(window) == ExplorerViewKind.Files, "A folder whose state an older Pitstop wrote did not keep the view switched to since");
         window.Close();
     }
 

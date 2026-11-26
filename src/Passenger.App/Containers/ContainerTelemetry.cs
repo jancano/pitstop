@@ -18,7 +18,7 @@ public sealed record ContainerTelemetry(string OtlpKey, string ApiKey)
     public const string Image = "mcr.microsoft.com/dotnet/aspire-dashboard:13.6";
 
     /// <summary>Its service's name in the run's Compose project.</summary>
-    public const string Service = "passenger-dashboard";
+    public const string Service = "pitstop-dashboard";
 
     /// <summary>The image's frontend port, which serves the telemetry API Passenger reads.</summary>
     public const int ApiPort = 18888;

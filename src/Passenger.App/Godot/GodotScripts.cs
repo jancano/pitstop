@@ -130,7 +130,7 @@ public static class GodotScripts
         }
         if (session.Server.OtherFolder is { } other)
         {
-            IdeErrors.Write($"GDScript: the Godot editor on port {port} is open on {other}, not {project}, so Passenger starts its own");
+            IdeErrors.Write($"GDScript: the Godot editor on port {port} is open on {other}, not {project}, so Pitstop starts its own");
             await session.DisposeAsync();
             return null;
         }
@@ -680,7 +680,7 @@ public static class GodotScripts
                         }
                         if (gitWrote)
                         {
-                            Theirs(name, $"GDScript: {path} changed while Passenger's Git wrote the work tree, so it is kept as written");
+                            Theirs(name, $"GDScript: {path} changed while Pitstop's Git wrote the work tree, so it is kept as written");
                             continue;
                         }
                         if (!final && Waits(name, now))
@@ -690,8 +690,8 @@ public static class GodotScripts
                         pending.Remove(name);
                         if (ByAnother(name, path, persons))
                         {
-                            Theirs(name, there ? $"GDScript: {path} was written by another program than Passenger's headless editor, so it is kept as written"
-                                : $"GDScript: {path} was deleted by another program than Passenger's headless editor, so it is left deleted");
+                            Theirs(name, there ? $"GDScript: {path} was written by another program than Pitstop's headless editor, so it is kept as written"
+                                : $"GDScript: {path} was deleted by another program than Pitstop's headless editor, so it is left deleted");
                             continue;
                         }
                         HeardPort(name, path);
@@ -839,7 +839,7 @@ public static class GodotScripts
                 {
                     unmade.ExceptWith(made);
                     made.ForEach(path => pending.Remove(path));
-                    IdeErrors.Write($"GDScript: {Plural.Listed([.. made.Select(p => Path.GetRelativePath(Project, p))])} came while Passenger's Git wrote the work tree, so they are kept");
+                    IdeErrors.Write($"GDScript: {Plural.Listed([.. made.Select(p => Path.GetRelativePath(Project, p))])} came while Pitstop's Git wrote the work tree, so they are kept");
                     return;
                 }
                 made = [.. made.Where(path => final || !Waits(path, now))];

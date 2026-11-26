@@ -22,8 +22,8 @@ public class GodotScriptTemplatesTests
     {
         string text = GodotScriptTemplates.Text("Node2D", Style(new() { ["csharp_style_namespace_declarations"] = "file_scoped:warning", ["indent_size"] = "4" }));
         Assert.Equal("""
-            // meta-name: Passenger (this project's style)
-            // meta-description: A Node2D script in the project's namespace and style, written by Passenger
+            // meta-name: Pitstop (this project's style)
+            // meta-description: A Node2D script in the project's namespace and style, written by Pitstop
             // meta-space-indent: 0
             using _BINDINGS_NAMESPACE_;
 
@@ -41,13 +41,13 @@ public class GodotScriptTemplatesTests
             }
 
             """.ReplaceLineEndings("\n"), text);
-        Assert.True(GodotScriptTemplates.IsPassengers(text), "The template does not say it is Passenger's");
+        Assert.True(GodotScriptTemplates.IsPassengers(text), "The template does not say it is Pitstop's");
     }
 
     private void Braces_at_the_lines_end_a_namespace_in_braces_and_tabs_are_written_as_the_project_says()
     {
         GodotScriptStyle style = Style(new() { ["csharp_style_namespace_declarations"] = "block_scoped", ["csharp_new_line_before_open_brace"] = "none", ["indent_style"] = "tab" });
-        Assert.Equal("// meta-name: Passenger (this project's style)\n// meta-description: A Resource script in the project's namespace and style, written by Passenger\n"
+        Assert.Equal("// meta-name: Pitstop (this project's style)\n// meta-description: A Resource script in the project's namespace and style, written by Pitstop\n"
             + "using _BINDINGS_NAMESPACE_;\n\nnamespace Spin.Game {\n\tpublic partial class _CLASS_ : _BASE_ {\n\t}\n}\n", GodotScriptTemplates.Text("Resource", style));
     }
 

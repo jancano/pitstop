@@ -278,7 +278,7 @@ internal sealed partial class CSharpAssist
         }
         if (named.Places.FirstOrDefault(p => !p.Plain && !p.Unsure) is { } escaped)
         {
-            return $"{old} is written with escapes at {escaped.Shown}, which Passenger does not rename";
+            return $"{old} is written with escapes at {escaped.Shown}, which Pitstop does not rename";
         }
         if (named.Places.FirstOrDefault(p => !p.Unsure && p.Written(name) is null) is { } raw)
         {

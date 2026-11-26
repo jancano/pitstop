@@ -452,7 +452,7 @@ public sealed class PublishDialog : IdeWindow
             foreach (PublishProfileFile each in profiles)
             {
                 ComboBoxItem item = new() { Content = each.Remote is null ? each.Name : $"{each.Name} ({each.Remote})", Tag = each };
-                ToolButtons.Grey(item, each.Remote is { } method ? $"{each.Name} publishes by {method}: Passenger publishes to a folder only, for now" : null);
+                ToolButtons.Grey(item, each.Remote is { } method ? $"{each.Name} publishes by {method}: Pitstop publishes to a folder only, for now" : null);
                 items.Add(item);
             }
             items.Add(new ComboBoxItem { Content = "New profile" });

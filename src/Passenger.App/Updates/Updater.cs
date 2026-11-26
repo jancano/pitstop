@@ -55,13 +55,13 @@ public abstract class Updater
         {
             await DiscardAsync().ConfigureAwait(false);
             return new UpdateOutcome.Refused(refused.Message,
-                $"Passenger {release.Version} was not installed: {refused.Message}{(refused.Detail is { } detail ? $" ({detail})" : string.Empty)}");
+                $"Pitstop {release.Version} was not installed: {refused.Message}{(refused.Detail is { } detail ? $" ({detail})" : string.Empty)}");
         }
         catch (Exception error) when (error is UpdateFailedException or IOException or UnauthorizedAccessException or TimeoutException
             or System.ComponentModel.Win32Exception)
         {
             await DiscardAsync().ConfigureAwait(false);
-            return new UpdateOutcome.Failed(error.Message, $"could not download Passenger {release.Version}: {error.Message}");
+            return new UpdateOutcome.Failed(error.Message, $"could not download Pitstop {release.Version}: {error.Message}");
         }
     }
 
@@ -92,7 +92,7 @@ public abstract class Updater
     {
         string? asset = Releases.ThisSystemsAsset();
         string missing = asset is null || release.File(asset) is null ? asset ?? kind : ReleaseSums.Name;
-        return new UpdateOutcome.Unavailable($"Passenger {release.Version} is only announced: its release carries no {missing}");
+        return new UpdateOutcome.Unavailable($"Pitstop {release.Version} is only announced: its release carries no {missing}");
     }
 
     /// <summary>Downloads a release's package into <paramref name="folder"/>, checked against the SHA-256 the release's
@@ -123,7 +123,7 @@ public abstract class Updater
     {
         string named = PathNames.Canonical(executable);
         List<int> here = [];
-        foreach (Process running in Process.GetProcessesByName("Passenger"))
+        foreach (Process running in Process.GetProcessesByName("Pitstop"))
         {
             using (running)
             {
@@ -145,8 +145,8 @@ public abstract class Updater
             return false;
         }
         string named = Listed(others.Where(other => !other.Relay));
-        IdeErrors.Write($"Updates: Passenger {version} waits to install: another Passenger runs from {from}: {named}");
-        NotInstalled = $"another Passenger ran from {from} ({named})";
+        IdeErrors.Write($"Updates: Pitstop {version} waits to install: another Pitstop runs from {from}: {named}");
+        NotInstalled = $"another Pitstop ran from {from} ({named})";
         return true;
     }
 
@@ -304,7 +304,7 @@ public abstract class Updater
             if (SpinWait.SpinUntil(() => Mcp.McpProxy.LetGo(relay.ProcessId) || Libc.Signal(relay.ProcessId, 0) != 0, left > TimeSpan.Zero ? left : TimeSpan.Zero)
                 && Mcp.McpProxy.LetGo(relay.ProcessId))
             {
-                IdeErrors.Write($"Updates: the agent's relay on {relay.Folder} (process {relay.ProcessId}) let go of the app to install Passenger {version}, "
+                IdeErrors.Write($"Updates: the agent's relay on {relay.Folder} (process {relay.ProcessId}) let go of the app to install Pitstop {version}, "
                     + "and starts again from it as its agent's session");
             }
             else if (Libc.Signal(relay.ProcessId, 0) == 0)
@@ -329,8 +329,8 @@ public abstract class Updater
     /// a kill at once. Only the relay itself, never its process group, which is its agent's. Each agent reconnects.</summary>
     protected void EndRelays(IReadOnlyList<OtherCopy> others, string version)
     {
-        string why = $"Passenger {version} is being installed in {Installed}, which ends this agent's connection to Passenger. "
-            + "Reconnect the agent to Passenger to go on (/mcp in Claude Code).";
+        string why = $"Pitstop {version} is being installed in {Installed}, which ends this agent's connection to Pitstop. "
+            + "Reconnect the agent to Pitstop to go on (/mcp in Claude Code).";
         List<(OtherCopy Relay, Process Process)> ending = [];
         foreach (OtherCopy relay in others.Where(o => o.Relay))
         {
@@ -379,7 +379,7 @@ public abstract class Updater
                         process.WaitForExit(limit);
                         how = $"killed, still running {Durations.Said(limit)} after it was told to end";
                     }
-                    IdeErrors.Write($"Updates: ended the agent's relay on {relay.Folder} (process {relay.ProcessId}) to install Passenger {version}: {how}");
+                    IdeErrors.Write($"Updates: ended the agent's relay on {relay.Folder} (process {relay.ProcessId}) to install Pitstop {version}: {how}");
                 }
                 catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
                 {
@@ -405,12 +405,12 @@ public abstract class Updater
 
     /// <summary>What a portable copy keeping its state in <paramref name="data"/> says of a newer release.</summary>
     public static UpdatedElsewhere Portable(string data, string? asset) =>
-        new($"This copy of Passenger is portable, keeping its state in {data}, so it never replaces itself: "
+        new($"This copy of Pitstop is portable, keeping its state in {data}, so it never replaces itself: "
             + $"put the release's {asset ?? "portable build"} in its place, keeping its {ThisCopy.DataName} folder.", Download: false);
 
     /// <summary>What a copy a package manager installed says of a newer release.</summary>
     public static UpdatedElsewhere Packaged(PackageManagerMark manager) =>
-        new($"This copy of Passenger is {manager.Said}: {manager.Updates}.", Download: false);
+        new($"This copy of Pitstop is {manager.Said}: {manager.Updates}.", Download: false);
 
     /// <summary>The updater of the running copy, or null with why it cannot update itself: portable or a package manager's
     /// (<see cref="LeftElsewhere"/>), not in a disk image's app bundle or an installer's folder, or where it cannot replace
@@ -430,7 +430,7 @@ public abstract class Updater
         {
             if (!Installation.Installed || !VelopackLocator.IsCurrentSet || VelopackLocator.Current.CurrentlyInstalledVersion is null)
             {
-                why = $"{AppContext.BaseDirectory} is not where Passenger's installer put it";
+                why = $"{AppContext.BaseDirectory} is not where Pitstop's installer put it";
                 return null;
             }
             why = string.Empty;
@@ -440,7 +440,7 @@ public abstract class Updater
         {
             return LinuxUpdater.OfThisInstall(Path.Combine(stateFolder, "updates"), out why);
         }
-        why = "Passenger installs updates itself on macOS, Windows and Linux";
+        why = "Pitstop installs updates itself on macOS, Windows and Linux";
         return null;
     }
 }

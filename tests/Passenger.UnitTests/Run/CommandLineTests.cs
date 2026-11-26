@@ -25,5 +25,5 @@ public class CommandLineTests
         Assert.True(CommandLine.NamesNoProgram(line), $"The shell path {line} was taken for a program, so a new terminal tab would try to start one named by nothing");
 
     private void A_program_or_no_line_at_all_is_not_refused(string? line) =>
-        Assert.False(CommandLine.NamesNoProgram(line), $"The shell path {line} was refused, which names a program or leaves the choice to Passenger");
+        Assert.False(CommandLine.NamesNoProgram(line), $"The shell path {line} was refused, which names a program or leaves the choice to Pitstop");
 }

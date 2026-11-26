@@ -147,7 +147,7 @@ public sealed class GDScriptUsagesTests
             bool asks = Ui.Pumped(() => asked.Count > 0, TimeSpan.FromSeconds(60));
             Assert.True(asks, $"The rename asked nothing: {window.Status}");
             Assert.True(Assert.Single(asked).Contains("other.gd:5: its 'hit' is on a value whose script is not read", StringComparison.Ordinal),
-                $"The question named no place Passenger can't see: {asked[0]}");
+                $"The question named no place Pitstop can't see: {asked[0]}");
             Assert.Equal(Player, document.Text.Snapshot.ToString());
             Assert.Equal(Enemy, File.ReadAllText(Path.Combine(folder, "enemy.gd")));
         }

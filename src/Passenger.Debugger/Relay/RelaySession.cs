@@ -625,7 +625,7 @@ internal sealed unsafe partial class RelaySession
             }
             _log?.Invoke("The app's relay is gone: no more of its runtime's callbacks");
         })
-        { IsBackground = true, Name = "Passenger relay callbacks" };
+        { IsBackground = true, Name = "Pitstop relay callbacks" };
         callbacks.Start();
     }
 

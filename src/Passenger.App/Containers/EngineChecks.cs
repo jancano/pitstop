@@ -722,12 +722,12 @@ internal sealed class DockerfileCheck(EngineChecks owner, OpenDocument document,
 }
 
 /// <summary>Whether Settings' Check Dockerfiles with BuildKit is on in a Passenger with no settings.json saying otherwise:
-/// on, unless the IDE's <c>PASSENGER_BUILDKIT_CHECKS</c> is <c>off</c>, which keeps a run from reaching any registry
+/// on, unless the IDE's <c>PITSTOP_BUILDKIT_CHECKS</c> is <c>off</c>, which keeps a run from reaching any registry
 /// through the Dockerfiles it opens.</summary>
 public static class BuildKitChecks
 {
     [IdentifierHome]
-    public const string Variable = "PASSENGER_BUILDKIT_CHECKS";
+    public const string Variable = "PITSTOP_BUILDKIT_CHECKS";
 
     /// <summary>The setting's default; a value of the variable other than <c>off</c> or <c>on</c> is fatal as the IDE starts.</summary>
     public static bool ByDefault => Environment.GetEnvironmentVariable(Variable) switch

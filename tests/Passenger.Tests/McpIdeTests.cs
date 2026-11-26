@@ -30,11 +30,11 @@ public sealed class McpIdeTests : McpRig, IClassFixture<RestoredFolders>
     [Fact]
     public async Task An_agents_IDE_tools_answer_settings_problems_finds_history_and_pictures_as_the_window_holds_them()
     {
-        await Flow.StepApartAsync("a label put while another passenger holds local history is answered as waiting and listed once let go", () => new McpIdeTests(restored), t => t.A_label_put_while_another_passenger_holds_local_history_is_answered_as_waiting_and_listed_once_let_go());
+        await Flow.StepApartAsync("a label put while another pitstop holds local history is answered as waiting and listed once let go", () => new McpIdeTests(restored), t => t.A_label_put_while_another_passenger_holds_local_history_is_answered_as_waiting_and_listed_once_let_go());
         await Flow.StepApartAsync("an action waits for the grammar reading the file it asks of", () => new McpIdeTests(restored), t => t.An_action_waits_for_the_grammar_reading_the_file_it_asks_of());
         await Flow.StepApartAsync("problems of thousands of warnings answer within the limit errors first and a path or severity reaches the rest", () => new McpIdeTests(restored), t => t.Problems_of_thousands_of_warnings_answer_within_the_limit_errors_first_and_a_path_or_severity_reaches_the_rest());
         await Flow.StepApartAsync("settings say what the folders editorconfig files set over each setting", () => new McpIdeTests(restored), t => t.Settings_say_what_the_folders_editorconfig_files_set_over_each_setting());
-        await Flow.StepApartAsync("an agents passenger opens on the settings kept in its named state and keeps its changes its own", () => new McpIdeTests(restored), t => t.An_agents_passenger_opens_on_the_settings_kept_in_its_named_state_and_keeps_its_changes_its_own());
+        await Flow.StepApartAsync("an agents pitstop opens on the settings kept in its named state and keeps its changes its own", () => new McpIdeTests(restored), t => t.An_agents_passenger_opens_on_the_settings_kept_in_its_named_state_and_keeps_its_changes_its_own());
         await Flow.StepApartAsync("an agent finds text in the windows scopes reverts a file through local history and reads problems and the build window", () => new McpIdeTests(restored), t => t.An_agent_finds_text_in_the_windows_scopes_reverts_a_file_through_local_history_and_reads_problems_and_the_build_window());
         await Flow.StepApartAsync("an agents directory scope inside node modules or bin finds and replaces what its files hold", () => new McpIdeTests(restored), t => t.An_agents_directory_scope_inside_node_modules_or_bin_finds_and_replaces_what_its_files_hold());
         await Flow.StepApartAsync("an agents ide action waits for its work and answers what it came to asking nobody", () => new McpIdeTests(restored), t => t.An_agents_ide_action_waits_for_its_work_and_answers_what_it_came_to_asking_nobody());
@@ -57,11 +57,11 @@ public sealed class McpIdeTests : McpRig, IClassFixture<RestoredFolders>
         {
             answer = (await Call(client, McpTools.LocalHistoryLabel, new() { ["name"] = "held" })).GetString()!;
         }
-        Assert.True(answer.StartsWith("Label held waits for another Passenger", StringComparison.Ordinal),
-            $"A label put while another Passenger held Local History past the call's wait answered \"{answer}\", as if it were kept");
+        Assert.True(answer.StartsWith("Label held waits for another Pitstop", StringComparison.Ordinal),
+            $"A label put while another Pitstop held Local History past the call's wait answered \"{answer}\", as if it were kept");
         JsonElement labelled = (await Call(client, McpTools.LocalHistory)).GetProperty("rows")[0];
         Assert.True(labelled.GetProperty("title").GetString() == "held" && labelled.GetProperty("label").GetBoolean(),
-            $"Once the other Passenger let go, Local History's newest row is {labelled.GetRawText()}, not the label held");
+            $"Once the other Pitstop let go, Local History's newest row is {labelled.GetRawText()}, not the label held");
     }
 
     /// <summary>A grammar takes a moment to read a long file, whose lines inside strings Convert Indentation must know: the action
@@ -161,7 +161,7 @@ public sealed class McpIdeTests : McpRig, IClassFixture<RestoredFolders>
         Assert.Equal("./.editorconfig sets insert_final_newline = false for *.md", Named("ensureFinalLineBreak").GetProperty("editorConfig")[0].GetString());
     }
 
-    /// <summary>An agent's Passenger whose state PASSENGER_SETTINGS names opens on the settings.json kept there, as a person's
+    /// <summary>An agent's Passenger whose state PITSTOP_SETTINGS names opens on the settings.json kept there, as a person's
     /// window would: solution-wide analysis on there is on from its start, listing an error of a file nobody opened, and the
     /// settings stay its own, kept nowhere, so a change it makes leaves the file as it was.</summary>
     private async Task An_agents_passenger_opens_on_the_settings_kept_in_its_named_state_and_keeps_its_changes_its_own()
@@ -174,16 +174,16 @@ public sealed class McpIdeTests : McpRig, IClassFixture<RestoredFolders>
         McpClient client = await Start(["--mcp", Folder]);
 
         JsonElement settings = await Call(client, McpTools.Settings);
-        Assert.False(settings.GetProperty("kept").GetBoolean(), "The agent's Passenger said its settings are kept, where they are its own");
+        Assert.False(settings.GetProperty("kept").GetBoolean(), "The agent's Pitstop said its settings are kept, where they are its own");
         Assert.True(settings.GetProperty("settings").EnumerateArray().Single(s => s.GetProperty("name").GetString() == "solutionWideAnalysis").GetProperty("value").GetBoolean(),
-            "The agent's Passenger did not open on solution-wide analysis on, as its state's settings.json keeps it");
+            "The agent's Pitstop did not open on solution-wide analysis on, as its state's settings.json keeps it");
         string[] solution = [.. (await Call(client, McpTools.Diagnostics)).GetProperty("solution").EnumerateArray().Select(p => $"{p.GetProperty("code").GetString()} {p.GetProperty("path").GetString()}:{p.GetProperty("line").GetInt32()}")];
         Assert.True(solution.Contains("CS0029 Bad.cs:3"), $"Solution-wide analysis on from the start listed: {string.Join("; ", solution)}");
 
         await Call(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["editorFontSize"] = 17 } });
         await client.DisposeAsync();
         // Ended, it has written all it would keep.
-        Assert.True(LastPassenger().WaitForExit(TimeSpan.FromMinutes(1).Scaled()), "The agent's Passenger did not end with its session");
+        Assert.True(LastPassenger().WaitForExit(TimeSpan.FromMinutes(1).Scaled()), "The agent's Pitstop did not end with its session");
         Assert.Equal(kept, File.ReadAllText(file));
     }
 
@@ -360,7 +360,7 @@ public sealed class McpIdeTests : McpRig, IClassFixture<RestoredFolders>
                 (new() { ["editorFontSize"] = "large" }, "editorFontSize takes a number, not \"large\""),
                 (new() { ["mcpServer"] = false }, "Enable MCP Server is the person's to change"),
                 (new() { ["agentFolders"] = new[] { Folder } }, "The folders agents join unasked are the person's to change"),
-                (new() { ["godotExecutable"] = "godot --verbose" }, "godotExecutable names a program Passenger runs, or code it loads: the person sets it in Settings"),
+                (new() { ["godotExecutable"] = "godot --verbose" }, "godotExecutable names a program Pitstop runs, or code it loads: the person sets it in Settings"),
             })
             {
                 CallToolResult refused = Await(Waiting.Apart(() => Result(client, McpTools.SettingsSet, new() { ["changes"] = changes })), "the refused settings change");

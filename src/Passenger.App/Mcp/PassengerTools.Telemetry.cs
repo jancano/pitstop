@@ -130,7 +130,7 @@ public sealed partial class PassengerTools
     {
         if (game.State != LiveAppState.Connected)
         {
-            throw new InvalidOperationException(game.State == LiveAppState.Waiting ? $"{game.Name} has not connected to Passenger yet" : $"{game.Name} has ended: run or debug_start starts it again");
+            throw new InvalidOperationException(game.State == LiveAppState.Waiting ? $"{game.Name} has not connected to Pitstop yet" : $"{game.Name} has ended: run or debug_start starts it again");
         }
         GodotMonitors? before = game.Monitors;
         await When(() => game.Monitors is not null && !ReferenceEquals(game.Monitors, before), Waits.Of(TimeSpan.FromSeconds(3)), cancel,

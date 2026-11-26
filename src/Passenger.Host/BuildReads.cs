@@ -187,7 +187,7 @@ internal static class BuildReads
             List<(string Path, string? Framework)> round = [.. projects];
             while (round.Count > 0)
             {
-                ApartScheduler.ForEach("Passenger build reader", round, 0, cancel, each => _ = Get(each.Path, each.Framework));
+                ApartScheduler.ForEach("Pitstop build reader", round, 0, cancel, each => _ = Get(each.Path, each.Framework));
                 round = [.. round.SelectMany(each => Get(each.Path, each.Framework).Projects ?? []).SelectMany(each => each.Walk.References)
                     .Where(reference => reached.Add(reference) && !made.ContainsKey(Key(reference, null))).Select(reference => (reference, (string?)null))];
             }

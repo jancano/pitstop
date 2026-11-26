@@ -409,7 +409,7 @@ public sealed class ProjectLoadTests : IDisposable
     /// being read-only.</summary>
     private void A_local_source_not_there_under_a_system_folder_is_said_in_nugets_words_not_as_that_folder_being_read_only()
     {
-        string missing = Path.Combine(Path.GetPathRoot(folder)!, "Users", "passenger-teammate", "feeds");
+        string missing = Path.Combine(Path.GetPathRoot(folder)!, "Users", "pitstop-teammate", "feeds");
         Assert.SkipWhen(Directory.Exists(missing), $"{missing}, the teammate's source this test names, is here");
         File.WriteAllText(Path.Combine(folder, "nuget.config"), $"""
             <?xml version="1.0" encoding="utf-8"?>

@@ -33,7 +33,7 @@ public sealed record LaunchOptions(string? Folder, IReadOnlyList<string> Files, 
             throw new FormatException($"{flag} takes SOURCE::NAME, a source and a theme's name, not '{text}'");
         }
         ThemeSource source = ThemeSource.Of(text[..split], out string? why)
-            ?? throw new FormatException($"{flag} '{text}' names no source Passenger reads: {why}");
+            ?? throw new FormatException($"{flag} '{text}' names no source Pitstop reads: {why}");
         return new NamedTheme(new SourcedTheme(source.Name, name));
     }
 
@@ -130,7 +130,7 @@ public sealed record LaunchOptions(string? Folder, IReadOnlyList<string> Files, 
             {
                 if (path is not null)
                 {
-                    throw new FormatException($"'{flag}' would be a second folder or file after '{path}'; Passenger opens one, and more files with --file");
+                    throw new FormatException($"'{flag}' would be a second folder or file after '{path}'; Pitstop opens one, and more files with --file");
                 }
                 path = flag;
                 continue;
@@ -151,7 +151,7 @@ public sealed record LaunchOptions(string? Folder, IReadOnlyList<string> Files, 
                         i++;
                         attachTo = int.TryParse(args[i], NumberStyles.None, CultureInfo.InvariantCulture, out int pid) && pid > 0
                             ? pid
-                            : throw new FormatException($"--mcp-attach takes the process id of a running Passenger, not '{args[i]}'");
+                            : throw new FormatException($"--mcp-attach takes the process id of a running Pitstop, not '{args[i]}'");
                     }
                     break;
                 case "--headless":
@@ -177,11 +177,11 @@ public sealed record LaunchOptions(string? Folder, IReadOnlyList<string> Files, 
                     break;
                 case "--look":
                     string lookText = Value(args, ref i, flag);
-                    look = lookText == "passenger" ? new NamedTheme(null)
+                    look = lookText == "pitstop" ? new NamedTheme(null)
                         : ThemeSource.Carried.FirstOrDefault(n => n.ToLowerInvariant() == lookText) is { } own ? new NamedTheme(SourcedTheme.BuiltIn(own))
                         : ThemeSource.FormerlyCarried.FirstOrDefault(n => n.ToLowerInvariant() == lookText) is { } carried ? new NamedTheme(SourcedTheme.Repository(carried))
                         : lookText.Contains(SourceAndName, StringComparison.Ordinal) ? Sourced(flag, lookText)
-                        : throw new FormatException($"--look takes passenger, {string.Join(", ", ThemeSource.Carried.Concat(ThemeSource.FormerlyCarried).Select(n => n.ToLowerInvariant()))} "
+                        : throw new FormatException($"--look takes pitstop, {string.Join(", ", ThemeSource.Carried.Concat(ThemeSource.FormerlyCarried).Select(n => n.ToLowerInvariant()))} "
                             + $"or SOURCE::NAME, not '{lookText}'");
                     break;
                 case "--scheme":
@@ -333,11 +333,11 @@ public sealed record LaunchOptions(string? Folder, IReadOnlyList<string> Files, 
     {
         if (given.Contains("--mcp") && given.Contains("--mcp-attach"))
         {
-            throw new FormatException("--mcp starts a Passenger of its own and --mcp-attach joins a running one; give one of them");
+            throw new FormatException("--mcp starts a Pitstop of its own and --mcp-attach joins a running one; give one of them");
         }
         if (mcp == McpMode.Attach && given.FirstOrDefault(g => g != "--mcp-attach" && g.StartsWith('-')) is { } extra)
         {
-            throw new FormatException($"--mcp-attach joins a running Passenger's window and takes only its process id and a folder, not {extra}");
+            throw new FormatException($"--mcp-attach joins a running Pitstop's window and takes only its process id and a folder, not {extra}");
         }
         if (mcp == McpMode.Stdio && screenshot)
         {
@@ -589,7 +589,7 @@ public abstract record ScriptStep
 
     /// <summary>An agent run in a tab of the Terminal window and waited for, the picture refused unless it ends with exit
     /// code 0: its command line as given and split, the program by its full path. It joins the window as any agent does,
-    /// through <c>$PASSENGER --mcp-attach $PASSENGER_PID</c>, and uses every tool unasked, since nobody is at a capture to
+    /// through <c>$PITSTOP --mcp-attach $PITSTOP_PID</c>, and uses every tool unasked, since nobody is at a capture to
     /// answer.</summary>
     public sealed record Agent(string Text, IReadOnlyList<string> Command) : ScriptStep;
 

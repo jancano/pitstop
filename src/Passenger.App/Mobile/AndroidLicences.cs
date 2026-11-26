@@ -13,7 +13,7 @@ public static class AndroidLicences
 {
     /// <summary>A stand-in of Google's repository, for tests: the URL of its XML.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_ANDROID_REPOSITORY";
+    public const string Variable = "PITSTOP_ANDROID_REPOSITORY";
 
     private static readonly Uri Google = new("https://dl.google.com/android/repository/repository2-3.xml");
 

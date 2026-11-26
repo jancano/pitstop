@@ -58,7 +58,7 @@ public sealed class StateTests : IDisposable
         Flow.StepApart<StateTests>("a change made while settings json is held reaches the file once it is let go", t => t.A_change_made_while_settings_json_is_held_reaches_the_file_once_it_is_let_go());
         Flow.StepApart<StateTests>("changes written at once while the file is held each reach it once let go", t => t.Changes_written_at_once_while_the_file_is_held_each_reach_it_once_let_go());
         Flow.StepApart<StateTests>("a change lands at once while another program reads the file sharing its deletion", t => t.A_change_lands_at_once_while_another_program_reads_the_file_sharing_its_deletion());
-        Flow.StepApart<StateTests>("a change refused as Passenger closes lands as it ends once the file is let go", t => t.A_change_refused_as_Passenger_closes_lands_as_it_ends_once_the_file_is_let_go());
+        Flow.StepApart<StateTests>("a change refused as Pitstop closes lands as it ends once the file is let go", t => t.A_change_refused_as_Passenger_closes_lands_as_it_ends_once_the_file_is_let_go());
         Flow.StepApart<StateTests>("what a person kept before the store is there on the first run", t => t.What_a_person_kept_before_the_store_is_there_on_the_first_run());
     }
 
@@ -166,7 +166,7 @@ public sealed class StateTests : IDisposable
 
         window.ApplySettings(window.Settings with { EditorFontSize = 16 });
         Ui.WaitFor(() => File.Exists(file + ".bad"), "the file that did not read to be set aside");
-        Ui.WaitFor(() => window.Status?.Contains($"settings.json did not read, so what this Passenger has in force is written in its place: what it held is kept as {file}.bad", StringComparison.Ordinal) == true,
+        Ui.WaitFor(() => window.Status?.Contains($"settings.json did not read, so what this Pitstop has in force is written in its place: what it held is kept as {file}.bad", StringComparison.Ordinal) == true,
             () => $"the status bar to say the values in force were written in place of the file set aside (it says \"{window.Status}\")");
         window.Close();
         JsonObject written = Read(file);
@@ -315,15 +315,15 @@ public sealed class StateTests : IDisposable
             layout.Set(Docking("closing")(layout.Value));
             store.Release();
             Assert.True(Ui.IdeLog().Contains($"{layout.Path} could not be written as it was flushed", StringComparison.Ordinal),
-                "The flush as Passenger closed went ahead while layout.json was held, so nothing here was refused");
+                "The flush as Pitstop closed went ahead while layout.json was held, so nothing here was refused");
             Task lettingGo = Waiting.Apart(() =>
             {
-                Waiting.For(TimeSpan.FromMilliseconds(200), "the holder to let go a moment after Passenger's end began");
+                Waiting.For(TimeSpan.FromMilliseconds(200), "the holder to let go a moment after Pitstop's end began");
                 held.Dispose();
             });
             StateStore.LandWaiting();
             Assert.True(Docked(layout.Path).Contains("closing"),
-                $"Passenger's end did not write again the change refused as it closed, so the next start comes up without it: layout.json holds {string.Join(", ", Docked(layout.Path))}");
+                $"Pitstop's end did not write again the change refused as it closed, so the next start comes up without it: layout.json holds {string.Join(", ", Docked(layout.Path))}");
             Ui.Await(lettingGo, "the holder to let go");
         }
         finally

@@ -45,8 +45,8 @@ public partial class MainWindow
         string names = Plural.Listed([.. up.Select(u => u.Run.Name)]);
         string them = Plural.Agreeing(up.Count, "its", "their");
         string? answer = await Choose("Containers Left Running",
-            $"Detach let go of {names}, and {them} containers still run.\n\nStop takes them down, {leaving}, as Passenger takes down all it started. "
-            + $"Leave Running leaves them running as yours, beyond Passenger, until you stop them (the Containers window lists them).",
+            $"Detach let go of {names}, and {them} containers still run.\n\nStop takes them down, {leaving}, as Pitstop takes down all it started. "
+            + $"Leave Running leaves them running as yours, beyond Pitstop, until you stop them (the Containers window lists them).",
             [StopThem, LeaveThemRunning], StopThem);
         if (answer is null || session != asked)
         {
@@ -98,7 +98,7 @@ public partial class MainWindow
         bool goOn;
         try
         {
-            goOn = await LetGoAskedAsync(quit ? "as Passenger quits" : "as the window closes");
+            goOn = await LetGoAskedAsync(quit ? "as Pitstop quits" : "as the window closes");
         }
         finally
         {

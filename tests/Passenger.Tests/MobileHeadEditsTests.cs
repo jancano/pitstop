@@ -22,7 +22,7 @@ public sealed partial class MobileHeadEditsTests
 
     /// <summary>What the banner says of a .NET 10 head's move to the first .NET on CoreCLR.</summary>
     private static string Moved(string framework, string platform) =>
-        $"net11.0-{framework} in place of net10.0-{framework}, whose {platform} apps run on Mono (Passenger builds, runs and debugs mobile apps from .NET 11, on CoreCLR)";
+        $"net11.0-{framework} in place of net10.0-{framework}, whose {platform} apps run on Mono (Pitstop builds, runs and debugs mobile apps from .NET 11, on CoreCLR)";
 
     /// <summary>The banner names each edit a head needs, Make the Mobile Edits makes them as one step of Undo keeping a file
     /// the person made since, and the heads then build.</summary>

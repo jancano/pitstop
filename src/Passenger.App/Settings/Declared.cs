@@ -43,7 +43,7 @@ public static class Declared
     public static readonly SizeSetting DisplayScale = new(s => s.DisplayScale, (s, v) => s with { DisplayScale = double.IsFinite(v) ? v : 1 }, [1, 1.25, 1.5, 1.75, 2, 2.5, 3],
         new(D.Appearance, "Display scale", "display scale zoom font size bigger larger interface ui accessibility dpi hidpi 4k monitor percent",
             "How large the window draws everything: menus, tool windows, tabs, dialogs, popups, editors and icons, on top of the "
-            + "system's own display scaling. 100% is Passenger's own size; 125% or 150% suits a dense screen."));
+            + "system's own display scaling. 100% is Pitstop's own size; 125% or 150% suits a dense screen."));
 
     public static readonly ToggleSetting MainMenuBar = new(s => s.MainMenuBar, (s, v) => s with { MainMenuBar = v },
         new(D.Appearance, "Show main menu as a menu bar", "main menu bar hamburger file edit view toolbar ribbon menus",
@@ -133,7 +133,7 @@ public static class Declared
     public static readonly ChoiceSetting<ConfirmClosing> ConfirmBeforeClosing = new(s => s.ConfirmBeforeClosing, (s, v) => s with { ConfirmBeforeClosing = v },
         [(ConfirmClosing.Never, "Never"), (ConfirmClosing.WhenQuitting, "When quitting"), (ConfirmClosing.EveryWindow, "Every window")],
         new(D.SystemPage, "Confirm before closing", "confirm ask prompt question before closing close quit exit window are you sure accidental",
-            $"Whether Passenger asks you before it quits ({(OperatingSystem.IsMacOS() ? "Quit Passenger" : "File | Exit")} or closing its last "
+            $"Whether Pitstop asks you before it quits ({(OperatingSystem.IsMacOS() ? "Quit Passenger" : "File | Exit")} or closing its last "
             + "window) or before any of its windows closes. The question's Don't ask again sets this back to Never."));
 
     public static readonly ToggleSetting SaveOnDeactivation = new(s => s.SaveOnDeactivation, (s, v) => s with { SaveOnDeactivation = v },
@@ -148,10 +148,10 @@ public static class Declared
 
     public static readonly ToggleSetting CheckForUpdates = new(s => s.CheckForUpdates, (s, v) => s with { CheckForUpdates = v },
         new(D.UpdatesPage, "Check for updates", "updates check new version release newer download github automatic install restart",
-            "Passenger asks GitHub for its latest release when it starts and once a day. When a newer one is out, an installed "
-            + "Passenger downloads it, checks it against the SHA-256 the release gives, and installs it when it restarts; a "
+            "Pitstop asks GitHub for its latest release when it starts and once a day. When a newer one is out, an installed "
+            + "Pitstop downloads it, checks it against the SHA-256 the release gives, and installs it when it restarts; a "
             + "copy built from source says in the status bar that it is out. Nothing is sent but the requests, which name "
-            + "Passenger and its version."));
+            + "Pitstop and its version."));
 
     public static readonly ToggleSetting AlwaysSelectOpenedFile = new(s => s.AlwaysSelectOpenedFile, (s, v) => s with { AlwaysSelectOpenedFile = v },
         new(D.ExplorerPage, "Always select opened file", "explorer solution view tree follow track sync locate active file tab autoscroll from source",
@@ -253,10 +253,10 @@ public static class Declared
             + "Prettier alone, and GDScript's own Reformat on save (Code Style: GDScript) turns this on for scripts alone."));
 
     public static readonly ChoiceSetting<CSharpFormatter> CSharpFormatter = new(s => s.CSharpFormatter, (s, v) => s with { CSharpFormatter = v },
-        [(Settings.CSharpFormatter.Passenger, "Passenger's own"), (Settings.CSharpFormatter.DotnetFormat, "dotnet format")],
+        [(Settings.CSharpFormatter.Passenger, "Pitstop's own"), (Settings.CSharpFormatter.DotnetFormat, "dotnet format")],
         new(D.EditorPage, "C# formatter", "c# formatter dotnet format reformat code cleanup on save layout whitespace style analyzers sdk editorconfig",
             "What lays C# out for Reformat Code, Code Cleanup and Reformat on save, in the editor and over what the Explorer has chosen. "
-            + "Passenger's own: the C# language server, at once, a selection alone where one is chosen. dotnet format: the folder's .NET SDK "
+            + "Pitstop's own: the C# language server, at once, a selection alone where one is chosen. dotnet format: the folder's .NET SDK "
             + "runs dotnet format on the file's project or the solution, reading each .editorconfig as the build does, and the editor takes "
             + "what it wrote, in the file's own line breaks, as one undoable step; Reformat Code fixes whitespace, Code Cleanup also the code "
             + "style and analyzer findings set to warning or above. It saves the file first, lays out the whole file, and runs only in a "
@@ -462,9 +462,9 @@ public static class Declared
         new(D.HotReloadPage, "Always restart for a change it cannot apply", "hot reload rude edit restart ask always never dotnet watch"));
 
     public static readonly ChoiceSetting<DebuggerStop> WhenDebuggerStops = new(s => s.WhenDebuggerStops, (s, v) => s with { WhenDebuggerStops = v },
-        [(DebuggerStop.ComeForward, "Bring Passenger to the front"), (DebuggerStop.AskForAttention, "Ask for attention"), (DebuggerStop.Nothing, "Nothing")],
+        [(DebuggerStop.ComeForward, "Bring Pitstop to the front"), (DebuggerStop.AskForAttention, "Ask for attention"), (DebuggerStop.Nothing, "Nothing")],
         new(D.RunPage, "When the debugger stops", "debugger debug stop stopped breakpoint hit exception step paused front foreground activate focus raise bring window attention bounce dock taskbar flash",
-            "What a breakpoint, an exception or a step's end does while you are in another program, such as the app you debug: Passenger's window "
+            "What a breakpoint, an exception or a step's end does while you are in another program, such as the app you debug: Pitstop's window "
             + $"comes to the front, or, where the system keeps that program in front, asks for your attention ({(OperatingSystem.IsMacOS() ? "its Dock icon bounces" : "its taskbar button flashes")}), "
             + "as Ask for attention always does. An agent's debugging never brings the window forward."));
 
@@ -497,14 +497,14 @@ public static class Declared
         new(D.SchemasPage, "Allow downloading JSON Schemas from remote sources",
             "json schema schemas remote download web http https schemastore $schema validation completion",
             "A JSON file that names a schema on the web ($schema) has it downloaded to check and complete it. package.json, "
-            + "tsconfig.json, jsconfig.json, appsettings.json, launchSettings.json and global.json use the schemas Passenger "
+            + "tsconfig.json, jsconfig.json, appsettings.json, launchSettings.json and global.json use the schemas Pitstop "
             + "carries from SchemaStore, which are never downloaded."));
 
     public static readonly ToggleSetting DownloadStylesheets = new(s => s.DownloadStylesheets, (s, v) => s with { DownloadStylesheets = v },
         new(D.StylesheetsPage, "Allow downloading the stylesheets a page links from the web",
             "css stylesheet stylesheets class classes remote download web http https cdn bootstrap link completion html razor blazor",
             "A page's <link rel=\"stylesheet\"> to an address on the web (a CDN's Bootstrap) has the stylesheet downloaded once, kept in "
-            + "Passenger's cache, to complete, describe and check the classes it defines; one whose link gives an integrity hash is "
+            + "Pitstop's cache, to complete, describe and check the classes it defines; one whose link gives an integrity hash is "
             + "used only while it matches. The app's own stylesheets and its packages' are read from disk, never downloaded."));
 
     public static readonly ChoiceSetting<RuntimeChoice> WebRuntime = new(s => s.WebRuntime, (s, v) => s with { WebRuntime = v },
@@ -542,7 +542,7 @@ public static class Declared
         new(D.RunPage, Run.PageBrowsers.Row, "browser browsers chrome edge firefox safari chromium brave open page url launch web app blazor webassembly wasm debug debugger",
             "The browser a web app's page opens in once it listens, as its launch profile's launchBrowser asks: a program (on macOS an app bundle too) "
             + "with any arguments to give it before the page's address; a run configuration may name its own. Debug drives it, on a profile of "
-            + "Passenger's own, to debug a Blazor app's WebAssembly components, which takes a Chromium browser. Empty, pages open in the system's "
+            + "Pitstop's own, to debug a Blazor app's WebAssembly components, which takes a Chromium browser. Empty, pages open in the system's "
             + "default browser, and Debug drives the first of Chrome, Edge, Chromium and Brave found where they install, else on the PATH."));
 
     public static readonly ProgramSetting GodotExecutable = new(s => s.GodotExecutable, (s, v) => s with { GodotExecutable = v },
@@ -562,16 +562,16 @@ public static class Declared
     public static readonly ToggleSetting GodotTestsWindowed = new(s => s.GodotTestsWindowed, (s, v) => s with { GodotTestsWindowed = v },
         new(D.GodotPage, "Show the game's window as GUT and GoDotTest run its tests", "godot tests gut godottest window headless visible run unit",
             "Off, Godot runs a game's GUT and GoDotTest tests headless, with no window; on, it shows the game's window as they run. "
-            + "GdUnit4 runs Godot as its run settings' parameters say. A Passenger nobody sees runs every Godot headless."));
+            + "GdUnit4 runs Godot as its run settings' parameters say. A Pitstop nobody sees runs every Godot headless."));
 
     public static readonly ToggleSetting GodotDebugPlays = new(s => s.GodotDebugPlays, (s, v) => s with { GodotDebugPlays = v },
         new(D.GodotPage, "Debug what Godot's Play starts", "godot editor play addon debug attach breakpoint held start",
-            "With Passenger's addon in a project, each game Play starts in Godot's editor waits at its start for this Passenger's "
+            "With Pitstop's addon in a project, each game Play starts in Godot's editor waits at its start for this Pitstop's "
             + "debugger, which attaches to it, so a breakpoint set here stops it. Off, Play still builds here, and the game runs undebugged."));
 
     public static readonly ToggleSetting GodotSelectionFollows = new(s => s.GodotSelectionFollows, (s, v) => s with { GodotSelectionFollows = v },
         new(D.GodotPage, "Show here the node selected in Godot's editor", "godot editor selection scene dock node outline follow addon",
-            "With Passenger's addon in a project, a node selected in the scene dock of Godot's editor shows here: its scene at the node, "
+            "With Pitstop's addon in a project, a node selected in the scene dock of Godot's editor shows here: its scene at the node, "
             + "which the outline follows, and its script, behind, at its class. The keys stay where they are."));
 
     public static readonly ToggleSetting TerminalCopyOnSelection = new(s => s.TerminalCopyOnSelection, (s, v) => s with { TerminalCopyOnSelection = v },
@@ -586,7 +586,7 @@ public static class Declared
 
     public static readonly ToggleSetting McpServer = new(s => s.McpServer, (s, v) => s with { McpServer = v },
         new(D.McpPage, "Enable MCP Server", D.McpWords,
-            "Agents started with passenger --mcp-attach can use this window without asking to: read and change files, build, run and "
+            "Agents started with pitstop --mcp-attach can use this window without asking to: read and change files, build, run and "
             + "debug, use Git, NuGet and the terminal. Off, the window asks before letting each agent in. Either way, the window asks "
             + "before each call of a tool that changes anything beyond saving, stopping and stepping, unless you allowed that tool, or every "
             + "tool at the agent's request, for the agent's session."));
@@ -605,7 +605,7 @@ public static class Declared
 
     public static readonly ToggleSetting LogEveryProgram = new(s => s.LogEveryProgram, (s, v) => s with { LogEveryProgram = v },
         new(D.DiagnosticsPage, "Log every program started", "debug log processes programs commands git dotnet exit code time",
-            "Each program the IDE runs (git, dotnet, the servers) is written to passenger.log with its exit code and time. "
+            "Each program the IDE runs (git, dotnet, the servers) is written to pitstop.log with its exit code and time. "
             + "Otherwise only those that fail or take a second or more are."));
 
     public static readonly ChoiceSetting<Passenger.Editor.KeymapPreset> Keymap = new(s => s.Keymap, (s, v) => s with { Keymap = v });

@@ -44,10 +44,10 @@ public sealed class SelfDebuggingTests : IDisposable
         window.Show();
         window.OpenFolder(repository);
         // Passenger's whole solution, which a small machine evaluates in longer than a key may settle in.
-        Ui.PumpUntil(() => BackgroundWork.Pending == 0, "Passenger's solution to load", TimeSpan.FromMinutes(5));
+        Ui.PumpUntil(() => BackgroundWork.Pending == 0, "Pitstop's solution to load", TimeSpan.FromMinutes(5));
         Ui.Settle();
         string app = PathNames.Canonical(Path.Combine(repository, "src", "Passenger.App", "Passenger.App.csproj"));
-        Assert.True(window.Configuration?.Project == app, $"Opened on its repository, Passenger would debug {window.Configuration?.Name}, not itself");
+        Assert.True(window.Configuration?.Project == app, $"Opened on its repository, Pitstop would debug {window.Configuration?.Name}, not itself");
 
         // Where the status bar is told why a key's action cannot run: F10 with nothing being debugged, in the inner Passenger.
         string actions = PathNames.Canonical(Path.Combine(repository, "src", "Passenger.App", "MainWindow.Actions.cs"));
@@ -60,8 +60,8 @@ public sealed class SelfDebuggingTests : IDisposable
 
         // The checkout's restore as its last build wrote it, which Passenger's build here leaves as it was.
         string[] spelled = [.. OtherwiseSpelled(repository, window.Projects, app)];
-        Assert.True(spelled.Length == 0, $"The checkout's last build restored {Plural.Of(spelled.Length, "project")} of Passenger through another spelling "
-            + $"of the checkout's path ({spelled.FirstOrDefault()}): building them through the disk's, Passenger would restore and compile them and all that "
+        Assert.True(spelled.Length == 0, $"The checkout's last build restored {Plural.Of(spelled.Length, "project")} of Pitstop through another spelling "
+            + $"of the checkout's path ({spelled.FirstOrDefault()}): building them through the disk's, Pitstop would restore and compile them and all that "
             + $"uses them again. Build the checkout only through {PathNames.Canonical(repository)}, with no MSBuild node left from a build through the other "
             + "(dotnet build-server shutdown)");
         Dictionary<string, byte[]> restore = RestoreFiles(repository);
@@ -73,19 +73,19 @@ public sealed class SelfDebuggingTests : IDisposable
         {
             launched = window.DebugAsync($"\"{folder}\" --screenshot \"{picture}\" --key F10 --key F10 --wait 600000");
             // A build begins its process only once saves have landed and the projects are read as written.
-            Ui.PumpUntil(() => window.Builder.IsRunning || launched.IsCompleted, "Passenger's build's process to start");
+            Ui.PumpUntil(() => window.Builder.IsRunning || launched.IsCompleted, "Pitstop's build's process to start");
         }
-        Ui.Launched(window, launched, "Passenger to build and start under its debugger", TimeSpan.FromMinutes(5));
+        Ui.Launched(window, launched, "Pitstop to build and start under its debugger", TimeSpan.FromMinutes(5));
         string[] rewritten = [.. restore.Where(r => !File.Exists(r.Key) || !File.ReadAllBytes(r.Key).AsSpan().SequenceEqual(r.Value))
             .Select(r => Path.GetFileName(Path.GetDirectoryName(r.Key)!)).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
-        Assert.True(rewritten.Length == 0, $"Building Passenger rewrote the checkout's restore of {Plural.Of(rewritten.Length, "project")} "
+        Assert.True(rewritten.Length == 0, $"Building Pitstop rewrote the checkout's restore of {Plural.Of(rewritten.Length, "project")} "
             + $"({string.Join(", ", rewritten)}), which the person's next build restores again; {FirstChange(restore)}");
         DebugSession session = window.Debugger.Session!;
-        Ui.WaitFor(() => session.State == DebugState.Paused || !window.Debugger.IsDebugging, "the inner Passenger to stop at the breakpoint in its key's action", TimeSpan.FromMinutes(3));
-        Assert.True(session.State == DebugState.Paused, $"The inner Passenger ended without stopping: {window.Status}\n{Console(window)}");
+        Ui.WaitFor(() => session.State == DebugState.Paused || !window.Debugger.IsDebugging, "the inner Pitstop to stop at the breakpoint in its key's action", TimeSpan.FromMinutes(3));
+        Assert.True(session.State == DebugState.Paused, $"The inner Pitstop ended without stopping: {window.Status}\n{Console(window)}");
         Ui.WaitFor(() => Value(window, "why") is not null, "the stop's frames and locals");
         DapStackFrame top = window.BottomPanel.Debug.Frames[0];
-        Assert.True(top.Source?.Path == actions && top.Line == line + 1, $"The inner Passenger stopped at {top.Source?.Path}:{top.Line}, not at the breakpoint");
+        Assert.True(top.Source?.Path == actions && top.Line == line + 1, $"The inner Pitstop stopped at {top.Source?.Path}:{top.Line}, not at the breakpoint");
         Assert.Contains(new LineMark(line, LineMarkKind.ExecutionPoint), editor.LineMarks);
         Assert.Equal("\"app.debug.stepOver\"", Value(window, "action"));
         Assert.Equal("\"Nothing is being debugged\"", Value(window, "why"));
@@ -102,26 +102,26 @@ public sealed class SelfDebuggingTests : IDisposable
         int stops = 0;
         session.StateChanged += (_, _) => stops += session.State == DebugState.Paused ? 1 : 0;
         Ui.Run(window, AppActions.Resume);
-        Ui.WaitFor(() => stops > 0 || !window.Debugger.IsDebugging, "the inner Passenger to take its next key", TimeSpan.FromMinutes(2));
-        Assert.True(session.State == DebugState.Paused, $"The inner Passenger did not stop at its next key: {window.Status}\n{Console(window)}");
+        Ui.WaitFor(() => stops > 0 || !window.Debugger.IsDebugging, "the inner Pitstop to take its next key", TimeSpan.FromMinutes(2));
+        Assert.True(session.State == DebugState.Paused, $"The inner Pitstop did not stop at its next key: {window.Status}\n{Console(window)}");
 
         // Its state is its own, in the sandbox under the outer's.
         string sandbox = Path.Combine(state, "sandbox");
         string opened = $"Opened {PathNames.Canonical(folder)}";
-        Assert.Contains(opened, Ui.Shared(Path.Combine(sandbox, "logs", "passenger.log")), StringComparison.Ordinal);
+        Assert.Contains(opened, Ui.Shared(Path.Combine(sandbox, "logs", "pitstop.log")), StringComparison.Ordinal);
         Assert.DoesNotContain(opened, Ui.IdeLog(), StringComparison.Ordinal);
         int inner = Ui.Await(session.ProcessStarted, "the adapter to say which process it started");
         IReadOnlyList<int> children = Processes.Descendants(inner);
         int[] servers = [.. Directory.GetFiles(Path.Combine(sandbox, "logs", "roslyn"), "server-*.log").Select(ServerProcess)];
         Assert.True(servers.Length > 0 && servers.All(children.Contains),
-            $"The inner Passenger's language servers ({string.Join(", ", servers)}) are not among what it started ({string.Join(", ", children)})");
+            $"The inner Pitstop's language servers ({string.Join(", ", servers)}) are not among what it started ({string.Join(", ", children)})");
 
         Ui.Run(window, AppActions.Stop);
         Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
-        Assert.True(Processes.Gone(inner), $"Stop left the inner Passenger running: {Processes.Describe(inner)}");
+        Assert.True(Processes.Gone(inner), $"Stop left the inner Pitstop running: {Processes.Describe(inner)}");
         foreach (int child in children)
         {
-            Assert.True(Processes.Gone(child), $"Stop left what the inner Passenger started running: {Processes.Describe(child)}");
+            Assert.True(Processes.Gone(child), $"Stop left what the inner Pitstop started running: {Processes.Describe(child)}");
         }
         window.Close();
     }

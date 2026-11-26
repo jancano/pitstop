@@ -698,7 +698,7 @@ public abstract class WatchedTree : IDisposable
     /// <summary>The variable naming a file whose changes every watcher passes over as the system drops one without a word,
     /// by its name in whatever folder: a test's hold, for what finds such a change otherwise.</summary>
     [IdentifierHome]
-    public const string UnheardVariable = "PASSENGER_UNHEARD";
+    public const string UnheardVariable = "PITSTOP_UNHEARD";
 
     /// <summary>The name <see cref="UnheardVariable"/> gives, or null; a value that is more than a file's name is fatal, as a
     /// malformed flag is.</summary>

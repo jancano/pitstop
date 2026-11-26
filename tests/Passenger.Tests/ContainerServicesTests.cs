@@ -458,12 +458,12 @@ public sealed class ContainerServicesTests(ContainerRunDebuggingTests.Tools tool
             string container = Docker.Ask(["ps", "-aq", "--filter", $"label=com.docker.compose.project={project}", "--filter", $"label=com.docker.compose.service={service}"]).Trim();
             Assert.Fail($"{service} gave no answer: {answer ?? "none in 90 s"}\nits container: {Docker.Ask(["inspect", "-f", "{{.State.Status}} {{.State.ExitCode}} {{.State.StartedAt}} {{.State.FinishedAt}}", container])}"
                 + $"\nits processes:\n{Docker.Ask(["top", container])}\nits log's end:\n{Docker.Ask(["logs", "--tail", "25", container])}\n"
-                + $"the debugger's log's end:\n{said[Math.Max(0, said.Length - 5000)..]}\nthe engine's log there (with PASSENGER_ENGINE_LOG):\n{EngineLogOf(container)}");
+                + $"the debugger's log's end:\n{said[Math.Max(0, said.Length - 5000)..]}\nthe engine's log there (with PITSTOP_ENGINE_LOG):\n{EngineLogOf(container)}");
         }
         return answer;
     }
 
-    /// <summary>The end of the debugger engine's log in a service's container (kept with PASSENGER_ENGINE_LOG), copied out,
+    /// <summary>The end of the debugger engine's log in a service's container (kept with PITSTOP_ENGINE_LOG), copied out,
     /// as a container that has stopped runs nothing that could read it there.</summary>
     private static string EngineLogOf(string container)
     {

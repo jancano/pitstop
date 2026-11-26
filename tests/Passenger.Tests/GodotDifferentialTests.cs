@@ -27,7 +27,7 @@ public sealed partial class GodotDifferentialTests
     private static readonly (Regex Said, string Why)[] Kept =
     [
         (KeptConstant(), "Godot's loader gives a constant of a type its target takes none of a second error at the same place, "
-            + "which Passenger gives only where Godot's server does, its other error there saying the same"),
+            + "which Pitstop gives only where Godot's server does, its other error there saying the same"),
     ];
 
     /// <summary>What Godot says of scripts and shaders written at random, and how it reads binary scenes, Passenger's own.</summary>
@@ -121,7 +121,7 @@ public sealed partial class GodotDifferentialTests
                 if (read?.Uid != told.Groups[2].Value || !godots.Order(StringComparer.Ordinal).SequenceEqual(ours.Order(StringComparer.Ordinal)))
                 {
                     differing.Add($"Scene {i} of seed {Seed}, saved with {saved[i]}: Godot wrote {told.Groups[2].Value} naming {string.Join(", ", godots)}; "
-                        + $"Passenger read {read?.Uid ?? unread} naming {string.Join(", ", ours)}");
+                        + $"Pitstop read {read?.Uid ?? unread} naming {string.Join(", ", ours)}");
                     continue;
                 }
                 GodotBinaryExternal[] to = [.. read!.Externals.Select(e => e with { Path = e.Path.Replace($"res://c{i}/", $"res://c{i}/moved/", StringComparison.Ordinal) })];
@@ -139,7 +139,7 @@ public sealed partial class GodotDifferentialTests
                         + $"\tprinterr(\"== {i} loaded \", \" \".join(shown{i}.get_children().map(func(c): return c.mesh.resource_path)))\n\tshown{i}.free()\n");
                 }
             }
-            Assert.True(differing.Count == 0, $"Passenger reads {differing.Count} of Godot's {Scenes} binary scenes otherwise than Godot does, so a move "
+            Assert.True(differing.Count == 0, $"Pitstop reads {differing.Count} of Godot's {Scenes} binary scenes otherwise than Godot does, so a move "
                 + $"would follow the wrong resources:\n{string.Join("\n", differing)}");
             string loaded = await RunAsync(godot, project, homes, "load.gd", load.Append("\tprinterr(\"== end\")\n\tquit()\n").ToString());
             foreach ((int i, string[] to) in moved)
@@ -152,10 +152,10 @@ public sealed partial class GodotDifferentialTests
                 if (named != expected || !saved[i].Contains("BIG_ENDIAN", StringComparison.Ordinal) && shown != expected)
                 {
                     differing.Add($"Scene {i} of seed {Seed}, saved with {saved[i]}, its meshes moved: Godot names {named ?? "nothing"} and loads "
-                        + $"{shown ?? "nothing"} where Passenger wrote {expected}");
+                        + $"{shown ?? "nothing"} where Pitstop wrote {expected}");
                 }
             }
-            Assert.True(differing.Count == 0, $"Godot reads {differing.Count} of the scenes Passenger rewrote otherwise than Passenger wrote them, so a "
+            Assert.True(differing.Count == 0, $"Godot reads {differing.Count} of the scenes Pitstop rewrote otherwise than Pitstop wrote them, so a "
                 + $"move leaves a scene naming what is no longer there:\n{string.Join("\n", differing)}");
         }
         finally
@@ -188,7 +188,7 @@ public sealed partial class GodotDifferentialTests
     {
         GodotFound? godot = GodotExecutables.Find(null);
         Assert.SkipWhen(godot is not { WhyNotScripts: null, Version: { } version } || !Pinned.Any(p => version.StartsWith(p + ".", StringComparison.Ordinal)),
-            $"No Godot {string.Join(" or ", Pinned)} was found (GODOT, the PATH, Applications), whose own errors Passenger's are held to");
+            $"No Godot {string.Join(" or ", Pinned)} was found (GODOT, the PATH, Applications), whose own errors Pitstop's are held to");
         return godot!;
     }
 
@@ -202,11 +202,11 @@ public sealed partial class GodotDifferentialTests
             if (!Same(godots[i], ours(texts[i])))
             {
                 (string smallest, HashSet<(int, string)> said) = await SmallestAsync(godot, texts[i], godots[i], ours);
-                differing.Add($"{kind} {i} of seed {Seed}, where Godot says {Told(godots[i])} and Passenger {Told(ours(texts[i]))}, cut to:\n{smallest}\n"
+                differing.Add($"{kind} {i} of seed {Seed}, where Godot says {Told(godots[i])} and Pitstop {Told(ours(texts[i]))}, cut to:\n{smallest}\n"
                     + $"Godot says: {Told(said)}\nPassenger says: {Told(ours(smallest))}");
             }
         }
-        Assert.True(differing.Count == 0, $"Passenger's {kind} errors differ from Godot's on {differing.Count} of {texts.Length}, so a person is told of "
+        Assert.True(differing.Count == 0, $"Pitstop's {kind} errors differ from Godot's on {differing.Count} of {texts.Length}, so a person is told of "
             + "an error Godot never gives or not of one it does:\n\n" + string.Join("\n\n", differing));
     }
 

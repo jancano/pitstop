@@ -390,12 +390,27 @@ public sealed class Navigator
         {
             return [];
         }
-        CSharpService? csharp = Session.CSharp;
-        if (csharp?.Session is not { IsLoaded: true } server)
+        ProjectSession session = Session;
+        CSharpService? csharp = session.CSharp;
+        IReadOnlyList<Lsp.SymbolInformation> found;
+        if ((Editors.Active?.Language.Service == Passenger.Languages.LanguageService.Clangd || csharp is null)
+            && session.Cpp?.Server is { } native && native.Provides("workspaceSymbolProvider"))
+        {
+            found = await native.RequestAsync<List<Lsp.SymbolInformation>>(Lsp.LspMethods.WorkspaceSymbol, new { query = query.Trim() }, cancel) ?? [];
+            cancel.ThrowIfCancellationRequested();
+            if (Session != session || session.Cpp.Server != native)
+            {
+                return [];
+            }
+        }
+        else if (csharp?.Session is { IsLoaded: true } server)
+        {
+            found = await server.SymbolsAsync(query.Trim(), cancel);
+        }
+        else
         {
             throw new Lsp.LanguageServerFailed(csharp is null ? Refusals.NoCSharp : $"the C# language server is not ready: {csharp.State}");
         }
-        IReadOnlyList<Lsp.SymbolInformation> found = await server.SymbolsAsync(query.Trim(), cancel);
         string? root = Session.Folder;
         Dictionary<string, TextSnapshot> open = new(StringComparer.Ordinal);
         foreach (OpenDocument document in Editors.Documents)

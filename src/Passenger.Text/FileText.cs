@@ -271,7 +271,7 @@ public sealed record FileText(string Text, Encoding Encoding, bool HasBom, bool 
     /// which nothing but the save should see: a '.user' file, which a .NET project's items leave out (the SDK's
     /// DefaultItemExcludes), so dotnet watch never takes one for a file added to the project and loads the projects again,
     /// however long the save keeps it there.</summary>
-    public const string SaveSuffix = ".passenger-save.user";
+    public const string SaveSuffix = ".pitstop-save.user";
 
     /// <summary>Whether a path is a save's temporary file, there beside its file for the moment the save writes: what
     /// reads the folder meanwhile (the folder watcher, Git's status, Go to File's index, the Explorer) passes it over

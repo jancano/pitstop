@@ -129,7 +129,7 @@ public sealed class XamlHotReload(LiveApp app, Func<string, TextSnapshot?> texts
         }
         if (await projects(file) is not { } project || project.UriOf(file) is not { } uri)
         {
-            return (file, new XamlReloaded([], $"{Path.GetFileName(file)} is in no project whose XAML Passenger reads", []), text);
+            return (file, new XamlReloaded([], $"{Path.GetFileName(file)} is in no project whose XAML Pitstop reads", []), text);
         }
         string shown = text.ToString();
         XamlChange change = new(file, shown, held.GetValueOrDefault(file), project.AssemblyName, uri)

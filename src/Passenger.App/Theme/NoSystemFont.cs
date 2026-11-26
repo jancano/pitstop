@@ -10,7 +10,7 @@ namespace Passenger.App;
 public static class NoSystemFont
 {
     /// <summary>What the person is told where fontconfig lists no font.</summary>
-    public const string Said = "fontconfig lists no font, so Passenger draws its words in the fonts it carries alone. "
+    public const string Said = "fontconfig lists no font, so Pitstop draws its words in the fonts it carries alone. "
         + "Where fonts are installed, fontconfig's cache is out of date: refresh it with fc-cache -f (sudo fc-cache -f for every user's). "
         + "Otherwise install one, such as your distribution's DejaVu Sans.";
 
@@ -26,7 +26,7 @@ public static class NoSystemFont
         if (Interlocked.Exchange(ref told, 1) == 0)
         {
             IdeErrors.Write($"Fonts: {Said}");
-            Console.Error.WriteLine($"passenger: {Said}");
+            Console.Error.WriteLine($"pitstop: {Said}");
         }
         return builder.With(new FontManagerOptions { DefaultFamilyName = WindowFonts.CarriedName });
     }

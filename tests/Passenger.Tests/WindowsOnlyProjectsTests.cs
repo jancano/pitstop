@@ -83,7 +83,7 @@ public sealed class WindowsOnlyProjectsTests : IClassFixture<WindowsOnlyProjects
             }
             Assert.Equal($"Windows only · {Framework}", gallery.Detail);
             Assert.Equal($"Windows only · {Framework}", forms.Detail);
-            Assert.StartsWith("WPF runs only on Windows: Passenger builds Gallery here for its code help", gallery.Tip, StringComparison.Ordinal);
+            Assert.StartsWith("WPF runs only on Windows: Pitstop builds Gallery here for its code help", gallery.Tip, StringComparison.Ordinal);
             Assert.StartsWith("Windows Forms runs only on Windows", forms.Tip, StringComparison.Ordinal);
 
             Assert.Equal("Gallery cannot run here: WPF runs only on Windows", ToolTip.GetTip(window.FindControl<Button>("RunConfigButton")!));
@@ -180,7 +180,7 @@ public sealed class WindowsOnlyProjectsTests : IClassFixture<WindowsOnlyProjects
                 Assert.True(File.ReadAllText(file) == text, $"{Path.GetRelativePath(Folder, file)} changed from what dotnet new made:\n{File.ReadAllText(file)}");
             }
             string[] props = [.. Directory.EnumerateFiles(Folder, "Directory.Build.*", SearchOption.AllDirectories)];
-            Assert.True(props.Length == 0, $"Passenger wrote {string.Join(", ", props)} into the solution");
+            Assert.True(props.Length == 0, $"Pitstop wrote {string.Join(", ", props)} into the solution");
         }
 
         public ValueTask DisposeAsync()

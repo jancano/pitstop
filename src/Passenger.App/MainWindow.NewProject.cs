@@ -80,7 +80,7 @@ public partial class MainWindow
     }
 
     /// <summary>The templates New Solution and New Project made something from lately, the newest first: those the person's
-    /// window keeps, or in a window nobody sees those kept where PASSENGER_SETTINGS names, read as its settings are there,
+    /// window keeps, or in a window nobody sees those kept where PITSTOP_SETTINGS names, read as its settings are there,
     /// keeping nothing; none in any other.</summary>
     private IReadOnlyList<string> RecentTemplates() => keepsWorkspace ? state!.Templates.Value.Newest()
         : Unseen && State.StateStore.Named is { } named

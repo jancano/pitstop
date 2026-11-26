@@ -184,7 +184,7 @@ public sealed class ActionsTests : IDisposable
         try
         {
             IdeAction quit = window.Actions[AppActions.Exit]!;
-            Assert.Equal(OperatingSystem.IsMacOS() ? "Quit Passenger" : "Exit", quit.Title);
+            Assert.Equal(OperatingSystem.IsMacOS() ? "Quit Pitstop" : "Exit", quit.Title);
             foreach (string asked in (string[])["Quit", "Exit"])
             {
                 ActionPopup popup = FindAction(window);

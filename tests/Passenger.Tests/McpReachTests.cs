@@ -43,7 +43,7 @@ public sealed class McpReachTests : McpRig
         await Flow.StepApartAsync("an agent reads and edits a project its trusted solution names beside the folder and nothing else there", () => new McpReachTests(), t => t.An_agent_reads_and_edits_a_project_its_trusted_solution_names_beside_the_folder_and_nothing_else_there());
         await Flow.StepApartAsync("an agent reads a packages file and a generators code outside the folder where its places lead and changes neither", () => new McpReachTests(), t => t.An_agent_reads_a_packages_file_and_a_generators_code_outside_the_folder_where_its_places_lead_and_changes_neither());
         await Flow.StepApartAsync("an agent reads the language servers library code only where its folder is the persons own", () => new McpReachTests(), t => t.An_agent_reads_the_language_servers_library_code_only_where_its_folder_is_the_persons_own());
-        await Flow.StepApartAsync("settings naming a program passenger runs are refused to an agent and kept as the person set them", () => new McpReachTests(), t => t.Settings_naming_a_program_passenger_runs_are_refused_to_an_agent_and_kept_as_the_person_set_them());
+        await Flow.StepApartAsync("settings naming a program pitstop runs are refused to an agent and kept as the person set them", () => new McpReachTests(), t => t.Settings_naming_a_program_passenger_runs_are_refused_to_an_agent_and_kept_as_the_person_set_them());
     }
 
     /// <summary>What an attached agent's edits reach as one flow, each step one test's check in an instance of its own:
@@ -454,7 +454,7 @@ public sealed class McpReachTests : McpRig
         foreach (string name in named)
         {
             CallToolResult refused = await Result(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { [name] = "/tmp/elsewhere" } });
-            if (refused.IsError != true || !Text(refused).Contains($"{name} names a program Passenger runs, or code it loads: the person sets it in Settings, never an agent", StringComparison.Ordinal))
+            if (refused.IsError != true || !Text(refused).Contains($"{name} names a program Pitstop runs, or code it loads: the person sets it in Settings, never an agent", StringComparison.Ordinal))
             {
                 answered.Add($"{name}: {Text(refused)}");
             }

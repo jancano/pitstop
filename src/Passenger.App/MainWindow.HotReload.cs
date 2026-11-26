@@ -212,7 +212,7 @@ public partial class MainWindow
 
     /// <summary>The variable that gives <see cref="WatchSaysLater"/> in milliseconds.</summary>
     [IdentifierHome]
-    public const string WatchSaysLaterVariable = "PASSENGER_WATCH_LATER_MS";
+    public const string WatchSaysLaterVariable = "PITSTOP_WATCH_LATER_MS";
 
     /// <summary>How long an agent's answer waits, once dotnet watch has applied the changes, for the restart they can
     /// still end in when the program next calls a method the update deleted (one whose signature changed); the status

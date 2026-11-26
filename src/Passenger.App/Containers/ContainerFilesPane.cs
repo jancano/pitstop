@@ -187,7 +187,7 @@ public sealed class ContainerFilesPane : DockPanel
         ContainerEngine docker = engine();
         string cache = System.IO.Path.Combine(stateFolder(), "cache", "containers");
         string? copy = CopyPlace(cache, from.Name, path);
-        string? problem = copy is null ? $"{path} is no file of the container's that Passenger copies out"
+        string? problem = copy is null ? $"{path} is no file of the container's that Pitstop copies out"
             : await BackgroundWork.Run(() => CopyAsync(docker, from.Id, path, copy, cache));
         if (problem is not null)
         {
@@ -306,7 +306,7 @@ public sealed class ContainerFilesPane : DockPanel
         // Only Passenger writes there; a link that would lead the copy out of the cache is refused all the same.
         if (!PathNames.IsUnder(PathNames.Canonical(folder), PathNames.Canonical(cache)))
         {
-            return $"{path} could not be copied: its place in Passenger's cache leads out of it";
+            return $"{path} could not be copied: its place in Pitstop's cache leads out of it";
         }
         string partial = System.IO.Path.Combine(folder, $".{System.IO.Path.GetFileName(copy)}.{Guid.NewGuid():N}");
         try

@@ -43,8 +43,8 @@ public sealed partial class SuspendedLaunch : IDisposable
         this.process = process;
         Input = input;
         // Read for as long as the program runs, a read of each blocking its thread.
-        Output = new ApartStream(output, "Passenger program output");
-        Error = new ApartStream(error, "Passenger program errors");
+        Output = new ApartStream(output, "Pitstop program output");
+        Error = new ApartStream(error, "Pitstop program errors");
     }
 
     public int ProcessId { get; }
@@ -75,14 +75,14 @@ public sealed partial class SuspendedLaunch : IDisposable
         if (OperatingSystem.IsWindows())
         {
             StandardHandles.NotInherited();
-            return (new ApartStream(Console.OpenStandardInput(), "Passenger protocol"), Console.OpenStandardOutput());
+            return (new ApartStream(Console.OpenStandardInput(), "Pitstop protocol"), Console.OpenStandardOutput());
         }
         SafeFileHandle input = new(Check(Dup(0), "dup"), ownsHandle: true);
         SafeFileHandle output = new(Check(Dup(1), "dup"), ownsHandle: true);
         using SafeFileHandle nothing = File.OpenHandle("/dev/null", FileMode.Open, FileAccess.Read);
         Check(Libc.DuplicateTo((int)nothing.DangerousGetHandle(), 0), "dup2");
         Check(Libc.DuplicateTo(2, 1), "dup2");
-        return (new ApartStream(new FileStream(input, FileAccess.Read, 1), "Passenger protocol"), new FileStream(output, FileAccess.Write, 1));
+        return (new ApartStream(new FileStream(input, FileAccess.Read, 1), "Pitstop protocol"), new FileStream(output, FileAccess.Write, 1));
     }
 
     /// <summary>Starts a program suspended, in a folder, with an environment (the adapter's, with these

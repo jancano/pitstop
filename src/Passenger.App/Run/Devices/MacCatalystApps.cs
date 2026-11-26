@@ -54,7 +54,7 @@ public static partial class MacCatalystApps
         }
         catch (Exception unowned) when (unowned is IOException or UnauthorizedAccessException)
         {
-            return (null, $"Could not run {name}: Passenger has no folder of its own to carry its inspector into: {unowned.Message}");
+            return (null, $"Could not run {name}: Pitstop has no folder of its own to carry its inspector into: {unowned.Message}");
         }
         app = app with { Carried = into, Pipes = pipes };
         IReadOnlyList<string> opening = Opening(app, plan.Unseen, [.. plan.OwnArguments]);

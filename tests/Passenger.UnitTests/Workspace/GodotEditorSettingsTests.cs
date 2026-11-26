@@ -57,7 +57,7 @@ public class GodotEditorSettingsTests
 
     private void Passenger_s_values_replace_the_lines_that_give_them_and_the_rest_are_added_at_the_section_s_end_every_other_line_kept()
     {
-        const string Executable = "/Applications/Passenger.app/Contents/MacOS/Passenger";
+        const string Executable = "/Applications/Pitstop.app/Contents/MacOS/Passenger";
 
         string text = GodotEditorSettings.With(Written, GodotEditorSettings.ForPassenger(Executable));
 
@@ -65,11 +65,11 @@ public class GodotEditorSettingsTests
         Assert.True(Equals(read[GodotEditorSettings.ExternalEditor], GodotEditorSettings.Custom) && Equals(read[GodotEditorSettings.CustomExecPath], Executable)
             && Equals(read[GodotEditorSettings.CustomExecPathArgs], GodotEditorSettings.ScriptArguments) && Equals(read[GodotEditorSettings.UseExternalEditor], true)
             && Equals(read[GodotEditorSettings.ExecPath], Executable) && Equals(read[GodotEditorSettings.ExecFlags], GodotEditorSettings.TextArguments),
-            $"Godot's editor would not open scripts in Passenger with what was written:\n{text}");
+            $"Godot's editor would not open scripts in Pitstop with what was written:\n{text}");
         string[] before = Written.Split('\n');
         string[] after = text.Split('\n');
         string[] lost = [.. before.Where(line => !Keys.Any(k => line.StartsWith(k + " ", StringComparison.Ordinal)) && !after.Contains(line))];
-        Assert.True(lost.Length == 0, $"Writing Passenger's values took lines of Godot's away: {string.Join(" | ", lost)}\n{text}");
+        Assert.True(lost.Length == 0, $"Writing Pitstop's values took lines of Godot's away: {string.Join(" | ", lost)}\n{text}");
         Assert.True(text.IndexOf("dotnet/editor/external_editor = 6", StringComparison.Ordinal) < text.IndexOf("interface/editor/display_scale", StringComparison.Ordinal)
             && text.TrimEnd().EndsWith($"{GodotEditorSettings.UseExternalEditor} = true", StringComparison.Ordinal),
             $"A value the file gave was to be set on its own line, and one it lacked added at the section's end:\n{text}");
@@ -77,7 +77,7 @@ public class GodotEditorSettingsTests
 
     private void A_path_with_backslashes_and_quotes_is_escaped_and_reads_back_as_it_was()
     {
-        const string Executable = @"C:\Users\Ted ""T""\AppData\Local\Passenger\current\Passenger.exe";
+        const string Executable = @"C:\Users\Ted ""T""\AppData\Local\Passenger\current\Pitstop.exe";
 
         string text = GodotEditorSettings.With(Written, GodotEditorSettings.ForPassenger(Executable));
 
@@ -90,7 +90,7 @@ public class GodotEditorSettingsTests
     {
         string windows = Written.Replace("\n", "\r\n", StringComparison.Ordinal);
 
-        string text = GodotEditorSettings.With(windows, GodotEditorSettings.ForPassenger("C:/Passenger/Passenger.exe"));
+        string text = GodotEditorSettings.With(windows, GodotEditorSettings.ForPassenger("C:/Passenger/Pitstop.exe"));
 
         Assert.True(!text.Replace("\r\n", string.Empty, StringComparison.Ordinal).Contains('\n'),
             $"A line was written with another ending than the file's own:\n{text.Replace("\r", "\\r", StringComparison.Ordinal)}");
@@ -98,7 +98,7 @@ public class GodotEditorSettingsTests
 
     private void With_no_file_yet_the_values_go_in_a_new_settings_file_as_Godot_begins_one()
     {
-        string text = GodotEditorSettings.With(string.Empty, GodotEditorSettings.ForPassenger("/opt/passenger/Passenger"));
+        string text = GodotEditorSettings.With(string.Empty, GodotEditorSettings.ForPassenger("/opt/pitstop/Passenger"));
 
         Assert.True(text.StartsWith("[gd_resource type=\"EditorSettings\" format=3]\n\n[resource]\n", StringComparison.Ordinal)
             && GodotEditorSettings.Read(text, Keys).Count == Keys.Length, $"A new settings file Godot would not read as its own:\n{text}");
@@ -121,7 +121,7 @@ public class GodotEditorSettingsTests
         (string? reads, string writes) = GodotEditorSettings.Files(folder, 4, minor, there.Contains);
 
         Assert.True(reads == (read is null ? null : Path.Combine(folder, read)) && writes == Path.Combine(folder, $"editor_settings-4.{minor}.tres"),
-            $"Godot 4.{minor} with [{string.Join(", ", present)}] reads {read ?? "none"} and writes its own; Passenger would read {reads ?? "none"} and write {writes}");
+            $"Godot 4.{minor} with [{string.Join(", ", present)}] reads {read ?? "none"} and writes its own; Pitstop would read {reads ?? "none"} and write {writes}");
     }
 
 }

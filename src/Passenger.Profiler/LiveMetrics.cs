@@ -47,7 +47,7 @@ public sealed class LiveMetrics : IAsyncDisposable
     public Task Ended => session.Ended;
 
     /// <summary>The session id a program in a container is read under, the same for every Passenger there.</summary>
-    public const string ContainerSession = "passenger-container-metrics";
+    public const string ContainerSession = "pitstop-container-metrics";
 
     /// <summary>The runtime's metrics of <paramref name="meters"/> asked under a session id: its messages, time series and
     /// instruments published, at the interval and limits dotnet-counters asks for.</summary>

@@ -30,7 +30,7 @@ public static class DockerScout
 
     /// <summary>What a check sends, as the window says before it asks.</summary>
     public const string Sends = "Docker Scout makes the image's package list (its SBOM) on this machine and sends it to Docker's Scout service under your "
-        + "Docker login, to match it with known vulnerabilities; an image this machine lacks it reads from its registry first. Passenger sends nothing itself.";
+        + "Docker login, to match it with known vulnerabilities; an image this machine lacks it reads from its registry first. Pitstop sends nothing itself.";
 
     /// <summary>Why there is no scout, and how to get it.</summary>
     public const string Missing = "Docker Scout is not installed: it comes with Docker Desktop, or install the docker-scout CLI plugin (github.com/docker/scout-cli)";

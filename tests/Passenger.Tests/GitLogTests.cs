@@ -265,14 +265,14 @@ public sealed class GitLogTests : IDisposable
 
         void Commit(string branch, int from, int merge)
         {
-            string[] authors = ["Zoë Ångström", "Łukasz Żółć", "山田 太郎", "Ада Лавлейс", "Passenger Tests"];
+            string[] authors = ["Zoë Ångström", "Łukasz Żółć", "山田 太郎", "Ада Лавлейс", "Pitstop Tests"];
             string author = authors[made % authors.Length];
             string subject = made % 3 == 0 ? $"Commit {made}: café crème, 日本語, emoji 😀" : $"Commit {made}";
             string text = $"{made}\n";
             mark++;
             stream.Append(CultureInfo.InvariantCulture, $"commit refs/heads/{branch}\nmark :{mark}\n");
             stream.Append(CultureInfo.InvariantCulture, $"author {author} <author{made % authors.Length}@passenger.invalid> {1_700_000_000 + (made * 60)} +0000\n");
-            stream.Append(CultureInfo.InvariantCulture, $"committer Passenger Tests <tests@passenger.invalid> {1_700_000_000 + (made * 60)} +0000\n");
+            stream.Append(CultureInfo.InvariantCulture, $"committer Pitstop Tests <tests@passenger.invalid> {1_700_000_000 + (made * 60)} +0000\n");
             stream.Append(CultureInfo.InvariantCulture, $"data {Encoding.UTF8.GetByteCount(subject)}\n{subject}\n");
             if (from > 0)
             {
@@ -307,7 +307,7 @@ public sealed class GitLogTests : IDisposable
         {
             string subject = $"Commit {commit}";
             string text = $"class C{commit}x0 {{ }}\n";
-            stream.Append(CultureInfo.InvariantCulture, $"commit refs/heads/main\ncommitter Passenger Tests <tests@passenger.invalid> {1_700_000_000 + (commit * 60)} +0000\n");
+            stream.Append(CultureInfo.InvariantCulture, $"commit refs/heads/main\ncommitter Pitstop Tests <tests@passenger.invalid> {1_700_000_000 + (commit * 60)} +0000\n");
             stream.Append(CultureInfo.InvariantCulture, $"data {Encoding.UTF8.GetByteCount(subject)}\n{subject}\n");
             stream.Append(CultureInfo.InvariantCulture, $"M 644 inline src/Area0/C{commit}x0.cs\ndata {Encoding.UTF8.GetByteCount(text)}\n{text}\n");
         }

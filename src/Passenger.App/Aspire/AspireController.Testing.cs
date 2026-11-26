@@ -19,7 +19,7 @@ public sealed partial class AspireController
             && testProject.ProjectReferences.Any(reference => PathNames.Same(reference, project.Path)))];
         if (hosts.Count != 1)
         {
-            throw new InvalidOperationException($"{testProject.Name} must reference exactly one evaluated Aspire AppHost to run integration tests in Passenger.");
+            throw new InvalidOperationException($"{testProject.Name} must reference exactly one evaluated Aspire AppHost to run integration tests in Pitstop.");
         }
         using CancellationTokenSource starting = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, cancellation);
         starting.Token.ThrowIfCancellationRequested();

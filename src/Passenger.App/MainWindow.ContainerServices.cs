@@ -132,7 +132,7 @@ public partial class MainWindow
 
     /// <summary>Why an AppHost's services cannot be acted on: Passenger does not run it.</summary>
     private static string NotRunHere(string appHost) =>
-        $"Passenger does not run {Path.GetFileNameWithoutExtension(appHost)}: Run, Debug or Profile its configuration first";
+        $"Pitstop does not run {Path.GetFileNameWithoutExtension(appHost)}: Run, Debug or Profile its configuration first";
 
     /// <summary>Why a service action cannot act on what it aims at, or null: a service that runs as its run says
     /// (<see cref="BuildRunController.ServiceOf"/>); an AppHost's resource that does not run, Debug and Run without Debugger

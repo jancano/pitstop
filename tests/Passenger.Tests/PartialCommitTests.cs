@@ -311,7 +311,7 @@ public sealed class PartialCommitTests : IDisposable
             Assert.Equal(index, TestGit.Run(folder, "write-tree"));
             Assert.Equal(head, TestGit.Run(folder, "rev-parse", "HEAD"));
             Assert.Equal(After, File.ReadAllText(PathOf("Notes.txt")));
-            Assert.Empty(Directory.GetFiles(PathOf(".git"), "passenger-commit-*"));
+            Assert.Empty(Directory.GetFiles(PathOf(".git"), "pitstop-commit-*"));
         }
         finally
         {

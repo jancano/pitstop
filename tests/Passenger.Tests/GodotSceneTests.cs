@@ -480,7 +480,7 @@ public sealed class GodotSceneTests : IClassFixture<GodotSceneTests.Game>
         }
         string level = game.PathOf("level.scn");
         byte[] saved = File.ReadAllBytes(level);
-        GodotBinaryResource original = GodotBinaryResource.Read(saved, out string? unread) ?? throw new Xunit.Sdk.XunitException($"Passenger can't read Godot's binary scene: {unread}");
+        GodotBinaryResource original = GodotBinaryResource.Read(saved, out string? unread) ?? throw new Xunit.Sdk.XunitException($"Pitstop can't read Godot's binary scene: {unread}");
         Assert.True(saved.AsSpan().StartsWith("RSCC"u8) && original.Externals.Any(e => e.Path == "res://Main.cs"),
             $"Godot's binary scene is not compressed or names no res://Main.cs: {string.Join(", ", original.Externals)}");
         string hero = game.PathOf("Hero.cs");

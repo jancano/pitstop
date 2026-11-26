@@ -116,13 +116,13 @@ public sealed record LaunchProfile(
     {
         null or "" => "its profile names no commandName",
         _ when Is(ProjectCommand) || Is(ExecutableCommand) || RunsInContainer => null,
-        _ when Is("IISExpress") => "an IIS Express profile runs under IIS Express on Windows, which Passenger does not start",
-        _ when Is("IIS") => "an IIS profile runs under IIS on Windows, which Passenger does not drive",
-        _ when Is("MsixPackage") => "an MSIX package profile runs a deployed Windows package, which Passenger does not deploy",
-        _ when Is("DebugRoslynComponent") => "a Roslyn component profile runs the compiler over another project, which Passenger does not",
+        _ when Is("IISExpress") => "an IIS Express profile runs under IIS Express on Windows, which Pitstop does not start",
+        _ when Is("IIS") => "an IIS profile runs under IIS on Windows, which Pitstop does not drive",
+        _ when Is("MsixPackage") => "an MSIX package profile runs a deployed Windows package, which Pitstop does not deploy",
+        _ when Is("DebugRoslynComponent") => "a Roslyn component profile runs the compiler over another project, which Pitstop does not",
         _ when Is(DockerComposeCommand) => "a Docker Compose profile belongs to a Docker Compose project (.dcproj), whose configurations run it",
-        _ when Is("WSL2") => "a WSL 2 profile runs in Linux under Windows, which Passenger does not start",
-        _ => $"Passenger does not know the {Command} command",
+        _ when Is("WSL2") => "a WSL 2 profile runs in Linux under Windows, which Pitstop does not start",
+        _ => $"Pitstop does not know the {Command} command",
     };
 
     /// <summary>Whether this profile runs the project's own program.</summary>

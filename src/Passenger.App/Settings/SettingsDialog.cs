@@ -55,7 +55,7 @@ public sealed partial class SettingsDialog : IdeWindow
         [(OpenProjectIn.NewWindow, "New window"), (OpenProjectIn.CurrentWindow, "Current window"), (OpenProjectIn.Ask, "Ask")];
 
     /// <summary>The names of <see cref="DiscordShown"/>'s choices, in its order.</summary>
-    public static readonly string[] DiscordChoices = ["Passenger only", "The solution", "The solution and the file"];
+    public static readonly string[] DiscordChoices = ["Pitstop only", "The solution", "The solution and the file"];
 
     private static readonly string[] Order = [Appearance, SystemPage, AccessibilityPage, TrustPage, UpdatesPage, ExplorerPage, EditorPage, CodeFoldingPage, PostfixPage, XamlCodeStylePage, GDScriptCodeStylePage, LiveTemplatesPage,
         VersionControlPage, BuildPage, RunPage, HotReloadPage, NodePage, EslintPage, PrettierPage, SchemasPage, StylesheetsPage, DockerPage, GodotPage, TerminalPage, McpPage, DiscordPage, DiagnosticsPage, KeymapPage];
@@ -332,7 +332,10 @@ public sealed partial class SettingsDialog : IdeWindow
             "autosave files idle inactive seconds");
 
         AddTrust();
-        Add(Declared.CheckForUpdates);
+        if (actions[AppActions.CheckForUpdates] is not null)
+        {
+            Add(Declared.CheckForUpdates);
+        }
 
         Add(Declared.AlwaysSelectOpenedFile);
         Add(Declared.OpenFilesWithSingleClick);
@@ -448,36 +451,39 @@ public sealed partial class SettingsDialog : IdeWindow
 
         AddAgents(agents);
 
-        ComboBox shows = Declared.DiscordShows.Box(Working, Change);
-        shows.IsEnabled = Working.ShowInDiscord;
-        NumericUpDown idleMinutes = Declared.DiscordIdleMinutes.Box(Working, Change);
-        idleMinutes.IsEnabled = Working.ShowInDiscord && Working.DiscordIdle;
-        CheckBox whenIdle = Check(Working.DiscordIdle, v =>
+        if (Discord.DiscordIpc.Configured)
         {
-            Change(s => s with { DiscordIdle = v });
-            idleMinutes.IsEnabled = Working.ShowInDiscord && v;
-        });
-        whenIdle.IsEnabled = Working.ShowInDiscord;
-        CheckBox discord = Check(Working.ShowInDiscord, v =>
-        {
-            Change(s => s with { ShowInDiscord = v });
-            shows.IsEnabled = v;
-            whenIdle.IsEnabled = v;
-            idleMinutes.IsEnabled = v && Working.DiscordIdle;
-        });
-        const string Discord = "discord rich presence activity status playing";
-        Add(DiscordPage, "Show activity in Discord", discord, $"{Discord} friends share game",
-            "Discord shows Playing Passenger with its icon, what is chosen below and how long the solution has been open, to "
-            + "whoever can see your activity. Passenger tells the Discord app on this computer alone. Off, it tells Discord nothing.");
-        Add(DiscordPage, "Show", shows, $"{Discord} solution project file name details visibility privacy",
-            "Passenger only: that you are using Passenger, and nothing of your work. The solution: its name too. The solution and "
-            + "the file: the name of the file you are editing as well. Whoever can see your Discord activity sees these names.");
-        Add(DiscordPage, "Only Passenger when idle for", new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = Gaps.Normal,
-            Children = { whenIdle, NumberSetting.WithUnit(idleMinutes, "minutes") },
-        }, $"{Discord} idle inactive away timeout minutes");
+            ComboBox shows = Declared.DiscordShows.Box(Working, Change);
+            shows.IsEnabled = Working.ShowInDiscord;
+            NumericUpDown idleMinutes = Declared.DiscordIdleMinutes.Box(Working, Change);
+            idleMinutes.IsEnabled = Working.ShowInDiscord && Working.DiscordIdle;
+            CheckBox whenIdle = Check(Working.DiscordIdle, v =>
+            {
+                Change(s => s with { DiscordIdle = v });
+                idleMinutes.IsEnabled = Working.ShowInDiscord && v;
+            });
+            whenIdle.IsEnabled = Working.ShowInDiscord;
+            CheckBox discord = Check(Working.ShowInDiscord, v =>
+            {
+                Change(s => s with { ShowInDiscord = v });
+                shows.IsEnabled = v;
+                whenIdle.IsEnabled = v;
+                idleMinutes.IsEnabled = v && Working.DiscordIdle;
+            });
+            const string Discord = "discord rich presence activity status playing";
+            Add(DiscordPage, "Show activity in Discord", discord, $"{Discord} friends share game",
+                "Discord shows Playing Pitstop with its icon, what is chosen below and how long the solution has been open, to "
+                + "whoever can see your activity. Pitstop tells the Discord app on this computer alone. Off, it tells Discord nothing.");
+            Add(DiscordPage, "Show", shows, $"{Discord} solution project file name details visibility privacy",
+                "Pitstop only: that you are using Pitstop, and nothing of your work. The solution: its name too. The solution and "
+                + "the file: the name of the file you are editing as well. Whoever can see your Discord activity sees these names.");
+            Add(DiscordPage, "Only Pitstop when idle for", new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = Gaps.Normal,
+                Children = { whenIdle, NumberSetting.WithUnit(idleMinutes, "minutes") },
+            }, $"{Discord} idle inactive away timeout minutes");
+        }
 
         Add(Declared.TraceProtocols);
         Add(Declared.LogEveryProgram);

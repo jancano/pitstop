@@ -43,7 +43,7 @@ public sealed class WebTool
     /// <summary>The variable naming a folder under which Biome's language server keeps its daemon's socket, cache and logs in
     /// place of the person's user cache, which every Biome of a version shares: a test run's.</summary>
     [IdentifierHome]
-    public const string BiomeHomeVariable = "PASSENGER_BIOME_HOME";
+    public const string BiomeHomeVariable = "PITSTOP_BIOME_HOME";
 
     /// <summary>The variables Biome's language server takes where <see cref="BiomeHomeVariable"/> names a folder: user folders
     /// under it (<see cref="Godot.GodotUserFolders.Under"/>), whose cache holds its daemon's socket, and its logs' folder

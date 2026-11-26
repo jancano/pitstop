@@ -39,7 +39,7 @@ public partial class MainWindow
         }
         if (AgentsOwn)
         {
-            return $"{chosen.Name} plays in the person's own Godot editor, which an agent's own Passenger does not ask: choose a configuration that runs the game here";
+            return $"{chosen.Name} plays in the person's own Godot editor, which an agent's own Pitstop does not ask: choose a configuration that runs the game here";
         }
         string? scene;
         if (chosen.GodotScene == RunConfiguration.CurrentScene)
@@ -68,18 +68,18 @@ public partial class MainWindow
                 peer.PlayAsked = false;
                 return $"Godot's editor on {name} did not take the play within {Durations.Said(Waits.Of(PlayTaken))}";
             }
-            status.Text = debug ? $"{name} plays in Godot's editor, built here and debugged by this Passenger" : $"{name} plays in Godot's editor, built here";
+            status.Text = debug ? $"{name} plays in Godot's editor, built here and debugged by this Pitstop" : $"{name} plays in Godot's editor, built here";
             return null;
         }
         string? older = session.GodotEditors.Editors.Any(e => PathNames.Same(e.Project, folder))
-            ? $"; Passenger's addon there is too old to play as asked, so Install Passenger's Godot Addon… updates it" : null;
+            ? $"; Pitstop's addon there is too old to play as asked, so Install Pitstop's Godot Addon… updates it" : null;
         if (!await session.GodotIde.IsOpenAsync(folder))
         {
             return await OfferGodotEditorAsync(chosen, name);
         }
         if (scene is not null)
         {
-            return $"Godot's editor on {name} plays only its main scene when asked without Passenger's addon: Install Passenger's Godot Addon… to play the scene chosen{older}";
+            return $"Godot's editor on {name} plays only its main scene when asked without Pitstop's addon: Install Pitstop's Godot Addon… to play the scene chosen{older}";
         }
         if (project is { IsScriptGame: false } && chosen.BuildBeforeLaunch)
         {
@@ -96,7 +96,7 @@ public partial class MainWindow
         }
         idePlays.Add(folder);
         status.Text = debug
-            ? $"{name} plays in Godot's editor undebugged: Godot's IDE messaging gives no debugger a way in, and Passenger's addon does (Install Passenger's Godot Addon…){older}"
+            ? $"{name} plays in Godot's editor undebugged: Godot's IDE messaging gives no debugger a way in, and Pitstop's addon does (Install Pitstop's Godot Addon…){older}"
             : $"{name} plays in Godot's editor, built here{older}";
         return null;
     }

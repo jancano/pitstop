@@ -85,7 +85,7 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
         Flow.StepApart("an agents input into the persons window never trusts its folder and is told why", () => new McpWindowTests(restored), t => t.An_agents_input_into_the_persons_window_never_trusts_its_folder_and_is_told_why());
         Flow.StepApart("an agents commit in a folder not trusted leaves out a file stored through a git filter saying why", () => new McpWindowTests(restored), t => t.An_agents_commit_in_a_folder_not_trusted_leaves_out_a_file_stored_through_a_git_filter_saying_why());
         Flow.StepApart("an agents stash and checkout in a folder not trusted are refused where git would write out a file stored through a filter", () => new McpWindowTests(restored), t => t.An_agents_stash_and_checkout_in_a_folder_not_trusted_are_refused_where_git_would_write_out_a_file_stored_through_a_filter());
-        Flow.StepApart("an attached agent never quits the persons passenger and is told why", () => new McpWindowTests(restored), t => t.An_attached_agent_never_quits_the_persons_passenger_and_is_told_why());
+        Flow.StepApart("an attached agent never quits the persons pitstop and is told why", () => new McpWindowTests(restored), t => t.An_attached_agent_never_quits_the_persons_passenger_and_is_told_why());
         Flow.StepApart("an attached agent allowed every tool never closes the persons solution and is told why", () => new McpWindowTests(restored), t => t.An_attached_agent_allowed_every_tool_never_closes_the_persons_solution_and_is_told_why());
     }
 
@@ -460,7 +460,7 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
         {
             Task<CallToolResult> answering = Waiting.Apart(() => Result(client, McpTools.AppClick,
                 new() { ["app"] = "ide", ["window"] = nameof(WorkspaceTrustDialog), ["control"] = $"Button \"{WorkspaceTrustDialog.Trust}\"" }));
-            Press(Question(window, "the question for the agent's click in Passenger's windows"), AgentToolDialog.AllowForSession);
+            Press(Question(window, "the question for the agent's click in Pitstop's windows"), AgentToolDialog.AllowForSession);
             CallToolResult answered = Await(answering, "the agent's click on the trust question's Trust");
             Assert.True(answered.IsError == true && Text(answered).Contains(Refusals.TrustAnsweredByThePerson, StringComparison.Ordinal),
                 $"The agent's click on the trust question's Trust was answered: {Text(answered)}{Said()}");
@@ -614,7 +614,7 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
                 ?? throw new InvalidOperationException("The banner's Install Workloads… is not in the window");
             Task<CallToolResult> clicking = Waiting.Apart(() => Result(client, McpTools.AppClick,
                 new() { ["app"] = "ide", ["window"] = nameof(MainWindow), ["x"] = at.X, ["y"] = at.Y }));
-            Press(Question(window, "the question for the agent's click in Passenger's windows"), AgentToolDialog.AllowForSession);
+            Press(Question(window, "the question for the agent's click in Pitstop's windows"), AgentToolDialog.AllowForSession);
             CallToolResult clicked = Await(clicking, "the agent's click on the banner's Install Workloads…");
             Assert.True(clicked.IsError == true && Text(clicked).Contains(Refusals.AgentInstallsMobile, StringComparison.Ordinal),
                 $"The agent's click on the banner's Install Workloads… was answered: {Text(clicked)}");
@@ -1083,7 +1083,7 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
         string folder = McpNavigationTests.MauiPage("mcp-maui-unheard-");
         DeleteAtEnd(folder);
         (CallToolResult answer, string said) = DefinitionWhileTheBuildsOutputsAreUntold(folder, found: true);
-        Assert.True(answer.IsError == true && said.Contains(": Passenger waited ", StringComparison.Ordinal)
+        Assert.True(answer.IsError == true && said.Contains(": Pitstop waited ", StringComparison.Ordinal)
             && said.Contains(" for the C# language server to read MauiApp1.", StringComparison.Ordinal)
             && said.Contains(", which a design-time build wrote again, which has not come, so the answer would be of the code before it", StringComparison.Ordinal),
             $"definition of a MAUI page's InitializeComponent, asked while the server never read what the build after the restore wrote again, answered: {said}");
@@ -1543,7 +1543,7 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
             Assert.True(IdeErrors.Errors.Any(e => e.Kind == "NullReferenceException" && e.Message == "The fault's own words"),
                 "A fault an agent's call met is not among the IDE's errors");
             IdeErrors.Flush();
-            Assert.True(Ui.Shared(IdeErrors.LogPath).Contains("The fault's own words", StringComparison.Ordinal), "A fault an agent's call met is not in passenger.log");
+            Assert.True(Ui.Shared(IdeErrors.LogPath).Contains("The fault's own words", StringComparison.Ordinal), "A fault an agent's call met is not in pitstop.log");
             IdeErrors.Clear();
         }
         finally
@@ -1554,7 +1554,7 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
     }
 
     /// <summary>An agent's call that fails as a file can (an action whose file another program holds), which the agent hears
-    /// in the failure's own words alone, leaves the failure in passenger.log whole: the tool, the exception and the frames it
+    /// in the failure's own words alone, leaves the failure in pitstop.log whole: the tool, the exception and the frames it
     /// was thrown through.</summary>
     private void An_agents_call_that_fails_leaves_its_exception_and_stack_in_the_log()
     {
@@ -1574,7 +1574,7 @@ public sealed class McpWindowTests : McpRig, IClassFixture<RestoredFolders>
             string logged = at < 0 ? string.Empty : log[at..];
             Assert.True(logged.Contains("System.IO.IOException: The file is held by another program", StringComparison.Ordinal)
                 && logged.Contains(nameof(ThrowAsHeld), StringComparison.Ordinal),
-                $"An agent's call that failed left no exception with its stack in passenger.log: {(at < 0 ? "no line names the call" : logged)}");
+                $"An agent's call that failed left no exception with its stack in pitstop.log: {(at < 0 ? "no line names the call" : logged)}");
         }
         finally
         {

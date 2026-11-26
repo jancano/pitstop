@@ -47,7 +47,7 @@ public sealed class ProjectWindowsTests : ProjectWindowsFolders
         Flow.StepApart<ProjectWindowsTests>("Open asks This Window or New Window and Dont ask again makes the answer the setting every window follows", t => t.Open_asks_This_Window_or_New_Window_and_Dont_ask_again_makes_the_answer_the_setting_every_window_follows());
         Flow.StepApart<ProjectWindowsTests>("the Window menu lists the solution windows and Next and Previous Solution Window step between them", t => t.The_Window_menu_lists_the_solution_windows_and_Next_and_Previous_Solution_Window_step_between_them());
         Flow.StepApart<ProjectWindowsTests>("quitting closes every window and a start reopens each on its own layout but not one closed alone", t => t.Quitting_closes_every_window_and_a_start_reopens_each_on_its_own_layout_but_not_one_closed_alone());
-        Flow.StepApart<ProjectWindowsTests>("a solution the system hands Passenger opens from a second window in front whose solution was closed", t => t.A_solution_the_system_hands_Passenger_opens_from_a_second_window_in_front_whose_solution_was_closed());
+        Flow.StepApart<ProjectWindowsTests>("a solution the system hands Pitstop opens from a second window in front whose solution was closed", t => t.A_solution_the_system_hands_Passenger_opens_from_a_second_window_in_front_whose_solution_was_closed());
         Flow.StepApart<ProjectWindowsTests>("a quit that asks about a read only files changes carries on once answered and a start reopens every window", t => t.A_quit_that_asks_about_a_read_only_files_changes_carries_on_once_answered_and_a_start_reopens_every_window());
         Flow.StepApart<ProjectWindowsTests>("a setting changed in one window shows in the other and both changes are kept in settings json", t => t.A_setting_changed_in_one_window_shows_in_the_other_and_both_changes_are_kept_in_settings_json());
     }
@@ -460,7 +460,7 @@ public sealed class ProjectWindowsTests : ProjectWindowsFolders
 
             Assert.Null(second.CloseSolution());
             PassengerApp.OpenFromSystem([beta]);
-            Ui.WaitFor(() => second.Folder == PathNames.Canonical(beta), "the solution handed to Passenger to open in the window in front, which had nothing open");
+            Ui.WaitFor(() => second.Folder == PathNames.Canonical(beta), "the solution handed to Pitstop to open in the window in front, which had nothing open");
             Assert.Equal([first, second], PassengerApp.Windows);
             PassengerApp.Quit();
         }
@@ -570,7 +570,7 @@ public sealed class ProjectWindowsTests : ProjectWindowsFolders
             File.WriteAllText(written, changed.ToJsonString());
             File.Move(written, file, overwrite: true);
             Ui.WaitFor(() => first.TerminalPanel.View.FontSize == 21 && second.TerminalPanel.View.FontSize == 21,
-                "both windows to follow the change another Passenger made to settings.json", TimeSpan.FromSeconds(30));
+                "both windows to follow the change another Pitstop made to settings.json", TimeSpan.FromSeconds(30));
             Assert.Equal(17, first.Settings.EditorFontSize);
         }
         finally

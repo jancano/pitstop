@@ -20,6 +20,31 @@ internal sealed class CodeNavigation(AssistContext context, PopupPlacement popup
         }
     }
 
+    public async Task GoToCppDefinition(int offset)
+    {
+        if (context.Ask("Go to Definition") is not { } lsp || context.Editors.Active is not { } shown)
+        {
+            return;
+        }
+        using IDisposable held = BackgroundWork.Scope();
+        int version = shown.Text.Version;
+        try
+        {
+            IReadOnlyList<LspLocation> places = await lsp.DefinitionAsync(offset);
+            if (context.Editors.Active == shown && context.Current?.Lsp == lsp && shown.Text.Version == version)
+            {
+                Go(places, offset, "Definitions", "No definition found");
+            }
+        }
+        catch (LanguageServerFailed failed)
+        {
+            context.Failed("Go to Definition", failed);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
     public async Task GoToImplementation(int offset)
     {
         using (BackgroundWork.Scope())
@@ -103,7 +128,13 @@ internal sealed class CodeNavigation(AssistContext context, PopupPlacement popup
         }
         try
         {
+            int version = shown.Text.Version;
             IReadOnlyList<LspLocation> served = await lsp.ReferencesAsync(offset);
+            if (context.ServerOf(shown) is Passenger.App.Workspace.CppEditorDocument cpp &&
+                (cpp.Lsp != lsp || context.Editors.Active != shown || shown.Text.Version != version))
+            {
+                return;
+            }
             // A Godot member's uses by its other names hold those of the generated one the offset may be on, which the server found too.
             IReadOnlyList<LspLocation> usages = [.. served, .. await context.Languages.Xaml.CodeUsesAsync(shown, lsp, offset),
                 .. DocumentUris.Besides(await context.Languages.CSharp.GodotUsesAsync(shown, lsp, offset), served)];

@@ -32,7 +32,7 @@ public sealed class OpenApiDiscoveryTests
         await using StandInHttp app = new(exchange => exchange.ReplyAsync(404, null, string.Empty));
         OpenApiDocument? read = await Asked(app, $"//127.0.0.1:{beyond.Port}/spec.json");
         Assert.Null(read);
-        Assert.True(beyond.Connections == 0, "A path the app's code maps sent Passenger's request to another host, where it promises to ask only the local app");
+        Assert.True(beyond.Connections == 0, "A path the app's code maps sent Pitstop's request to another host, where it promises to ask only the local app");
     }
 
     private async Task A_redirect_to_another_origin_is_not_followed_and_reaches_nothing_there()
@@ -41,7 +41,7 @@ public sealed class OpenApiDiscoveryTests
         await using StandInHttp app = new(exchange => exchange.ReplyAsync(302, null, string.Empty, $"Location: {beyond.Root}/spec.json\r\n"));
         OpenApiDocument? read = await Asked(app);
         Assert.Null(read);
-        Assert.True(beyond.Connections == 0, "An app's redirect took Passenger's request to another server, where it promises to ask only the local app");
+        Assert.True(beyond.Connections == 0, "An app's redirect took Pitstop's request to another server, where it promises to ask only the local app");
     }
 
     private async Task A_redirect_within_the_app_is_followed_to_its_document()

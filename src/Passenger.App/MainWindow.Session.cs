@@ -5,6 +5,7 @@ using Passenger.App.Workspace;
 using Passenger.Core;
 using Passenger.Text;
 using Passenger.Workspace;
+using Pitstop.Xmake;
 
 namespace Passenger.App;
 
@@ -60,7 +61,15 @@ public partial class MainWindow
         GodotHeadlessAtOpen = GodotHeadlessAtOpen,
         Unseen = Unseen,
         HeadStart = headStart,
+        EvaluateXmake = EvaluateXmake,
+        StartClangd = StartClangd,
     };
+
+    /// <summary>An Xmake evaluator supplied by a headless host. Regular windows use the installed Xmake.</summary>
+    public Func<string, string, CancellationToken, Task<XmakeWorkspace>>? EvaluateXmake { get; init; }
+
+    /// <summary>A clangd transport supplied by a headless host.</summary>
+    public Func<string, string, string, CancellationToken, Task<Lsp.LanguageSession>>? StartClangd { get; init; }
 
     /// <summary>The opening of the folder the process was started on, begun before the window was built, which the first
     /// session of the window takes up (<see cref="SessionSetup.HeadStart"/>); a windowless Passenger's. None for a person's
@@ -75,7 +84,7 @@ public partial class MainWindow
     private HeadStart? headStart;
 
     /// <summary>Where this window's Dockerfile server asks for image tags in Docker Hub's place: the one given, else
-    /// the place <c>PASSENGER_DOCKER_HUB</c> names, else Docker Hub's own.</summary>
+    /// the place <c>PITSTOP_DOCKER_HUB</c> names, else Docker Hub's own.</summary>
     public Uri? DockerHub { get; init; }
 
     /// <summary>The user folders every Godot this window starts keeps its settings, caches and logs in, in place of the
@@ -224,7 +233,8 @@ public partial class MainWindow
         Bottom.Debug.Clear();
         Bind(opened);
         // In the view the folder keeps from the start, so its rows are made once.
-        explorerView = kept?.Workspace.Value.ExplorerView ?? Passenger.App.Explorer.ExplorerViewKind.Solution;
+        explorerView = kept?.Workspace.Value.ExplorerView ?? (named is null && opened.Xmake is { IsXmake: true }
+            ? Passenger.App.Explorer.ExplorerViewKind.Xmake : Passenger.App.Explorer.ExplorerViewKind.Solution);
         Explorer.Load(opened.Workspace!, explorerView);
         opened.Start();
         FindTests();
@@ -284,6 +294,29 @@ public partial class MainWindow
     private void Bind(ProjectSession next)
     {
         session = next;
+        Explorer.BindXmake(next.Xmake);
+        if (next.Cpp is { } cpp)
+        {
+            cpp.Changed += (_, _) =>
+            {
+                if (session == next && Editors.Active?.Language.Service == Languages.LanguageService.Clangd)
+                {
+                    assist.CppContextChanged();
+                    status.ShowLanguage(LanguageLabel());
+                    structure?.FollowServer();
+                }
+            };
+        }
+        if (next.Xmake is { } native)
+        {
+            native.Changed += (_, _) =>
+            {
+                if (session == next)
+                {
+                    Explorer.FollowXmake();
+                }
+            };
+        }
         // The tool windows follow what the folder holds, before anything of the session shows one.
         Dock.Serve();
         next.HoldsChanged += (_, _) =>

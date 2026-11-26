@@ -355,7 +355,7 @@ public sealed class ConfigurationTests : IClassFixture<ConfigurationTests.Projec
         try
         {
             Ui.WaitFor(() => window.EditorArea.Active!.Markers.Any(m => m.Message.Contains("CS0219", StringComparison.Ordinal)),
-                () => $"the compiler's warning of the unused variable, pulled with Passenger's own: {Marked(window)}");
+                () => $"the compiler's warning of the unused variable, pulled with Pitstop's own: {Marked(window)}");
             string[] warned = [.. window.EditorArea.Active!.Markers.Select(m => m.Message).Where(m => m.Contains("the configuration key", StringComparison.Ordinal))];
             Assert.True(warned.Length == 0, $"A library no program runs was warned of a key, its own folder taken for a program's: {string.Join(" | ", warned)}");
         }
@@ -384,7 +384,7 @@ public sealed class ConfigurationTests : IClassFixture<ConfigurationTests.Projec
             window.CSharpService!.HoldRefreshes(checkedOnce.Task);
             // Pumped, not settled: the round held is the window's background work until let go.
             Ui.PumpUntil(() => held.IsCompleted, "the first round to hold Shop's evaluation", TimeSpan.FromMinutes(1));
-            Ui.PumpUntil(() => Marked(window).Contains("CS0219", StringComparison.Ordinal), "the compiler's warning of the unused variable, pulled with Passenger's own",
+            Ui.PumpUntil(() => Marked(window).Contains("CS0219", StringComparison.Ordinal), "the compiler's warning of the unused variable, pulled with Pitstop's own",
                 TimeSpan.FromMinutes(3));
             Assert.True(window.Session.Projects.All(p => p.Evaluated is null) && Missing(window).Count == 0,
                 $"The file was pulled with its projects evaluated or a key warned of: {Marked(window)}");

@@ -67,9 +67,9 @@ public sealed class NewGodotGameTests : IDisposable
             string project = File.ReadAllText(Path.Combine(folder, "Spinner.csproj"));
             Assert.StartsWith($"<Project Sdk=\"Godot.NET.Sdk/{godot.Version}\">", project, StringComparison.Ordinal);
             Assert.Contains($"<TargetFramework>{framework}</TargetFramework>", project, StringComparison.Ordinal);
-            Ui.WaitFor(() => !window.IsBuilding && window.Status?.Contains("Make Passenger Godot's Script Editor…", StringComparison.Ordinal) == true,
-                () => $"the new game to be built and Passenger offered as Godot's script editor ({window.Status})", TimeSpan.FromMinutes(4));
-            Assert.Equal("make Passenger Godot's Script Editor", window.StatusPlace?.Name);
+            Ui.WaitFor(() => !window.IsBuilding && window.Status?.Contains("Make Pitstop Godot's Script Editor…", StringComparison.Ordinal) == true,
+                () => $"the new game to be built and Pitstop offered as Godot's script editor ({window.Status})", TimeSpan.FromMinutes(4));
+            Assert.Equal("make Pitstop Godot's Script Editor", window.StatusPlace?.Name);
             Runs(window, "Spinner");
         }
         finally
@@ -101,7 +101,7 @@ public sealed class NewGodotGameTests : IDisposable
             string folder = PathNames.Canonical(Path.Combine(place, "Spinner"));
             Ui.WaitFor(() => window.WorkspaceModel?.OpenedAs is not null, () => $"the new game's solution to open ({window.Status})", TimeSpan.FromMinutes(2));
             (string said, int code, bool built) = BuiltByGodotsEditor(window, folder);
-            Assert.True(code == 0 && built && Unbuilt(said) is null, $"Godot's editor started through Passenger did not build the net10.0 game ({ExitCodes.Said(code)}), "
+            Assert.True(code == 0 && built && Unbuilt(said) is null, $"Godot's editor started through Pitstop did not build the net10.0 game ({ExitCodes.Said(code)}), "
                 + $"DOTNET_ROOT naming {root}:\n{said}");
         }
         finally
@@ -123,7 +123,7 @@ public sealed class NewGodotGameTests : IDisposable
         int own = DotnetMachine.Read().Installation?.Runtimes.Where(r => !VersionOrder.IsPrerelease(r)).Select(VersionOrder.Major).Max() ?? 0;
         Assert.SkipUnless(targets is { Newest.Major: int newest } && newest < own, targets is null
             ? "Nothing here says which .NET Godot's editor builds and runs a game on (macOS and Godot's .NET build alone do)"
-            : $"Godot's editor builds and runs a game here on .NET {targets.Newest?.Major.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "none"}, no older than Passenger's .NET {own}");
+            : $"Godot's editor builds and runs a game here on .NET {targets.Newest?.Major.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "none"}, no older than Pitstop's .NET {own}");
         GodotEditorDotnet.GameDotnet godots = targets!.Newest!;
         MainWindow window = Started();
         try
@@ -131,7 +131,7 @@ public sealed class NewGodotGameTests : IDisposable
             NewProjectDialog dialog = Chosen(window, "C#");
             string fits = $"net{godots.Major}.0";
             Assert.True(dialog.Framework == fits, $"The game targets {dialog.Framework} by default, which Godot's editor here builds or runs no game of: {targets.WhyNot(dialog.Framework)}");
-            Assert.Equal($"{targets.Editor} builds and runs a game here on .NET {godots.Major} at most, that of {godots.Root}, older than Passenger's .NET {own}", dialog.FrameworkNote);
+            Assert.Equal($"{targets.Editor} builds and runs a game here on .NET {godots.Major} at most, that of {godots.Root}, older than Pitstop's .NET {own}", dialog.FrameworkNote);
             Assert.Null(dialog.WindowsNote);
             string newer = $"net{own}.0";
             dialog.Framework = newer;
@@ -146,7 +146,7 @@ public sealed class NewGodotGameTests : IDisposable
             Ui.WaitFor(() => window.WorkspaceModel?.OpenedAs is not null, () => $"the new game's solution to open ({window.Status})", TimeSpan.FromMinutes(2));
             Assert.Contains($"<TargetFramework>{fits}</TargetFramework>", File.ReadAllText(Path.Combine(folder, "Spinner.csproj")), StringComparison.Ordinal);
             (string said, int code, bool built) = BuiltByGodotsEditor(window, folder);
-            Assert.True(code == 0 && built && Unbuilt(said) is null, $"Godot's editor started through Passenger did not build the {fits} game ({ExitCodes.Said(code)}):\n{said}");
+            Assert.True(code == 0 && built && Unbuilt(said) is null, $"Godot's editor started through Pitstop did not build the {fits} game ({ExitCodes.Said(code)}):\n{said}");
             string opened = OpenedByGodotsEditor(window, godots.Root);
             Assert.True(!opened.Contains("Could not load file or assembly", StringComparison.Ordinal) && Unbuilt(opened) is null,
                 $"Godot's editor on the .NET of {godots.Root} did not load the {fits} game:\n{opened}");
@@ -176,8 +176,8 @@ public sealed class NewGodotGameTests : IDisposable
     /// whether Godot's own build ended well, as its build log under the test's user folders keeps it, the game's assembly there.</summary>
     private (string Said, int Code, bool Built) BuiltByGodotsEditor(MainWindow window, string folder)
     {
-        Ui.WaitFor(() => !window.IsBuilding && window.Status?.Contains("Make Passenger Godot's Script Editor…", StringComparison.Ordinal) == true,
-            () => $"Passenger's own build of the new game to end ({window.Status})", TimeSpan.FromMinutes(4));
+        Ui.WaitFor(() => !window.IsBuilding && window.Status?.Contains("Make Pitstop Godot's Script Editor…", StringComparison.Ordinal) == true,
+            () => $"Pitstop's own build of the new game to end ({window.Status})", TimeSpan.FromMinutes(4));
         Ui.WaitFor(() => window.Configurations.Any(c => c.Generated && c.GodotEditor),
             () => $"the game's Godot Editor configuration ({string.Join(", ", window.Configurations.Select(c => c.Name))})", TimeSpan.FromMinutes(1));
         RunConfiguration editor = window.Configurations.First(c => c.Generated && c.GodotEditor);

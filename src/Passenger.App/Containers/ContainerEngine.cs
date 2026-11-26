@@ -60,7 +60,7 @@ public sealed record EngineState(EngineStatus Status, string? Cli, string? Probl
     /// <summary>What the engine cannot do that Passenger would otherwise, said where its problems are: Podman has no
     /// BuildKit, whose checks a Dockerfile's are (buildx would start a BuildKit container on it, which Passenger never does).</summary>
     public string? Limit => IsPodman
-        ? "Dockerfiles are not checked with BuildKit: Podman has none (it builds with Buildah), and Passenger starts no BuildKit container for its checks"
+        ? "Dockerfiles are not checked with BuildKit: Podman has none (it builds with Buildah), and Pitstop starts no BuildKit container for its checks"
         : null;
 
     /// <summary>Whether Docker Desktop is installed where a click can start it (macOS's app, Windows' executable).</summary>

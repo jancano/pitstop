@@ -10,13 +10,13 @@ namespace Passenger.App;
 /// enable-animations, cursor-blink and its cycle; elsewhere Passenger's own. Read as Passenger starts and again as a window
 /// comes in front (<see cref="LookAgain"/>), and put in force for every window where it changed: every caret's blink
 /// (<see cref="Carets"/>) and, with less motion asked, the still styles (<see cref="StillMotion"/>).
-/// <c>PASSENGER_SYSTEM_MOTION</c> stands in for the system (<see cref="MotionAsked.Parse"/>), as a test run's does.</summary>
+/// <c>PITSTOP_SYSTEM_MOTION</c> stands in for the system (<see cref="MotionAsked.Parse"/>), as a test run's does.</summary>
 public static partial class SystemMotion
 {
     /// <summary>Names what the system asks in its place: <c>full</c> or <c>reduced</c> and <c>blink=none</c>,
     /// <c>blink=MS</c> or <c>blink=SHOWN/HIDDEN</c>, comma-separated; a malformed value is fatal as the IDE starts.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_SYSTEM_MOTION";
+    public const string Variable = "PITSTOP_SYSTEM_MOTION";
 
     /// <summary>What is in force, Passenger's own until the first read lands.</summary>
     public static MotionAsked InForce { get; private set; } = MotionAsked.Default;
@@ -199,7 +199,7 @@ public static partial class SystemMotion
         }
         catch (Exception error) when (ChildFailures.Of(error))
         {
-            IdeErrors.Write($"System motion: GNOME's interface settings could not be read, so Passenger's own stand: {error.Message}");
+            IdeErrors.Write($"System motion: GNOME's interface settings could not be read, so Pitstop's own stand: {error.Message}");
             return MotionAsked.Default;
         }
     }

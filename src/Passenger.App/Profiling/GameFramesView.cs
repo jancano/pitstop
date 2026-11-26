@@ -106,7 +106,7 @@ public sealed class GameFramesView : DockPanel
     }
 
     /// <summary>What the page says of a game's run that recorded no frames.</summary>
-    private const string NoFrames = "No Godot frames in this run. Passenger records a Godot game's own frame profile beside its samples when it profiles one Run, Debug or Profile started.";
+    private const string NoFrames = "No Godot frames in this run. Pitstop records a Godot game's own frame profile beside its samples when it profiles one Run, Debug or Profile started.";
 
     /// <summary>A GDScript function's row opened: its script, at its line.</summary>
     public event EventHandler<(ScriptFunction Function, string Folder)>? FunctionOpened;

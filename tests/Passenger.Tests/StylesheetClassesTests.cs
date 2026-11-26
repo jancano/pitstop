@@ -356,7 +356,7 @@ public sealed class StyledShop : SharedProject
             using (ZipArchive package = ZipFile.Open(PathOf("feed/kit.1.0.0.nupkg"), ZipArchiveMode.Create))
             {
                 Entry(package, "Kit.nuspec", "<?xml version=\"1.0\"?>\n<package xmlns=\"http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd\">\n"
-                    + "  <metadata>\n    <id>Kit</id>\n    <version>1.0.0</version>\n    <authors>Passenger</authors>\n    <description>A stylesheet</description>\n"
+                    + "  <metadata>\n    <id>Kit</id>\n    <version>1.0.0</version>\n    <authors>Pitstop</authors>\n    <description>A stylesheet</description>\n"
                     + "  </metadata>\n</package>\n");
                 Entry(package, "staticwebassets/kit.css", ".kit-card {\n    border: 1px solid #ccc;\n}\n");
             }
@@ -364,7 +364,7 @@ public sealed class StyledShop : SharedProject
             using (ZipArchive package = ZipFile.Open(PathOf("feed/lamp.1.0.0.nupkg"), ZipArchiveMode.Create))
             {
                 Entry(package, "Lamp.nuspec", "<?xml version=\"1.0\"?>\n<package xmlns=\"http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd\">\n"
-                    + "  <metadata>\n    <id>Lamp</id>\n    <version>1.0.0</version>\n    <authors>Passenger</authors>\n    <description>A stylesheet</description>\n"
+                    + "  <metadata>\n    <id>Lamp</id>\n    <version>1.0.0</version>\n    <authors>Pitstop</authors>\n    <description>A stylesheet</description>\n"
                     + "  </metadata>\n</package>\n");
                 Entry(package, "staticwebassets/lamp.css", ".lamp-glow {\n    color: orange;\n}\n");
                 Entry(package, "build/Microsoft.AspNetCore.StaticWebAssets.props", "<Project>\n  <ItemGroup>\n"

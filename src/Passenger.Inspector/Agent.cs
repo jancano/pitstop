@@ -119,7 +119,7 @@ public static class Agent
             {
                 // A Main left to choose its platform chose one the hook does not know: ended before its windows are shown, if it can be.
                 string said = "The app draws where people see it, on a platform other than Avalonia's headless one. "
-                    + "It was ended as its windows came, as a Passenger nobody sees opens no window on the person's screen";
+                    + "It was ended as its windows came, as a Pitstop nobody sees opens no window on the person's screen";
                 Console.Error.WriteLine(said);
                 Tell(said);
                 Environment.Exit(StartupHook.EndedUnseen);

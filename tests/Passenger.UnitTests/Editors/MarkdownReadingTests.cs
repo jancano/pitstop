@@ -69,7 +69,7 @@ public sealed class MarkdownReadingTests
         const string Readme = """
             <div align="center">
 
-            # Passenger
+            # Pitstop
 
             **An IDE**
 
@@ -88,7 +88,7 @@ public sealed class MarkdownReadingTests
             """;
         IReadOnlyList<M.Placed> placed = M.ParsePlaced(Readme);
         Assert.Equal(["Heading", "Paragraph", "Division", "Details", "Paragraph"], placed.Select(p => p.Block.GetType().Name));
-        Assert.Equal(new M.Heading(1, "Passenger"), placed[0].Block);
+        Assert.Equal(new M.Heading(1, "Pitstop"), placed[0].Block);
         M.Details details = (M.Details)placed[3].Block;
         Assert.True(placed[3].Line == 10 && placed[3].End == 16, $"The details are read from line {placed[3].Line} to {placed[3].End}, not 10 to past their close's 15");
         Assert.True(details.Open, "The details' open is not read");

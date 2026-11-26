@@ -47,7 +47,7 @@ public sealed class SettingsStore : IDisposable
     /// <summary>A window's own settings, kept nowhere: the defaults, or those it opens on, changed only by that window.</summary>
     public static SettingsStore Unkept(AppSettings? opening = null) => new(null, opening);
 
-    /// <summary>The settings kept where PASSENGER_SETTINGS names (<see cref="StateStore.Named"/>), which a process nobody
+    /// <summary>The settings kept where PITSTOP_SETTINGS names (<see cref="StateStore.Named"/>), which a process nobody
     /// sees opens on, read as a window keeping them reads them, on any thread: null with no folder named, or none kept there
     /// (no file, or one that did not read).</summary>
     internal static AppSettings? KeptWhereNamed() =>
@@ -181,7 +181,7 @@ public sealed class SettingsStore : IDisposable
         }
         AppSettings before = value;
         value = document.Value;
-        IdeErrors.Write("Settings: settings.json was changed by another Passenger, and is read again");
+        IdeErrors.Write("Settings: settings.json was changed by another Pitstop, and is read again");
         Raise(before, value);
     }
 

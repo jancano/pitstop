@@ -143,6 +143,7 @@ public partial class MainWindow : IdeWindow
         AddContextHelp();
         AddUpdates();
         AddWhatsNew();
+        Editors.BrowseRequested += (_, address) => Browse(address);
         AddAgents();
         AddDiscord();
         AddShutdown();
@@ -293,7 +294,7 @@ public partial class MainWindow : IdeWindow
         });
         assist = new CodeAssist(Editors, Editors.AssistLayer, () => session.CSharp)
         {
-            Xaml = () => session.Xaml, MSBuild = () => session.MSBuild, Web = () => session.Web, GodotScenes = () => session.GodotScenes,
+            Xaml = () => session.Xaml, MSBuild = () => session.MSBuild, Web = () => session.Web, Cpp = () => session.Cpp, GodotScenes = () => session.GodotScenes,
             GodotShaders = () => session.GodotShaders,
             GodotScriptTypes = () => session.GodotScriptTypes,
             Stylesheets = () => session.Stylesheets,
@@ -1341,7 +1342,7 @@ public partial class MainWindow : IdeWindow
     {
         string? named = Folder is not { } folder ? null : session.Workspace?.Name ?? Path.GetFileName(folder);
         OpenDocument? shown = Editors.ShownInMain;
-        Title = shown is null ? named ?? "Welcome to Passenger" : $"{(named is null ? "" : named + " – ")}{(shown.Tool is null ? shown.Name : shown.Title)}";
+        Title = shown is null ? named ?? "Welcome to Pitstop" : $"{(named is null ? "" : named + " – ")}{(shown.Tool is null ? shown.Name : shown.Title)}";
         FollowInDiscord();
     }
 
@@ -1351,6 +1352,10 @@ public partial class MainWindow : IdeWindow
     {
         // A diff's tab names no language of its own, nor a tool window's.
         string language = Editors.Active is { Diff: null, Tool: null } file ? file.Language.Name : string.Empty;
+        if (Editors.Active is { Diff: null, Tool: null } native && native.Language.Service == Languages.LanguageService.Clangd)
+        {
+            return session.Cpp?.Label(native) is { } label ? $"{language} · {label}" : language;
+        }
         if (Editors.Active is { Diff: null, Tool: null } active && Web.WebLanguages.LanguageOf(active.Path) is not null)
         {
             // A web file's server, not C#'s, is what it waits on; one named as its language is said once (TypeScript's TypeScript).

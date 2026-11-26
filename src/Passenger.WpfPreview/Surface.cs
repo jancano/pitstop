@@ -307,7 +307,7 @@ internal sealed partial class Surface
     {
         try
         {
-            HwndSourceParameters parameters = new("Passenger WPF preview")
+            HwndSourceParameters parameters = new("Pitstop WPF preview")
             {
                 // A popup never shown, off every screen, never activated and never in the taskbar.
                 WindowStyle = unchecked((int)0x80000000),

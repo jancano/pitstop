@@ -29,7 +29,7 @@ public sealed partial class TextMateHighlighter : IHighlighter, IBraceMatcher, I
 
     /// <summary>The variable that gives <see cref="LineTime"/> in milliseconds.</summary>
     [IdentifierHome]
-    public const string LineTimeVariable = "PASSENGER_GRAMMAR_LINE_MS";
+    public const string LineTimeVariable = "PITSTOP_GRAMMAR_LINE_MS";
 
     /// <summary>How often a long pass shows what it has read so far.</summary>
     private static readonly TimeSpan ShowEvery = TimeSpan.FromMilliseconds(60);

@@ -16,11 +16,11 @@ public static class GpgLoopback
 {
     /// <summary>The variable naming the person's gpg, which makes Passenger's executable this program.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_GPG";
+    public const string Variable = "PITSTOP_GPG";
 
     /// <summary>The variable naming the person's gpgsm, which signs with an X.509 certificate's key, as git runs gpg.</summary>
     [IdentifierHome]
-    public const string X509Variable = "PASSENGER_GPGSM";
+    public const string X509Variable = "PITSTOP_GPGSM";
 
     /// <summary>What Main asks before anything starts: where git runs this executable as its gpg, gpg run and its exit
     /// code; else null, and Passenger starts as itself.</summary>

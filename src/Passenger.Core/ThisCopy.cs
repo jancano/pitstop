@@ -6,17 +6,17 @@ namespace Passenger.Core;
 /// <summary>What the place this copy of Passenger runs from says of it, read once as it starts (<see cref="Read()"/>): a
 /// <c>data</c> folder in the copy's folder makes it portable, keeping all its state there (<see cref="Data"/>), and a
 /// package manager's file beside its executable, or WinGet's own folder, leaves its updates to that manager
-/// (<see cref="PackageManager"/>). The copy's folder is the one a person keeps it in: Passenger.exe's on Windows, the
+/// (<see cref="PackageManager"/>). The copy's folder is the one a person keeps it in: Pitstop.exe's on Windows, the
 /// archive's passenger/ folder on Linux (the executable in its app/), the one holding the app bundle on macOS (where
 /// macOS runs a quarantined app from a copy of its own, the bundle's own place). A marker that cannot be what it says is
 /// fatal, as a malformed flag is.</summary>
 public static partial class ThisCopy
 {
     /// <summary>The folder in the copy's folder that makes it portable.</summary>
-    public const string DataName = "data";
+    public const string DataName = "pitstop-data";
 
     /// <summary>The file a package manager puts beside the executable to say it installed the copy.</summary>
-    public const string PackageManagerName = "package-manager";
+    public const string PackageManagerName = "pitstop-package-manager";
 
     /// <summary>The most a package manager's file may hold: a line naming the manager and one with its command.</summary>
     private const int MarkLimit = 4096;
@@ -46,12 +46,12 @@ public static partial class ThisCopy
     public static string FolderOf(string programs)
     {
         string trimmed = Path.TrimEndingDirectorySeparator(programs);
-        if (MacBundles.Of(Path.Combine(trimmed, "Passenger")) is { } bundle)
+        if (MacBundles.Of(Path.Combine(trimmed, Product.Name)) is { } bundle)
         {
             return Path.GetDirectoryName(Untranslocated(bundle)) ?? trimmed;
         }
         // The Linux archive's passenger/ folder: the app in app/, its launcher beside.
-        if (Path.GetFileName(trimmed) == "app" && Path.GetDirectoryName(trimmed) is { } above && File.Exists(Path.Combine(above, "passenger")))
+        if (Path.GetFileName(trimmed) == "app" && Path.GetDirectoryName(trimmed) is { } above && File.Exists(Path.Combine(above, "pitstop")))
         {
             return above;
         }
@@ -65,7 +65,7 @@ public static partial class ThisCopy
         if (!Directory.Exists(data))
         {
             return File.Exists(data) || new FileInfo(data).LinkTarget is not null
-                ? throw new FormatException($"{data} is no folder, where a folder named {DataName} beside Passenger makes it portable, keeping its state there: "
+                ? throw new FormatException($"{data} is no folder, where a folder named {DataName} beside Pitstop makes it portable, keeping its state there: "
                     + "remove it, or make it a folder")
                 : null;
         }
@@ -77,7 +77,7 @@ public static partial class ThisCopy
         }
         catch (Exception refused) when (refused is UnauthorizedAccessException or IOException)
         {
-            throw new FormatException($"{canonical}, the folder this portable Passenger keeps its state in, cannot be written: {refused.Message}", refused);
+            throw new FormatException($"{canonical}, the folder this portable Pitstop keeps its state in, cannot be written: {refused.Message}", refused);
         }
         return canonical;
     }
@@ -89,7 +89,7 @@ public static partial class ThisCopy
         string path = Path.Combine(programs, PackageManagerName);
         if (Directory.Exists(path))
         {
-            throw new FormatException($"{path} is a folder, where a package manager's file says it installed Passenger");
+            throw new FormatException($"{path} is a folder, where a package manager's file says it installed Pitstop");
         }
         if (!File.Exists(path))
         {
@@ -105,7 +105,7 @@ public static partial class ThisCopy
             throw new FormatException($"{path}, a package manager's file, cannot be read: {refused.Message}", refused);
         }
         return MarkOf(bytes) ?? throw new FormatException($"{path} is not a package manager's file: at most {MarkLimit} bytes of text, "
-            + "a line naming the manager and, after it, a line with the command that updates Passenger");
+            + "a line naming the manager and, after it, a line with the command that updates Pitstop");
     }
 
     /// <summary>A package manager's file read, or null where it is no such file: UTF-8 text of at most two lines, the

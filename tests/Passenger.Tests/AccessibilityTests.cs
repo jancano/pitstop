@@ -360,7 +360,7 @@ public sealed class AccessibilityTests : IDisposable
                 Assert.True(inner.IsExpanded, "VoiceOver's opening of Inner left it closed");
                 AsReaderHears(reused, "Inner", ExpandCollapseState.Expanded);
             }
-            Assert.True(faults.Thrown.Length == 0, $"Avalonia's bridge met an exception asking a row, which ends a person's Passenger: {string.Join("; ", faults.Thrown)}");
+            Assert.True(faults.Thrown.Length == 0, $"Avalonia's bridge met an exception asking a row, which ends a person's Pitstop: {string.Join("; ", faults.Thrown)}");
             Assert.True(refused.Count == 0, $"A row told a reader its open state changed while it gave no way to ask it: {string.Join("; ", refused)}");
 
             void Key(ExplorerNode row, string key)

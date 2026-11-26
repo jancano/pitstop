@@ -322,7 +322,7 @@ internal sealed unsafe partial class SharedWatch : IDisposable
                     self.Free();
                     throw new IOException($"macOS made no stream of the file events under {Top}");
                 }
-                queue = dispatch_queue_create($"Passenger's file events of {Top}", IntPtr.Zero);
+                queue = dispatch_queue_create($"Pitstop's file events of {Top}", IntPtr.Zero);
                 FSEventStreamSetDispatchQueue(stream, queue);
                 if (!FSEventStreamStart(stream))
                 {

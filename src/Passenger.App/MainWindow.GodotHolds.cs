@@ -47,7 +47,7 @@ public partial class MainWindow
         }
         bool one = paths.Count == 1;
         return await ConfirmAsync("Write Over What Godot Holds?",
-            $"{said}. Passenger writes {(one ? "that file" : "those files")} now; Godot's editor then asks whether to keep its own version or take this one.",
+            $"{said}. Pitstop writes {(one ? "that file" : "those files")} now; Godot's editor then asks whether to keep its own version or take this one.",
             "Write Anyway", null) ? null : $"{said}; {(one ? "it was left as it is" : "they were left as they are")}";
     }
 

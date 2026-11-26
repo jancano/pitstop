@@ -33,7 +33,7 @@ public static class TextSearch
 
     /// <summary>The variable that gives <see cref="Apart"/> in milliseconds.</summary>
     [IdentifierHome]
-    public const string ApartVariable = "PASSENGER_REGEX_TIMEOUT_MS";
+    public const string ApartVariable = "PITSTOP_REGEX_TIMEOUT_MS";
 
     /// <summary>How long a regex's search of a text may run off the UI thread, its matches together: far past the few
     /// hundred milliseconds a busy machine keeps a quick search waiting, so only a regex backtracking without end

@@ -20,7 +20,7 @@ public static class RoslynServerFolder
     /// <summary>The variable naming, by its full path, a folder to run the server from in place of <see cref="Carried"/>: a
     /// test's stand-in for an app whose server is missing or broken.</summary>
     [IdentifierHome]
-    public const string ServerVariable = "PASSENGER_ROSLYN_SERVER";
+    public const string ServerVariable = "PITSTOP_ROSLYN_SERVER";
 
     /// <summary>Where the server Passenger runs is: <see cref="Carried"/>, or the folder <see cref="ServerVariable"/> names;
     /// a value that is no full path is fatal as Passenger starts, as a malformed flag is.</summary>

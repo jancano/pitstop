@@ -322,7 +322,7 @@ internal static class Signatures
                     continue;
                 }
                 // The same passing name for a parameter in every declaration, so a rename Roslyn carries to another finds it done.
-                string to = final ? name : $"passenger__{ordinal}__{name}";
+                string to = final ? name : $"pitstop__{ordinal}__{name}";
                 if (method.Parameters[ordinal].Name != to)
                 {
                     solution = await Renamer.RenameSymbolAsync(solution, method.Parameters[ordinal], options, to, cancel).ConfigureAwait(false);

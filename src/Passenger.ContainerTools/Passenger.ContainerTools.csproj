@@ -5,7 +5,7 @@
        nothing of the image but the C library. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>passenger-tools</AssemblyName>
+    <AssemblyName>pitstop-tools</AssemblyName>
     <RootNamespace>Passenger.ContainerTools</RootNamespace>
     <!-- The tools format nothing by culture, so they need no ICU, which Alpine's .NET images lack. -->
     <InvariantGlobalization>true</InvariantGlobalization>

@@ -80,7 +80,7 @@ public sealed partial class SameOnEverySystemRulesTests
     /// <summary>The tests' own helpers whose work differs by system, by type name or Type.Method, and why.</summary>
     private static readonly Dictionary<string, string> DifferingHelpers = new(StringComparer.Ordinal)
     {
-        ["McpRig"] = "starts a Passenger of its own", ["Debuggees.Program"] = "runs a debuggee", ["Docker"] = "runs containers",
+        ["McpRig"] = "starts a Pitstop of its own", ["Debuggees.Program"] = "runs a debuggee", ["Docker"] = "runs containers",
         ["ContainerPrograms"] = "runs containers", ["AspireApp"] = "runs Aspire", ["AspireFunctionsApp"] = "runs Aspire",
         ["AspireDashboardHost"] = "runs Aspire", ["AspireInteractionHost"] = "runs Aspire", ["AvaloniaApp"] = "builds and runs an app",
         ["WpfApp"] = "builds and runs an app", ["MauiApp"] = "builds and runs an app", ["BellApp"] = "builds and runs an app",

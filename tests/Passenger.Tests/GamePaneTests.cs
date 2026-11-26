@@ -224,7 +224,7 @@ public sealed class GamePaneTests
         public void Shares(long context)
         {
             standIn!.GetStream().Write(GodotMessage.Frame(GodotWords.EmbeddedContext, context));
-            Ui.WaitFor(() => Listened.EmbeddedContext is not null, () => "Passenger to hear the layer's context");
+            Ui.WaitFor(() => Listened.EmbeddedContext is not null, () => "Pitstop to hear the layer's context");
         }
 
         /// <summary>The game moves the pointer to a place of its window, heard by Passenger before this returns.</summary>
@@ -234,7 +234,7 @@ public sealed class GamePaneTests
             void Heard(object? sender, (int X, int Y) named) => heard = true;
             Listened.PointerWarped += Heard;
             standIn!.GetStream().Write(GodotMessage.Frame(GodotWords.EmbeddedWarpMouse, new GodotMath(GodotType.Vector2I, [x, y])));
-            Ui.WaitFor(() => heard, () => "Passenger to hear the game move the pointer");
+            Ui.WaitFor(() => heard, () => "Pitstop to hear the game move the pointer");
             Listened.PointerWarped -= Heard;
         }
 

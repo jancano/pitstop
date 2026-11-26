@@ -329,7 +329,7 @@ public sealed partial class CSharpDocument : IServerDocument, IDisposable
         {
             Range = new LspRange(lines.PositionOf(at), lines.PositionOf(Math.Min(at + 1, lines.Text.Length))),
             Severity = DiagnosticSeverity.Information,
-            Source = "Passenger",
+            Source = "Pitstop",
             Message = CSharpParsing.TooDeep,
         };
         Show(diagnostics.Take([note], DiagnosticMarks.Marker));

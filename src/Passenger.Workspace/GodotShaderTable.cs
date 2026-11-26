@@ -64,7 +64,7 @@ public sealed class GodotShaderTable
     private static readonly Lazy<GodotShaderTable> carried = new(() =>
     {
         using Stream stream = typeof(GodotShaderTable).Assembly.GetManifestResourceStream(Resource)
-            ?? throw new InvalidOperationException($"Passenger carries no {Resource}");
+            ?? throw new InvalidOperationException($"Pitstop carries no {Resource}");
         using StreamReader reader = new(stream, Encoding.UTF8);
         return Read(reader.ReadToEnd());
     });

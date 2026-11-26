@@ -191,7 +191,7 @@ internal sealed partial class ComposeCheck(EngineChecks owner, OpenDocument docu
         }
     }
 
-    private const string Probe = "x-passenger-values";
+    private const string Probe = "x-pitstop-values";
 
     private static bool Required(string expression) => RequiredExpression().IsMatch(expression);
 

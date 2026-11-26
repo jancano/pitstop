@@ -85,7 +85,7 @@ public class ThemeSourceTests
         Assert.Equal("""{"editorFontSize":14,"look":{"source":"Zaneris/passenger-themes","name":"Harbour"},"colourScheme":{"source":"Zaneris/passenger-themes","name":"Reef"}}""",
             settings.ToJsonString());
 
-        JsonObject own = new() { ["look"] = "Passenger", ["colourScheme"] = "Theme" };
+        JsonObject own = new() { ["look"] = "Pitstop", ["colourScheme"] = "Theme" };
         ThemeSource.MoveFormerChoices(own, "look", "colourScheme");
         Assert.Equal("{}", own.ToJsonString());
 

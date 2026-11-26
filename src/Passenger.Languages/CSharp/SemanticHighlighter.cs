@@ -163,7 +163,7 @@ public sealed class SemanticHighlighter : CarriedColours
             TextSnapshot snapshot = document.Text.Snapshot;
             int version = document.Text.Version;
             askedFor = version;
-            if (Screen(snapshot) is { } range)
+            if (document.SupportsSemanticRanges && Screen(snapshot) is { } range)
             {
                 (SemanticTokens? near, _) = await Out(request, sent => document.SemanticTokensAsync(range, cancel, sent));
                 if (near is not null && !await Land(near, snapshot, version, range, request, cancel))

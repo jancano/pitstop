@@ -25,9 +25,9 @@ public sealed class LaunchHandOffTests
     {
         Flow.StepApart<LaunchHandOffTests>("a second launch with a file and caret goes to the window on its folder at its line with no second window", t => t.A_second_launch_with_a_file_and_caret_goes_to_the_window_on_its_folder_at_its_line_with_no_second_window());
         Flow.StepApart<LaunchHandOffTests>("a launch counting its caret from zero as Godot s editor fills it in puts the caret on that line", t => t.A_launch_counting_its_caret_from_zero_as_Godot_s_editor_fills_it_in_puts_the_caret_on_that_line());
-        Flow.StepApart<LaunchHandOffTests>("a launch for a folder no window has is opened by the running Passenger in a window of its own", t => t.A_launch_for_a_folder_no_window_has_is_opened_by_the_running_Passenger_in_a_window_of_its_own());
-        Flow.StepApart<LaunchHandOffTests>("a recent solution s shortcut opens it in the running Passenger and New Window makes a window with nothing open", t => t.A_recent_solution_s_shortcut_opens_it_in_the_running_Passenger_and_New_Window_makes_a_window_with_nothing_open());
-        Flow.StepApart<LaunchHandOffTests>("with no Passenger running a launch is the Passenger and the next launch goes to it", t => t.With_no_Passenger_running_a_launch_is_the_Passenger_and_the_next_launch_goes_to_it());
+        Flow.StepApart<LaunchHandOffTests>("a launch for a folder no window has is opened by the running Pitstop in a window of its own", t => t.A_launch_for_a_folder_no_window_has_is_opened_by_the_running_Passenger_in_a_window_of_its_own());
+        Flow.StepApart<LaunchHandOffTests>("a recent solution s shortcut opens it in the running Pitstop and New Window makes a window with nothing open", t => t.A_recent_solution_s_shortcut_opens_it_in_the_running_Passenger_and_New_Window_makes_a_window_with_nothing_open());
+        Flow.StepApart<LaunchHandOffTests>("with no Pitstop running a launch is the Pitstop and the next launch goes to it", t => t.With_no_Passenger_running_a_launch_is_the_Passenger_and_the_next_launch_goes_to_it());
     }
 
     private void A_second_launch_with_a_file_and_caret_goes_to_the_window_on_its_folder_at_its_line_with_no_second_window()
@@ -69,7 +69,7 @@ public sealed class LaunchHandOffTests
         Launched([other, "--file", script, "--caret", "2:1"], StateStore.DefaultRoot);
 
         Ui.WaitFor(() => PassengerApp.Windows.Any(w => w != window && w.Folder == PathNames.Canonical(other)),
-            () => $"a window of the running Passenger's own on {other}; its windows are on {string.Join(", ", PassengerApp.Windows.Select(w => w.Folder ?? "nothing"))}");
+            () => $"a window of the running Pitstop's own on {other}; its windows are on {string.Join(", ", PassengerApp.Windows.Select(w => w.Folder ?? "nothing"))}");
         MainWindow opened = PassengerApp.Windows.Single(w => w.Folder == PathNames.Canonical(other));
         Ui.WaitFor(() => Caret(opened) == (PathNames.Canonical(script), new TextPosition(1, 0)),
             () => $"the launch's file at 2:1 in the window made for its folder; it shows {opened.EditorArea.Active?.Path ?? "nothing"} at {Caret(opened).At}");
@@ -100,7 +100,7 @@ public sealed class LaunchHandOffTests
             $"The jump list was to list the folder and the solution opened, newest first, and not the folder gone from disk; it lists {string.Join(", ", listed.Select(l => $"{l.Shortcut.Title} ({l.Path})"))}");
         Launched(listed[1].Shortcut.Arguments, StateStore.DefaultRoot);
         Ui.WaitFor(() => PassengerApp.Windows.Any(w => w != window && w.WorkspaceModel?.OpenedAs == solution),
-            () => $"a window of the running Passenger's on {solution}; its windows are on {string.Join(", ", PassengerApp.Windows.Select(w => w.WorkspaceModel?.OpenedAs ?? w.Folder ?? "nothing"))}");
+            () => $"a window of the running Pitstop's on {solution}; its windows are on {string.Join(", ", PassengerApp.Windows.Select(w => w.WorkspaceModel?.OpenedAs ?? w.Folder ?? "nothing"))}");
 
         int windows = PassengerApp.Windows.Count;
         Launched(RecentShortcuts.NewWindow.Arguments, StateStore.DefaultRoot);
@@ -130,17 +130,17 @@ public sealed class LaunchHandOffTests
         {
             string sockets = SocketFolders.For(state);
             Ui.PumpUntil(() => Directory.Exists(sockets) && Directory.EnumerateFiles(sockets, "*.open").Any() || !DotnetProcesses.Runs(first),
-                $"the Passenger the first launch started to listen for launches in {sockets}", TimeSpan.FromMinutes(2));
+                $"the Pitstop the first launch started to listen for launches in {sockets}", TimeSpan.FromMinutes(2));
             if (!DotnetProcesses.Runs(first))
             {
-                Assert.Fail($"The first launch, with no Passenger running, ended with exit code {first.ExitCode} rather than being the Passenger");
+                Assert.Fail($"The first launch, with no Pitstop running, ended with exit code {first.ExitCode} rather than being the Pitstop");
             }
 
-            string log = Path.Combine(state, "logs", "passenger.log");
+            string log = Path.Combine(state, "logs", "pitstop.log");
             Launched([project, "--file", folder, "--caret", "3:1"], state, () => File.Exists(log) ? Ui.Shared(log) : "no log");
 
             Ui.PumpUntil(() => File.Exists(log) && Ui.Shared(log).Contains("taken by the window on " + PathNames.Canonical(project), StringComparison.Ordinal),
-                $"the first launch's Passenger to say in its log that it took the second launch in its window on {project}");
+                $"the first launch's Pitstop to say in its log that it took the second launch in its window on {project}");
         }
         finally
         {
@@ -177,7 +177,7 @@ public sealed class LaunchHandOffTests
             bool ended = Ui.Pumped(() => !DotnetProcesses.Runs(launch), TimeSpan.FromSeconds(60));
             string errors = ended ? Ui.AwaitPumped(error, "the launch's standard error to end") : string.Empty;
             Assert.True(ended && launch.ExitCode == 0, ended ? $"The launch ended with exit code {launch.ExitCode}: {errors}"
-                : $"The launch was still running after 60 s: it started a Passenger of its own rather than handing itself to the one running{(running is null ? string.Empty : $"\nThe running one's log:\n{running()}")}");
+                : $"The launch was still running after 60 s: it started a Pitstop of its own rather than handing itself to the one running{(running is null ? string.Empty : $"\nThe running one's log:\n{running()}")}");
         }
         finally
         {

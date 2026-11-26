@@ -22,6 +22,7 @@ public enum LanguageService
     Dockerfile,
     Yaml,
     GDScript,
+    Clangd,
 }
 
 /// <summary>A file name a language claims, matched without regard to case: a name, or one <c>*</c> standing for any run
@@ -87,6 +88,7 @@ public sealed class Language
         ("source.yaml.1.0", "yaml-1.0.tmLanguage.json"), ("source.yaml.1.1", "yaml-1.1.tmLanguage.json"),
         ("source.yaml.1.2", "yaml-1.2.tmLanguage.json"), ("source.yaml.1.3", "yaml-1.3.tmLanguage.json"),
         ("source.yaml.embedded", "yaml-embedded.tmLanguage.json"),
+        ("source.cpp.embedded.macro", "cpp.embedded.macro.tmLanguage.json"),
     ];
 
     /// <summary>Each grammar's file by the scope it names, every language's and every one of <see cref="Included"/>, for
@@ -256,7 +258,18 @@ public sealed class Language
         grammar: new("text.gherkin.feature", "feature.tmLanguage.json"), folds: FoldScan.Gherkin, literals: Passenger.Workspace.Gherkin.FeatureReading.DocStringLines);
 
     /// <summary>Languages with no grammar here, commented as C's are or as scripts are.</summary>
-    public static readonly Language Code = new("code", "Code", ["*.rs", "*.go", "*.java", "*.kt", "*.swift", "*.c", "*.h", "*.cpp"],
+    public static readonly Language Cpp = new(LanguageIds.Cpp, "C++",
+        ["*.cpp", "*.cc", "*.cxx", "*.c++", "*.hpp", "*.hh", "*.hxx", "*.h++", "*.cppm", "*.ixx", "*.mpp", "*.cxxm", "*.ccm"],
+        line: "//", block: ("/*", "*/"), grammar: new("source.cpp", "cpp.tmLanguage.json"),
+        folds: FoldScan.Indented, service: LanguageService.Clangd);
+
+    public static readonly Language C = new(LanguageIds.C, "C", ["*.c", "*.h"], line: "//", block: ("/*", "*/"),
+        grammar: new("source.c", "c.tmLanguage.json"), folds: FoldScan.Indented, service: LanguageService.Clangd);
+
+    public static readonly Language Lua = new(LanguageIds.Lua, "Lua", ["*.lua"], line: "--", block: ("--[[", "]]"),
+        grammar: new("source.lua", "lua.tmLanguage.json"), folds: FoldScan.Indented);
+
+    public static readonly Language Code = new("code", "Code", ["*.rs", "*.go", "*.java", "*.kt", "*.swift"],
         line: "//", block: ("/*", "*/"));
 
     public static readonly Language Script = new("script", "Script", ["*.toml", "*.ps1", "*.rb", "justfile"], line: "#");
@@ -319,6 +332,10 @@ public sealed class Language
     /// <summary>The language a file is in, by its name (and its folders, where a pattern names them).</summary>
     public static Language ForPath(string path)
     {
+        if (System.IO.Path.GetExtension(path) is ".C" or ".H")
+        {
+            return Cpp;
+        }
         foreach (Language language in All)
         {
             if (language.PatternOf(path) is not null)

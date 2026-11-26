@@ -28,8 +28,8 @@ public sealed partial class PassengerTools
 
     [McpServerTool(Name = McpTools.Settings, Title = "The IDE's settings", ReadOnly = true), Description(
         "Every setting the Settings dialog has, by its settings.json name (editorFontSize, theme...), with its value, kind, " +
-        "choices, range and what the folder's .editorconfig files set over it; kept is false for an --mcp Passenger's own, kept " +
-        "nowhere (it opens on the settings.json of the folder PASSENGER_SETTINGS names).")]
+        "choices, range and what the folder's .editorconfig files set over it; kept is false for an --mcp Pitstop's own, kept " +
+        "nowhere (it opens on the settings.json of the folder PITSTOP_SETTINGS names).")]
     public Task<SettingsInfo> GetSettings(CancellationToken cancel = default) => OnUi(cancel, async () =>
     {
         // Looked at every 50 ms: the .editorconfig files are those the folder's walk lists.
@@ -67,7 +67,7 @@ public sealed partial class PassengerTools
         "Changes settings as the Settings dialog's OK does: changes maps each name settings lists to a JSON value of its kind " +
         "({\"editorFontSize\": 15, \"theme\": \"Dark\"}): a number brought into its range, text (null for none), a choice by " +
         "name, an object's members to change. Anything Settings lacks or refuses is refused, changing nothing. On a person's window the " +
-        "change is theirs, kept; Enable MCP Server, agentFolders and each setting naming a program Passenger runs are theirs alone. Returns each as it was and is now.")]
+        "change is theirs, kept; Enable MCP Server, agentFolders and each setting naming a program Pitstop runs are theirs alone. Returns each as it was and is now.")]
     public Task<IReadOnlyList<SettingChange>> SetSettings(
         Dictionary<string, JsonElement> changes,
         CancellationToken cancel = default) => OnUi(cancel, async () =>
@@ -127,7 +127,7 @@ public sealed partial class PassengerTools
             }
             if (AppSettings.NamingPrograms.Contains(property.Name))
             {
-                throw new InvalidOperationException($"{name} names a program Passenger runs, or code it loads: the person sets it in Settings, never an agent; nothing changed");
+                throw new InvalidOperationException($"{name} names a program Pitstop runs, or code it loads: the person sets it in Settings, never an agent; nothing changed");
             }
             next[name] = SettingValue(name, property, next[name], value);
             named.Add(name);
@@ -147,8 +147,8 @@ public sealed partial class PassengerTools
     /// <summary>How a theme or code colour scheme is named, with some of Passenger's themes repository's.</summary>
     private static string? ThemeNote(string property) => property switch
     {
-        nameof(AppSettings.Look) => $"null for Passenger's own, or {{\"source\", \"name\"}}: {ThemeSource.BuiltIn.Name} holds {Plural.Listed(ThemeSource.Carried)}, "
-            + $"carried with Passenger; {ThemeSource.RepositoryName} holds {string.Join(", ", ThemeSource.FormerlyCarried)} among others; themeSources lists the person's sources",
+        nameof(AppSettings.Look) => $"null for Pitstop's own, or {{\"source\", \"name\"}}: {ThemeSource.BuiltIn.Name} holds {Plural.Listed(ThemeSource.Carried)}, "
+            + $"carried with Pitstop; {ThemeSource.RepositoryName} holds {string.Join(", ", ThemeSource.FormerlyCarried)} among others; themeSources lists the person's sources",
         nameof(AppSettings.ColourScheme) => $"null for the theme's own, or {{\"source\", \"name\"}}: {ThemeSource.RepositoryName} holds {ThemeSource.FormerScheme} among others",
         _ => null,
     };
@@ -601,7 +601,7 @@ public sealed partial class PassengerTools
         // Looked at every 50 ms: Local History's queue, drained off the UI thread, raises nothing as it empties.
         await Until(() => !history.IsRecording, HistoryLimit, cancel);
         return !history.IsRecording ? $"Label {label} put"
-            : history.WaitsForAnother ? $"Label {label} waits for another Passenger on the same state, which holds Local History: it is kept once that one lets go, and local_history lists it then"
+            : history.WaitsForAnother ? $"Label {label} waits for another Pitstop on the same state, which holds Local History: it is kept once that one lets go, and local_history lists it then"
             : $"Label {label} is still being kept: local_history lists it once it is";
     });
 

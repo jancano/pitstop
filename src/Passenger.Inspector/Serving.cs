@@ -38,7 +38,7 @@ internal static class Serving
         InspectorTrace.Step($"connecting to {socket}");
         if (Connection.Open(socket) is not { } connection)
         {
-            InspectorTrace.Step("Passenger is not listening");
+            InspectorTrace.Step("Pitstop is not listening");
             return;
         }
         try
@@ -52,7 +52,7 @@ internal static class Serving
             InspectorTrace.Step($"{problem}: {error}");
             connection.Send(new Reply { Event = Wire.BindingFailed, Error = problem });
         }
-        ApartThreads.Start("Passenger inspector", () => Serve(connection, app));
+        ApartThreads.Start("Pitstop inspector", () => Serve(connection, app));
     }
 
     private static void Serve(Connection connection, IAppUi app)
@@ -77,7 +77,7 @@ internal static class Serving
         {
             InspectorTrace.Observe(AnswerAsync(app, connection, request));
         }
-        InspectorTrace.Step("Passenger has gone");
+        InspectorTrace.Step("Pitstop has gone");
         app.Close();
     }
 

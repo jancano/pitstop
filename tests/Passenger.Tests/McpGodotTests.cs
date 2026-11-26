@@ -227,12 +227,12 @@ public sealed class McpGodotTests : McpRig, IClassFixture<GodotGameFolder>
         await using McpClient client = await Start(["--mcp", game.Folder], languageServer: false);
         JsonElement ran = await Call(client, McpTools.Run, new() { ["configuration"] = Headless, ["waitSeconds"] = 180 });
         Assert.True(ran.GetProperty("stillRunning").GetBoolean(), $"The game ended as it started: {ran}");
-        Assert.Contains("Passenger its remote debugger", ran.GetProperty("status").GetString(), StringComparison.Ordinal);
+        Assert.Contains("Pitstop its remote debugger", ran.GetProperty("status").GetString(), StringComparison.Ordinal);
 
         string tree = await Game(client, McpTools.AppTree, []);
         Assert.True(tree.Contains("Main#Main @", StringComparison.Ordinal) && tree.Contains("Button#Toggle \"Toggle\" @", StringComparison.Ordinal)
             && tree.Contains("LineEdit#Field \"\" @", StringComparison.Ordinal) && !tree.Contains("PassengerAgent", StringComparison.Ordinal),
-            $"The game's tree as an agent reads it lacks its nodes, where they are and what they show, or holds Passenger's helper:\n{tree}");
+            $"The game's tree as an agent reads it lacks its nodes, where they are and what they show, or holds Pitstop's helper:\n{tree}");
         JsonElement window = Assert.Single((await Call(client, McpTools.AppWindows)).GetProperty("windows").EnumerateArray());
         Assert.Equal("Window", window.GetProperty("type").GetString());
 

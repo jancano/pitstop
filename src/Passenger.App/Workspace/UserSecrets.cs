@@ -16,7 +16,7 @@ public static class UserSecrets
 {
     /// <summary>The folder kept in place of .NET's own when set.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_USER_SECRETS";
+    public const string Variable = "PITSTOP_USER_SECRETS";
 
     public static string Root => Environment.GetEnvironmentVariable(Variable) is { Length: > 0 } given ? given
         : OperatingSystem.IsWindows() ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "UserSecrets")

@@ -1,4 +1,3 @@
-using System.Globalization;
 using Passenger.Debugger;
 using Passenger.Debugger.Interop;
 
@@ -17,7 +16,7 @@ public class PrimitiveTextTests
             Assert.Equal("4000000000", ManagedDebugger.PrimitiveText(CorElementType.U4, BitConverter.GetBytes(4000000000u)));
         }),
         ("a real number is written as the debugger writes numbers", () =>
-            Assert.Equal(0.75.ToString(CultureInfo.CurrentCulture), ManagedDebugger.PrimitiveText(CorElementType.R8, BitConverter.GetBytes(0.75)))),
+            Assert.Equal("0.75", ManagedDebugger.PrimitiveText(CorElementType.R8, BitConverter.GetBytes(0.75)))),
         ("a native integer is as wide as the bytes the program holds it in", () =>
         {
             Assert.Equal("-42", ManagedDebugger.PrimitiveText(CorElementType.I, BitConverter.GetBytes(-42)));

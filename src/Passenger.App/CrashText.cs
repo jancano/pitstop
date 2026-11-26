@@ -12,7 +12,7 @@ public static class CrashText
     private const string Time = "yyyy-MM-dd HH:mm:ss.fff";
 
     public static string Of(object thrown, DateTime at, int process, string version) =>
-        $"{at.ToString(Time, CultureInfo.InvariantCulture)} [{process}] Passenger {version} {Ended}{Environment.NewLine}{thrown}{Environment.NewLine}";
+        $"{at.ToString(Time, CultureInfo.InvariantCulture)} [{process}] Pitstop {version} {Ended}{Environment.NewLine}{thrown}{Environment.NewLine}";
 
     /// <summary>The crash a file's text keeps, its time the text's own, else <paramref name="written"/>; null for a text
     /// keeping none.</summary>
@@ -35,7 +35,7 @@ public static class CrashText
 
     /// <summary>What the window says of an exception a run before this one ended on.</summary>
     public static string Said(string message) =>
-        message.Length > 0 ? $"Passenger ended on this error as it last ran: {message}" : "Passenger ended on this error as it last ran";
+        message.Length > 0 ? $"Pitstop ended on this error as it last ran: {message}" : "Pitstop ended on this error as it last ran";
 }
 
 /// <summary>An exception a run ended on: when, its type's name, what the window says of it, and the file's text whole.</summary>

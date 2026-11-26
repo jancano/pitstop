@@ -1,19 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- passenger-ide on Windows (Program.cs): a Windows program of no console, so a terminal is not held and the Run box
-       opens no console window. Carried as its assembly, .deps.json and runtimeconfig.json beside Passenger.exe, and as its
+  <!-- pitstop-ide on Windows (Program.cs): a Windows program of no console, so a terminal is not held and the Run box
+       opens no console window. Carried as its assembly, .deps.json and runtimeconfig.json beside Pitstop.exe, and as its
        apphost under bin\, which names the assembly above it, so the folder Windows' installer puts on the person's Path
        holds the command alone. Built for a publish's system it is self-contained on the same runtime pack, so its apphost
-       finds the runtime Passenger carries beside it. macOS's command is the script beside this (passenger-ide). -->
+       finds the runtime Passenger carries beside it. macOS's command is the script beside this (pitstop-ide). -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <AssemblyName>passenger-ide</AssemblyName>
+    <AssemblyName>pitstop-ide</AssemblyName>
     <RootNamespace>Passenger.Launcher</RootNamespace>
     <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
-    <ApplicationIcon>../Passenger.App/Assets/Passenger.ico</ApplicationIcon>
+    <ApplicationIcon>../Passenger.App/Assets/Pitstop.ico</ApplicationIcon>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <!-- The apphost again, as bin\passenger-ide.exe naming ..\passenger-ide.dll, made as the SDK makes its own. -->
+  <!-- The apphost again, as bin\pitstop-ide.exe naming ..\pitstop-ide.dll, made as the SDK makes its own. -->
   <Target Name="CreateCommandHost" AfterTargets="_CreateAppHost" Condition="'$(AppHostIntermediatePath)' != '' And Exists('$(AppHostSourcePath)')">
     <PropertyGroup>
       <CommandHostPath>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)bin/$(AssemblyName)$(_NativeExecutableExtension)'))</CommandHostPath>

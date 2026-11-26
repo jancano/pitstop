@@ -155,7 +155,7 @@ internal sealed class EditorConfigAssist(AssistContext context, CodeCompletion c
         cancel.ThrowIfCancellationRequested();
         card.AddCode(spot.Key, Language.EditorConfig);
         card.AddText(known.Said(spot.Key) is { } said ? string.Join('\n', said)
-            : known.Server is null && EditorConfigKnown.IsDotnet(spot.Key) ? "Roslyn's server has not said what it reads yet" : "Nothing Passenger knows of reads this key");
+            : known.Server is null && EditorConfigKnown.IsDotnet(spot.Key) ? "Roslyn's server has not said what it reads yet" : "Nothing Pitstop knows of reads this key");
         return true;
     }
 
@@ -244,7 +244,7 @@ internal sealed class EditorConfigAssist(AssistContext context, CodeCompletion c
         List<(CompletionItem, IReadOnlyList<string>)> items = [];
         foreach (KnownKey key in known.Keys.Where(k => preamble == (k.Name == "root")))
         {
-            int rank = key.From switch { "EditorConfig" => 0, "Passenger" => 1, _ => 2 };
+            int rank = key.From switch { "EditorConfig" => 0, "Pitstop" => 1, _ => 2 };
             items.Add((Key(key.Name, key.Said[0].Split(" › ")[^1], rank), known.Said(key.Name) ?? []));
         }
         if (preamble)

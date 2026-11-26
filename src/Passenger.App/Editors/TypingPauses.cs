@@ -10,7 +10,7 @@ namespace Passenger.App.Editors;
 public static class TypingPauses
 {
     [IdentifierHome]
-    public const string Variable = "PASSENGER_TYPING_PAUSE_MS";
+    public const string Variable = "PITSTOP_TYPING_PAUSE_MS";
 
     /// <summary>Before a C# file's diagnostics are pulled again, and the other C# files shown.</summary>
     public static TimeSpan Diagnostics => Of(TimeSpan.FromMilliseconds(600));

@@ -276,7 +276,7 @@ public sealed partial class MigrationsController(MigrationsParts parts)
         RunsOf(startup) is { } runs && AspNetCoreVariables.EnvironmentOf(runs.Environment.GetValueOrDefault, string.Empty) is { Length: > 0 } configured
             ? new EfEnvironment(configured, "the run configuration's")
             : AspNetCoreVariables.EnvironmentOf(System.Environment.GetEnvironmentVariable, string.Empty) is { Length: > 0 } inherited
-            ? new EfEnvironment(inherited, "Passenger's own")
+            ? new EfEnvironment(inherited, "Pitstop's own")
             : new EfEnvironment("Development", "the default");
 
     /// <summary>Chooses the environment dotnet ef runs the startup project in, kept with the folder: the default's name goes

@@ -82,7 +82,7 @@ public sealed class SystemContrastTests : IDisposable
     /// <summary>What the system asks of contrast where a run sets it before it starts (a Windows contrast theme turned on in
     /// a VM's session, say): <c>none</c>, <c>high</c>, <c>high-dark</c> or <c>high-light</c>, as the stand-in names it.</summary>
     [IdentifierHome]
-    public const string ExpectedVariable = "PASSENGER_TEST_SYSTEM_CONTRAST";
+    public const string ExpectedVariable = "PITSTOP_TEST_SYSTEM_CONTRAST";
 
     /// <summary>The system's own high contrast is read whatever stands in for it, and is what a run that set it says it set.</summary>
     private void The_systems_own_high_contrast_is_read_whatever_stands_in_for_it()

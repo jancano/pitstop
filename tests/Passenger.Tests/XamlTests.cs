@@ -37,7 +37,7 @@ public sealed class XamlTests : IClassFixture<XamlTests.Gallery>
         Flow.StepApart("typing a tag offers the controls, then a control's properties, then the values of the one chosen", () => new XamlTests(app), t => t.Typing_a_tag_offers_the_controls_then_a_controls_properties_and_then_the_values_of_the_one_chosen());
         Flow.StepApart("a value chosen with nothing typed from the list its property opened leaves the caret after it to type on", () => new XamlTests(app), t => t.A_value_chosen_with_nothing_typed_from_the_list_its_property_opened_leaves_the_caret_after_it_to_type_on());
         Flow.StepApart("a misspelt property, enum value, resource and binding path are marked as typed, listed in Problems and go once put right", () => new XamlTests(app), t => t.A_misspelt_property_enum_value_resource_and_binding_path_are_marked_as_typed_listed_in_problems_and_go_once_put_right());
-        Flow.StepApart("Passenger's own XAML, which compiles, is marked with no problem", () => new XamlTests(app), t => t.Passengers_own_xaml_which_compiles_is_marked_with_no_problem());
+        Flow.StepApart("Pitstop's own XAML, which compiles, is marked with no problem", () => new XamlTests(app), t => t.Passengers_own_xaml_which_compiles_is_marked_with_no_problem());
         Flow.StepApart("an element's name renames with its code-behind's uses, and Go to Declaration from the code lands on it", () => new XamlTests(app), t => t.An_elements_name_renames_with_its_code_behinds_uses_and_go_to_declaration_from_the_code_lands_on_it());
         Flow.StepApart("an avares path completes from the project's assets, is warned of when missing and goes to its file", () => new XamlTests(app), t => t.An_avares_path_completes_from_the_projects_assets_is_warned_of_when_missing_and_goes_to_its_file());
         Flow.StepApart("colours show as gutter swatches, and one chosen in the picker is written back as it was written", () => new XamlTests(app), t => t.Colours_show_as_gutter_swatches_and_one_chosen_in_the_picker_is_written_back_as_it_was_written());
@@ -845,7 +845,7 @@ public sealed class XamlTests : IClassFixture<XamlTests.Gallery>
         Ui.Run(window, AppActions.Build);
         Ui.Settle();
         string said = $"{Ui.Said(window)}: {string.Join("; ", window.BottomPanel.Problems.Problems.Select(p => $"{p.Code} {p.Where} {p.Message}"))}";
-        Assert.True(window.Status?.StartsWith("Build succeeded", StringComparison.Ordinal) == true, $"The view Passenger finds right did not build: {said}");
+        Assert.True(window.Status?.StartsWith("Build succeeded", StringComparison.Ordinal) == true, $"The view Pitstop finds right did not build: {said}");
         Assert.True(!window.BottomPanel.Problems.Problems.Any(p => p.Path?.EndsWith("ContextsView.axaml", StringComparison.Ordinal) == true), $"The build said something of the view: {said}");
         window.Close();
     }
@@ -938,7 +938,7 @@ public sealed class XamlTests : IClassFixture<XamlTests.Gallery>
         Ui.Run(window, AppActions.Build);
         Ui.Settle();
         string said = $"{Ui.Said(window)}: {string.Join("; ", window.BottomPanel.Problems.Problems.Select(p => $"{p.Code} {p.Where} {p.Message}"))}";
-        Assert.True(window.Status?.StartsWith("Build succeeded", StringComparison.Ordinal) == true, $"The view Passenger finds right did not build: {said}");
+        Assert.True(window.Status?.StartsWith("Build succeeded", StringComparison.Ordinal) == true, $"The view Pitstop finds right did not build: {said}");
         Assert.True(!window.BottomPanel.Problems.Problems.Any(p => p.Path?.EndsWith("ShelfView.axaml", StringComparison.Ordinal) == true), $"The build said something of the view: {said}");
         window.Close();
     }
@@ -2277,7 +2277,7 @@ public sealed class XamlTests : IClassFixture<XamlTests.Gallery>
     }
 
     /// <summary>An Avalonia previewer that ends as it draws (a crash, here killed) is let go of: the pane says its exit code
-    /// and last words, which passenger.log has too, as the WPF previewer's end, and the next edit starts a new previewer,
+    /// and last words, which pitstop.log has too, as the WPF previewer's end, and the next edit starts a new previewer,
     /// whose frame draws the edit.</summary>
     private void An_Avalonia_previewer_that_ends_says_its_exit_and_the_next_edit_draws_in_a_new_one()
     {
@@ -2325,7 +2325,7 @@ public sealed class XamlTests : IClassFixture<XamlTests.Gallery>
             string log = Ui.Shared(IdeErrors.LogPath);
             string? line = log.Split('\n').LastOrDefault(l => l.Contains($"The Avalonia previewer of MainWindow.axaml ended with {exit}: ", StringComparison.Ordinal));
             Assert.True(line is not null && line.Contains(last, StringComparison.Ordinal),
-                $"passenger.log has {(line is null ? "nothing of the Avalonia previewer's end" : $"its end as '{line}'")}, where the pane says it ended with '{last}'");
+                $"pitstop.log has {(line is null ? "nothing of the Avalonia previewer's end" : $"its end as '{line}'")}, where the pane says it ended with '{last}'");
 
             Avalonia.Controls.Image frame = window.PreviewPaneOf(document)!.Frame;
             // A point of the panel below its children, where its background shows.
@@ -2401,7 +2401,7 @@ public sealed class XamlTests : IClassFixture<XamlTests.Gallery>
         {
             Passenger.App.Xaml.XamlPreview preview = window.PreviewOf(document)!;
             Ui.Hold(TimeSpan.FromSeconds(1), "what is sent as a previewer connects to reach it");
-            Assert.True(standIn.Heard.Count == 0, $"Passenger sent the previewer {string.Join(", ", standIn.Heard.Select(m => m.GetType().Name))} before it said its "
+            Assert.True(standIn.Heard.Count == 0, $"Pitstop sent the previewer {string.Join(", ", standIn.Heard.Select(m => m.GetType().Name))} before it said its "
                 + "session started, which a previewer still setting itself up holds and hands over in a race that may lose one or give it out of order");
             standIn.Begin();
             Ui.WaitFor(() => preview.Frame is not null && Math.Abs(preview.FrameSize.Width - StandInPreviewer.WidthOf(1)) < 0.5,

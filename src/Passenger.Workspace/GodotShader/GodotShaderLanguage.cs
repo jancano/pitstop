@@ -464,7 +464,7 @@ public sealed partial class GodotShaderLanguage
 
     /// <summary>What is said where a shader goes past the stack its parse has left, as a stack that ran out would end the
     /// process: no error, as Godot may well compile it, and the check's last word.</summary>
-    internal const string TooDeep = "Passenger read no deeper than this, so the rest of the shader is unread and unmarked and its warnings aren't checked.";
+    internal const string TooDeep = "Pitstop read no deeper than this, so the rest of the shader is unread and unmarked and its warnings aren't checked.";
 
     /// <summary>What is said of a case label of a constant Godot worked out no value for (<c>~1</c>): Godot takes its first
     /// value without asking and crashes, saying nothing of its own.</summary>

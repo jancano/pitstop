@@ -4,14 +4,14 @@ using System.Runtime.InteropServices;
 
 namespace Passenger.Launcher;
 
-/// <summary><c>passenger-ide [folder, solution or file] [flags]</c> on Windows: starts the Passenger.exe beside its
+/// <summary><c>pitstop-ide [folder, solution or file] [flags]</c> on Windows: starts the Pitstop.exe beside its
 /// assembly with the arguments it was given, each as written, in the folder it was started in, so a relative path is read
 /// from there, then ends at once, leaving Passenger running.</summary>
 public static partial class Program
 {
     public static int Main(string[] args)
     {
-        ProcessStartInfo start = new(Path.Combine(AppContext.BaseDirectory, "Passenger.exe"))
+        ProcessStartInfo start = new(Path.Combine(AppContext.BaseDirectory, "Pitstop.exe"))
         {
             UseShellExecute = false,
             WorkingDirectory = Environment.CurrentDirectory,
@@ -33,7 +33,7 @@ public static partial class Program
             if (AttachConsole(ParentsConsole))
             {
                 using StreamWriter error = new(Console.OpenStandardError()) { AutoFlush = true };
-                error.WriteLine($"passenger-ide: Passenger did not start from {start.FileName}: {failed.Message}");
+                error.WriteLine($"pitstop-ide: Pitstop did not start from {start.FileName}: {failed.Message}");
             }
             return 1;
         }

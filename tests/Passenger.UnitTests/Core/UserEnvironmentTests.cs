@@ -8,7 +8,7 @@ namespace Passenger.UnitTests.Core;
 /// names that a process's PATH lacks.</summary>
 public class UserEnvironmentTests
 {
-    private const string Folder = @"C:\Users\ana\AppData\Local\PassengerIDE\current\bin";
+    private const string Folder = @"C:\Users\ana\AppData\Local\PitstopIDE\current\bin";
 
     [Fact]
     public void Windows_user_path_changes_a_folder_at_a_time_as_windows_reads_it() => Cases.All(
@@ -54,9 +54,9 @@ public class UserEnvironmentTests
         Environment.SetEnvironmentVariable("UNIT_TEST_LOCAL_APP_DATA", @"C:\Users\ana\AppData\Local");
         try
         {
-            Assert.True(UserEnvironment.Names(@"%UNIT_TEST_LOCAL_APP_DATA%\PassengerIDE\current\bin", Folder),
+            Assert.True(UserEnvironment.Names(@"%UNIT_TEST_LOCAL_APP_DATA%\PitstopIDE\current\bin", Folder),
                 "An entry naming the folder through a variable was taken for another folder");
-            Assert.Equal(@"C:\Tools", UserEnvironment.Without(@"C:\Tools;%UNIT_TEST_LOCAL_APP_DATA%\PassengerIDE\current\bin", Folder));
+            Assert.Equal(@"C:\Tools", UserEnvironment.Without(@"C:\Tools;%UNIT_TEST_LOCAL_APP_DATA%\PitstopIDE\current\bin", Folder));
         }
         finally
         {

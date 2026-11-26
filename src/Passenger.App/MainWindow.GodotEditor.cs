@@ -21,7 +21,7 @@ public partial class MainWindow
 
     private void AddGodotEditor()
     {
-        actions!.Add(new IdeAction(AppActions.GodotScriptEditor, "Make Passenger Godot's Script Editor…", "Godot", _ => IdeErrors.Observe(MakeGodotScriptEditorAsync()))
+        actions!.Add(new IdeAction(AppActions.GodotScriptEditor, "Make Pitstop Godot's Script Editor…", "Godot", _ => IdeErrors.Observe(MakeGodotScriptEditorAsync()))
         {
             WhyNot = _ => Folder is null ? Refusals.NoFolder : GodotAtHand() is null ? Refusals.NoGodotProject : null,
             Menus = [new MenuPlace("Tools", 0, 6)],
@@ -81,7 +81,7 @@ public partial class MainWindow
         {
             return;
         }
-        GodotBanner.Say($"Godot {found.Version}'s editor can open this project's scripts in Passenger, at their line");
+        GodotBanner.Say($"Godot {found.Version}'s editor can open this project's scripts in Pitstop, at their line");
     }
 
     /// <summary>The open folder's Godot projects: those its projects build on Godot.NET.Sdk, those of GDScript alone, else the
@@ -123,12 +123,12 @@ public partial class MainWindow
             GodotSetUp found = await BackgroundWork.Run(() => GodotSetUp.Of(GodotLaunch.Found(setting), scripts, folders));
             if (found.Problem is { } problem)
             {
-                Told(work, false, $"Passenger cannot be Godot's script editor: {problem}");
+                Told(work, false, $"Pitstop cannot be Godot's script editor: {problem}");
                 return;
             }
             if (found.Values is { } now && values.All(v => now.TryGetValue(v.Key, out object? had) && Equals(had, v.Value)))
             {
-                Told(work, true, $"Godot {found.Version}'s editor already opens its scripts in this Passenger, as {PathNames.Shown(found.Written!, null)} says");
+                Told(work, true, $"Godot {found.Version}'s editor already opens its scripts in this Pitstop, as {PathNames.Shown(found.Written!, null)} says");
                 return;
             }
             string listed = string.Join(Environment.NewLine, values.Select(v => $"{v.Key} = {GodotEditorSettings.Written(v.Value)}"));
@@ -140,14 +140,14 @@ public partial class MainWindow
             work.Say("Asking to write Godot's editor settings");
             CheckBox addon = new()
             {
-                Content = $"Also install Passenger's addon in this project ({GodotAddon.FolderName} under addons, enabled in {GodotProject.FileName}): "
-                    + "Godot's Play then builds here, and this Passenger debugs what it plays",
+                Content = $"Also install Pitstop's addon in this project ({GodotAddon.FolderName} under addons, enabled in {GodotProject.FileName}): "
+                    + "Godot's Play then builds here, and this Pitstop debugs what it plays",
                 IsChecked = false,
             };
             StackPanel detail = new() { Spacing = Gaps.Normal, Children = { Copyable(listed), addon } };
-            if (!await ConfirmAsync("Make Passenger Godot's Script Editor?",
-                $"Godot {found.Version}'s editor will open its C# scripts and its other scripts in Passenger, at their line, in the window on their project. "
-                + $"Passenger writes these into {PathNames.Shown(found.Written!, null)}, keeping the rest; Godot's editor takes them as it next starts.",
+            if (!await ConfirmAsync("Make Pitstop Godot's Script Editor?",
+                $"Godot {found.Version}'s editor will open its C# scripts and its other scripts in Pitstop, at their line, in the window on their project. "
+                + $"Pitstop writes these into {PathNames.Shown(found.Written!, null)}, keeping the rest; Godot's editor takes them as it next starts.",
                 "Write Settings", detail))
             {
                 Told(work, false, "Godot's editor settings were left as they were");
@@ -160,14 +160,14 @@ public partial class MainWindow
                 return;
             }
             string[] changed = [.. values.Where(v => found.Values?.TryGetValue(v.Key, out object? had) != true || !Equals(had, v.Value)).Select(v => v.Key)];
-            string said = $"Godot {found.Version}'s editor now opens its scripts in Passenger: {Plural.Listed(changed)} set in {PathNames.Shown(found.Written!, null)}; "
+            string said = $"Godot {found.Version}'s editor now opens its scripts in Pitstop: {Plural.Listed(changed)} set in {PathNames.Shown(found.Written!, null)}; "
                 + "restart Godot's editor if it is open, which takes them as it starts";
             if (addon.IsChecked == true && await InstallGodotAddonAsync(work, ask: false) is { } notInstalled)
             {
                 Told(work, false, $"{said}; {notInstalled}");
                 return;
             }
-            Told(work, true, addon.IsChecked == true ? $"{said}; Passenger's addon is installed in this project" : said);
+            Told(work, true, addon.IsChecked == true ? $"{said}; Pitstop's addon is installed in this project" : said);
         }
     }
 
@@ -187,7 +187,7 @@ public partial class MainWindow
         {
             await Avalonia.Input.Platform.ClipboardExtensions.SetTextAsync(clipboard, paste);
         }
-        Told(work, false, $"Passenger cannot write Godot's editor settings: {why}; set them in Godot's Editor Settings{(copy ? ", the values copied" : string.Empty)}");
+        Told(work, false, $"Pitstop cannot write Godot's editor settings: {why}; set them in Godot's Editor Settings{(copy ? ", the values copied" : string.Empty)}");
     }
 
     private void Told(Working work, bool succeeded, string said)

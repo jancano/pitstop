@@ -116,7 +116,7 @@ public sealed class GodotExecutablesTests : IDisposable
         Directory.CreateDirectory(Path.Combine(folder, "GodotSharp", "Api"));
         Directory.CreateDirectory(Path.Combine(folder, "GodotSharp", "Mono"));
         GodotFound found = GodotExecutables.At(godot, GodotExecutables.Variable, windows: false);
-        Assert.Equal($"{godot} is Godot 3, whose C# runs on Mono: Passenger runs C# on Godot 4's .NET build", found.WhyNot);
+        Assert.Equal($"{godot} is Godot 3, whose C# runs on Mono: Pitstop runs C# on Godot 4's .NET build", found.WhyNot);
     }
 
     private static void Godots_answer_to_version_gives_its_version_and_whether_it_runs_CSharp() => Cases.EachApart<GodotExecutablesTests, (string Answer, string Version, bool Dotnet)>(

@@ -427,7 +427,7 @@ public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixt
             OpenWindows.CloseAll();
             return Task.CompletedTask;
         });
-        await Flow.StepApartLivedAsync<DebuggerTests>("attach to process stops a program started outside passenger at a breakpoint it then reaches and detach leaves it running to its end", () => new DebuggerTests(sum, sleeper, folders), t =>
+        await Flow.StepApartLivedAsync<DebuggerTests>("attach to process stops a program started outside pitstop at a breakpoint it then reaches and detach leaves it running to its end", () => new DebuggerTests(sum, sleeper, folders), t =>
         {
             t.Attach_to_process_stops_a_program_started_outside_passenger_at_a_breakpoint_it_then_reaches_and_detach_leaves_it_running_to_its_end();
             OpenWindows.CloseAll();
@@ -1071,10 +1071,10 @@ public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixt
 
     private void A_configuration_is_run_debugged_and_profiled_with_the_same_arguments_variable_and_working_folder()
     {
-        Write("Program.cs", "Console.WriteLine($\"seen [{string.Join(\"|\", args)}] {Environment.GetEnvironmentVariable(\"PASSENGER_SEEN\")} in {Environment.CurrentDirectory}\");\n");
+        Write("Program.cs", "Console.WriteLine($\"seen [{string.Join(\"|\", args)}] {Environment.GetEnvironmentVariable(\"PITSTOP_SEEN\")} in {Environment.CurrentDirectory}\");\n");
         Write("Properties/launchSettings.json", """
             { "profiles": { "Seen": { "commandName": "Project", "commandLineArgs": "first \"second word\"", "workingDirectory": "work dir",
-              "environmentVariables": { "PASSENGER_SEEN": "yes, seen" } } } }
+              "environmentVariables": { "PITSTOP_SEEN": "yes, seen" } } } }
             """);
         string work = Path.GetDirectoryName(Write("work dir/.keep", string.Empty))!;
         string settings = TestFolders.Create("settings-");
@@ -2311,7 +2311,7 @@ public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixt
             window.Debugger.StateChanged += (_, _) => adapter = window.Debugger.Session?.AdapterProcessId ?? adapter;
             Ui.Run(window, AppActions.Debug);
             Assert.True(adapter != 0, $"Debug started no debugger: {window.Status}");
-            string ended = $"Passenger's debugger (process {adapter}) stopped";
+            string ended = $"Pitstop's debugger (process {adapter}) stopped";
             Ui.WaitFor(() => Ui.IdeLog().Contains(ended, StringComparison.Ordinal), "the debugger's end in the IDE's log");
 
             Assert.True(window.IsVisible, "The IDE went down with its debugger");

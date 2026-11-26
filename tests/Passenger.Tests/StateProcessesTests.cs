@@ -14,7 +14,7 @@ public sealed class StateProcessesTests : IDisposable
 {
     /// <summary>Names a writer process's state folder and the names it adds, in the test that starts it.</summary>
     [IdentifierHome]
-    internal const string WriterVariable = "PASSENGER_TEST_STATE_WRITER";
+    internal const string WriterVariable = "PITSTOP_TEST_STATE_WRITER";
 
     private const int Writes = 150;
 

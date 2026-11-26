@@ -21,7 +21,7 @@ public sealed class HomeDotnetTests(LinkedDotnetTests.Linked linked) : McpRig, I
     [Fact]
     public async Task The_dotnet_a_global_json_asks_for_in_the_home_folder_or_its_paths_is_the_one_a_folder_uses()
     {
-        await Flow.StepApartAsync("an agents Passenger loads a project whose global json asks for the SDK only the homes dotnet folder holds", () => new HomeDotnetTests(linked), t => t.An_agents_Passenger_loads_a_project_whose_global_json_asks_for_the_SDK_only_the_homes_dotnet_folder_holds());
+        await Flow.StepApartAsync("an agents Pitstop loads a project whose global json asks for the SDK only the homes dotnet folder holds", () => new HomeDotnetTests(linked), t => t.An_agents_Passenger_loads_a_project_whose_global_json_asks_for_the_SDK_only_the_homes_dotnet_folder_holds());
         await Flow.StepApartAsync("a folder the first installation serves keeps its terminals path and dotnet root as given", () => new HomeDotnetTests(linked), t => t.A_folder_the_first_installation_serves_keeps_its_terminals_path_and_dotnet_root_as_given());
         await Flow.StepApartAsync("a folder whose global json paths name an installation of its own loads and builds with it", () => new HomeDotnetTests(linked), t => t.A_folder_whose_global_json_paths_name_an_installation_of_its_own_loads_and_builds_with_it());
         await Flow.StepApartAsync("a folder whose global json paths hold no sdk it takes says its error message", () => new HomeDotnetTests(linked), t => t.A_folder_whose_global_json_paths_hold_no_sdk_it_takes_says_its_error_message());

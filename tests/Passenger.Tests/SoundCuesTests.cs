@@ -192,7 +192,7 @@ public sealed class SoundCuesTests : IDisposable
             if (kind is "zsh" or "bash")
             {
                 string[] stopped = [.. ScreenLines(shell).Where(l => l.Contains("__passenger", StringComparison.Ordinal) || l.Contains(".zshenv:", StringComparison.Ordinal) || l.Contains("unbound variable", StringComparison.Ordinal))];
-                Assert.True(stopped.Length == 0, $"Passenger's {kind} hooks stopped under nounset, which the startup files turned on, losing what follows them:\n{string.Join('\n', stopped)}");
+                Assert.True(stopped.Length == 0, $"Pitstop's {kind} hooks stopped under nounset, which the startup files turned on, losing what follows them:\n{string.Join('\n', stopped)}");
             }
             Run(window, shell, string.Empty, answered);
             Run(window, shell, "echo second", answered);

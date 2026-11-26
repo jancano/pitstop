@@ -20,8 +20,8 @@ public sealed class CarriedFilesTests : IDisposable
 
     private void A_bundle_carries_its_debug_relays_in_its_Resources()
     {
-        string code = Path.Join(root, "Passenger.app", "Contents", "MacOS");
-        string relays = Path.Join(root, "Passenger.app", "Contents", "Resources", "debugger", "relay");
+        string code = Path.Join(root, "Pitstop.app", "Contents", "MacOS");
+        string relays = Path.Join(root, "Pitstop.app", "Contents", "Resources", "debugger", "relay");
         Directory.CreateDirectory(Path.Join(code, "debugger"));
         Directory.CreateDirectory(Path.Join(relays, "iossimulator-arm64"));
 

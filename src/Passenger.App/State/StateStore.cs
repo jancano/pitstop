@@ -66,11 +66,11 @@ public sealed class StateStore
 
     /// <summary>The variable that names the folder in the user's local application data's place.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_SETTINGS";
+    public const string Variable = "PITSTOP_SETTINGS";
 
-    /// <summary>The folder: PASSENGER_SETTINGS names it, else a portable copy's data folder (<see cref="ThisCopy.Data"/>),
+    /// <summary>The folder: PITSTOP_SETTINGS names it, else a portable copy's data folder (<see cref="ThisCopy.Data"/>),
     /// else the user's local application data.</summary>
-    public static string DefaultRoot => Named ?? ThisCopy.Data ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Passenger");
+    public static string DefaultRoot => Named ?? ThisCopy.Data ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Product.Name);
 
     /// <summary>The state folder made the person's alone as Passenger starts (<see cref="Containers.OwnFiles.Folder"/>, one an
     /// earlier Passenger made put right), its logs with all they hold (<see cref="Containers.OwnFiles.Tree"/>): Local History
@@ -86,17 +86,17 @@ public sealed class StateStore
         }
         catch (Exception refused) when (refused is IOException or UnauthorizedAccessException)
         {
-            Console.Error.WriteLine($"passenger: the state folder {DefaultRoot}{(Named is null ? "" : $", which {Variable} names,")} could not be made the person's alone: {refused.Message}");
+            Console.Error.WriteLine($"pitstop: the state folder {DefaultRoot}{(Named is null ? "" : $", which {Variable} names,")} could not be made the person's alone: {refused.Message}");
             return false;
         }
     }
 
-    /// <summary>The folder PASSENGER_SETTINGS names, or null where it names none or this portable copy's own data folder,
+    /// <summary>The folder PITSTOP_SETTINGS names, or null where it names none or this portable copy's own data folder,
     /// which it gave the programs it starts (<see cref="NameWhole"/>).</summary>
     public static string? Named => Environment.GetEnvironmentVariable(Variable) is { Length: > 0 } folder
         && !(ThisCopy.Data is { } data && PathNames.Same(folder, data)) ? folder : null;
 
-    /// <summary>Makes a folder PASSENGER_SETTINGS names by a relative path the one it names from the folder Passenger was
+    /// <summary>Makes a folder PITSTOP_SETTINGS names by a relative path the one it names from the folder Passenger was
     /// started in, before Passenger leaves that folder for the person's home, and names a portable copy's data folder where
     /// it names none: this process and every program it starts (a terminal's shell, a Godot editor's addon, another
     /// Passenger) then take the same folder.</summary>

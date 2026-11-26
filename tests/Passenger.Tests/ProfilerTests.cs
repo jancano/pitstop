@@ -81,7 +81,7 @@ public sealed class ProfilerTests : IClassFixture<ProfilerTests.Waits>, IDisposa
             t.A_trace_of_allocations_and_collections_alone_lists_them();
             OpenWindows.CloseAll();
         });
-        Flow.StepApart<ProfilerTests>("a snapshot in a folder passenger cannot write opens and two reads of it at once both open", () => new ProfilerTests(waits), t =>
+        Flow.StepApart<ProfilerTests>("a snapshot in a folder pitstop cannot write opens and two reads of it at once both open", () => new ProfilerTests(waits), t =>
         {
             t.A_snapshot_in_a_folder_passenger_cannot_write_opens_and_two_reads_of_it_at_once_both_open();
             OpenWindows.CloseAll();
@@ -623,7 +623,7 @@ public sealed class ProfilerTests : IClassFixture<ProfilerTests.Waits>, IDisposa
                 }
                 else
                 {
-                    Assert.True(opened is null && Said().StartsWith("cut.nettrace is not a snapshot Passenger can read: ", StringComparison.Ordinal),
+                    Assert.True(opened is null && Said().StartsWith("cut.nettrace is not a snapshot Pitstop can read: ", StringComparison.Ordinal),
                         $"The trace cut at {length} of its {written.Length} bytes, within its header, was not refused as no snapshot: {Said()}");
                 }
                 Assert.True(IdeErrors.Errors.Count == 0, $"The trace cut at {length} of its {written.Length} bytes reached IDE Internal Errors: {string.Join("; ", IdeErrors.Errors.Select(e => e.Message))}");
@@ -1224,7 +1224,7 @@ public sealed class ProfilerTests : IClassFixture<ProfilerTests.Waits>, IDisposa
         try
         {
             Snapshot? alone = Ui.Await(window.OpenSnapshotAsync(trace), "the snapshot to open");
-            Assert.True(alone is not null, $"A snapshot in a folder Passenger cannot write did not open: {window.Status}");
+            Assert.True(alone is not null, $"A snapshot in a folder Pitstop cannot write did not open: {window.Status}");
             Task<Snapshot?> first = window.OpenSnapshotAsync(trace);
             Task<Snapshot?> second = window.OpenSnapshotAsync(trace);
             Snapshot? one = Ui.Await(first, "the first of two reads at once");
@@ -1465,7 +1465,7 @@ public sealed class ProfilerTests : IClassFixture<ProfilerTests.Waits>, IDisposa
     /// <summary>The diagnostic ports this process's profiler is listening at: a socket in the run's socket folder each, or a
     /// named pipe on Windows.</summary>
     private static IReadOnlyList<string> Ports() => OperatingSystem.IsWindows()
-        ? [.. Directory.GetFiles(@"\\.\pipe\").Where(p => Path.GetFileName(p).StartsWith($"passenger-profile-{Environment.ProcessId}-", StringComparison.Ordinal)).Order(StringComparer.Ordinal)]
+        ? [.. Directory.GetFiles(@"\\.\pipe\").Where(p => Path.GetFileName(p).StartsWith($"pitstop-profile-{Environment.ProcessId}-", StringComparison.Ordinal)).Order(StringComparer.Ordinal)]
         : Directory.Exists(Passenger.App.Mcp.McpHost.SocketFolder)
             ? [.. Directory.GetFiles(Passenger.App.Mcp.McpHost.SocketFolder, $"{Environment.ProcessId}-*.profiler").Order(StringComparer.Ordinal)]
             : [];

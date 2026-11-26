@@ -17,7 +17,7 @@ public partial class MainWindow
 
     /// <summary>The quit's action as named here: as the application menu names it on macOS (Quit Passenger), as File's
     /// item elsewhere (Exit).</summary>
-    public static readonly string QuitTitle = OperatingSystem.IsMacOS() ? $"{QuitWord} Passenger" : QuitWord;
+    public static readonly string QuitTitle = OperatingSystem.IsMacOS() ? $"{QuitWord} Pitstop" : QuitWord;
 
     /// <summary>The answer of the question before a window closes.</summary>
     public const string CloseWord = "Close";
@@ -91,7 +91,7 @@ public partial class MainWindow
     internal async Task<bool> ConfirmedAsync(bool quits)
     {
         ConfirmDialog asked = quits
-            ? new ConfirmDialog($"{QuitWord} Passenger", "Passenger's windows close, and the programs, builds and terminals they run end with them.",
+            ? new ConfirmDialog($"{QuitWord} Pitstop", "Pitstop's windows close, and the programs, builds and terminals they run end with them.",
                 QuitWord, offersNotAgain: true) { PersonsAlone = Refusals.QuitIsThePersons }
             : new ConfirmDialog("Close Window", Folder is null ? "This window closes."
                 : $"The window on {SolutionTitle} closes, and the programs, builds and terminals it runs end with it.",

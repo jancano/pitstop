@@ -28,7 +28,7 @@ public static class CSharpParsing
     internal static long TypedRead => typedRead;
 
     /// <summary>What's said where a text goes too deep (<see cref="DeepAt(SyntaxTree)"/>).</summary>
-    public const string TooDeep = "Passenger read no deeper than this, so the file is read as text: it has no colours, folds or C# language server, "
+    public const string TooDeep = "Pitstop read no deeper than this, so the file is read as text: it has no colours, folds or C# language server, "
         + "and what it declares reads as missing";
 
     /// <summary>A file in no project's.</summary>

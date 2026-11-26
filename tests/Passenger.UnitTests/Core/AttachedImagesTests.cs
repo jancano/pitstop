@@ -25,7 +25,7 @@ public class AttachedImagesTests
                     <key>hdid-pid</key>
                     <integer>18454</integer>
                     <key>image-path</key>
-                    <string>/tmp/updates/1.0.0/Passenger-macos-arm64.dmg</string>
+                    <string>/tmp/updates/1.0.0/Pitstop-macos-arm64.dmg</string>
                     <key>system-entities</key>
                     <array>
                         <dict>
@@ -65,7 +65,7 @@ public class AttachedImagesTests
                     <key>diskimages2</key>
                     <true/>
                     <key>image-path</key>
-                    <string>/tmp/updates/1.0.0/Passenger-macos-arm64.dmg</string>
+                    <string>/tmp/updates/1.0.0/Pitstop-macos-arm64.dmg</string>
                     <key>image-type</key>
                     <string>read-only disk image</string>
                 </dict>
@@ -98,7 +98,7 @@ public class AttachedImagesTests
     {
         IReadOnlyList<AttachedImages.Attachment> attached = AttachedImages.Read(Listed);
         Assert.Equal(2, attached.Count);
-        Assert.Equal("/tmp/updates/1.0.0/Passenger-macos-arm64.dmg", attached[0].Image);
+        Assert.Equal("/tmp/updates/1.0.0/Pitstop-macos-arm64.dmg", attached[0].Image);
         Assert.Equal("/dev/disk10", attached[0].Disk);
         Assert.Equal(["/private/tmp/updates/1.0.0/mount"], attached[0].Mounts);
         Assert.Equal("/Users/someone/Tom & Jerry.dmg", attached[1].Image);

@@ -34,7 +34,7 @@ internal static partial class Bindings
         connection = to;
         BindingFailures.Start(to);
         Take();
-        ApartThreads.Start("Passenger inspector's binding log", Watch);
+        ApartThreads.Start("Pitstop inspector's binding log", Watch);
     }
 
     /// <summary>Passenger has gone: the app's own sink is Avalonia's again.</summary>

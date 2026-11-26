@@ -286,7 +286,7 @@ public sealed partial class BuildRunController
         }
         catch (Exception unwritten) when (unwritten is IOException or UnauthorizedAccessException)
         {
-            return Said($"{chosen.Name} cannot run: Passenger's override could not be written: {unwritten.Message}");
+            return Said($"{chosen.Name} cannot run: Pitstop's override could not be written: {unwritten.Message}");
         }
         if (Checkpoint(work, chosen.Name) is { } written)
         {
@@ -394,7 +394,7 @@ public sealed partial class BuildRunController
             return following;
         }
         string what = ServicesStarted(chosen.Name, how, Plural.Listed([.. debugged.Select(s => s.Service)]));
-        parts.Say($"{what}{(how == RunStart.Run ? ":" : ";")} {Plural.Of(plan.Running.Count(), ".NET service")} from Passenger's build"
+        parts.Say($"{what}{(how == RunStart.Run ? ":" : ";")} {Plural.Of(plan.Running.Count(), ".NET service")} from Pitstop's build"
             + $"{(plan.Mode == ContainerMode.Images ? " images" : string.Empty)}, {Plural.Of(plan.Backing.Count(plan.Touched.Contains), "other service")}; Stop takes them down"
             + (notes.Count > 0 ? $" ({string.Join("; ", notes)})" : string.Empty),
             // What dev-certs said of a certificate that did not come is in the Run window.
@@ -445,7 +445,7 @@ public sealed partial class BuildRunController
         string named = string.Join(", ", others);
         if (NoOneToAsk() is { } why)
         {
-            return $"{starting} was not run: it would replace {named} of {plan.ProjectName}, which Passenger did not make for this folder, and {why}; "
+            return $"{starting} was not run: it would replace {named} of {plan.ProjectName}, which Pitstop did not make for this folder, and {why}; "
                 + "remove them first, or run it from the window";
         }
         bool replace = false;
@@ -463,7 +463,7 @@ public sealed partial class BuildRunController
             }
         }
         work.Stopping.ThrowIfCancellationRequested();
-        return replace ? null : $"{starting} was not run: {named} of {plan.ProjectName}, which Passenger did not make for this folder, were left as they are";
+        return replace ? null : $"{starting} was not run: {named} of {plan.ProjectName}, which Pitstop did not make for this folder, were left as they are";
     }
 
     /// <summary>The container run whose log ended by itself while it is asked whether its containers still run, which keeps

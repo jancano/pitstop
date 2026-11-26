@@ -30,7 +30,7 @@ public sealed class PreviewRequests<T> where T : PreviewRequest
         }
         catch (IOException error)
         {
-            Console.Error.WriteLine($"Passenger's requests ended: {error.Message}");
+            Console.Error.WriteLine($"Pitstop's requests ended: {error.Message}");
         }
         lock (gate)
         {

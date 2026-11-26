@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The site's html-preview scene, which needs a window someone could see, taken in the Parallels Windows 11 VM, whose
 # desktop is its own: vm-shots.sh IMAGES in each of SITE_SHOTS_THEMES (shots.sh runs it). The git HEAD is built in a
-# clone of its own there (passenger-site-shots, as vm-test.sh builds one); vm-scene.ps1, through the Mac's Documents
+# clone of its own there (pitstop-site-shots, as vm-test.sh builds one); vm-scene.ps1, through the Mac's Documents
 # folder the VM shares, prepares the page's folder and each run's state under %USERPROFILE%\site-shots; Passenger is
 # started from a batch file and placed, its window taken as the VM's desktop composes it and scaled to the site's 2400
 # pixels; then the Passenger it started is ended.
@@ -12,10 +12,10 @@ read -r -a themes <<< "${SITE_SHOTS_THEMES:-dark light}"
 repo=$(cd "$(dirname "$0")/../.." && pwd -P)
 work="$repo/artifacts/site-shots"
 vm="Windows 11"
-share="$HOME/Documents/passenger-vm/site-shots"
-shared='C:\Mac\Home\Documents\passenger-vm\site-shots'
+share="$HOME/Documents/pitstop-vm/site-shots"
+shared='C:\Mac\Home\Documents\pitstop-vm\site-shots'
 root='C:\Users\zaneris\site-shots'
-clone=passenger-site-shots
+clone=pitstop-site-shots
 exe="C:\\Users\\zaneris\\src\\$clone\\artifacts\\bin\\Passenger.App\\debug\\Passenger.exe"
 mkdir -p "$share" "$work/png"
 # The version whose What's New each state has shown, so none opens over the scene.
@@ -55,9 +55,9 @@ built() {
     cat > "$share/build.cmd" <<BATCH
 @echo off
 cd /d %USERPROFILE%\\src
-if not exist $clone git clone -q passenger $clone
+if not exist $clone git clone -q pitstop $clone
 cd $clone || exit /b 1
-git fetch -q https://github.com/Zaneris/passenger.git main || exit /b 1
+git fetch -q https://github.com/jancano/pitstop.git main || exit /b 1
 git fetch -q $shared\\head.bundle HEAD || exit /b 1
 git checkout -q --detach $(git -C "$repo" rev-parse HEAD) || exit /b 1
 set AVALONIA_TELEMETRY_OPTOUT=1
@@ -88,7 +88,7 @@ take() {
     step state -Scene "$scene" -Theme "$theme" -Folder "$folder" -Version "$version" -Node "$node"
     cat > "$share/start.cmd" <<BATCH
 @echo off
-set PASSENGER_SETTINGS=$root\\state-$scene-$theme
+set PITSTOP_SETTINGS=$root\\state-$scene-$theme
 set AVALONIA_TELEMETRY_OPTOUT=1
 set DOTNET_CLI_TELEMETRY_OPTOUT=1
 start "" "$exe" "$folder" --file index.html --caret 103:7

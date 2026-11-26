@@ -25,13 +25,13 @@ public static partial class UserTemporary
         return Path.GetTempPath();
     }
 
-    /// <summary>A state folder's own folder in <see cref="Folder"/>, <c>passenger-HASH</c>, or <c>passenger-HASH-KIND</c>
+    /// <summary>A state folder's own folder in <see cref="Folder"/>, <c>pitstop-HASH</c>, or <c>pitstop-HASH-KIND</c>
     /// for a <paramref name="kind"/> of it; made by its caller.</summary>
     public static string Of(string state, string? kind = null)
     {
         string key = $"{Environment.UserName}\n{Path.TrimEndingDirectorySeparator(PathNames.Canonical(state))}";
         string hash = FileNames.Hash(key, 10);
-        return Path.Combine(Folder(), kind is null ? $"passenger-{hash}" : $"passenger-{hash}-{kind}");
+        return Path.Combine(Folder(), kind is null ? $"pitstop-{hash}" : $"pitstop-{hash}-{kind}");
     }
 
     /// <summary><paramref name="folder"/> made the user's alone (mode 0700), or an <see cref="IOException"/> saying why not:

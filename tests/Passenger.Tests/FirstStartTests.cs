@@ -54,13 +54,13 @@ public sealed class FirstStartTests : IDisposable
         {
             FirstStartView page = Shown(window);
             Assert.Equal(FirstStartView.Screen.Theme, page.Shown);
-            Assert.Equal(["Passenger", "Cubicle", ThemeSource.HighContrast], Names(page));
-            Assert.True(Chosen(page) == "Passenger", $"The theme in force, Passenger's own, is not the one marked, which is {Chosen(page)}");
+            Assert.Equal(["Pitstop", "Cubicle", ThemeSource.HighContrast], Names(page));
+            Assert.True(Chosen(page) == "Pitstop", $"The theme in force, Pitstop's own, is not the one marked, which is {Chosen(page)}");
             Assert.True(page.IsKeyboardFocusWithin, "The question does not have the keys, so the person's arrows and Enter go elsewhere");
             Color passengers = Ui.Pixel(window, Bare);
 
             Ui.Press(window, "RIGHT");
-            Assert.True(page.Tiles[1].IsKeyboardFocusWithin, "Right did not move the keys from Passenger's tile to Cubicle's");
+            Assert.True(page.Tiles[1].IsKeyboardFocusWithin, "Right did not move the keys from Pitstop's tile to Cubicle's");
             Ui.Press(window, "ENTER");
             Assert.Equal(Cubicle, window.Settings.Look);
             Assert.Equal(Cubicle, Themes.Look);
@@ -68,7 +68,7 @@ public sealed class FirstStartTests : IDisposable
             Assert.Equal(["Dark", "Light"], Names(page));
             Color cubicles = Ui.Pixel(window, Bare);
             Assert.True(cubicles != passengers && cubicles == Token(window, TokenKeys.Editor_Background),
-                $"Dark or light is not asked in Cubicle, just chosen: its ground is {cubicles}, where Passenger's was {passengers}");
+                $"Dark or light is not asked in Cubicle, just chosen: its ground is {cubicles}, where Pitstop's was {passengers}");
             Assert.True(page.SystemChoice.IsKeyboardFocusWithin && page.SystemChoice.Classes.Contains(StyleClasses.Chosen),
                 "Following the system, in force, is not the choice marked and with the keys");
 
@@ -155,7 +155,7 @@ public sealed class FirstStartTests : IDisposable
     {
         File.WriteAllText(Path.Combine(state, file), "{}\n");
         MainWindow window = Started();
-        Assert.False(window.ShowFirstStartOnce(), $"An update over an earlier Passenger's {file} asked the theme as a first start would");
+        Assert.False(window.ShowFirstStartOnce(), $"An update over an earlier Pitstop's {file} asked the theme as a first start would");
         Assert.Null(window.FirstStart);
         window.Close();
     }

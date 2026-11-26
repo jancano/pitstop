@@ -103,7 +103,7 @@ public sealed class BlazorServiceHotReloadTests(StandInAppHost project) : IClass
     /// another program applied in the page, which a refresh client of the test's own hears (<see cref="RefreshClient"/>).</summary>
     private static void KeptUp(MainWindow window, string bell, int port)
     {
-        RefreshClient client = Ui.AwaitPumped(Waiting.Apart(() => RefreshClient.ConnectAsync(port)), "the page's refresh client to connect to Passenger through the service");
+        RefreshClient client = Ui.AwaitPumped(Waiting.Apart(() => RefreshClient.ConnectAsync(port)), "the page's refresh client to connect to Pitstop through the service");
         try
         {
             File.AppendAllText(Path.Combine(Path.GetDirectoryName(bell)!, "wwwroot", "app.css"), "\n.kept-up-in-place { color: rebeccapurple; }\n");

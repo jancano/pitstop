@@ -105,14 +105,14 @@ public sealed class ThemeLooksTests : IDisposable
             double text = editor.PointOf(0).X;
             Border header = window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains(StyleClasses.ToolHeader) && b.IsEffectivelyVisible);
             TextBlock title = header.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains(StyleClasses.ToolTitle));
-            Assert.True(header.Bounds.Height == 38 && title.Margin == new Thickness(14, 0, 0, 0), $"Passenger's own tool window header is {header.Bounds.Height} high, its title at {title.Margin}");
+            Assert.True(header.Bounds.Height == 38 && title.Margin == new Thickness(14, 0, 0, 0), $"Pitstop's own tool window header is {header.Bounds.Height} high, its title at {title.Margin}");
 
             string name = $"Margins {Guid.NewGuid():N}";
             string json = $$$"""{"format": 1, "name": "{{{name}}}", "tokens": {"EditorTextPadding": 30, "ToolHeaderHeight": 50, "ToolTitleMargin": [20, 0, 0, 0], "DialogFooterPadding": [24, 14, 24, 14]} }""";
             Assert.Null(KeptThemes.Keep(ThemeSource.Added, false, name, System.Text.Encoding.UTF8.GetBytes(json)));
             window.ApplySettings(window.Settings with { Look = new SourcedTheme(ThemeSource.Added.Name, name) });
             Ui.Settle();
-            Assert.True(editor.PointOf(0).X == text + 24, $"The theme's 30 between gutter and text put the text at {editor.PointOf(0).X}, where Passenger's own 6 put it at {text}");
+            Assert.True(editor.PointOf(0).X == text + 24, $"The theme's 30 between gutter and text put the text at {editor.PointOf(0).X}, where Pitstop's own 6 put it at {text}");
             Assert.True(header.Bounds.Height == 50 && title.Margin == new Thickness(20, 0, 0, 0), $"The theme's tool window header is {header.Bounds.Height} high, its title at {title.Margin}");
             SettingsDialog dialog = window.ShowSettings();
             Ui.Settle();

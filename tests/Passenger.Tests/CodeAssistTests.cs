@@ -151,7 +151,7 @@ public sealed class CodeAssistTests : IClassFixture<CodeAssistTests.Project>
         Flow.StepApart("code typed below a comment holding line breaks only Roslyn counts is squiggled, coloured and reformatted in place", () => new CodeAssistTests(project), t => t.Code_typed_below_a_comment_holding_line_breaks_only_roslyn_counts_is_squiggled_coloured_and_reformatted_in_place());
         Flow.StepApart("edits that make and unmake line breaks only Roslyn counts, or fall between a CRLF's halves, keep the server in step", () => new CodeAssistTests(project), t => t.Edits_that_make_and_unmake_line_breaks_only_roslyn_counts_or_fall_between_a_crlfs_halves_keep_the_server_in_step());
         Flow.StepApart("Go to Symbol, Declaration, Implementation and a refactoring's changed lines are the editor's below line breaks only Roslyn counts", () => new CodeAssistTests(project), t => t.Go_to_symbol_declaration_implementation_and_a_refactorings_changed_lines_are_the_editors_below_line_breaks_only_roslyn_counts());
-        Flow.StepApart("a paste past what Passenger reads is said and kept from the server until it is undone", () => new CodeAssistTests(project), t => t.A_paste_past_what_passenger_reads_is_said_and_kept_from_the_server_until_it_is_undone());
+        Flow.StepApart("a paste past what Pitstop reads is said and kept from the server until it is undone", () => new CodeAssistTests(project), t => t.A_paste_past_what_passenger_reads_is_said_and_kept_from_the_server_until_it_is_undone());
     }
 
     /// <summary>A library type's decompiled source refuses every change and stays as another window's server decompiles
@@ -1018,7 +1018,7 @@ public sealed class CodeAssistTests : IClassFixture<CodeAssistTests.Project>
         string roslyn = Path.Combine(AppContext.BaseDirectory, "roslyn");
         string[] carried = [.. Directory.EnumerateFiles(roslyn, "*.dll", SearchOption.AllDirectories)
             .Where(file => LeftOut.Any(name => Path.GetFileName(file).StartsWith(name + ".", StringComparison.Ordinal)))];
-        Assert.True(carried.Length == 0, $"Passenger carries Visual Studio's own assemblies beside the language server, whose terms are not open source:\n{string.Join('\n', carried)}");
+        Assert.True(carried.Length == 0, $"Pitstop carries Visual Studio's own assemblies beside the language server, whose terms are not open source:\n{string.Join('\n', carried)}");
 
         MainWindow window = project.Open("Program.cs");
         CodeEditor editor = window.EditorArea.CodeEditor;
@@ -1047,7 +1047,7 @@ public sealed class CodeAssistTests : IClassFixture<CodeAssistTests.Project>
         string log = string.Empty;
         Ui.WaitFor(() => (log = Ui.Shared(path)).Contains("Razor extension startup finished.", StringComparison.Ordinal), "the language server's Razor support to start");
         string[] looked = [.. log.Split('\n').Where(line => LeftOut.Any(name => line.Contains(name, StringComparison.Ordinal)))];
-        Assert.True(looked.Length == 0, $"The language server looked for an assembly Passenger leaves out, so something it does needs it:\n{string.Join('\n', looked)}");
+        Assert.True(looked.Length == 0, $"The language server looked for an assembly Pitstop leaves out, so something it does needs it:\n{string.Join('\n', looked)}");
         window.Close();
     }
 

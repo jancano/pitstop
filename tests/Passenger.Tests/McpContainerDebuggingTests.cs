@@ -303,7 +303,7 @@ public sealed class McpContainerDebuggingTests(ContainerRunDebuggingTests.Tools 
             await Docker.RunAsync("compose", "-f", Path.Combine(shop, "compose.yaml"), "-f", Path.Combine(shop, "theirs.yaml"), "up", "-d", "cache");
             string theirs = await ContainerRunsTests.ContainerAsync(project, "cache");
             ModelContextProtocol.Protocol.CallToolResult refused = await Result(client, McpTools.Run, new() { ["configuration"] = "Compose: compose.yaml" });
-            Assert.True(refused.IsError == true && Text(refused).Contains($"would replace {project}-cache-1 of {project}, which Passenger did not make", StringComparison.Ordinal),
+            Assert.True(refused.IsError == true && Text(refused).Contains($"would replace {project}-cache-1 of {project}, which Pitstop did not make", StringComparison.Ordinal),
                 $"run answered: {Text(refused)}");
             Assert.Equal(theirs, await ContainerRunsTests.ContainerAsync(project, "cache"));
             await Docker.RunAsync("rm", "-f", theirs);
@@ -349,7 +349,7 @@ public sealed class McpContainerDebuggingTests(ContainerRunDebuggingTests.Tools 
         // The headless IDE's log, whose last lines say how its start and end went.
         string LogTail()
         {
-            string log = Path.Combine(OwnState, "logs", "passenger.log");
+            string log = Path.Combine(OwnState, "logs", "pitstop.log");
             if (!File.Exists(log))
             {
                 return "(no log)";

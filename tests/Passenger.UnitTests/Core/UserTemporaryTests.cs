@@ -6,7 +6,7 @@ namespace Passenger.UnitTests.Core;
 /// spelling, a kind of it beside its own; a folder made the user's alone, a link in its place refused.</summary>
 public class UserTemporaryTests
 {
-    private static readonly string State = Path.Combine(Path.DirectorySeparatorChar + "no-such-folder", "Passenger");
+    private static readonly string State = Path.Combine(Path.DirectorySeparatorChar + "no-such-folder", "Pitstop");
 
     [Fact]
     public void A_states_temporary_folders_are_its_own_and_the_users_alone() => Cases.All(
@@ -20,7 +20,7 @@ public class UserTemporaryTests
         string updates = UserTemporary.Of(State, "updates");
         Assert.True(Path.GetDirectoryName(own) == Path.TrimEndingDirectorySeparator(UserTemporary.Folder()),
             $"The state's folder {own} is not in the user's temporary folder, {UserTemporary.Folder()}");
-        Assert.Matches("^passenger-[0-9a-f]{10}$", Path.GetFileName(own));
+        Assert.Matches("^pitstop-[0-9a-f]{10}$", Path.GetFileName(own));
         Assert.True(updates == $"{own}-updates", $"The state's updates folder is {updates}, not its own folder's name with its kind, {own}-updates");
     }
 

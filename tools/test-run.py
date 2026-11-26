@@ -35,7 +35,7 @@ ASSEMBLY = os.path.join(ROOT, "artifacts", "bin", "Passenger.Tests", "debug", "P
 UNIT_ASSEMBLY = os.path.join(ROOT, "artifacts", "bin", "Passenger.UnitTests", "debug", "Passenger.UnitTests.dll")
 RESULTS = os.path.join(ROOT, "artifacts", "test-results", "local")
 SYSTEM = {"Darwin": "macOS", "Windows": "Windows", "Linux": "Linux"}.get(platform.system(), "Linux")
-TIME_SCALE = "PASSENGER_TEST_TIME_SCALE"
+TIME_SCALE = "PITSTOP_TEST_TIME_SCALE"
 # The first phase's limits, its processes sharing the machine: a test's limits are written for a machine that runs it
 # alone, and this lengthens only how long a test may wait, never how long it does.
 SIDE_BY_SIDE_SCALE = "1.5"
@@ -352,7 +352,7 @@ def main():
     parser.add_argument("filter", nargs="?", default="", help="dotnet test's --filter, as `just test Editing` gives it")
     parser.add_argument("count", nargs="?", default="", help="how many processes, as `just test Editing 2` gives it")
     parser.add_argument("--processes", type=int, help="how many processes the first phase runs at once (default: "
-                        "PASSENGER_TEST_PROCESSES, else a quarter of the processors, at most 4)")
+                        "PITSTOP_TEST_PROCESSES, else a quarter of the processors, at most 4)")
     parser.add_argument("--plan", action="store_true", help="say how the classes would be dealt, and run none")
     lanes = parser.add_mutually_exclusive_group()
     lanes.add_argument("--lane", choices=shards.LANES, default="all", help="the part of the suite to run: the gate's "
@@ -377,11 +377,11 @@ def main():
             count = int(arguments.count)
         except ValueError:
             sys.exit(f"test-run: \"{arguments.count}\" is no number of processes: give a whole number, 1 or more")
-    if count is None and os.environ.get("PASSENGER_TEST_PROCESSES"):
+    if count is None and os.environ.get("PITSTOP_TEST_PROCESSES"):
         try:
-            count = int(os.environ["PASSENGER_TEST_PROCESSES"])
+            count = int(os.environ["PITSTOP_TEST_PROCESSES"])
         except ValueError:
-            sys.exit(f"test-run: PASSENGER_TEST_PROCESSES is \"{os.environ['PASSENGER_TEST_PROCESSES']}\": it must be a "
+            sys.exit(f"test-run: PITSTOP_TEST_PROCESSES is \"{os.environ['PITSTOP_TEST_PROCESSES']}\": it must be a "
                      "whole number of processes, 1 or more")
     if count is None:
         count = default_processes()

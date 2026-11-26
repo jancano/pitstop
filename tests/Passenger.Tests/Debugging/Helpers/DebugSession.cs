@@ -45,7 +45,7 @@ public sealed class DebugSession : IAsyncDisposable
         {
             throw new FileNotFoundException("The debug adapter is not beside the tests", path);
         }
-        // PASSENGER_ENGINE_LOG=FILE keeps every session's log; else one is kept for a failed wait to quote.
+        // PITSTOP_ENGINE_LOG=FILE keeps every session's log; else one is kept for a failed wait to quote.
         string? kept = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable) is { Length: > 0 } named ? named : null;
         ownLog = kept is null;
         engineLog = kept ?? Path.Combine(TestRun.Root, $"engine-{Guid.NewGuid():N}.log");
@@ -475,8 +475,8 @@ public sealed class DebugSession : IAsyncDisposable
 
     public static InitializeArguments InitializeArguments => new()
     {
-        ClientId = "passenger",
-        ClientName = "Passenger",
+        ClientId = "pitstop",
+        ClientName = "Pitstop",
         AdapterId = "coreclr",
         Locale = "en-us",
         LinesStartAt1 = true,

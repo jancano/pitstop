@@ -20,21 +20,21 @@ public sealed class AboutDialog : IdeWindow
 
     public AboutDialog(Action<string> open)
     {
-        Title = "About Passenger";
+        Title = "About Pitstop";
         Width = DialogWidths.Question;
         SizeToContent = SizeToContent.Height;
         CanResize = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         string commit = Product.Commit is { } hash ? $"Commit {hash[..Math.Min(12, hash.Length)]}" : "Built outside a Git repository";
-        Text = $"Passenger {Product.Version}\n{(Product.Commit is { } full ? $"Commit {full}" : commit)}\nRuntime version: {Product.Runtime}\n{RuntimeInformation.OSDescription}";
+        Text = $"Pitstop {Product.Version}\n{(Product.Commit is { } full ? $"Commit {full}" : commit)}\nRuntime version: {Product.Runtime}\n{RuntimeInformation.OSDescription}";
 
         StackPanel facts = new()
         {
             Spacing = Gaps.Tight,
             Children =
             {
-                new TextBlock { Classes = { StyleClasses.HeroTitle }, Text = $"Passenger {Product.Version}", Margin = new Thickness(0, 0, 0, Gaps.Small) },
+                new TextBlock { Classes = { StyleClasses.HeroTitle }, Text = $"Pitstop {Product.Version}", Margin = new Thickness(0, 0, 0, Gaps.Small) },
                 new TextBlock { Text = commit },
                 new TextBlock { Text = $"Runtime version: {Product.Runtime}" },
                 Sentence("Powered by ", Link(NoticesLink, Product.Notices), new Thickness(0, Gaps.Wide, 0, 0)),
@@ -60,7 +60,7 @@ public sealed class AboutDialog : IdeWindow
             {
                 new Image
                 {
-                    Source = new Bitmap(AssetLoader.Open(new Uri("avares://Passenger/Assets/passenger.png"))),
+                    Source = new Bitmap(AssetLoader.Open(new Uri("avares://Pitstop/Assets/pitstop.png"))),
                     Width = 64,
                     Height = 64,
                     VerticalAlignment = VerticalAlignment.Top,

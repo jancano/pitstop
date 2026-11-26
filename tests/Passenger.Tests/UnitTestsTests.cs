@@ -1478,9 +1478,9 @@ public sealed class UnitTestsDebuggingTests : UnitTestsFolders, IClassFixture<Re
     {
         Directory.CreateDirectory(Path.Combine(Folder, "Properties"));
         Write("Properties/launchSettings.json",
-            "{ \"profiles\": { \"Sums\": { \"commandName\": \"Project\", \"environmentVariables\": { \"PASSENGER_GREETING\": \"from the profile\" } } } }");
+            "{ \"profiles\": { \"Sums\": { \"commandName\": \"Project\", \"environmentVariables\": { \"PITSTOP_GREETING\": \"from the profile\" } } } }");
         Write("GreetingTests.cs", "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class GreetingTests\n{\n    [Fact]\n" +
-            "    public void The_profile_greets() => Assert.Equal(\"from the profile\", Environment.GetEnvironmentVariable(\"PASSENGER_GREETING\"));\n}\n");
+            "    public void The_profile_greets() => Assert.Equal(\"from the profile\", Environment.GetEnvironmentVariable(\"PITSTOP_GREETING\"));\n}\n");
         MainWindow window = Open();
         CodeEditor editor = window.EditorArea.CodeEditor;
         editor.GoTo(new TextPosition(10, 8));

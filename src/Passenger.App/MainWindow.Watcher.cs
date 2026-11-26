@@ -105,8 +105,12 @@ public partial class MainWindow
     /// window's thread, for what the system dropped without a word (macOS's watcher passes over its word that it did): each
     /// folder they recorded whose stamp moved is listed again, and what came or went there is handed over as heard, which
     /// the task waits for.</summary>
-    private Task LookAgainAsync() => Task.WhenAll(session.Watcher?.LookAgainAsync() ?? Task.CompletedTask, session.Vcs.WatchersLookAgainAsync(),
-        session.CSharp?.Watching?.LookAgainAsync() ?? Task.CompletedTask);
+    private Task LookAgainAsync()
+    {
+        session.Xmake?.LookAgain();
+        return Task.WhenAll(session.Watcher?.LookAgainAsync() ?? Task.CompletedTask, session.Vcs.WatchersLookAgainAsync(),
+            session.CSharp?.Watching?.LookAgainAsync() ?? Task.CompletedTask);
+    }
 
     /// <summary>How the folders opened from now on are watched: the system's way, unless another is chosen.</summary>
     public FolderWatching Watching { get; set; } = FolderWatching.Platform;

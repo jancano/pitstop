@@ -8,13 +8,13 @@ namespace Passenger.App.Web;
 /// program's .run.json, global.json) take SchemaStore's, and compose files the Compose specification's, carried under
 /// <c>web/schemas/</c> with those they refer to and never downloaded. A schema a file names itself (its <c>$schema</c>) is
 /// downloaded while Settings allow it, over HTTP or HTTPS, kept for the process, or read from a file on this machine's own
-/// disks (<see cref="FoundPaths.OfFileAddress"/>), never another machine's or a share's; <c>PASSENGER_SCHEMAS</c> names
+/// disks (<see cref="FoundPaths.OfFileAddress"/>), never another machine's or a share's; <c>PITSTOP_SCHEMAS</c> names
 /// another place to ask for them. The JSON server asks here for every schema, a file's too, and the YAML server, through
 /// Passenger's preload (<see cref="YamlPreload"/>), for every schema's file and one over HTTP. Called on any thread.</summary>
 public sealed class JsonSchemas(Func<bool> download)
 {
     [IdentifierHome]
-    public const string Variable = "PASSENGER_SCHEMAS";
+    public const string Variable = "PITSTOP_SCHEMAS";
 
     /// <summary>SchemaStore's hosts, whose schemas Passenger carries by their file's name.</summary>
     private static readonly string[] SchemaStore = ["json.schemastore.org", "www.schemastore.org", "schemastore.org"];
@@ -43,8 +43,8 @@ public sealed class JsonSchemas(Func<bool> download)
     public static string ComposeUri => new Uri(Path.Combine(Folder, "compose-spec.json")).AbsoluteUri;
 
     /// <summary>Passenger's preload for the YAML server, carried beside the web language servers, which has it ask here for
-    /// each schema's file it would read itself (<c>web/passenger/yaml-schemas.mjs</c>).</summary>
-    public static string YamlPreload => Path.Combine(WebLanguages.Carried, "passenger", "yaml-schemas.mjs");
+    /// each schema's file it would read itself (<c>web/pitstop/yaml-schemas.mjs</c>).</summary>
+    public static string YamlPreload => Path.Combine(WebLanguages.Carried, "pitstop", "yaml-schemas.mjs");
 
     /// <summary>The Node.js the YAML server's preload runs on, beside what the server's package needs: one with
     /// <c>module.registerHooks</c>.</summary>
@@ -71,11 +71,11 @@ public sealed class JsonSchemas(Func<bool> download)
         if (asked.IsFile)
         {
             return FoundPaths.OfFileAddress(asked) is { } file ? await ReadAsync(file, cancel)
-                : throw new InvalidOperationException($"Passenger reads a schema's file only from this machine's own disks, never another machine's or a share's ({uri})");
+                : throw new InvalidOperationException($"Pitstop reads a schema's file only from this machine's own disks, never another machine's or a share's ({uri})");
         }
         if (asked.Scheme != Uri.UriSchemeHttps && asked.Scheme != Uri.UriSchemeHttp)
         {
-            throw new InvalidOperationException($"Passenger reads schemas from http and https URLs, not {uri}");
+            throw new InvalidOperationException($"Pitstop reads schemas from http and https URLs, not {uri}");
         }
         if (!download())
         {
@@ -121,7 +121,7 @@ public sealed class JsonSchemas(Func<bool> download)
         return File.Exists(path) ? path : null;
     }
 
-    /// <summary>The place <c>PASSENGER_SCHEMAS</c> names to ask for schemas at in place of their own hosts; null for none
+    /// <summary>The place <c>PITSTOP_SCHEMAS</c> names to ask for schemas at in place of their own hosts; null for none
     /// (<see cref="EnvironmentValues.Address(string, string)"/>).</summary>
     public static Uri? Place => EnvironmentValues.Address(Variable, "schemas are asked for at");
 

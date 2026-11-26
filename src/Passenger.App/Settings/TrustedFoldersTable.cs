@@ -59,7 +59,7 @@ public sealed class TrustedFoldersTable : EditableTable
         box.IsChecked = trusted;
         Avalonia.Automation.AutomationProperties.SetLabeledBy(box, name);
         box.HorizontalAlignment = HorizontalAlignment.Center;
-        ToolTip.SetTip(box, "Checked, Passenger runs the folder's code; cleared, it runs none of it, and the folder opens without asking");
+        ToolTip.SetTip(box, "Checked, Pitstop runs the folder's code; cleared, it runs none of it, and the folder opens without asking");
         Button forget = ToolButtons.Glyph(IconKeys.Close, "Forget: the folder is asked of again the next time it opens");
         forget.VerticalAlignment = VerticalAlignment.Center;
         Border view = Ruled(name, box, forget);

@@ -86,7 +86,7 @@ public sealed class WebLanguages : IAsyncDisposable
 
     /// <summary>The variable that shortens how long GDScript's server waits, no GDScript open, before it is let go.</summary>
     [IdentifierHome]
-    public const string GDScriptIdleVariable = "PASSENGER_GDSCRIPT_IDLE_MS";
+    public const string GDScriptIdleVariable = "PITSTOP_GDSCRIPT_IDLE_MS";
 
     /// <summary>How long GDScript's server, a headless Godot editor of about 800 MB, is kept once no GDScript is open: the
     /// next asking starts it again in a few seconds, Passenger's own reading of the scripts answering meanwhile.</summary>
@@ -134,7 +134,7 @@ public sealed class WebLanguages : IAsyncDisposable
     public JsonSchemas Schemas { get; }
 
     /// <summary>Where the Dockerfile server asks for image tags in Docker Hub's place: a stand-in; null for the place
-    /// <c>PASSENGER_DOCKER_HUB</c> names, else Docker Hub's own (<see cref="DockerHubTags"/>).</summary>
+    /// <c>PITSTOP_DOCKER_HUB</c> names, else Docker Hub's own (<see cref="DockerHubTags"/>).</summary>
     public Uri? DockerHub { get; init; }
 
     /// <summary>The stylesheets the folder's pages link, whose classes an HTML file's are checked against.</summary>
@@ -793,7 +793,7 @@ public sealed class WebLanguages : IAsyncDisposable
     private static string? Missing(WebServerKind kind) =>
         kind == WebServerKind.GDScript ? null
         : !File.Exists(Script(kind)) ? $"its language server is missing from the app's folder ({Script(kind)})"
-        : Preload(kind) is { } preload && !File.Exists(preload) ? $"Passenger's part of its language server is missing from the app's folder ({preload})"
+        : Preload(kind) is { } preload && !File.Exists(preload) ? $"Pitstop's part of its language server is missing from the app's folder ({preload})"
         : null;
 
     /// <summary>Passenger's preload a server runs with, null for none: the Dockerfile server's, which keeps it from Docker Hub
@@ -810,7 +810,7 @@ public sealed class WebLanguages : IAsyncDisposable
     /// resolved through <c>module.registerHooks</c>, which Bun lacks.</summary>
     private static string? Refused(WebServerKind kind, NodeRuntime node) =>
         kind == WebServerKind.Yaml && node.Kind == ScriptRuntime.Bun
-            ? $"Passenger's part of the YAML language server needs Node.js's module.registerHooks, which Bun lacks: choose Node.js or Deno in {NodeRuntime.SettingsPlace}"
+            ? $"Pitstop's part of the YAML language server needs Node.js's module.registerHooks, which Bun lacks: choose Node.js or Deno in {NodeRuntime.SettingsPlace}"
             : null;
 
     /// <summary>A server that cannot run: its files keep their colours and say why in their banner, the status bar in a
@@ -882,7 +882,7 @@ public sealed class WebLanguages : IAsyncDisposable
         {
             WebServerKind.TypeScript => new
             {
-                hostInfo = "Passenger",
+                hostInfo = "Pitstop",
                 disableAutomaticTypingAcquisition = true,
                 // One tsserver (a second would answer from the open files alone), the project's own only in a folder trusted.
                 tsserver = new { logVerbosity = "off", useSyntaxServer = "never", path = own ?? CarriedTsserver },

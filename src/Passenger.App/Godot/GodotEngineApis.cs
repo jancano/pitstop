@@ -166,7 +166,7 @@ public sealed class GodotEngineApis(Func<string?> setting, Func<IReadOnlyDiction
     private static byte[] Carried(string resource)
     {
         using Stream stream = typeof(GodotEngineApis).Assembly.GetManifestResourceStream(resource)
-            ?? throw new InvalidOperationException($"Passenger carries no {resource}");
+            ?? throw new InvalidOperationException($"Pitstop carries no {resource}");
         using MemoryStream bytes = new();
         stream.CopyTo(bytes);
         return bytes.ToArray();

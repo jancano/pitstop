@@ -235,7 +235,7 @@ public sealed class GodotEditorCompletionTests : IClassFixture<GodotEditorComple
             GodotTests.Game.Make(Folder, version, packages, Script, Scene);
             File.AppendAllText(PathOf("project.godot"), Settings);
             Directory.CreateDirectory(PathOf(Path.Combine("addons", "passenger_test")));
-            File.WriteAllText(PathOf(Path.Combine("addons", "passenger_test", "plugin.cfg")), "[plugin]\n\nname=\"Passenger test\"\ndescription=\"\"\nauthor=\"\"\nversion=\"1.0\"\nscript=\"plugin.gd\"\n");
+            File.WriteAllText(PathOf(Path.Combine("addons", "passenger_test", "plugin.cfg")), "[plugin]\n\nname=\"Pitstop test\"\ndescription=\"\"\nauthor=\"\"\nversion=\"1.0\"\nscript=\"plugin.gd\"\n");
             File.WriteAllText(PathOf(Path.Combine("addons", "passenger_test", "plugin.gd")), Plugin);
         }
 

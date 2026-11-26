@@ -358,7 +358,7 @@ public sealed class IdeErrorsTests : IDisposable
                 $"{Path.GetFileName(log)} grew to {new FileInfo(log).Length} bytes, past the log's limit of {IdeErrors.LogLimit}"));
             // Twelve kept beside the current one, the oldest gone.
             Assert.Equal(
-                Enumerable.Range(1, IdeErrors.Rotations).Select(n => $"passenger.{n}.log").Append("passenger.log").Order(StringComparer.Ordinal),
+                Enumerable.Range(1, IdeErrors.Rotations).Select(n => $"passenger.{n}.log").Append("pitstop.log").Order(StringComparer.Ordinal),
                 logs.Select(log => Path.GetFileName(log)).Order(StringComparer.Ordinal));
             int traces = logs.Sum(log => Ui.Shared(log).Split($"{nameof(IdeErrorsTests)}.{nameof(Tick)}()").Length - 1);
             Assert.True(traces <= 1, $"The stack trace is in the log {traces} times: a repeat wrote it again rather than a line");

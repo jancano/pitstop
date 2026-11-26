@@ -20,7 +20,7 @@ namespace Passenger.App;
 public partial class MainWindow
 {
     /// <summary>The words when there is nothing newer.</summary>
-    public const string UpToDate = "Passenger is up to date";
+    public const string UpToDate = "Pitstop is up to date";
 
     private static readonly TimeSpan UpdateInterval = TimeSpan.FromDays(1);
 
@@ -61,7 +61,7 @@ public partial class MainWindow
     /// <summary>What the watching window's notice says, which every window shows; null while it says nothing.</summary>
     private NoticeSaid? said;
 
-    /// <summary>Where this window asks for the latest release: GitHub's, or the one PASSENGER_RELEASES names, unless
+    /// <summary>Where this window asks for the latest release: GitHub's, or the one PITSTOP_RELEASES names, unless
     /// one is given.</summary>
     public ReleaseFeed Releases { get; init; } = ReleaseFeed.Default;
 
@@ -108,6 +108,10 @@ public partial class MainWindow
 
     private void AddUpdates()
     {
+        if (!Releases.Enabled)
+        {
+            return;
+        }
         actions!.Add(new IdeAction(AppActions.CheckForUpdates, "Check for Updates…", "Help",
             context => IdeErrors.Observe(CheckForUpdatesAskedAsync()))
         {
@@ -139,7 +143,7 @@ public partial class MainWindow
             // Closed alone, another window open takes the watch over, and with it the update made ready (PassengerApp).
             if (readyRelease is { } ready && !HandsOnUpdates())
             {
-                IdeErrors.Write($"Updates: closing with Passenger {ready.Version} ready to install{(restartToUpdate ? ", to start it again" : string.Empty)}");
+                IdeErrors.Write($"Updates: closing with Pitstop {ready.Version} ready to install{(restartToUpdate ? ", to start it again" : string.Empty)}");
                 // An install that asks for a password is left for Restart to Update: closing alone installs nothing.
                 if (keepsSettings && (restartToUpdate || selfUpdate?.Asks is null))
                 {
@@ -155,6 +159,10 @@ public partial class MainWindow
     /// how the update the last session installed went.</summary>
     public void WatchForUpdates()
     {
+        if (!Releases.Enabled)
+        {
+            return;
+        }
         PassengerApp.WatchUpdatesIn(this);
         watchesUpdates = true;
         SayInstalled();
@@ -335,14 +343,14 @@ public partial class MainWindow
                     ShowReady(release);
                     if (asker is not null)
                     {
-                        Found(true, $"Passenger {release.Version} is ready: restart to update");
+                        Found(true, $"Pitstop {release.Version} is ready: restart to update");
                     }
                 }
                 else
                 {
                     if (asker is not null)
                     {
-                        Found(true, release.Security is null ? $"Passenger {release.Version} is available, and downloading" : $"{SecurityWords(release)}, and downloading");
+                        Found(true, release.Security is null ? $"Pitstop {release.Version} is available, and downloading" : $"{SecurityWords(release)}, and downloading");
                     }
                     checking?.Dispose();
                     if (downloadingRelease?.Version != release.Version)
@@ -367,7 +375,7 @@ public partial class MainWindow
                 }
                 if (asker is not null)
                 {
-                    Found(true, release.Security is null ? $"Passenger {release.Version} is available" : $"{SecurityWords(release)}. Install it soon");
+                    Found(true, release.Security is null ? $"Pitstop {release.Version} is available" : $"{SecurityWords(release)}. Install it soon");
                 }
                 break;
             case ReleaseAnswer.Failed { Reason: var reason } when asker is not null:
@@ -416,7 +424,7 @@ public partial class MainWindow
         {
             // Not one an updater expects (those are its outcomes): an IDE error, and the download did not land.
             IdeErrors.Report(error);
-            outcome = new UpdateOutcome.Failed(error.Message, $"could not download Passenger {release.Version}: {error.Message}");
+            outcome = new UpdateOutcome.Failed(error.Message, $"could not download Pitstop {release.Version}: {error.Message}");
         }
         finally
         {
@@ -451,12 +459,12 @@ public partial class MainWindow
                 ShowByHand(release, command);
                 break;
             case UpdateOutcome.Refused { Reason: var reason }:
-                ShowRefused(release, $"Passenger {release.Version} was not installed: {reason}");
-                status.Text = $"Passenger {release.Version} was not installed: {reason}";
+                ShowRefused(release, $"Pitstop {release.Version} was not installed: {reason}");
+                status.Text = $"Pitstop {release.Version} was not installed: {reason}";
                 break;
             case UpdateOutcome.Failed { Reason: var reason }:
-                ShowUpdate(release, release.Link, $"Could not download Passenger {release.Version}: {reason}");
-                status.Text = $"Could not download Passenger {release.Version}: {reason}";
+                ShowUpdate(release, release.Link, $"Could not download Pitstop {release.Version}: {reason}");
+                status.Text = $"Could not download Pitstop {release.Version}: {reason}";
                 break;
             default:
                 ShowUpdate(release, release.Link);
@@ -543,13 +551,13 @@ public partial class MainWindow
         state.Updates.Set(state.Updates.Value with { Installing = null, NotInstalled = null });
         if (installing == Product.Version)
         {
-            status.Text = $"Passenger was updated to {installing}";
-            IdeErrors.Write($"Updates: Passenger {installing} was installed as the last session ended");
+            status.Text = $"Pitstop was updated to {installing}";
+            IdeErrors.Write($"Updates: Pitstop {installing} was installed as the last session ended");
         }
         else
         {
-            Say(why is null ? $"Passenger {installing} did not install: Help, Show Log says why" : $"Passenger {installing} did not install: {why}", LogPlace);
-            IdeErrors.Write($"Updates: Passenger {installing} was to install as the last session ended, but this is {Product.Version}{(why is null ? string.Empty : $": {why}")}");
+            Say(why is null ? $"Pitstop {installing} did not install: Help, Show Log says why" : $"Pitstop {installing} did not install: {why}", LogPlace);
+            IdeErrors.Write($"Updates: Pitstop {installing} was to install as the last session ended, but this is {Product.Version}{(why is null ? string.Empty : $": {why}")}");
         }
     }
 
@@ -570,7 +578,7 @@ public partial class MainWindow
 
     /// <summary>What a security release fixes, as its notice and the status bar say it.</summary>
     private static string SecurityWords(LatestRelease release) =>
-        release.Security is { Length: > 0 } fixes ? $"Passenger {release.Version} is a security update: {fixes}" : $"Passenger {release.Version} is a security update";
+        release.Security is { Length: > 0 } fixes ? $"Pitstop {release.Version} is a security update: {fixes}" : $"Pitstop {release.Version} is a security update";
 
     /// <summary>A security release's first lines in its notice's tip, asking for it soon; nothing for any other release.</summary>
     private static string SecurityTip(LatestRelease release, string soon) => release.Security is null ? string.Empty : $"{SecurityWords(release)}\n{soon}\n";
@@ -582,7 +590,7 @@ public partial class MainWindow
         string opens = link == release.Link && release.Asset is { } asset ? $"Download {asset}" : $"Open the release page of {release.Tag}";
         bool security = release.Security is not null;
         Notice(UpdateNotice.Available, security ? IconKeys.Lock : IconKeys.ArrowDown, security ? TokenKeys.Warning : TokenKeys.Link,
-            security ? $"Security update: Passenger {release.Version} available" : $"Passenger {release.Version} available",
+            security ? $"Security update: Pitstop {release.Version} available" : $"Pitstop {release.Version} available",
             $"{SecurityTip(release, "Install it as soon as you can.")}{(why is null ? string.Empty : why + "\n")}{opens}\n{link}");
     }
 
@@ -591,10 +599,10 @@ public partial class MainWindow
     {
         shownRelease = release;
         bool security = release.Security is not null;
-        string named = security ? $"security update Passenger {release.Version}" : $"Passenger {release.Version}";
+        string named = security ? $"security update Pitstop {release.Version}" : $"Pitstop {release.Version}";
         Notice(UpdateNotice.Downloading, security ? IconKeys.Lock : IconKeys.ArrowDown, security ? TokenKeys.Warning : TokenKeys.Link,
             percent < 100 ? $"Downloading {named}: {percent}%" : $"Checking {named}…",
-            $"{SecurityTip(release, "Restart into it once it is ready.")}Passenger {release.Version} is downloading from GitHub, to be checked and installed when Passenger restarts.\nClick to open its release page.");
+            $"{SecurityTip(release, "Restart into it once it is ready.")}Pitstop {release.Version} is downloading from GitHub, to be checked and installed when Pitstop restarts.\nClick to open its release page.");
     }
 
     private void ShowReady(LatestRelease release)
@@ -602,11 +610,11 @@ public partial class MainWindow
         shownRelease = release;
         string how = SelfUpdate?.Asks is { } asks
             ? $"Click to restart into it.\n{asks}, and only Restart to Update installs it."
-            : "Click to restart into it;\notherwise it installs when Passenger closes.";
+            : "Click to restart into it;\notherwise it installs when Pitstop closes.";
         bool security = release.Security is not null;
         Notice(UpdateNotice.Ready, IconKeys.Rerun, security ? TokenKeys.Warning : TokenKeys.Link,
-            security ? $"Restart to install security update Passenger {release.Version}" : $"Restart to update to Passenger {release.Version}",
-            $"{SecurityTip(release, "Restart into it now rather than later.")}Passenger {release.Version} is downloaded and checked. {how}{RelaysEnded()}");
+            security ? $"Restart to install security update Pitstop {release.Version}" : $"Restart to update to Pitstop {release.Version}",
+            $"{SecurityTip(release, "Restart into it now rather than later.")}Pitstop {release.Version} is downloaded and checked. {how}{RelaysEnded()}");
     }
 
     /// <summary>A release downloaded and checked that this copy cannot install itself: the command that does, which a
@@ -616,9 +624,9 @@ public partial class MainWindow
         shownRelease = release with { Link = release.Page };
         bool security = release.Security is not null;
         Notice(UpdateNotice.ByHand, security ? IconKeys.Lock : IconKeys.ArrowDown, security ? TokenKeys.Warning : TokenKeys.Link,
-            security ? $"Security update: Passenger {release.Version} ready to install" : $"Passenger {release.Version} ready to install",
-            $"{SecurityTip(release, "Install it as soon as you can.")}Passenger {release.Version} is downloaded and checked, but this user cannot write {SelfUpdate?.Installed}, where it is installed for everyone.\n"
-            + $"To install it, run this in a terminal, then start Passenger again:\n{command}\nClick to copy the command.");
+            security ? $"Security update: Pitstop {release.Version} ready to install" : $"Pitstop {release.Version} ready to install",
+            $"{SecurityTip(release, "Install it as soon as you can.")}Pitstop {release.Version} is downloaded and checked, but this user cannot write {SelfUpdate?.Installed}, where it is installed for everyone.\n"
+            + $"To install it, run this in a terminal, then start Pitstop again:\n{command}\nClick to copy the command.");
     }
 
     /// <summary>What installing does to the agents connected through relays of this install, said before, with the folders
@@ -636,8 +644,8 @@ public partial class MainWindow
         }
         string on = string.Join(", ", folders.Distinct(PathNames.Comparer));
         return OperatingSystem.IsWindows()
-            ? $"\nInstalling it ends {Plural.Of(folders.Length, "agent's connection", "agents' connections")} to Passenger, on {on}: each agent reconnects to go on (/mcp in Claude Code)."
-            : $"\n{Plural.Of(folders.Length, "agent's connection", "agents' connections")} to Passenger, on {on}, {Plural.Agreeing(folders.Length, "goes", "go")} on into the new version.";
+            ? $"\nInstalling it ends {Plural.Of(folders.Length, "agent's connection", "agents' connections")} to Pitstop, on {on}: each agent reconnects to go on (/mcp in Claude Code)."
+            : $"\n{Plural.Of(folders.Length, "agent's connection", "agents' connections")} to Pitstop, on {on}, {Plural.Agreeing(folders.Length, "goes", "go")} on into the new version.";
     }
 
     /// <summary>The update held back by programs running from the install, each named in full, with what to do; a click
@@ -646,10 +654,10 @@ public partial class MainWindow
     {
         shownRelease = release;
         bool one = named.Count == 1;
-        Notice(UpdateNotice.Blocked, IconKeys.Error, TokenKeys.Warning, $"Passenger {release.Version} waits for {Plural.Of(named.Count, "program")} to close",
-            $"Passenger {release.Version} cannot be installed while {(one ? "this runs" : "these run")} from {installed}:\n"
+        Notice(UpdateNotice.Blocked, IconKeys.Error, TokenKeys.Warning, $"Pitstop {release.Version} waits for {Plural.Of(named.Count, "program")} to close",
+            $"Pitstop {release.Version} cannot be installed while {(one ? "this runs" : "these run")} from {installed}:\n"
             + string.Join("\n", named.Select(n => $"• {n}"))
-            + $"\nQuit {(one ? "it" : "each")} (an agent's own Passenger, --mcp, ends with that agent's session), then click here to restart to update.");
+            + $"\nQuit {(one ? "it" : "each")} (an agent's own Pitstop, --mcp, ends with that agent's session), then click here to restart to update.");
     }
 
     /// <summary>A download refused, in the editor's warning colour, its link the release's page rather than the file
@@ -657,7 +665,7 @@ public partial class MainWindow
     private void ShowRefused(LatestRelease release, string why)
     {
         shownRelease = release with { Link = release.Page };
-        Notice(UpdateNotice.Refused, IconKeys.Error, TokenKeys.Warning, $"Passenger {release.Version} not installed",
+        Notice(UpdateNotice.Refused, IconKeys.Error, TokenKeys.Warning, $"Pitstop {release.Version} not installed",
             $"{why}\nOpen the release page of {release.Tag}\n{release.Page}");
     }
 
@@ -709,7 +717,7 @@ public partial class MainWindow
         {
             await Avalonia.Input.Platform.ClipboardExtensions.SetTextAsync(clipboard, command);
         }
-        status.Text = $"Copied the command that installs Passenger {version}: paste it into a terminal";
+        status.Text = $"Copied the command that installs Pitstop {version}: paste it into a terminal";
     }
 
     /// <summary>What a notice shows: its icon and colour by their keys, its words and its tip.</summary>

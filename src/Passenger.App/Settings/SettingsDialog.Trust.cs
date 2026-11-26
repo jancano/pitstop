@@ -35,7 +35,7 @@ public sealed partial class SettingsDialog
         TrustedFolders.Set(trust.Kept);
         Add(TrustPage, "Folders answered for", new StackPanel { MaxWidth = OptionRow.EditorWidth, Children = { TrustedFolders } },
             "workspace trust trusted untrusted restricted safe mode folders forget stop trusting code runs security",
-            "A folder you trust has its code run as Passenger works on it: its MSBuild files, analyzers and generators, restore, "
+            "A folder you trust has its code run as Pitstop works on it: its MSBuild files, analyzers and generators, restore, "
             + "its own tools. A folder in a Git repository is trusted with the whole repository, whose build files its projects take in. "
             + "Clear Trusted to stop trusting a folder, and Forget to be asked again as it next opens. Taken "
             + "back from a folder open in a window, its language server and project hosts end, and what you started there runs on until it ends.");

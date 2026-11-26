@@ -129,7 +129,7 @@ public sealed class SettingsTests : IDisposable
 
             dialog = window.ShowSettings();
             dialog.Change(s => s with { EditorFontSize = 20 });
-            dialog.Change(s => s with { EditorFontFamily = "Passenger Missing Font" });
+            dialog.Change(s => s with { EditorFontFamily = "Pitstop Missing Font" });
             Assert.NotNull(dialog.Refused);
             Assert.Equal(CodeEditor.CodeFont, window.EditorArea.CodeEditor.FontFamily);
             Ui.Press(dialog, "ESCAPE");
@@ -474,16 +474,16 @@ public sealed class SettingsTests : IDisposable
     private void Old_terminal_settings_and_an_unavailable_font_keep_a_usable_default()
     {
         File.WriteAllText(Path.Combine(settings, "settings.json"), """
-            { "version": 1, "terminalFontSize": 15, "terminalFontFamily": "Passenger Missing Font", "terminalCursorStyle": 99 }
+            { "version": 1, "terminalFontSize": 15, "terminalFontFamily": "Pitstop Missing Font", "terminalCursorStyle": 99 }
             """);
         MainWindow window = Open();
         window.KeepSettings();
         Assert.Equal(15, window.TerminalPanel.View.FontSize);
         Assert.Equal(CodeEditor.CodeFont, window.TerminalPanel.View.FontFamily);
-        Assert.Equal("Passenger Missing Font", window.Settings.TerminalFontFamily);
+        Assert.Equal("Pitstop Missing Font", window.Settings.TerminalFontFamily);
         SettingsDialog dialog = TerminalDialog(window);
         Assert.Contains("Cursor style", dialog.Shown);
-        Assert.Equal("Passenger Missing Font (not installed)", FontList(dialog).SelectedItem?.ToString());
+        Assert.Equal("Pitstop Missing Font (not installed)", FontList(dialog).SelectedItem?.ToString());
         Assert.Null(dialog.Refused);
         Assert.Equal("Block", Editor<ComboBox>(dialog, "Cursor style").SelectedItem);
         Assert.False(Editor<CheckBox>(dialog, "Copy on selection").IsChecked);
@@ -579,7 +579,7 @@ public sealed class SettingsTests : IDisposable
     private void The_editor_font_family_chosen_in_settings_is_the_code_font_everywhere_and_a_proportional_one_is_refused()
     {
         IReadOnlyList<string> installed = Ui.Await(CodeFonts.InstalledAsync(), "the installed monospaced fonts");
-        Assert.SkipWhen(installed.Count == 0, "No monospaced font is installed beside the one Passenger carries");
+        Assert.SkipWhen(installed.Count == 0, "No monospaced font is installed beside the one Pitstop carries");
         string font = installed[0];
         File.WriteAllText(Path.Combine(folder, "One.cs"), "class One { }\n");
         MainWindow window = Open();
@@ -623,8 +623,8 @@ public sealed class SettingsTests : IDisposable
                 again.Change(s => s with { EditorFontFamily = proportional });
                 Assert.Equal($"Font family {proportional} ({SettingsDialog.PlaceOfPage(SettingsDialog.EditorPage)}) is not monospaced: code's columns need every character one width", again.Refused);
             }
-            again.Change(s => s with { EditorFontFamily = "Passenger Missing Font" });
-            Assert.Equal($"Font family Passenger Missing Font ({SettingsDialog.PlaceOfPage(SettingsDialog.EditorPage)}) is not a font installed on this computer", again.Refused);
+            again.Change(s => s with { EditorFontFamily = "Pitstop Missing Font" });
+            Assert.Equal($"Font family Pitstop Missing Font ({SettingsDialog.PlaceOfPage(SettingsDialog.EditorPage)}) is not a font installed on this computer", again.Refused);
             again.Change(s => s with { EditorFontFamily = null });
             Assert.Null(again.Refused);
             again.Ok();
@@ -872,7 +872,7 @@ public sealed class SettingsTests : IDisposable
             Ui.WaitFor(() => again.TerminalPanel.Active is { } shell && TerminalTests.Screen(shell).Contains("could not start", StringComparison.Ordinal),
                 () => $"the new terminal tab to say why no shell started: {string.Join(", ", again.TerminalPanel.Tabs.Select(t => t.Name))}");
             string said = TerminalTests.Screen(again.TerminalPanel.Active!);
-            Assert.True(said.Contains("Passenger could not start a shell: the Shell path in Settings | Terminal names no program to start", StringComparison.Ordinal),
+            Assert.True(said.Contains("Pitstop could not start a shell: the Shell path in Settings | Terminal names no program to start", StringComparison.Ordinal),
                 $"The terminal tab met with a shell path naming no program said:\n{said}");
 
             SettingsDialog dialog = TerminalPage(again);
@@ -935,14 +935,14 @@ public sealed class SettingsTests : IDisposable
             WrittenElsewhere(file, 21);
             watched.Fail();
             Ui.WaitFor(() => window.EditorArea.CodeEditor.FontSize == 21,
-                $"the window to follow another Passenger's change to settings.json, lost in the watcher's overflow (its font is {window.EditorArea.CodeEditor.FontSize})");
+                $"the window to follow another Pitstop's change to settings.json, lost in the watcher's overflow (its font is {window.EditorArea.CodeEditor.FontSize})");
 
             WrittenElsewhere(file, 19);
             Ui.Settle();
             Assert.True(window.EditorArea.CodeEditor.FontSize == 21, "settings.json was read again with its watcher deaf and no word of a change");
             window.Activate();
             Ui.WaitFor(() => window.EditorArea.CodeEditor.FontSize == 19,
-                $"the window come in front to follow another Passenger's change to settings.json, dropped without a word (its font is {window.EditorArea.CodeEditor.FontSize})");
+                $"the window come in front to follow another Pitstop's change to settings.json, dropped without a word (its font is {window.EditorArea.CodeEditor.FontSize})");
         }
         finally
         {
@@ -1014,7 +1014,7 @@ public sealed class SettingsTests : IDisposable
                 WrittenElsewhere(kept, size);
                 window.Activate();
                 Ui.WaitFor(() => window.EditorArea.CodeEditor.FontSize == size,
-                    () => $"the window come in front to follow another Passenger's change to the settings.json a link names, to {size} (its font is {window.EditorArea.CodeEditor.FontSize})");
+                    () => $"the window come in front to follow another Pitstop's change to the settings.json a link names, to {size} (its font is {window.EditorArea.CodeEditor.FontSize})");
             }
         }
         finally
@@ -1057,7 +1057,7 @@ public sealed class SettingsTests : IDisposable
     private static string OtherTerminalFont()
     {
         IReadOnlyList<string> installed = Ui.Await(CodeFonts.InstalledAsync(), "the installed monospaced fonts");
-        Assert.SkipWhen(installed.Count == 0, "No monospaced font is installed beside the one Passenger carries");
+        Assert.SkipWhen(installed.Count == 0, "No monospaced font is installed beside the one Pitstop carries");
         return installed[0];
     }
 

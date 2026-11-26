@@ -76,10 +76,10 @@ public sealed class GameFramesTests
         {
             string trace = Path.Combine(folder, "Ticker-20261101-120000.nettrace");
             new FileStream(trace, FileMode.CreateNew, FileAccess.Write).Dispose();
-            GameRecording recording = new("Godot 4.7.2", "/games/ticker", draws: false) { Passengers = file => file.EndsWith("passenger_agent.gd", StringComparison.Ordinal) };
+            GameRecording recording = new("Godot 4.7.2", "/games/ticker", draws: false) { Passengers = file => file.EndsWith("pitstop_agent.gd", StringComparison.Ordinal) };
             recording.Signature(0, "res://ticker.gd::7::_process");
-            recording.Signature(1, "/state/cache/godot/passenger_agent.gd::38::asked");
-            recording.Signature(2, "/state/cache/godot/passenger_agent.gd::0::Node.get_node");
+            recording.Signature(1, "/state/cache/godot/pitstop_agent.gd::38::asked");
+            recording.Signature(2, "/state/cache/godot/pitstop_agent.gd::0::Node.get_node");
             recording.Took(Frame(1, 5, new ScriptWork(0, 1, 0.2, 0.2, 0), new ScriptWork(1, 2, 0.5, 0.75, 0.25), new ScriptWork(2, 2, 0.25, 0.25, 0)) with { ScriptMs = 0.95 },
                 Began.AddMilliseconds(5));
             recording.Took(Frame(2, 5, new ScriptWork(0, 1, 0.3, 0.3, 0)) with { ScriptMs = 0.3 }, Began.AddMilliseconds(10));

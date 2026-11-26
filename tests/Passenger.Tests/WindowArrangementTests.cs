@@ -687,7 +687,7 @@ public sealed class WindowArrangementTests : IDisposable
             Ui.Settle();
             astray = [.. Astray(dock, passengers, ToolWindowIds.Terminal)];
             Assert.True(astray.Length == 0 && dock[ToolWindowIds.Explorer].Anchor == ToolAnchor.LeftTop && dock[ToolWindowIds.Terminal].Anchor == ToolAnchor.RightBottom && dock.IsShown(ToolWindowIds.Run),
-                $"Passenger's own theme chosen again left {string.Join(", ", astray)} where Cubicle put them, the Terminal the person moved in {dock[ToolWindowIds.Terminal].Anchor}, Run shown {dock.IsShown(ToolWindowIds.Run)}");
+                $"Pitstop's own theme chosen again left {string.Join(", ", astray)} where Cubicle put them, the Terminal the person moved in {dock[ToolWindowIds.Terminal].Anchor}, Run shown {dock.IsShown(ToolWindowIds.Run)}");
         }
         finally
         {

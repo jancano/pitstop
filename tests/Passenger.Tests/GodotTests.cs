@@ -276,7 +276,7 @@ public sealed class GodotTests : IClassFixture<GodotTests.Game>
             Assert.True(said.Contains("quitting", StringComparison.Ordinal), $"The game's session ended before it quit by itself:\n{said}");
             Assert.False(session.FallbackUsed, $"The game's session was ended without its debugger saying its debugging ended:\n{said}");
             Assert.True(session.ExitCode == 0, $"The game's exit code was {session.ExitCode?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "never said"}, not its own 0:\n{said}");
-            Assert.False(said.Contains("was left running by the debugger", StringComparison.Ordinal), $"Passenger ended the game as it tore down:\n{said}");
+            Assert.False(said.Contains("was left running by the debugger", StringComparison.Ordinal), $"Pitstop ended the game as it tore down:\n{said}");
         }
         finally
         {

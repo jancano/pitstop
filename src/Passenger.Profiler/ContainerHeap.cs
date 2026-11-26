@@ -75,8 +75,8 @@ internal sealed class ContainerHeap(ProfilePlace place, int processId) : IAsyncD
                 await EndAsync(running).ConfigureAwait(false);
                 UnawaitedWork.Dismiss(reading);
                 throw new ProfilingException(stopped is TimeoutException
-                    ? $"Passenger's tools in {place.Where} took no memory snapshot in {Durations.Said(limit)}, and were ended{stage}"
-                    : $"The memory snapshot of the program in {place.Where} was stopped{stage}, and Passenger's tools there ended", stopped);
+                    ? $"Pitstop's tools in {place.Where} took no memory snapshot in {Durations.Said(limit)}, and were ended{stage}"
+                    : $"The memory snapshot of the program in {place.Where} was stopped{stage}, and Pitstop's tools there ended", stopped);
             }
             catch (InvalidDataException unreadable)
             {
@@ -94,7 +94,7 @@ internal sealed class ContainerHeap(ProfilePlace place, int processId) : IAsyncD
             }
             if (answer.Kind == HeapWire.Failure)
             {
-                throw new InvalidOperationException(ErrorLines.Last(Encoding.UTF8.GetString(answer.Body)) ?? $"Passenger's tools in {place.Where} took no snapshot");
+                throw new InvalidOperationException(ErrorLines.Last(Encoding.UTF8.GetString(answer.Body)) ?? $"Pitstop's tools in {place.Where} took no snapshot");
             }
             TimeSpan asked = clock.Elapsed;
             int numberedAfter = before;
@@ -109,7 +109,7 @@ internal sealed class ContainerHeap(ProfilePlace place, int processId) : IAsyncD
             {
                 // A container's answer that does not hold together: nothing after it is trusted either.
                 await EndAsync(running).ConfigureAwait(false);
-                throw new InvalidOperationException($"The snapshot Passenger's tools in {place.Where} sent could not be read: {unreadable.Message}", unreadable);
+                throw new InvalidOperationException($"The snapshot Pitstop's tools in {place.Where} sent could not be read: {unreadable.Message}", unreadable);
             }
             last = taken.Number;
             kept.Took(taken);
@@ -144,7 +144,7 @@ internal sealed class ContainerHeap(ProfilePlace place, int processId) : IAsyncD
         }
         catch (Exception error) when (ChildFailures.Of(error))
         {
-            throw new InvalidOperationException($"Could not start Passenger's tools in {place.Where} for a memory snapshot: {error.Message}", error);
+            throw new InvalidOperationException($"Could not start Pitstop's tools in {place.Where} for a memory snapshot: {error.Message}", error);
         }
         Process started = tools;
         errorsRead = ErrorLines.Hear(started, line =>
@@ -165,7 +165,7 @@ internal sealed class ContainerHeap(ProfilePlace place, int processId) : IAsyncD
     private async Task<string> GoneAsync()
     {
         await Task.WhenAny(errorsRead, Task.Delay(TimeSpan.FromSeconds(2))).ConfigureAwait(false);
-        return Volatile.Read(ref lastError) ?? $"Passenger's tools in {place.Where} ended before the snapshot was taken";
+        return Volatile.Read(ref lastError) ?? $"Pitstop's tools in {place.Where} ended before the snapshot was taken";
     }
 
     /// <summary>Ends the tools whose answer could not be trusted, at once, so the next snapshot starts them again, never asks

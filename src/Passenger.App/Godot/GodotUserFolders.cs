@@ -12,7 +12,7 @@ public static class GodotUserFolders
     /// <summary>The variable naming a folder under which every Godot Passenger starts keeps its user folders in place of the
     /// person's: a test run's.</summary>
     [IdentifierHome]
-    public const string HomeVariable = "PASSENGER_GODOT_HOME";
+    public const string HomeVariable = "PITSTOP_GODOT_HOME";
 
     /// <summary>The variables that keep a Godot's user folders under <paramref name="home"/>: HOME (and XDG's) on macOS and
     /// Linux, APPDATA and LOCALAPPDATA on Windows.</summary>

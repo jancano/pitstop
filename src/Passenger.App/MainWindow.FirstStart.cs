@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Passenger.App.Updates;
 using Passenger.App.Welcome;
+using Passenger.Core;
 
 namespace Passenger.App;
 
@@ -86,7 +87,7 @@ public partial class MainWindow
         }
         ToolbarStart.IsVisible = true;
         ToolbarEnd.IsVisible = true;
-        IdeErrors.Write($"First start: {settings.Look?.Shown ?? "Passenger"}, {settings.Theme}");
+        IdeErrors.Write($"First start: {settings.Look?.Shown ?? Product.Name}, {settings.Theme}");
         if (Editors.Active is not null)
         {
             FocusEditor();

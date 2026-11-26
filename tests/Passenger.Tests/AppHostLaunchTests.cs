@@ -86,7 +86,7 @@ public sealed class AppHostLaunchTests : IClassFixture<RestoredFolders>, IDispos
             Assert.True(ran.Contains($"started as {AppHost}\n", StringComparison.Ordinal),
                 $"Run did not start the program from its apphost {AppHost}, so on Windows its manifest, icon and name are lost:\n{ran}");
             Assert.True(ran.Contains($"root {Dotnet.Root()}\n", StringComparison.Ordinal),
-                $"The apphost was not told the .NET Passenger builds with, {Dotnet.Root()}, so it may run on another:\n{ran}");
+                $"The apphost was not told the .NET Pitstop builds with, {Dotnet.Root()}, so it may run on another:\n{ran}");
             Assert.True(!OperatingSystem.IsWindows() || ran.Contains("code page 65001\n", StringComparison.Ordinal),
                 $"The apphost's manifest did not apply, its UTF-8 code page not the process's:\n{ran}");
 

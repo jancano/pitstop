@@ -193,7 +193,7 @@ public sealed class GodotAddonTests : IDisposable
         	await get_tree().process_frame
         	for menu in dialog.find_children("*", "OptionButton", true, false):
         		for i in menu.item_count:
-        			if menu.get_item_text(i) == base + ": Passenger (this project's style)":
+        			if menu.get_item_text(i) == base + ": Pitstop (this project's style)":
         				menu.select(i)
         				menu.item_selected.emit(i)
         				print("TEST: template ", menu.get_item_text(i))
@@ -261,7 +261,7 @@ public sealed class GodotAddonTests : IDisposable
         	if not FileAccess.file_exists("res://play.txt") or EditorInterface.is_playing_scene():
         		return
         	for plugin in get_parent().get_children():
-        		if plugin.get_script() != null and plugin.get_script().resource_path == "res://addons/passenger/passenger.gd" and plugin.get("welcomed"):
+        		if plugin.get_script() != null and plugin.get_script().resource_path == "res://addons/pitstop/pitstop.gd" and plugin.get("welcomed"):
         			DirAccess.remove_absolute(ProjectSettings.globalize_path("res://play.txt"))
         			print("TEST: playing")
         			EditorInterface.play_main_scene()
@@ -435,10 +435,10 @@ public sealed class GodotAddonTests : IDisposable
             return window;
         }
         Assert.Null(window.Actions.Run(AppActions.GodotAddon));
-        Ui.WaitFor(() => window.Status?.Contains("Passenger's addon is installed", StringComparison.Ordinal) == true, () => $"the addon to be installed ({window.Status})");
+        Ui.WaitFor(() => window.Status?.Contains("Pitstop's addon is installed", StringComparison.Ordinal) == true, () => $"the addon to be installed ({window.Status})");
         string enabled = File.ReadAllText(project);
-        Assert.True(File.Exists(Path.Combine(folder, "addons", "passenger", "passenger.gd")) && File.Exists(Path.Combine(folder, "addons", "passenger", "plugin.cfg"))
-            && enabled.Contains("enabled=PackedStringArray(\"res://addons/plays/plugin.cfg\", \"res://addons/passenger/plugin.cfg\")", StringComparison.Ordinal),
+        Assert.True(File.Exists(Path.Combine(folder, "addons", "pitstop", "pitstop.gd")) && File.Exists(Path.Combine(folder, "addons", "pitstop", "plugin.cfg"))
+            && enabled.Contains("enabled=PackedStringArray(\"res://addons/plays/plugin.cfg\", \"res://addons/pitstop/plugin.cfg\")", StringComparison.Ordinal),
             $"The addon's files were to be written and enabled beside the test's plugin:\n{enabled}");
         window.OpenFile(Path.Combine(folder, "Main.cs"));
         return window;
@@ -779,7 +779,7 @@ public sealed class GodotAddonTests : IDisposable
             Ui.Press(window, "ENTER");
             Ui.WaitFor(() => File.ReadAllText(ScenePath).Contains("method=\"OnFlipped\"", StringComparison.Ordinal),
                 () => $"the rename to reach the scene's connection ({window.Status})", TimeSpan.FromMinutes(1));
-            Ui.WaitFor(() => said.Any(l => l.Contains("res://main.tscn read again, as Passenger wrote it", StringComparison.Ordinal)),
+            Ui.WaitFor(() => said.Any(l => l.Contains("res://main.tscn read again, as Pitstop wrote it", StringComparison.Ordinal)),
                 () => $"Godot's editor to read the scene again (Godot said: {Said()})", TimeSpan.FromMinutes(1));
 
             int press = Array.FindIndex(File.ReadAllText(ScenePath).Split('\n'), l => l.StartsWith("[node name=\"Press\"", StringComparison.Ordinal)) + 1;
@@ -836,16 +836,16 @@ public sealed class GodotAddonTests : IDisposable
             {
                 Assert.True(unsaved.GetBoolean(), $"The edited scene was not said to hold unsaved changes: {read.GetRawText()}");
                 Ui.WaitFor(() => window.HeldByGodot(ScenePath)?.Contains("unsaved edits", StringComparison.Ordinal) == true,
-                    () => $"Passenger's writes to see the scene held unsaved ({window.HeldByGodot(ScenePath) ?? "nothing held"})");
+                    () => $"Pitstop's writes to see the scene held unsaved ({window.HeldByGodot(ScenePath) ?? "nothing held"})");
             }
 
             TestFolders.Write(folder, "undo.txt", "undo\n");
-            Ui.WaitFor(() => said.Any(l => l.Contains("TEST: undid Passenger: add Score", StringComparison.Ordinal)), () => $"Godot's undo of the node added (Godot said: {Said()})");
+            Ui.WaitFor(() => said.Any(l => l.Contains("TEST: undid Pitstop: add Score", StringComparison.Ordinal)), () => $"Godot's undo of the node added (Godot said: {Said()})");
             read = agent.Unasked(window, client, McpTools.GodotEditor, new() { ["action"] = "read" });
             Assert.Null(Node(read, "Ui/Score"));
             Assert.Equal("\"Go\"", Stored(read, "Ui/Press", "text"));
             TestFolders.Write(folder, "undo.txt", "undo\n");
-            Ui.WaitFor(() => said.Any(l => l.Contains("TEST: undid Passenger: set text of Press", StringComparison.Ordinal)), () => $"Godot's undo of the property set (Godot said: {Said()})");
+            Ui.WaitFor(() => said.Any(l => l.Contains("TEST: undid Pitstop: set text of Press", StringComparison.Ordinal)), () => $"Godot's undo of the property set (Godot said: {Said()})");
             Assert.Equal("\"Press\"", Stored(agent.Unasked(window, client, McpTools.GodotEditor, new() { ["action"] = "read" }), "Ui/Press", "text"));
             Assert.DoesNotContain(said, l => l.Contains("SCRIPT ERROR", StringComparison.Ordinal));
         }

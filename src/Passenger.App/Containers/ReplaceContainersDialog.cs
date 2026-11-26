@@ -17,10 +17,10 @@ public sealed class ReplaceContainersDialog : IdeWindow
         ReplaceButton.Click += (_, _) => Close(true);
 
         bool one = containers.Count == 1;
-        DialogFooter.Question(this, one ? "A container Passenger did not make for this folder" : "Containers Passenger did not make for this folder",
+        DialogFooter.Question(this, one ? "A container Pitstop did not make for this folder" : "Containers Pitstop did not make for this folder",
         [
             DialogFooter.Paragraph($"{configuration} would replace {string.Join(", ", containers)} of the Compose project {project}: Compose makes "
-                + $"{(one ? "it" : "them")} again with Passenger's settings for this run."),
+                + $"{(one ? "it" : "them")} again with Pitstop's settings for this run."),
             DialogFooter.Paragraph($"Replace Them runs it, and {(one ? "the container is" : "the containers are")} then the run's: Stop removes "
                 + $"{(one ? "it" : "them")}. Cancel runs nothing and leaves {(one ? "it" : "them")} as {(one ? "it is" : "they are")}."),
         ], DialogFooter.Answers(ReplaceButton, CancelButton));

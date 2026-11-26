@@ -50,7 +50,7 @@ public sealed class ContainerTelemetryTests : McpRig
             string? refused = Ui.Await(window.RunAsync(), "the Compose application to come up with its dashboard", TimeSpan.FromMinutes(5));
             Assert.True(refused is null, $"{refused}{Ui.BuildErrors(window)}\n{ContainerRunsTests.Run(window)}");
             string dashboard = ContainerRunsTests.Container(project, ContainerTelemetry.Service);
-            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"net.passenger-ide.state\"}}", dashboard));
+            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"io.github.jancano.pitstop.state\"}}", dashboard));
             // Its OTLP endpoint is the run's network's alone: only the API, on this machine's loopback, is published.
             Assert.Equal("127.0.0.1", Docker.Run("compose", "-p", project, "port", ContainerTelemetry.Service, "18888").Split(':')[0]);
             Assert.Equal(string.Empty, Docker.Said("compose", "-p", project, "port", ContainerTelemetry.Service, "18889") ?? string.Empty);
@@ -84,7 +84,7 @@ public sealed class ContainerTelemetryTests : McpRig
             Task<JsonElement> logs = Waiting.Apart(() => Call(client, McpTools.Telemetry, new() { ["resource"] = "web", ["limit"] = 50 }));
             Press(Admission(window, "the window to ask whether the agent may work there"), AgentAdmissionDialog.Allow);
             JsonElement read = Await(logs, "the agent's telemetry of web's logs");
-            Assert.Contains(read.GetProperty("logs").EnumerateArray(), item => item.GetProperty("message").GetString()?.Contains("Passenger order 42", StringComparison.Ordinal) == true);
+            Assert.Contains(read.GetProperty("logs").EnumerateArray(), item => item.GetProperty("message").GetString()?.Contains("Pitstop order 42", StringComparison.Ordinal) == true);
             JsonElement traced = Await(Waiting.Apart(() => Call(client, McpTools.Telemetry, new() { ["kind"] = "traces", ["traceId"] = log.TraceId })), "the agent's telemetry of the request's trace");
             Assert.True(Assert.Single(traced.GetProperty("traces").EnumerateArray()).GetProperty("spans").GetArrayLength() >= 3, traced.ToString());
         }
@@ -105,7 +105,7 @@ public sealed class ContainerTelemetryTests : McpRig
 
     /// <summary>web's log of the order it placed, once the Telemetry tab lists it.</summary>
     private static AspireStructuredLog? Logged(TelemetryView telemetry) =>
-        telemetry.Logs.FirstOrDefault(log => log.ToString().Contains("Passenger order 42", StringComparison.Ordinal));
+        telemetry.Logs.FirstOrDefault(log => log.ToString().Contains("Pitstop order 42", StringComparison.Ordinal));
 
     private static string? Answer(int port)
     {
@@ -151,7 +151,7 @@ public sealed class ContainerTelemetryTests : McpRig
             WebApplication app = builder.Build();
             app.MapGet("/", async (ILogger<Program> log, IHttpClientFactory clients) =>
             {
-                log.LogInformation("Passenger order {Order} placed", 42);
+                log.LogInformation("Pitstop order {Order} placed", 42);
                 return await clients.CreateClient().GetStringAsync("http://localhost:8080/stock");
             });
             app.MapGet("/stock", () => "in stock");

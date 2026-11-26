@@ -1,6 +1,6 @@
 // Passenger's preload for the Dockerfile language server (node --require, Web/DockerHubTags.cs): it changes the copy
 // of dockerfile-language-service's DockerRegistryClient the server loads, which asks Docker Hub for an image's tags, as
-// PASSENGER_DOCKER_HUB says:
+// PITSTOP_DOCKER_HUB says:
 //   off             getTags answers no tags and asks nothing (Settings' Complete image tags from Docker Hub is off);
 //   an http(s) URL  each request goes there instead, its host and path under it (<URL>/auth.docker.io/token?...);
 //   unset           nothing changes: Docker Hub is asked.
@@ -13,7 +13,7 @@ const http = require("http");
 const https = require("https");
 const path = require("path");
 
-const said = process.env.PASSENGER_DOCKER_HUB;
+const said = process.env.PITSTOP_DOCKER_HUB;
 
 if (said) {
     // The copy the server's own require finds, its file read by path, which a package's exports field never hides.
@@ -31,7 +31,7 @@ if (said) {
     } else {
         const place = new URL(said);
         if (place.protocol !== "http:" && place.protocol !== "https:") {
-            throw new Error(`PASSENGER_DOCKER_HUB takes off or an http or https URL, not ${said}`);
+            throw new Error(`PITSTOP_DOCKER_HUB takes off or an http or https URL, not ${said}`);
         }
         const under = place.pathname.endsWith("/") ? place.pathname : place.pathname + "/";
         // The client expects a 200's JSON, else an error carrying its status, which it logs.

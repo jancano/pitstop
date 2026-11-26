@@ -98,8 +98,8 @@ public class DotnetWantTests
 
     [Fact]
     public void A_translated_Passenger_wants_an_SDK_of_its_own_processor() => Cases.All(
-        ("a translated Passenger whose x64 installation holds a runtime alone beside the systems own SDK lacks an SDK of its processor", A_translated_Passenger_whose_x64_installation_holds_a_runtime_alone_beside_the_systems_own_SDK_lacks_an_SDK_of_its_processor),
-        ("a translated Passenger with no SDK at all lacks an SDK of its processor and installs none", A_translated_Passenger_with_no_SDK_at_all_lacks_an_SDK_of_its_processor_and_installs_none));
+        ("a translated Pitstop whose x64 installation holds a runtime alone beside the systems own SDK lacks an SDK of its processor", A_translated_Passenger_whose_x64_installation_holds_a_runtime_alone_beside_the_systems_own_SDK_lacks_an_SDK_of_its_processor),
+        ("a translated Pitstop with no SDK at all lacks an SDK of its processor and installs none", A_translated_Passenger_with_no_SDK_at_all_lacks_an_SDK_of_its_processor_and_installs_none));
 
     /// <summary>An x64 Passenger the system translates (Windows' emulation on an Arm64 PC, Rosetta on a Mac) finds the x64
     /// installation beside the system's own first; holding a runtime alone, where the system's own holds an SDK, what lacks

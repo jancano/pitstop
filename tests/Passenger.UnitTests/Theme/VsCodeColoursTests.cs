@@ -100,7 +100,7 @@ public class VsCodeColoursTests
 
     [Fact]
     public void A_theme_kept_over_a_vs_code_theme_names_its_base_its_name_and_its_version_as_written() => Cases.All(
-        ("a passenger theme names its vs code base and its own tokens win over the base s", A_passenger_theme_names_its_vs_code_base_and_its_own_tokens_win_over_the_base_s),
+        ("a pitstop theme names its vs code base and its own tokens win over the base s", A_passenger_theme_names_its_vs_code_base_and_its_own_tokens_win_over_the_base_s),
         ("a theme names a vs code theme beside its file and a code colour scheme may name one too", A_theme_names_a_vs_code_theme_beside_its_file_and_a_code_colour_scheme_may_name_one_too),
         ("a theme kept over a vs code theme is written as its file is read", () => Cases.Each<(string?, string?, string?, string?)>(
         [

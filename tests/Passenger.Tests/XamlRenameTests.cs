@@ -164,7 +164,7 @@ public sealed class XamlRenameTests : IClassFixture<XamlRenameTests.Shop>
 
         XamlTests.RenameInCode(window, "public string Greet", "Salutation");
 
-        Ui.WaitFor(() => window.Status?.Contains("Deep.axaml is nested too deeply for Passenger to read whole", StringComparison.Ordinal) == true,
+        Ui.WaitFor(() => window.Status?.Contains("Deep.axaml is nested too deeply for Pitstop to read whole", StringComparison.Ordinal) == true,
             () => $"the rename refused for the view read in part: {window.Status}");
         Assert.Equal(ViewModel, model.Text.Snapshot.ToString());
         Assert.Equal((Reader, Card, deep), (File.ReadAllText(ReaderPath), File.ReadAllText(CardPath), File.ReadAllText(shop.PathOf("Views/Deep.axaml"))));

@@ -9,14 +9,14 @@ namespace Passenger.App;
 /// accessibilityDisplayShouldIncreaseContrast) and GNOME's High Contrast (org.gnome.desktop.a11y.interface's
 /// high-contrast); elsewhere none. Read as Passenger starts and again as a window comes in front (<see cref="LookAgain"/>),
 /// as <see cref="SystemMotion"/> is, and put in force through <see cref="Themes.UseContrast"/>. A Passenger nobody sees
-/// reads only what stands in, <c>PASSENGER_SYSTEM_CONTRAST</c> (<see cref="ContrastAsked.Parse"/>) or a test's, and the
+/// reads only what stands in, <c>PITSTOP_SYSTEM_CONTRAST</c> (<see cref="ContrastAsked.Parse"/>) or a test's, and the
 /// system's own where that variable says <see cref="FromSystem"/>.</summary>
 public static partial class SystemContrast
 {
     /// <summary>Names what the system asks in its place: <c>none</c>, <c>high</c>, <c>high-dark</c> or <c>high-light</c>,
     /// or <see cref="FromSystem"/>; a malformed value is fatal as the IDE starts.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_SYSTEM_CONTRAST";
+    public const string Variable = "PITSTOP_SYSTEM_CONTRAST";
 
     /// <summary>The variable's word for the system's own, read even where nobody sees the window (a screenshot's).</summary>
     public const string FromSystem = "system";

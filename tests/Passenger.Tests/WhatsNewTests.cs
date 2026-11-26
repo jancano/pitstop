@@ -19,6 +19,7 @@ namespace Passenger.Tests;
 public sealed class WhatsNewTests : IDisposable
 {
     private const string Version = "0.3.0";
+    private static readonly string HistoricalNotes = Path.Combine(Debugging.Helpers.Debuggees.Root, "docs", "release-notes");
 
     private readonly string state = TestFolders.Create("whatsnew-state-");
     private readonly string folder = TestFolders.Create("whatsnew-folder-");
@@ -73,7 +74,7 @@ public sealed class WhatsNewTests : IDisposable
         Assert.True(missing.Length == 0, $"The page does not say what the carried file does, missing its headings [{string.Join(", ", missing)}]; it says:\n{view.Text}");
         Assert.True(!view.Text.Contains("##", StringComparison.Ordinal) && !view.Text.Contains("**", StringComparison.Ordinal) && !view.Text.Contains("](", StringComparison.Ordinal),
             $"The page shows the Markdown's marks rather than drawing them:\n{view.Text}");
-        Assert.Equal($"What's New in Passenger {Version}", view.Title);
+        Assert.Equal($"What's New in Pitstop {Version}", view.Title);
         Assert.True(notes.IsReadOnly && !notes.HoldsText, "The notes' tab can be edited, or reads as text to edit, though it is the installed app's file");
 
         // A link opens in the browser wherever its block draws it: the first drawn below its block's first line.
@@ -140,23 +141,23 @@ public sealed class WhatsNewTests : IDisposable
     /// minor version's notes, nor a newer version's the folder carries.</summary>
     private void A_patch_releases_notes_show_its_minor_versions_earlier_notes_beneath_newest_first_and_a_minor_releases_its_own_alone()
     {
-        Write("0.3.4", "Passenger 0.3.4 mends the older line.");
-        Write("0.4.0", "Passenger 0.4.0 brings mobile apps.");
-        Write("0.4.1", "Passenger 0.4.1 fixes what 0.4.0 left.");
-        Write("0.4.2", "Passenger 0.4.2 is a later patch.");
-        Write("0.5.0", "Passenger 0.5.0 is the next minor version.");
+        Write("0.3.4", "Pitstop 0.3.4 mends the older line.");
+        Write("0.4.0", "Pitstop 0.4.0 brings mobile apps.");
+        Write("0.4.1", "Pitstop 0.4.1 fixes what 0.4.0 left.");
+        Write("0.4.2", "Pitstop 0.4.2 is a later patch.");
+        Write("0.5.0", "Pitstop 0.5.0 is the next minor version.");
 
         MainWindow window = Started("0.4.1", notes);
         Assert.Null(window.ShowWhatsNew());
         Ui.Settle();
         Assert.Equal("What's New in 0.4.1", window.EditorArea.Active?.Title);
         ReleaseNotesView view = Rendered(window);
-        Assert.Equal("What's New in Passenger 0.4.1", view.Title);
+        Assert.Equal("What's New in Pitstop 0.4.1", view.Title);
         Assert.True(view.Versions.SequenceEqual(["0.4.1", "0.4.0"]), $"0.4.1's page lays the notes of [{string.Join(", ", view.Versions)}], not 0.4.1's then 0.4.0's");
         string[] laid = [.. view.Blocks.Select(b => b.Shown)];
-        int own = Array.IndexOf(laid, "Passenger 0.4.1 fixes what 0.4.0 left.");
-        int heading = Array.IndexOf(laid, "What's New in Passenger 0.4.0");
-        int earlier = Array.IndexOf(laid, "Passenger 0.4.0 brings mobile apps.");
+        int own = Array.IndexOf(laid, "Pitstop 0.4.1 fixes what 0.4.0 left.");
+        int heading = Array.IndexOf(laid, "What's New in Pitstop 0.4.0");
+        int earlier = Array.IndexOf(laid, "Pitstop 0.4.0 brings mobile apps.");
         Assert.True(own >= 0 && own < heading && heading < earlier,
             $"0.4.1's notes are not above 0.4.0's heading and its notes beneath it, in that order; the page says:\n{view.Text}");
         Assert.True(laid.Count(b => b == "Fixed") == 2 && laid.Count(b => b == "Highlights") == 2,
@@ -170,9 +171,9 @@ public sealed class WhatsNewTests : IDisposable
         Assert.Null(window.ShowWhatsNew());
         Ui.Settle();
         view = Rendered(window);
-        Assert.Equal("What's New in Passenger 0.4.0", view.Title);
+        Assert.Equal("What's New in Pitstop 0.4.0", view.Title);
         Assert.True(view.Versions.SequenceEqual(["0.4.0"]), $"0.4.0's page lays the notes of [{string.Join(", ", view.Versions)}], not its own alone");
-        Assert.True(view.Text.Contains("Passenger 0.4.0 brings mobile apps.", StringComparison.Ordinal) && !view.Text.Contains("What's New in", StringComparison.Ordinal)
+        Assert.True(view.Text.Contains("Pitstop 0.4.0 brings mobile apps.", StringComparison.Ordinal) && !view.Text.Contains("What's New in", StringComparison.Ordinal)
             && !view.Text.Contains("0.4.1", StringComparison.Ordinal) && !view.Text.Contains("0.3.4", StringComparison.Ordinal),
             $"0.4.0's page does not show its own notes alone; it says:\n{view.Text}");
         window.Close();
@@ -189,7 +190,7 @@ public sealed class WhatsNewTests : IDisposable
         MainWindow window = new()
         {
             Width = 1200, Height = 800, StateFolder = state, StartsLanguageServer = false,
-            Notes = new ReleaseNotes(from ?? ReleaseNotes.CarriedFolder, version),
+            Notes = new ReleaseNotes(from ?? HistoricalNotes, version),
         };
         window.Show();
         window.KeepLayout();
@@ -203,7 +204,7 @@ public sealed class WhatsNewTests : IDisposable
     {
         OpenDocument? shown = window.EditorArea.Active;
         Assert.True(shown is { IsReleaseNotes: true }, $"The notes are not the tab shown, which is {shown?.Path ?? "none"}: [{Open(window)}]");
-        Assert.True(PathNames.Same(shown!.Path, PathNames.Canonical(new ReleaseNotes(ReleaseNotes.CarriedFolder, Version).File)),
+        Assert.True(PathNames.Same(shown!.Path, PathNames.Canonical(new ReleaseNotes(HistoricalNotes, Version).File)),
             $"The tab shown is {shown.Path}, not the notes the app carries beside it");
         Assert.Equal($"What's New in {Version}", shown.Title);
         return shown;
@@ -221,7 +222,7 @@ public sealed class WhatsNewTests : IDisposable
     private static string Open(MainWindow window) => string.Join(", ", window.EditorArea.Documents.Select(d => d.Name));
 
     /// <summary>The notes the build carries beside it, as written.</summary>
-    private static string Carried() => File.ReadAllText(new ReleaseNotes(ReleaseNotes.CarriedFolder, Version).File);
+    private static string Carried() => File.ReadAllText(new ReleaseNotes(HistoricalNotes, Version).File);
 
     /// <summary>The words of the notes' section headings, as a person reads them once drawn.</summary>
     private static IEnumerable<string> Headings(string notes) =>

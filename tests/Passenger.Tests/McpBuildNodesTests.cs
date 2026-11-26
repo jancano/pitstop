@@ -30,9 +30,9 @@ public sealed class McpBuildNodesTests : McpRig, IClassFixture<RestoredFolders>
     [Fact]
     public async Task What_Passengers_builds_start_ends_with_Passenger_MSBuilds_nodes_too()
     {
-        await Flow.StepApartAsync("the msbuild nodes a build leaves for the next end with passenger (false)", () => new McpBuildNodesTests(restored), t => t.The_msbuild_nodes_a_build_leaves_for_the_next_end_with_passenger(false));
-        await Flow.StepApartAsync("the msbuild nodes a build leaves for the next end with passenger (true)", () => new McpBuildNodesTests(restored), t => t.The_msbuild_nodes_a_build_leaves_for_the_next_end_with_passenger(true));
-        await Flow.StepApartAsync("nothing a build of passengers starts runs on under its salt once passenger ends", () => new McpBuildNodesTests(restored), t => t.Nothing_a_build_of_passengers_starts_runs_on_under_its_salt_once_passenger_ends());
+        await Flow.StepApartAsync("the msbuild nodes a build leaves for the next end with pitstop (false)", () => new McpBuildNodesTests(restored), t => t.The_msbuild_nodes_a_build_leaves_for_the_next_end_with_passenger(false));
+        await Flow.StepApartAsync("the msbuild nodes a build leaves for the next end with pitstop (true)", () => new McpBuildNodesTests(restored), t => t.The_msbuild_nodes_a_build_leaves_for_the_next_end_with_passenger(true));
+        await Flow.StepApartAsync("nothing a build of passengers starts runs on under its salt once pitstop ends", () => new McpBuildNodesTests(restored), t => t.Nothing_a_build_of_passengers_starts_runs_on_under_its_salt_once_passenger_ends());
     }
 
     /// <summary>The MSBuild nodes a build of Passenger's leaves for its next build, which no other build takes up, end with
@@ -71,7 +71,7 @@ public sealed class McpBuildNodesTests : McpRig, IClassFixture<RestoredFolders>
                 own.AddRange(left.Select(OwnProcess.Of));
                 if (left.Count == 0 && build == NodeBuilds)
                 {
-                    Assert.Fail($"{NodeBuilds} builds left nothing for the next build to use, so there is nothing to see end with Passenger.{NoNodeLeft(passenger.Id, during, listed)}");
+                    Assert.Fail($"{NodeBuilds} builds left nothing for the next build to use, so there is nothing to see end with Pitstop.{NoNodeLeft(passenger.Id, during, listed)}");
                 }
             }
 
@@ -83,10 +83,10 @@ public sealed class McpBuildNodesTests : McpRig, IClassFixture<RestoredFolders>
             {
                 await client.DisposeAsync();
                 client = null;
-                Assert.True(passenger.WaitForExit(MainWindow.EndLimit + TimeSpan.FromSeconds(5).Scaled()), "Passenger did not end once its agent left");
+                Assert.True(passenger.WaitForExit(MainWindow.EndLimit + TimeSpan.FromSeconds(5).Scaled()), "Pitstop did not end once its agent left");
             }
             string[] running = [.. left.Where(id => !Processes.Gone(id)).Select(Processes.Describe)];
-            Assert.True(running.Length == 0, $"After Passenger {(killed ? "was killed" : "ended")}, {running.Length} of the {left.Count} processes its build left went on:\n{string.Join('\n', running)}");
+            Assert.True(running.Length == 0, $"After Pitstop {(killed ? "was killed" : "ended")}, {running.Length} of the {left.Count} processes its build left went on:\n{string.Join('\n', running)}");
         }
         finally
         {
@@ -116,7 +116,7 @@ public sealed class McpBuildNodesTests : McpRig, IClassFixture<RestoredFolders>
         await TakeFolderAsync();
         string two = await WriteTwoAsync();
         Process passenger = StartPassenger(["--mcp", two], languageServer: false);
-        string salt = $"passenger-{passenger.Id}";
+        string salt = $"pitstop-{passenger.Id}";
         IReadOnlyDictionary<int, string> during = new Dictionary<int, string>();
         McpClient? client = null;
         try
@@ -129,18 +129,18 @@ public sealed class McpBuildNodesTests : McpRig, IClassFixture<RestoredFolders>
                 Assert.True(built.GetProperty("succeeded").GetBoolean(), built.GetProperty("outcome").GetString());
                 during = Processes.SaltedBuilds(salt);
                 Assert.False(during.Values.Any(c => c.Contains("/nodemode:8", StringComparison.Ordinal)),
-                    $"Passenger's build ran in MSBuild's server, which outlives every build and keeps its nodes:\n{string.Join('\n', during.Values)}");
+                    $"Pitstop's build ran in MSBuild's server, which outlives every build and keeps its nodes:\n{string.Join('\n', during.Values)}");
                 if (!during.Values.Any(IsNode) && build == NodeBuilds)
                 {
-                    Assert.Fail($"{NodeBuilds} builds left no node under {salt}, so there is nothing to see end with Passenger.{NoNodeLeft(passenger.Id, [], Processes.Listed())}");
+                    Assert.Fail($"{NodeBuilds} builds left no node under {salt}, so there is nothing to see end with Pitstop.{NoNodeLeft(passenger.Id, [], Processes.Listed())}");
                 }
             }
             await client.DisposeAsync();
             client = null;
-            Assert.True(passenger.WaitForExit(MainWindow.EndLimit + TimeSpan.FromSeconds(5).Scaled()), "Passenger did not end once its agent left");
+            Assert.True(passenger.WaitForExit(MainWindow.EndLimit + TimeSpan.FromSeconds(5).Scaled()), "Pitstop did not end once its agent left");
             IReadOnlyDictionary<int, string> left = during;
             await Waiting.UntilAsync(() => (left = Processes.SaltedBuilds(salt)).Count == 0, TimeSpan.FromSeconds(10).Scaled(), TestContext.Current.CancellationToken, TimeSpan.FromMilliseconds(250));
-            Assert.True(left.Count == 0, $"After Passenger ended, {left.Count} of what its builds started went on under its salt {salt}, each holding its memory until "
+            Assert.True(left.Count == 0, $"After Pitstop ended, {left.Count} of what its builds started went on under its salt {salt}, each holding its memory until "
                 + $"MSBuild's idle timeout or for good:\n{string.Join('\n', left.Select(p => $"{p.Key} {p.Value}"))}");
         }
         finally
@@ -202,7 +202,7 @@ public sealed class McpBuildNodesTests : McpRig, IClassFixture<RestoredFolders>
     {
         IReadOnlyDictionary<int, string> now = Processes.Listed();
         IReadOnlyDictionary<int, string> nodes = Processes.MSBuildNodes();
-        string[] ours = [.. nodes.Where(n => $"{n.Value} ".Contains($"passenger-{passenger} ", StringComparison.Ordinal)).Select(n => $"{Seen(n.Key)} {n.Value}")];
+        string[] ours = [.. nodes.Where(n => $"{n.Value} ".Contains($"pitstop-{passenger} ", StringComparison.Ordinal)).Select(n => $"{Seen(n.Key)} {n.Value}")];
         (int counted, int most) = Processes.MSBuildNodesCounted();
         return $"\nPassenger: {Seen(passenger)}\nWhat its build ran while both steps did:\n{string.Join('\n', ran.Select(Seen))}" +
             $"\nPassenger's MSBuild nodes now:\n{string.Join('\n', ours)}" +

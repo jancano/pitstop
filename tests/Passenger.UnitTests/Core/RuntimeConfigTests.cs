@@ -67,7 +67,7 @@ public sealed class RuntimeConfigTests : IDisposable
         };
         Assert.True(read is not null && read.Count == given.Count && given.All(p => read.TryGetValue(p.Key, out string? value) && value == p.Value),
             $"The properties read as {(read is null ? "nothing" : string.Join(", ", read.Select(p => $"{p.Key}={p.Value}")))}, where the host gives {string.Join(", ", given.Select(p => $"{p.Key}={p.Value}"))}: "
-            + "a helper Passenger runs is given its configuration otherwise than its own host would give it");
+            + "a helper Pitstop runs is given its configuration otherwise than its own host would give it");
     }
 
     private void A_self_contained_build_runs_on_the_frameworks_it_carries_and_one_with_no_configuration_reads_as_none()

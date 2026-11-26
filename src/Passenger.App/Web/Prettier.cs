@@ -15,7 +15,7 @@ public sealed record PrettierAnswer(string? Formatted = null, int Cursor = 0, bo
 
 /// <summary>Prettier for the folder open: the project's own prettier package (found from each file's folder up, or the
 /// one Settings names) with its .prettierrc, .editorconfig and nearest .prettierignore. With no language server,
-/// Passenger's runner (<c>web/passenger/prettier.cjs</c>) runs its API on the web servers' runtime through ChildProcesses,
+/// Passenger's runner (<c>web/pitstop/prettier.cjs</c>) runs its API on the web servers' runtime through ChildProcesses,
 /// with a Yarn Plug'n'Play project's .pnp.cjs where it has one, one process kept warm for the folder, since the first format waits for Node.js to start and Prettier
 /// to load. Formats are asked one at a time, from any thread.</summary>
 public sealed class PrettierService : IAsyncDisposable
@@ -42,7 +42,7 @@ public sealed class PrettierService : IAsyncDisposable
     }
 
     /// <summary>The runner carried beside the app.</summary>
-    public static string Script => Path.Combine(WebLanguages.Carried, "passenger", "prettier.cjs");
+    public static string Script => Path.Combine(WebLanguages.Carried, "pitstop", "prettier.cjs");
 
     /// <summary>The Prettier package that formats a file as Settings configure it, null for none (Disabled, no package
     /// found, or a file of a folder not trusted). The glob is not asked: Reformat with Prettier formats any file Prettier reads.</summary>
@@ -150,7 +150,7 @@ public sealed class PrettierService : IAsyncDisposable
         }
         if (!File.Exists(Script))
         {
-            return new PrettierAnswer(Error: $"Passenger's Prettier runner is missing from the app's folder ({Script})");
+            return new PrettierAnswer(Error: $"Pitstop's Prettier runner is missing from the app's folder ({Script})");
         }
         await turn.WaitAsync(cancel).ConfigureAwait(false);
         try

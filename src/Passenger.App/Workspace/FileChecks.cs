@@ -26,13 +26,13 @@ internal sealed class FileChecks(Func<CSharpService?> csharp, Func<Git?> reposit
     /// way) and the marks a file's text gets.</summary>
     private readonly Check[] kinds =
     [
-        new(path => Language.ForPath(path) == Language.EditorConfig, "Passenger's reading of its sections and keys",
+        new(path => Language.ForPath(path) == Language.EditorConfig, "Pitstop's reading of its sections and keys",
             async (path, text) => await EditorConfigMarksAsync(csharp(), path, text.ToString())),
-        new(path => Language.ForPath(path) == Language.GitAttributes, "Passenger's reading of its attributes",
+        new(path => Language.ForPath(path) == Language.GitAttributes, "Pitstop's reading of its attributes",
             async (_, text) => GitAttributesMarks(text.ToString(), repository() is { } git ? await git.DriversAsync() : null)),
         new(GitIgnoreAssist.IsGitIgnore, GitIgnoreChecker, async (path, text) => await GitIgnoreMarksAsync(repository(), path, text)),
-        new(path => Path.GetExtension(path).Equals(".slnx", StringComparison.OrdinalIgnoreCase), "Passenger's reading of the solution", (path, text) => Task.FromResult(SolutionMarks(path, text))),
-        new(HttpFile.Is, "Passenger's reading of its requests", (path, text) => Task.FromResult(RequestMarks(path, text))),
+        new(path => Path.GetExtension(path).Equals(".slnx", StringComparison.OrdinalIgnoreCase), "Pitstop's reading of the solution", (path, text) => Task.FromResult(SolutionMarks(path, text))),
+        new(HttpFile.Is, "Pitstop's reading of its requests", (path, text) => Task.FromResult(RequestMarks(path, text))),
     ];
 
     protected override (string Checker, Check Kept)? Follow(OpenDocument document) =>

@@ -323,7 +323,7 @@ public static class PassengerApp
         UiThread.Check();
         if (Fronts.LastOrDefault(w => w is { IsStarted: true, TakesLaunches: true }) is not { } from)
         {
-            return HandedLaunch.Answer(null, "Passenger has no window ready to take it");
+            return HandedLaunch.Answer(null, "Pitstop has no window ready to take it");
         }
         string? place = launch.Folder ?? (launch.Files.Count > 0 ? Path.GetDirectoryName(launch.Files[0]) : null);
         MainWindow? holding = place is null ? from : Open

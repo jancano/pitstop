@@ -24,7 +24,7 @@ public sealed class McpGodotEditorTests : McpRig
             {
                 CallToolResult refused = await Result(client, McpTools.GodotEditor, new() { ["action"] = action });
                 Assert.True(refused.IsError == true && Text(refused).Contains(Refusals.GodotEditorOfPerson, StringComparison.Ordinal),
-                    $"godot_editor {action} on an agent's own Passenger answered: {Text(refused)}");
+                    $"godot_editor {action} on an agent's own Pitstop answered: {Text(refused)}");
             }
         }
         finally

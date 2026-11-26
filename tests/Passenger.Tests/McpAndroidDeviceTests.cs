@@ -21,7 +21,7 @@ namespace Passenger.Tests;
 [Collection(Alone.Name)]
 public sealed class McpAndroidDeviceTests : McpRig
 {
-    private const string Package = "net.passengeride.tests.androidapp";
+    private const string Package = "net.pitstopide.tests.androidapp";
 
     [Fact]
     public async Task An_agents_run_of_an_android_app_on_an_emulator_answers_once_it_has_started_there_naming_the_emulator_and_stop_once_it_has_ended()
@@ -245,13 +245,13 @@ public sealed class McpAndroidDeviceTests : McpRig
         await Call(client, McpTools.IdeAction, new() { ["action"] = AppActions.ChooseRunTarget, ["input"] = target.Name });
         JsonElement started = await Call(client, McpTools.DebugStart, new() { ["configuration"] = "AndroidApp", ["waitSeconds"] = 5 });
         string serial = await SerialAsync(target, project);
-        Assert.True((await LeftAsync(tools, serial)).Length > 0, $"debug_start put nothing of Passenger's on the emulator: {started}");
+        Assert.True((await LeftAsync(tools, serial)).Length > 0, $"debug_start put nothing of Pitstop's on the emulator: {started}");
 
         await Call(client, McpTools.Stop);
         await client.DisposeAsync();
-        Assert.True(await Waiting.Within(passenger.WaitForExitAsync(Cancel), TimeSpan.FromMinutes(1), Cancel), "Passenger did not end once the agent went");
+        Assert.True(await Waiting.Within(passenger.WaitForExitAsync(Cancel), TimeSpan.FromMinutes(1), Cancel), "Pitstop did not end once the agent went");
         string left = await LeftAsync(tools, serial);
-        Assert.True(left.Length == 0, $"Passenger went leaving on the emulator {left}: the next start finds them, and the app runs on marked as debugged");
+        Assert.True(left.Length == 0, $"Pitstop went leaving on the emulator {left}: the next start finds them, and the app runs on marked as debugged");
     }
 
     /// <summary>An agent's Passenger the system asks to end (SIGTERM) while its debugged app's end on the emulator is held past
@@ -285,14 +285,14 @@ public sealed class McpAndroidDeviceTests : McpRig
         JsonElement debugged = await Call(client, McpTools.DebugStart, new() { ["configuration"] = "AndroidApp", ["waitSeconds"] = 3600 });
         Assert.True(debugged.GetProperty("state").GetString() == "running", $"debug_start did not leave the app running debugged on the emulator: {debugged}");
         string serial = await SerialAsync(target, project);
-        Assert.True((await LeftAsync(tools, serial)).Length > 0, $"debug_start put nothing of Passenger's on the emulator: {debugged}");
+        Assert.True((await LeftAsync(tools, serial)).Length > 0, $"debug_start put nothing of Pitstop's on the emulator: {debugged}");
 
         OwnProcess.Of(passenger).Terminate();
-        Assert.True(await Waiting.Within(passenger.WaitForExitAsync(Cancel), TimeSpan.FromMinutes(1), Cancel), "Passenger did not end once the system asked it to");
+        Assert.True(await Waiting.Within(passenger.WaitForExitAsync(Cancel), TimeSpan.FromMinutes(1), Cancel), "Pitstop did not end once the system asked it to");
         string left = await LeftAsync(tools, serial);
-        Assert.True(left.Length == 0, $"Passenger went as the system asked leaving on the emulator {left}: the next start finds them, and the app runs on marked as debugged");
+        Assert.True(left.Length == 0, $"Pitstop went as the system asked leaving on the emulator {left}: the next start finds them, and the app runs on marked as debugged");
         string running = (await ChildProcesses.RunAsync(ChildProcesses.Command(tools.Adb, ["-s", serial, "shell", "pidof", Package]), cancel: Cancel)).Output.Trim();
-        Assert.True(running.Length == 0, $"Passenger went as the system asked with its debugged app still running on the emulator as {running}");
+        Assert.True(running.Length == 0, $"Pitstop went as the system asked with its debugged app still running on the emulator as {running}");
     }
 
     /// <summary>What a Debug start leaves on the emulator of <paramref name="serial"/>: a port forwarded to a relay's or an
@@ -305,9 +305,9 @@ public sealed class McpAndroidDeviceTests : McpRig
         string relay = (await ChildProcesses.RunAsync(ChildProcesses.Command(tools.Adb,
             ["-s", serial, "shell", $"run-as {Package} ls files/.__override__/arm64-v8a files/.__override__/x86_64 2>/dev/null"]))).Output;
         string debugged = (await ChildProcesses.RunAsync(ChildProcesses.Command(tools.Adb, ["-s", serial, "shell", "dumpsys activity processes | grep mDebugApp="]))).Output;
-        return string.Join("; ", [.. forwards.Split('\n').Where(l => l.StartsWith(serial + " ", StringComparison.Ordinal) && l.Contains("localabstract:passenger-", StringComparison.Ordinal))
+        return string.Join("; ", [.. forwards.Split('\n').Where(l => l.StartsWith(serial + " ", StringComparison.Ordinal) && l.Contains("localabstract:pitstop-", StringComparison.Ordinal))
                 .Select(l => l.Trim()),
-            .. reverses.Split('\n').Where(l => l.Contains("localabstract:passenger-", StringComparison.Ordinal)).Select(l => l.Trim()),
+            .. reverses.Split('\n').Where(l => l.Contains("localabstract:pitstop-", StringComparison.Ordinal)).Select(l => l.Trim()),
             .. relay.Contains(AndroidApp.RelayFile, StringComparison.Ordinal) ? ["the relay in the app"] : (string[])[],
             .. debugged.Contains($"mDebugApp={Package}/", StringComparison.Ordinal) ? [$"{Package} marked as debugged"] : (string[])[]]);
     }

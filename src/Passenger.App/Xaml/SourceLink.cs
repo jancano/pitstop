@@ -15,14 +15,14 @@ public interface ILibraryFiles
 }
 
 /// <summary>A library's files through its Source Link: the portable PDB its assembly names, from NuGet's symbol server
-/// (<c>PASSENGER_SYMBOLS</c> names another), its Source Link map from the build's paths to the repository's, and the
+/// (<c>PITSTOP_SYMBOLS</c> names another), its Source Link map from the build's paths to the repository's, and the
 /// project folder its documents are in; each file downloaded once over HTTPS (<see cref="OutboundHttp"/>) into
 /// MetadataAsSource/SourceLink/, which the
 /// editor shows read-only, written whole or not at all and never outside its assembly version's folder.</summary>
 public sealed class SourceLink : ILibraryFiles
 {
     [IdentifierHome]
-    public const string Variable = "PASSENGER_SYMBOLS";
+    public const string Variable = "PITSTOP_SYMBOLS";
 
     private static readonly Guid SourceLinkKind = new("CC110556-A091-4D38-9FEC-25AB9A351A6A");
 

@@ -162,7 +162,7 @@ public sealed class BlazorBrowserDebuggingTests(StandInAppHost appHost) : IDispo
                 () => $"the page to ask for its .NET code ({Sessions(window)}; {Ui.Said(window)}; {Consoles(window)}; the browser said: {BrowserSaid()})", TimeSpan.FromMinutes(3));
             Assert.False(BrowserRefused(window), $"No browser asks for the page, as none started: {Ui.Said(window)}");
             int ended = Ui.Await(Waiting.Apart(EndNetworkService), "the browser's network service to be ended");
-            Assert.True(ended > 0, $"The browser Passenger started has no network service to end: {BrowserSaid()}");
+            Assert.True(ended > 0, $"The browser Pitstop started has no network service to end: {BrowserSaid()}");
 
             string browser = ChromiumBrowsers.Find(null)!.Name;
             Ui.WaitFor(() => Consoles(window).Contains($"{browser}'s network service ended as the page loaded its .NET code, which it could then not fetch: the page is loaded again",
@@ -319,7 +319,7 @@ public sealed class BlazorBrowserDebuggingTests(StandInAppHost appHost) : IDispo
         string[] reached = Reached(netLog);
         Assert.Contains(reached, address => address.StartsWith("127.0.0.1:", StringComparison.Ordinal) || address.StartsWith("[::1]:", StringComparison.Ordinal));
         string[] elsewhere = [.. reached.Where(address => !address.StartsWith("127.0.0.1:", StringComparison.Ordinal) && !address.StartsWith("[::1]:", StringComparison.Ordinal))];
-        Assert.True(elsewhere.Length == 0, $"The browser Passenger started for debugging connected beyond this machine: {string.Join(", ", elsewhere)}");
+        Assert.True(elsewhere.Length == 0, $"The browser Pitstop started for debugging connected beyond this machine: {string.Join(", ", elsewhere)}");
     }
 
     /// <summary>The browser a standalone WebAssembly app is debugged in starts no updater while the app runs, past the 19 s
@@ -357,11 +357,11 @@ public sealed class BlazorBrowserDebuggingTests(StandInAppHost appHost) : IDispo
         {
             End(window);
         }
-        Assert.True(updaters.Count == 0, $"The browser Passenger started for debugging started an updater: {string.Join("; ", updaters.Distinct())}");
+        Assert.True(updaters.Count == 0, $"The browser Pitstop started for debugging started an updater: {string.Join("; ", updaters.Distinct())}");
         string log = Ui.Shared(IdeLog.PathOf(IdeLog.Debugger));
         string[] said = [.. log[Math.Min(logged, log.Length)..].Split('\n')
             .Where(l => l.Contains(tag, StringComparison.Ordinal) && l.Contains("updater", StringComparison.OrdinalIgnoreCase))];
-        Assert.True(said.Length == 0, $"The browser Passenger started for debugging ran an updater, which wrote:\n{string.Join('\n', said.Take(6))}");
+        Assert.True(said.Length == 0, $"The browser Pitstop started for debugging ran an updater, which wrote:\n{string.Join('\n', said.Take(6))}");
 
         static IEnumerable<int> Under(int id) => DotnetProcesses.StartedBy(id).SelectMany(child => (int[])[child, .. Under(child)]);
     }

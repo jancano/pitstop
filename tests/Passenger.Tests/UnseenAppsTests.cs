@@ -32,8 +32,8 @@ public sealed class UnseenAppsTests : IDisposable
         Flow.StepApart<UnseenAppsTests>("a named dotnet run of another project is kept off the screen by what that project is", t => t.A_named_dotnet_run_of_another_project_is_kept_off_the_screen_by_what_that_project_is());
         Flow.StepApart<UnseenAppsTests>("an Avalonia app dotnet watch would start is kept off the screen", t => t.An_avalonia_app_dotnet_watch_would_start_is_kept_off_the_screen());
         Flow.StepApart<UnseenAppsTests>("a desktop project never built is known by what it says before dotnet watch builds it", t => t.A_desktop_project_never_built_is_known_by_what_it_says_before_dotnet_watch_builds_it());
-        Flow.StepApart<UnseenAppsTests>("a simulator's window opens in the background for a person's window and never for a Passenger nobody sees", t => t.A_simulators_window_opens_in_the_background_for_a_persons_window_and_never_for_a_passenger_nobody_sees());
-        await Flow.StepApartAsync("on Linux a display a configuration names stays out of what a Passenger nobody sees starts", () => new UnseenAppsTests(), t => t.On_Linux_a_display_a_configuration_names_stays_out_of_what_a_passenger_nobody_sees_starts());
+        Flow.StepApart<UnseenAppsTests>("a simulator's window opens in the background for a person's window and never for a Pitstop nobody sees", t => t.A_simulators_window_opens_in_the_background_for_a_persons_window_and_never_for_a_passenger_nobody_sees());
+        await Flow.StepApartAsync("on Linux a display a configuration names stays out of what a Pitstop nobody sees starts", () => new UnseenAppsTests(), t => t.On_Linux_a_display_a_configuration_names_stays_out_of_what_a_passenger_nobody_sees_starts());
     }
 
     private void A_gtk_program_a_configuration_names_never_reaches_the_screen()
@@ -119,7 +119,7 @@ public sealed class UnseenAppsTests : IDisposable
         Assert.Equal(["-g", $"devices://device/open?id={Udid}"], AppleSimulators.WindowOpening(unseen: false, null, Udid));
         Assert.True(AppleSimulators.WindowOpening(unseen: true, simulator, Udid) is null
             && AppleSimulators.WindowOpening(unseen: true, null, Udid) is null,
-            "A Passenger nobody sees would open a simulator's window on the person's screen");
+            "A Pitstop nobody sees would open a simulator's window on the person's screen");
     }
 
     /// <summary>A launch profile may name a display, as one forwarded over SSH does: where nobody is to see the program, that
@@ -138,7 +138,7 @@ public sealed class UnseenAppsTests : IDisposable
         LaunchPlan plan = await LaunchPlan.ResolveAsync(named, [], null, folder, TestContext.Current.CancellationToken, unseen: true);
         LaunchPlan seen = await LaunchPlan.ResolveAsync(named, [], null, folder, TestContext.Current.CancellationToken, unseen: false);
 
-        Assert.False(plan.Environment.ContainsKey(NoDisplay.X11), "A configuration's DISPLAY reaches what a Passenger nobody sees starts");
+        Assert.False(plan.Environment.ContainsKey(NoDisplay.X11), "A configuration's DISPLAY reaches what a Pitstop nobody sees starts");
         Assert.Equal((NoDisplay.Nowhere, "yes"), (plan.Environment[NoDisplay.Wayland], plan.Environment["KEPT"]));
         Assert.Equal((":1", "wayland-1"), (seen.Environment[NoDisplay.X11], seen.Environment[NoDisplay.Wayland]));
     }
@@ -161,10 +161,10 @@ public sealed class UnseenAppsTests : IDisposable
     {
         if (OperatingSystem.IsWindows())
         {
-            Assert.True(plan.OnOwnDesktop && plan.WhyNot("run") is null, $"{called} a Passenger nobody sees runs went to the person's desktop: {plan.WhyNot("run")}");
+            Assert.True(plan.OnOwnDesktop && plan.WhyNot("run") is null, $"{called} a Pitstop nobody sees runs went to the person's desktop: {plan.WhyNot("run")}");
             return;
         }
         Assert.True(plan.WhyNot("run") is { } why && why.Contains(called, StringComparison.Ordinal),
-            $"{called} a Passenger nobody sees runs was let through to the person's screen: {plan.WhyNot("run")}");
+            $"{called} a Pitstop nobody sees runs was let through to the person's screen: {plan.WhyNot("run")}");
     }
 }

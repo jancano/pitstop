@@ -61,7 +61,7 @@ public sealed class RemoteStylesheets(Func<bool> download)
     {
         if (address.Scheme != Uri.UriSchemeHttps && address.Scheme != Uri.UriSchemeHttp)
         {
-            return new Fetched(null, null, $"Passenger reads stylesheets from http and https addresses, not {address}");
+            return new Fetched(null, null, $"Pitstop reads stylesheets from http and https addresses, not {address}");
         }
         (string, string?) link = (address.AbsoluteUri, integrity);
         return await fetches.Take(link, () => FetchOnceAsync(address, integrity, link)).WaitAsync(cancel);

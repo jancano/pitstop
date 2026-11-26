@@ -335,7 +335,7 @@ internal sealed partial class CodeActions
                 return RefactorOutcome.Refused($"{title} was not applied: {made.Refused}") with
                 {
                     Anyway = new FixConfirmed(
-                        () => Task.FromResult(document.Text.Snapshot == asked ? $"Passenger can't see whether {(one ? "this place uses" : "these places use")} {old}:\n\n"
+                        () => Task.FromResult(document.Text.Snapshot == asked ? $"Pitstop can't see whether {(one ? "this place uses" : "these places use")} {old}:\n\n"
                             + $"{string.Join("\n", unseen)}\n\nRename it to {name} anyway, leaving {(one ? "it as it is" : "them as they are")}?" : null),
                         "Rename Anyway",
                         async _ => document.Text.Snapshot == asked && await GDScriptRenameAsync(document, offset, name, anyway: true) is { } forced ? forced

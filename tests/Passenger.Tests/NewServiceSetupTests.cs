@@ -192,7 +192,7 @@ public sealed class NewServiceSetupTests : IDisposable
         File.WriteAllText(Path.Combine(folder, ".template.config", "template.json"), $$"""
             {
               "$schema": "http://json.schemastore.org/template",
-              "author": "Passenger's tests",
+              "author": "Pitstop's tests",
               "classifications": [ {{string.Join(", ", classifications.Select(c => $"\"{c}\""))}} ],
               "identity": "Passenger.Tests.{{shortName}}",
               "groupIdentity": "Passenger.Tests.{{shortName}}.Group",
@@ -573,7 +573,7 @@ public sealed class NewServiceSetupTests : IDisposable
         Assert.SkipUnless(OperatingSystem.IsMacOS(), "A volume of the test's own is a disk image hdiutil makes, on macOS alone");
         string volume = Directory.CreateDirectory(Path.Combine(place, "volume")).FullName;
         string disk = Path.Combine(place, "volume.dmg");
-        ChildResult image = Ran("/usr/bin/hdiutil", "create", "-size", "64m", "-fs", "HFS+", "-volname", "Passenger Undo Tests", "-ov", disk, "-quiet");
+        ChildResult image = Ran("/usr/bin/hdiutil", "create", "-size", "64m", "-fs", "HFS+", "-volname", "Pitstop Undo Tests", "-ov", disk, "-quiet");
         Assert.SkipUnless(image.Succeeded, $"hdiutil made no disk image (exit code {image.ExitCode}): {image.Error}{image.Output}");
         ChildResult attached = Ran("/usr/bin/hdiutil", "attach", disk, "-nobrowse", "-noautoopen", "-mountpoint", volume, "-quiet");
         Assert.SkipUnless(attached.Succeeded, $"hdiutil attached no disk image (exit code {attached.ExitCode}): {attached.Error}{attached.Output}");

@@ -55,7 +55,7 @@ public sealed class GodotAgentCallTests
                     await second.SetPropertyAsync(1, "text", new string('x', 32 * 1024 * 1024));
                 }
             });
-            Assert.EndsWith("waiting for its connection to take scene:set_object_property, which it would not: Passenger let go of the connection", refused, StringComparison.Ordinal);
+            Assert.EndsWith("waiting for its connection to take scene:set_object_property, which it would not: Pitstop let go of the connection", refused, StringComparison.Ordinal);
             Ui.WaitFor(() => second.State == LiveAppState.Ended, "the connection let go of to end the game's debugging");
         }
         finally
@@ -75,8 +75,8 @@ public sealed class GodotAgentCallTests
         TcpClient standIn = new();
         standIn.Connect(IPAddress.Loopback, new Uri(address).Port);
         Ui.WaitFor(() => game.State == LiveAppState.Connected, () => "the stand-in game to connect: " + (game.ConnectionTaken
-            ? "Passenger took its connection, but the word of it posted to the window's thread never ran there"
-            : "its connect was made, but Passenger never took the connection"));
+            ? "Pitstop took its connection, but the word of it posted to the window's thread never ran there"
+            : "its connect was made, but Pitstop never took the connection"));
         return (game, standIn);
     }
 

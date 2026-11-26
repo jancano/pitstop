@@ -24,7 +24,7 @@ public sealed class XamlTimingTests : IClassFixture<XamlTimingTests.LongView>
     public void A_long_view_and_passengers_own_types_never_hold_the_window_taking_keys()
     {
         Flow.StepApart("completion in a five-thousand-line view reads the view once a key", () => new XamlTimingTests(app), t => t.Completion_in_a_five_thousand_line_view_reads_the_view_once_a_key());
-        Flow.StepApart("reading Passenger's own types for its XAML leaves the window taking keys", () => new XamlTimingTests(app), t => t.Reading_passengers_own_types_for_its_xaml_leaves_the_window_taking_keys());
+        Flow.StepApart("reading Pitstop's own types for its XAML leaves the window taking keys", () => new XamlTimingTests(app), t => t.Reading_passengers_own_types_for_its_xaml_leaves_the_window_taking_keys());
     }
 
     /// <summary>Completion after '&lt;' in a view of five thousand lines allocates, over every thread, under one and a half

@@ -23,7 +23,7 @@ public sealed partial record MacCatalystApp(string Bundle, string Executable)
         $"{name}'s build trims .NET's own assemblies, so {KeptOut}. Its Debug build keeps them whole with {LinkNone}";
 
     /// <summary>What stays out of an app whose build trims .NET's own assemblies, which the banner's edit of it says too.</summary>
-    public const string KeptOut = "Passenger's inspector and update handlers' hook, which need them whole, stay out of it: "
+    public const string KeptOut = "Pitstop's inspector and update handlers' hook, which need them whole, stay out of it: "
         + "the Live Visual Tree and an agent's app tools do not reach it, and Hot Reload calls no update handler";
 
     /// <summary>The property that keeps a build's assemblies whole, as a project writes it.</summary>
@@ -55,7 +55,7 @@ public sealed partial record MacCatalystApp(string Bundle, string Executable)
     public static string ContainerTemporary(string home, string package) => Path.Combine(home, "Library", "Containers", package, "Data", "tmp");
 
     /// <summary>The name of the folder a start carries into, its own however many Passengers and starts open the app at once.</summary>
-    public static string CarriedName(int process, int start) => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"passenger-{process}-{start}");
+    public static string CarriedName(int process, int start) => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"pitstop-{process}-{start}");
 
     /// <summary>The folder of the app's bundle whose assemblies it loads, each beside its PDB.</summary>
     public string Assemblies => Path.Combine(Bundle, "Contents", "MonoBundle");

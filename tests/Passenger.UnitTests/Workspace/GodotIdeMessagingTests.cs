@@ -31,7 +31,7 @@ public class GodotIdeMessagingTests
 
     private void Only_a_godot_editor_of_the_protocol_s_major_and_no_later_minor_is_talked_to()
     {
-        Assert.Equal("GodotIdeClient,Version=1.1.2,Passenger", GodotIdeMessaging.ClientHandshake);
+        Assert.Equal("GodotIdeClient,Version=1.1.2,Pitstop", GodotIdeMessaging.ClientHandshake);
         Assert.True(GodotIdeMessaging.IsServerHandshake("GodotIdeServer,Version=1.1.0,server"));
         Assert.True(GodotIdeMessaging.IsServerHandshake("GodotIdeServer,Version=1.0.7,server"));
         Assert.False(GodotIdeMessaging.IsServerHandshake("GodotIdeServer,Version=1.2.0,server"), "a later minor version refuses a client of an earlier one");

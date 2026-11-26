@@ -46,7 +46,7 @@ public static class OutboundHttp
     public static HttpRequestMessage Request(HttpMethod method, Uri uri)
     {
         HttpRequestMessage request = new(method, uri);
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Passenger", Product.Version));
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Pitstop", Product.Version));
         return request;
     }
 
@@ -78,14 +78,14 @@ public static class OutboundHttp
             }
             if (response.Content.Headers.ContentLength is > 0 and var length && length > most)
             {
-                return (null, $"{named} is {Sizes.Said(length)}, more than the {Sizes.Said(most)} Passenger reads");
+                return (null, $"{named} is {Sizes.Said(length)}, more than the {Sizes.Said(most)} Pitstop reads");
             }
             Stream stream = await response.Content.ReadAsStreamAsync(cancel).ConfigureAwait(false);
             await using (stream.ConfigureAwait(false))
             {
                 return await Streams.BoundedAsync(stream, most, cancel).ConfigureAwait(false) is { } bytes
                     ? (bytes, null)
-                    : (null, $"{named} is more than the {Sizes.Said(most)} Passenger reads");
+                    : (null, $"{named} is more than the {Sizes.Said(most)} Pitstop reads");
             }
         }
         catch (Exception error) when (error is HttpRequestException or IOException || (error is TaskCanceledException && !cancel.IsCancellationRequested))

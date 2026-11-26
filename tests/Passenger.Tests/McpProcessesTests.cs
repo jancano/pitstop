@@ -29,8 +29,8 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
     [Fact]
     public async Task A_change_one_Passenger_makes_is_one_named_change_set_in_another_and_a_killed_one_leaves_nothing_running()
     {
-        await Flow.StepApartAsync("a change one passenger makes is one change set named for it in another on the same state and in one started after", () => new McpProcessesTests(restored), t => t.A_change_one_passenger_makes_is_one_change_set_named_for_it_in_another_on_the_same_state_and_in_one_started_after());
-        await Flow.StepApartAsync("a Passenger killed while it loads runs profiles debugs and builds a project leaves none of it running", () => new McpProcessesTests(restored), t => t.A_Passenger_killed_while_it_loads_runs_profiles_debugs_and_builds_a_project_leaves_none_of_it_running());
+        await Flow.StepApartAsync("a change one pitstop makes is one change set named for it in another on the same state and in one started after", () => new McpProcessesTests(restored), t => t.A_change_one_passenger_makes_is_one_change_set_named_for_it_in_another_on_the_same_state_and_in_one_started_after());
+        await Flow.StepApartAsync("a Pitstop killed while it loads runs profiles debugs and builds a project leaves none of it running", () => new McpProcessesTests(restored), t => t.A_Passenger_killed_while_it_loads_runs_profiles_debugs_and_builds_a_project_leaves_none_of_it_running());
     }
 
     /// <summary>Local History shared with the person's window as one flow, each step one test's check in an instance of
@@ -39,8 +39,8 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
     [AvaloniaFact]
     public void An_agents_Local_History_and_labels_outlast_the_persons_window_pruning_the_shared_history()
     {
-        Flow.StepApart("what an agents own passenger keeps in local history outlasts the persons window pruning the history", () => new McpProcessesTests(restored), t => t.What_an_agents_own_passenger_keeps_in_local_history_outlasts_the_persons_window_pruning_the_history());
-        Flow.StepApart("labels an agents passenger puts as the persons window prunes the shared history are all kept", () => new McpProcessesTests(restored), t => t.Labels_an_agents_passenger_puts_as_the_persons_window_prunes_the_shared_history_are_all_kept());
+        Flow.StepApart("what an agents own pitstop keeps in local history outlasts the persons window pruning the history", () => new McpProcessesTests(restored), t => t.What_an_agents_own_passenger_keeps_in_local_history_outlasts_the_persons_window_pruning_the_history());
+        Flow.StepApart("labels an agents pitstop puts as the persons window prunes the shared history are all kept", () => new McpProcessesTests(restored), t => t.Labels_an_agents_passenger_puts_as_the_persons_window_prunes_the_shared_history_are_all_kept());
     }
 
     /// <summary>An agent's windowless Passenger over the person's folder keeps its Local History in the person's store: what
@@ -75,7 +75,7 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
 
         // Taken here, on the UI thread, where the folder is restored.
         string taken = Folder;
-        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], languageServer: false)), "the agent's Passenger starting");
+        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], languageServer: false)), "the agent's Pitstop starting");
         try
         {
             Await(Waiting.Apart(() => Call(client, McpTools.Open, new() { ["path"] = "Notes.txt" })), "the agent opening Notes.txt");
@@ -87,7 +87,7 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
             Gone(client);
         }
         Process agents = LastPassenger();
-        WaitFor(() => !DotnetProcesses.Runs(agents), "the agent's Passenger to end");
+        WaitFor(() => !DotnetProcesses.Runs(agents), "the agent's Pitstop to end");
         Ui.WaitFor(() => File.ReadAllText(notes) == "second first draft\n", "the person's window to see the agent's change");
 
         // The next day's save, at which the window prunes the oldest of its history.
@@ -106,7 +106,7 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
             string kept = PathNames.Canonical(notes);
             bool Drafted() => history.Snapshot().Events.Any(e => PathNames.Same(e.Path ?? string.Empty, kept)
                 && new[] { e.Before, e.After }.OfType<string>().Any(hash => history.Content(hash) is { } bytes && System.Text.Encoding.UTF8.GetString(bytes) == "first draft\n"));
-            Ui.WaitFor(Drafted, "Local History to have Notes.txt as it was before the agent changed it: the person's window pruning its history erased what the agent's Passenger kept",
+            Ui.WaitFor(Drafted, "Local History to have Notes.txt as it was before the agent changed it: the person's window pruning its history erased what the agent's Pitstop kept",
                 TimeSpan.FromSeconds(20));
         }
         finally
@@ -129,7 +129,7 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
             $"{{\"s\":{(now - 100_000_000) * 1000 + i},\"t\":{now - ((Earlier - i) * 200L)},\"k\":\"label\",\"n\":\"earlier {i}\"}}\n")));
         // Taken here, on the UI thread, where the folder is restored.
         string taken = Folder;
-        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], languageServer: false)), "the agent's Passenger starting");
+        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], languageServer: false)), "the agent's Pitstop starting");
         long[] clock = [new DateTimeOffset(2026, 3, 2, 9, 0, 0, TimeSpan.Zero).UtcTicks];
         global::Passenger.App.History.HistoryKeeping day = new(Days: 1) { Clock = () => new(Interlocked.Read(ref clock[0]), TimeSpan.Zero) };
         MainWindow window = new() { Width = 1200, Height = 800, StateFolder = OwnState, HistoryKeeping = day, StartsLanguageServer = false };
@@ -140,7 +140,7 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
         try
         {
             Assert.Equal(PathNames.Canonical(Path.GetDirectoryName(log)!), PathNames.Canonical(window.LocalHistory!.Root));
-            Await(Waiting.Apart(() => Call(client, McpTools.Workspace)), "the agent's Passenger to have the folder open");
+            Await(Waiting.Apart(() => Call(client, McpTools.Workspace)), "the agent's Pitstop to have the folder open");
             bool saving = true;
             Task<int> labelling = Waiting.Apart(async () =>
             {
@@ -173,7 +173,7 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
                     .Where(name => name.StartsWith("agent ", StringComparison.Ordinal))];
                 lost = [.. Enumerable.Range(1, labels).Select(n => $"agent {n}").Where(label => !kept.Contains(label))];
                 return lost.Count == 0;
-            }, () => $"the {labels} labels the agent's Passenger put, of which the person's window pruning the shared history lost {lost.Count}: {string.Join(", ", lost.Take(20))}",
+            }, () => $"the {labels} labels the agent's Pitstop put, of which the person's window pruning the shared history lost {lost.Count}: {string.Join(", ", lost.Take(20))}",
                 TimeSpan.FromSeconds(30));
             Assert.True(File.ReadAllLines(log).Count(line => line.Contains("\"earlier ", StringComparison.Ordinal)) == Earlier, "The earlier labels, which both keep, were not all kept");
         }
@@ -198,18 +198,18 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
             {
                 await Call(editing, McpTools.Edit, new() { ["path"] = "Notes.txt", ["oldText"] = "notes", ["newText"] = "notes kept" });
                 string[] made = await Titles(editing);
-                Assert.True(made is ["Change"], $"The Passenger that made the change lists [{string.Join(", ", made)}]");
+                Assert.True(made is ["Change"], $"The Pitstop that made the change lists [{string.Join(", ", made)}]");
             }
             // A file made after the change is heard after it: kept in the folder's history, the change has been heard too.
             File.WriteAllText(Path.Combine(folder, "Heard.txt"), "heard\n");
             await Until(async () => (await Call(watching, McpTools.LocalHistory)).GetProperty("rows").EnumerateArray()
-                .Any(r => r.GetProperty("files").EnumerateArray().Any(f => f.GetString() == "Heard.txt")), "the other Passenger to hear the changes on disk");
+                .Any(r => r.GetProperty("files").EnumerateArray().Any(f => f.GetString() == "Heard.txt")), "the other Pitstop to hear the changes on disk");
             string[] heard = await Titles(watching);
-            Assert.True(heard is ["Change"], $"The Passenger that heard the change lists [{string.Join(", ", heard)}], not the one change set of the edit");
+            Assert.True(heard is ["Change"], $"The Pitstop that heard the change lists [{string.Join(", ", heard)}], not the one change set of the edit");
         }
         await using McpClient after = await Start(["--mcp", folder], languageServer: false);
         string[] read = await Titles(after);
-        Assert.True(read is ["Change"], $"A Passenger started after both lists [{string.Join(", ", read)}], not the one change set of the edit");
+        Assert.True(read is ["Change"], $"A Pitstop started after both lists [{string.Join(", ", read)}], not the one change set of the edit");
 
         async Task<string[]> Titles(McpClient client) =>
             [.. (await Call(client, McpTools.LocalHistory, new() { ["path"] = "Notes.txt" })).GetProperty("rows").EnumerateArray().Select(r => r.GetProperty("title").GetString()!)];
@@ -276,7 +276,7 @@ public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
             giveUp.Cancel();
             OwnProcess.Of(passenger).Kill(alone: true);
             string[] left = [.. started.Where(id => !Processes.Gone(id)).Select(Processes.Describe)];
-            Assert.True(left.Length == 0, $"Passenger, killed, left running {left.Length} of the {started.Count} processes it had started:\n{string.Join('\n', left)}");
+            Assert.True(left.Length == 0, $"Pitstop, killed, left running {left.Length} of the {started.Count} processes it had started:\n{string.Join('\n', left)}");
         }
         finally
         {

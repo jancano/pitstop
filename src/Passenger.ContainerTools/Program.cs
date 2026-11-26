@@ -6,7 +6,7 @@ using Words = Passenger.Profiler.ContainerToolsWords;
 // Passenger's container tools, run by the IDE through docker exec. The first word is the mode; a mode or flag it does not
 // know is fatal (exit code 2), so a typo never runs something other than what was asked.
 const string Usage = $$"""
-    passenger-tools MODE [FLAGS]
+    pitstop-tools MODE [FLAGS]
       {{Words.Dap}}        Passenger's debug adapter on standard input and output ({{Words.Dap}} --help lists its flags)
       {{Words.Processes}}  this container's .NET programs as a JSON array, those the debugger cannot attach to saying why
       {{Words.Trace}}      {{Words.Pid}} PID [{{Words.Resume}}] [{{Words.Requests}} | {{Words.Metrics}}]: the profiler's EventPipe session of a program, its
@@ -29,7 +29,7 @@ string[] rest = args[1..];
 switch (args[0])
 {
     case Words.Dap:
-        return await Passenger.DebugAdapter.AdapterProgram.RunAsync(rest, $"passenger-tools {Words.Dap}");
+        return await Passenger.DebugAdapter.AdapterProgram.RunAsync(rest, $"pitstop-tools {Words.Dap}");
     case Words.Processes:
         if (!NoFlags(Words.Processes, rest))
         {

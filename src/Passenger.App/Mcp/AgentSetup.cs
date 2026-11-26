@@ -39,16 +39,16 @@ public sealed record AgentSetup(string Executable, string? Folder, ShellKind She
     };
 
     /// <summary>Claude Code's command, run in a terminal's <see cref="Shell"/>.</summary>
-    public string ClaudeCode => $"claude mcp add passenger -- {ShellWords.Quoted(Executable, Shell)} --mcp-attach";
+    public string ClaudeCode => $"claude mcp add pitstop -- {ShellWords.Quoted(Executable, Shell)} --mcp-attach";
 
     /// <summary>A repository's .mcp.json, which Claude Code reads for everyone working there.</summary>
     public string McpJson => Json(["--mcp-attach"]);
 
     /// <summary>Codex's command, run in a terminal's <see cref="Shell"/>.</summary>
-    public string Codex => $"codex mcp add passenger -- {ShellWords.Quoted(Executable, Shell)} --mcp-attach";
+    public string Codex => $"codex mcp add pitstop -- {ShellWords.Quoted(Executable, Shell)} --mcp-attach";
 
     /// <summary>Codex's ~/.codex/config.toml entry, which the Codex app shares.</summary>
-    public string CodexToml => $"[mcp_servers.passenger]\ncommand = {Quoted(Executable)}\nargs = [\"--mcp-attach\"]";
+    public string CodexToml => $"[mcp_servers.pitstop]\ncommand = {Quoted(Executable)}\nargs = [\"--mcp-attach\"]";
 
     /// <summary>Claude Desktop's claude_desktop_config.json entry, with the folder to work in.</summary>
     public string ClaudeDesktop => Json(["--mcp-attach", Folder ?? FolderPlaceholder]);
@@ -63,7 +63,7 @@ public sealed record AgentSetup(string Executable, string? Folder, ShellKind She
 
     /// <summary>OpenCode 1's opencode.json entry: a local server, its command one list, its one timeout every request's.</summary>
     public string OpenCode =>
-        "{\n  \"mcp\": {\n    \"passenger\": {\n" +
+        "{\n  \"mcp\": {\n    \"pitstop\": {\n" +
         "      \"type\": \"local\",\n" +
         $"      \"command\": [{Quoted(Executable)}, \"--mcp-attach\"],\n" +
         "      \"enabled\": true,\n" +
@@ -73,7 +73,7 @@ public sealed record AgentSetup(string Executable, string? Folder, ShellKind She
     /// <summary>OpenCode 2's: under mcp.servers, Code Mode off, so the agent calls Passenger's tools itself (Code Mode's
     /// permission prompts can leave a call waiting), and a tool call's execution timeout.</summary>
     public string OpenCode2 =>
-        "{\n  \"mcp\": {\n    \"servers\": {\n      \"passenger\": {\n" +
+        "{\n  \"mcp\": {\n    \"servers\": {\n      \"pitstop\": {\n" +
         "        \"type\": \"local\",\n" +
         $"        \"command\": [{Quoted(Executable)}, \"--mcp-attach\"],\n" +
         "        \"codemode\": false,\n" +
@@ -81,7 +81,7 @@ public sealed record AgentSetup(string Executable, string? Folder, ShellKind She
         "      }\n    }\n  }\n}";
 
     private string Json(IReadOnlyList<string> arguments) =>
-        "{\n  \"mcpServers\": {\n    \"passenger\": {\n" +
+        "{\n  \"mcpServers\": {\n    \"pitstop\": {\n" +
         $"      \"command\": {Quoted(Executable)},\n" +
         $"      \"args\": [{string.Join(", ", arguments.Select(Quoted))}]\n" +
         "    }\n  }\n}";

@@ -41,7 +41,7 @@ public static class DotnetReleases
 {
     /// <summary>Where the metadata is read, in place of Microsoft's: the address of a folder holding releases-index.json.</summary>
     [IdentifierHome]
-    public const string Variable = "PASSENGER_DOTNET_RELEASES";
+    public const string Variable = "PITSTOP_DOTNET_RELEASES";
 
     public static readonly Uri Microsoft = new("https://builds.dotnet.microsoft.com/dotnet/release-metadata/");
 

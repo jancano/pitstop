@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Passenger.Analyzers;
 
 /// <summary>PSG0001: a string literal equal to an identifier of a home ([IdentifierHome]) outside it. One with a letter and a
-/// '.', '_', '/', '-', '=' or ':' ("app.open", "Passenger.Accent", "PASSENGER_SETTINGS") is flagged wherever it is
+/// '.', '_', '/', '-', '=' or ':' ("app.open", "Passenger.Accent", "PITSTOP_SETTINGS") is flagged wherever it is
 /// written, being no ordinary word; a plain word ("run") only where it is given to, or compared with, a parameter,
 /// property or field marked [IdentifierOf] its home's type. Homes are read from this compilation and the Passenger
 /// assemblies it references, where it may see them. Passed over: the homes' own constants and generated code, the only
@@ -27,7 +27,7 @@ public sealed class IdentifierLiterals : DiagnosticAnalyzer
             homes.Add(Homes.Of(start.Compilation.Assembly), start.Compilation);
             foreach (IAssemblySymbol assembly in start.Compilation.SourceModule.ReferencedAssemblySymbols)
             {
-                if (assembly.Name.StartsWith("Passenger", StringComparison.Ordinal))
+                if (assembly.Name == "Pitstop" || assembly.Name.StartsWith("Passenger", StringComparison.Ordinal))
                 {
                     homes.Add(Homes.Of(assembly), start.Compilation);
                 }

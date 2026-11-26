@@ -511,7 +511,7 @@ public sealed class MemorySnapshotsTests : IDisposable
         else
         {
             // Only where Passenger may not read a program it did not start (Linux's ptrace_scope) is it asked first.
-            Assert.True(OperatingSystem.IsLinux(), $"Passenger asked before a memory snapshot, saying: {asked[0]}");
+            Assert.True(OperatingSystem.IsLinux(), $"Pitstop asked before a memory snapshot, saying: {asked[0]}");
             Assert.Contains("createdump", asked[0], StringComparison.Ordinal);
             Assert.Null(window.ProfilerView.Memory);
         }
@@ -654,7 +654,7 @@ public sealed class MemorySnapshotsTests : IDisposable
     }
 
     /// <summary>This process's dumps of a program in the temporary folder.</summary>
-    private static string[] Dumps(int program) => Directory.GetFiles(ProfilingSession.DumpFolder, $"passenger-heap-{Environment.ProcessId}-{program}-*.dmp");
+    private static string[] Dumps(int program) => Directory.GetFiles(ProfilingSession.DumpFolder, $"pitstop-heap-{Environment.ProcessId}-{program}-*.dmp");
 
     /// <summary>A console project, built and started under the profiler from the window, run until it says it is ready
     /// (having been <paramref name="sent"/> a line to say back, for a program that says nothing by itself).</summary>

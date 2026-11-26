@@ -120,7 +120,7 @@ public sealed class ContainerDetailsTests
         {
             string written = File.ReadAllText(file);
             Assert.True(!written.Contains(Secret, StringComparison.Ordinal) && !written.Contains(FlagSecret, StringComparison.Ordinal),
-                $"{file}, which Passenger wrote, holds a password");
+                $"{file}, which Pitstop wrote, holds a password");
         }
         window.Close();
     }
@@ -170,7 +170,7 @@ public sealed class ContainerDetailsTests
             Assert.False(File.Exists(command), "Inspect's copy written before its command line was masked, holding a password, is still on disk");
             Assert.True(File.Exists(masked), "Inspect's copy written masked was removed with the old ones");
             Assert.DoesNotContain(window.EditorArea.Documents, d => d.Path == PathNames.Canonical(old));
-            Assert.Equal("Removed 2 of Inspect's copies written before Passenger masked the secrets in them", window.Status);
+            Assert.Equal("Removed 2 of Inspect's copies written before Pitstop masked the secrets in them", window.Status);
 
             window.OpenFile(masked);
             Ui.Settle();

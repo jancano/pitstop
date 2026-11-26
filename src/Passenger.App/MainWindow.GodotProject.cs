@@ -119,8 +119,8 @@ public partial class MainWindow
 
             GodotSetUp setUp = GodotSetUp.Of(found, scripts, folders);
             bool handedOff = setUp.Values is { } now && values.All(v => now.TryGetValue(v.Key, out object? had) && Equals(had, v.Value));
-            string handOff = setUp.Problem is { } problem ? $"Passenger cannot be Godot's script editor: {problem}"
-                : handedOff ? $"Godot {setUp.Version}'s editor opens this project's scripts in this Passenger, at their line"
+            string handOff = setUp.Problem is { } problem ? $"Pitstop cannot be Godot's script editor: {problem}"
+                : handedOff ? $"Godot {setUp.Version}'s editor opens this project's scripts in this Pitstop, at their line"
                 : $"Godot {setUp.Version}'s editor opens its scripts in another editor";
             List<GodotPageLayer> layers = [.. GodotDefinitions.LayerKinds.SelectMany(kind => defined.Layers(kind).Where(l => l.Places.Count > 0)
                 .Select(l => new GodotPageLayer(GodotDefinitions.LayersShown(kind), int.Parse(l.Name, System.Globalization.CultureInfo.InvariantCulture), l.Detail, Line(l.Places[0]), kind)))];
@@ -187,7 +187,7 @@ public partial class MainWindow
         string file = Path.Combine(folder, GodotProject.FileName);
         string doing = enable ? "Enable" : "Disable";
         bool agreed = await ConfirmAsync($"{doing} Plugin?",
-            $"{doing} {plugin.Name} ({plugin.Res}) in {PathNames.Shown(file, Folder)}? Passenger writes the plugins it enables there; Godot's editor takes them as it next starts.",
+            $"{doing} {plugin.Name} ({plugin.Res}) in {PathNames.Shown(file, Folder)}? Pitstop writes the plugins it enables there; Godot's editor takes them as it next starts.",
             doing, null);
         // The keys go back to the page the box was on, which the write's reading draws again without it.
         if (Editors.ActiveGroup.GodotPage is { } shown)

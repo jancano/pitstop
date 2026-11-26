@@ -1,13 +1,13 @@
 #!/bin/sh
-# Installs Passenger from the passenger/ folder this script is in (an unpacked Passenger-linux-<arch>.tar.gz) for this
+# Installs Pitstop from the pitstop/ folder this script is in (an unpacked Pitstop-linux-<arch>.tar.gz) for this
 # user, or with --system for everyone, or removes it again; ./install.sh --help says each way. Installing a newer
 # release's folder the same way replaces the old files and keeps the settings; the installed script run again refreshes
 # the menu entry, icons and command.
 set -eu
 
-app=io.github.zaneris.passenger
-# The command on the PATH, named after the site (passenger-ide.net): Phusion Passenger's is passenger.
-command_name=passenger-ide
+app=io.github.jancano.pitstop
+# The command the installer puts on the PATH.
+command_name=pitstop-ide
 
 fail() {
     echo "install.sh: $*" >&2
@@ -16,13 +16,13 @@ fail() {
 
 usage() {
     cat <<'EOF'
-Installs Passenger from the passenger/ folder this script is in (an unpacked Passenger-linux-<arch>.tar.gz), or
+Installs Pitstop from the pitstop/ folder this script is in (an unpacked Pitstop-linux-<arch>.tar.gz), or
 removes it again:
-  ./install.sh                         for you alone: ~/.local/opt/passenger, ~/.local/bin/passenger-ide, and Passenger
+  ./install.sh                         for you alone: ~/.local/opt/pitstop, ~/.local/bin/pitstop-ide, and Pitstop
                                        in your applications menu with its icon and file types (~/.local/share)
-  sudo ./install.sh --system           for everyone: /opt/passenger, /usr/local/bin/passenger-ide, /usr/share/applications
-  ./install.sh --uninstall [--system]  removes what that install added, and leaves the settings (~/.local/share/Passenger)
-  ./install.sh --from FOLDER [--system] installs the unpacked passenger/ folder FOLDER rather than this script's own
+  sudo ./install.sh --system           for everyone: /opt/pitstop, /usr/local/bin/pitstop-ide, /usr/share/applications
+  ./install.sh --uninstall [--system]  removes what that install added, and leaves the settings (~/.local/share/Pitstop)
+  ./install.sh --from FOLDER [--system] installs the unpacked pitstop/ folder FOLDER rather than this script's own
   ./install.sh --archive FILE --sha256 SUM [--system]  installs the archive FILE, only where its SHA-256 is SUM,
                                        copied and unpacked where only this user writes
   ./install.sh --from FOLDER --keep-replaced  also keeps the release it replaces beside FOLDER (or FILE) until the next start
@@ -42,12 +42,12 @@ while [ $# -gt 0 ]; do
         --system) system=1 ;;
         --uninstall) uninstall=1 ;;
         --from)
-            [ $# -gt 1 ] || fail "--from names the unpacked passenger/ folder to install: --from FOLDER"
+            [ $# -gt 1 ] || fail "--from names the unpacked pitstop/ folder to install: --from FOLDER"
             from=$2
             shift
             ;;
         --archive)
-            [ $# -gt 1 ] || fail "--archive names the Passenger-linux-*.tar.gz to install: --archive FILE --sha256 SUM"
+            [ $# -gt 1 ] || fail "--archive names the Pitstop-linux-*.tar.gz to install: --archive FILE --sha256 SUM"
             archive=$2
             shift
             ;;
@@ -93,7 +93,7 @@ else
 fi
 if [ -n "$system" ]; then
     [ "$(id -u)" = 0 ] || fail "--system installs for everyone, under /opt and /usr: run it with sudo"
-    dest=/opt/passenger
+    dest=/opt/pitstop
     bin=/usr/local/bin
     data=/usr/share
 else
@@ -101,32 +101,32 @@ else
         fail "under sudo this would install for root alone: run it as yourself, or add --system to install for everyone"
     fi
     [ -n "${HOME:-}" ] || fail "HOME is not set, so there is no home to install into"
-    dest=$HOME/.local/opt/passenger
+    dest=$HOME/.local/opt/pitstop
     bin=$HOME/.local/bin
     data=${XDG_DATA_HOME:-$HOME/.local/share}
 fi
 link=$bin/$command_name
-# The command's name before it was passenger-ide: its link moves to the new name only where it leads to a Passenger.
-former=$bin/passenger
+# The command's name before it was pitstop-ide: its link moves to the new name only where it leads to a Pitstop.
+former=$bin/pitstop
 entry=$data/applications/$app.desktop
 icon_png=$data/icons/hicolor/256x256/apps/$app.png
 icon_svg=$data/icons/hicolor/scalable/apps/$app.svg
 types=$data/mime/packages/$app.xml
 
-# A folder Passenger was installed to, or unpacked as: never anything else of the same name, which is left alone.
+# A folder Pitstop was installed to, or unpacked as: never anything else of the same name, which is left alone.
 is_passenger() {
-    [ -x "$1/app/Passenger" ] && [ -f "$1/install.sh" ] && [ -f "$1/$app.desktop" ]
+    [ -x "$1/app/Pitstop" ] && [ -f "$1/install.sh" ] && [ -f "$1/$app.desktop" ]
 }
 
-# Whether a link leads to this install's launcher, or to the launcher of another Passenger folder.
+# Whether a link leads to this install's launcher, or to the launcher of another Pitstop folder.
 leads_to_passenger() {
     [ -L "$1" ] || return 1
     to=$(readlink "$1")
     led=$(readlink -f "$1" || true)
-    [ "$to" = "$dest/passenger" ] || { [ "${led##*/}" = passenger ] && is_passenger "${led%/*}"; }
+    [ "$to" = "$dest/pitstop" ] || { [ "${led##*/}" = pitstop ] && is_passenger "${led%/*}"; }
 }
 
-# Whether fontconfig, or else the font folders, know a font: Passenger draws in installed fonts what its own faces (Inter,
+# Whether fontconfig, or else the font folders, know a font: Pitstop draws in installed fonts what its own faces (Inter,
 # JetBrains Mono) lack, which fontconfig names.
 has_font() {
     if command -v fc-list > /dev/null 2>&1; then
@@ -183,7 +183,7 @@ refresh() {
 settle() {
     if [ -z "$swapped" ] && [ -e "$old" ]; then
         if [ -e "$dest" ] || ! mv "$old" "$dest"; then
-            echo "install.sh: the Passenger installed before is left in $old" >&2
+            echo "install.sh: the Pitstop installed before is left in $old" >&2
         fi
     fi
     rm -rf "$new" || true
@@ -202,11 +202,11 @@ unpacked() {
 
 if [ -n "$uninstall" ]; then
     if [ -e "$dest" ] && ! is_passenger "$dest"; then
-        fail "$dest is not a Passenger install, so it is left as it is"
+        fail "$dest is not a Pitstop install, so it is left as it is"
     fi
-    # The links only when they lead to this install, the menu entry and the rest by their names, which are Passenger's.
+    # The links only when they lead to this install, the menu entry and the rest by their names, which are Pitstop's.
     for named in "$link" "$former"; do
-        if [ -L "$named" ] && [ "$(readlink "$named")" = "$dest/passenger" ]; then
+        if [ -L "$named" ] && [ "$(readlink "$named")" = "$dest/pitstop" ]; then
             rm -f "$named"
         fi
     done
@@ -215,9 +215,9 @@ if [ -n "$uninstall" ]; then
     # The folder last: this script may be the installed copy, which the shell goes on reading once it is gone.
     rm -rf "$dest"
     if [ -n "$system" ]; then
-        echo "Passenger is uninstalled. Each person's settings stay in their ~/.local/share/Passenger."
+        echo "Pitstop is uninstalled. Each person's settings stay in their ~/.local/share/Pitstop."
     else
-        echo "Passenger is uninstalled. Your settings stay in $data/Passenger; delete that folder to remove them too."
+        echo "Pitstop is uninstalled. Your settings stay in $data/Pitstop; delete that folder to remove them too."
     fi
     exit 0
 fi
@@ -225,7 +225,7 @@ fi
 # Checked as a copy only this user writes, so what is unpacked is what was checked, whoever can write where it was.
 if [ -n "$archive" ]; then
     mkdir -p "$(dirname "$dest")"
-    unpacking=$(mktemp -d "$(dirname "$dest")/.passenger-archive.XXXXXX") || fail "no folder could be made in $(dirname "$dest") to unpack $archive in"
+    unpacking=$(mktemp -d "$(dirname "$dest")/.pitstop-archive.XXXXXX") || fail "no folder could be made in $(dirname "$dest") to unpack $archive in"
     trap unpacked EXIT
     trap 'exit 1' HUP INT TERM
     cp -- "$given" "$unpacking/archive.tar.gz" || fail "$archive could not be read"
@@ -235,19 +235,19 @@ if [ -n "$archive" ]; then
     fi
     mkdir "$unpacking/out"
     tar -C "$unpacking/out" -xzf "$unpacking/archive.tar.gz" || fail "$archive does not unpack as a gzipped tar archive"
-    [ "$(ls -A "$unpacking/out")" = passenger ] || fail "$archive holds more than one passenger folder"
-    here=$unpacking/out/passenger
+    [ "$(ls -A "$unpacking/out")" = pitstop ] || fail "$archive holds more than one pitstop folder"
+    here=$unpacking/out/pitstop
 fi
 
-is_passenger "$here" || fail "$here holds no Passenger: run the install.sh of an unpacked Passenger-linux-*.tar.gz"
+is_passenger "$here" || fail "$here holds no Pitstop: run the install.sh of an unpacked Pitstop-linux-*.tar.gz"
 # The menu entry names the launcher in a quoted string, in which the desktop entry spec gives these characters meanings.
 case $dest in
     *[\"\`\$\\%]*) fail "$dest has a character a desktop entry cannot name (\" \` \$ \\ %)" ;;
 esac
-# The command's link goes only where nothing is or a link leads to a Passenger: another program of its name stays.
+# The command's link goes only where nothing is or a link leads to a Pitstop: another program of its name stays.
 if [ -L "$link" ]; then
     if ! leads_to_passenger "$link"; then
-        fail "$link is there, a link to $(readlink "$link"), which is not Passenger: move it away first"
+        fail "$link is there, a link to $(readlink "$link"), which is not Pitstop: move it away first"
     fi
 elif [ -d "$link" ]; then
     fail "$link is there, a folder: move it away first"
@@ -257,10 +257,10 @@ elif [ -e "$link" ]; then
     fail "$link is there, a file: move it away first"
 fi
 
-# The new files beside the old, then swapped in, so a Passenger still running keeps the files it has open.
+# The new files beside the old, then swapped in, so a Pitstop still running keeps the files it has open.
 if [ "$here" != "$(readlink -f "$dest" 2> /dev/null || echo "$dest")" ]; then
     if [ -e "$dest" ] && ! is_passenger "$dest"; then
-        fail "$dest is there and is not a Passenger install: move it away first"
+        fail "$dest is there and is not a Pitstop install: move it away first"
     fi
     mkdir -p "$(dirname "$dest")"
     new=$dest.new-$$
@@ -292,16 +292,16 @@ if [ "$here" != "$(readlink -f "$dest" 2> /dev/null || echo "$dest")" ]; then
 fi
 
 mkdir -p "$bin" "$(dirname "$entry")" "$(dirname "$icon_png")" "$(dirname "$icon_svg")" "$(dirname "$types")"
-ln -sfn "$dest/passenger" "$link"
-# An earlier install's link of the former name moves to the new one; Phusion Passenger's passenger, or anyone's, stays.
+ln -sfn "$dest/pitstop" "$link"
+# An earlier install's link of the former name moves to the new one; any other program stays.
 if leads_to_passenger "$former"; then
     rm -f "$former"
 fi
 # The template's Exec and TryExec name the launcher on the PATH; the installed entry names this install's.
 while IFS= read -r line; do
     case $line in
-        Exec=*) printf 'Exec="%s" %%f\n' "$dest/passenger" ;;
-        TryExec=*) printf 'TryExec=%s\n' "$dest/passenger" ;;
+        Exec=*) printf 'Exec="%s" %%f\n' "$dest/pitstop" ;;
+        TryExec=*) printf 'TryExec=%s\n' "$dest/pitstop" ;;
         *) printf '%s\n' "$line" ;;
     esac
 done < "$dest/$app.desktop" > "$entry"
@@ -313,13 +313,13 @@ if [ -n "$system" ]; then
 fi
 refresh
 
-echo "Passenger is installed in $dest, and is in the applications menu."
+echo "Pitstop is installed in $dest, and is in the applications menu."
 case ":${PATH:-}:" in
     *":$bin:"*) echo "Start it from a shell with: $command_name [folder or solution]" ;;
-    *) echo "$bin is not on your PATH yet: add it, then start Passenger from a shell with: $command_name [folder or solution]" ;;
+    *) echo "$bin is not on your PATH yet: add it, then start Pitstop from a shell with: $command_name [folder or solution]" ;;
 esac
 
-# What Passenger needs and this system lacks, said now, not as a window that never opens (ldconfig may be in /sbin).
+# What Pitstop needs and this system lacks, said now, not as a window that never opens (ldconfig may be in /sbin).
 missing=
 ldconfig=$(command -v ldconfig || echo /sbin/ldconfig)
 if [ -x "$ldconfig" ]; then
@@ -332,7 +332,7 @@ if [ -x "$ldconfig" ]; then
     done
 fi
 if [ -n "$missing" ]; then
-    echo "Passenger's window needs$missing, which this system lacks: see https://passenger-ide.net/linux" >&2
+    echo "Pitstop's window needs$missing, which this system lacks: see the Pitstop README" >&2
 fi
 if ! has_font; then
     if command -v fc-list > /dev/null 2>&1 && font_files; then
@@ -340,20 +340,20 @@ if ! has_font; then
         if command -v fc-cache > /dev/null 2>&1 && fc-cache -f > /dev/null 2>&1 && lists_font; then
             echo "fontconfig listed none of the fonts installed, its cache being out of date: refreshed it with fc-cache -f."
         else
-            echo "Fonts are installed, but fontconfig lists none, its cache being out of date: refresh it with fc-cache -f (sudo fc-cache -f for every user's), then start Passenger." >&2
+            echo "Fonts are installed, but fontconfig lists none, its cache being out of date: refresh it with fc-cache -f (sudo fc-cache -f for every user's), then start Pitstop." >&2
         fi
     else
         hint=$(font_command)
         if [ -n "$hint" ]; then
-            echo "No font is installed, so Passenger draws in the fonts it carries alone, which lack most scripts and emoji: install one, as with: $hint" >&2
+            echo "No font is installed, so Pitstop draws in the fonts it carries alone, which lack most scripts and emoji: install one, as with: $hint" >&2
         else
-            echo "No font is installed, so Passenger draws in the fonts it carries alone, which lack most scripts and emoji: install one, such as your distribution's DejaVu Sans." >&2
+            echo "No font is installed, so Pitstop draws in the fonts it carries alone, which lack most scripts and emoji: install one, such as your distribution's DejaVu Sans." >&2
         fi
     fi
 fi
 if ! command -v dotnet > /dev/null 2>&1 && [ -z "${DOTNET_ROOT:-}" ]; then
-    echo "No .NET SDK on the PATH: Passenger needs version 10 or later to build your projects and run its language server." >&2
+    echo "No .NET SDK on the PATH: Pitstop needs version 10 or later to build your projects and run its language server." >&2
 fi
 if ! command -v git > /dev/null 2>&1; then
-    echo "Git is not installed: Passenger's version control needs it." >&2
+    echo "Git is not installed: Pitstop's version control needs it." >&2
 fi

@@ -13,7 +13,7 @@ namespace Passenger.UnitTests.Xaml;
 internal static class XamlFiles
 {
     /// <summary>The project's folder, under the root of the temporary folder's drive.</summary>
-    public static readonly string Folder = Path.Combine(Path.GetPathRoot(Path.GetTempPath())!, "passenger-unit-xaml", "App");
+    public static readonly string Folder = Path.Combine(Path.GetPathRoot(Path.GetTempPath())!, "pitstop-unit-xaml", "App");
 
     /// <summary>A file's path in the project.</summary>
     public static string PathOf(string name) => Path.Combine(Folder, name);

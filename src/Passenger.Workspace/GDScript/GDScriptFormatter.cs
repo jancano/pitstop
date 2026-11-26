@@ -38,7 +38,7 @@ public static partial class GDScriptFormatter
     private readonly record struct Laid(GDScriptToken Token, int Level, int Depth, bool First);
 
     /// <summary>Why a script nested past what Passenger reads is left as it is: its result could not be read back against it.</summary>
-    private const string ReadInPart = "the script is nested too deeply for Passenger to read whole";
+    private const string ReadInPart = "the script is nested too deeply for Pitstop to read whole";
 
     public static GDScriptFormatted Format(string text, GDScriptFormatOptions options)
     {

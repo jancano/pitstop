@@ -14,7 +14,7 @@ public sealed record ReleaseNotes(string Folder, string Version)
     public const string SecurityMarker = "<!-- Security release -->";
 
     /// <summary>The folder beside the app that holds them.</summary>
-    public static string CarriedFolder { get; } = Path.Combine(AppContext.BaseDirectory, "release-notes");
+    public static string CarriedFolder { get; } = Path.Combine(AppContext.BaseDirectory, "pitstop-release-notes");
 
     /// <summary>This build's: the notes of the version it is.</summary>
     public static ReleaseNotes Carried { get; } = new(CarriedFolder, Product.Version);
@@ -101,7 +101,7 @@ public sealed record ReleaseNotes(string Folder, string Version)
     public static string TitleOf(string version) => $"What's New in {version}";
 
     /// <summary>The heading a version's notes are shown under, at the page's head and above each earlier version's beneath.</summary>
-    public static string HeadingOf(string version) => $"What's New in Passenger {version}";
+    public static string HeadingOf(string version) => $"What's New in Pitstop {version}";
 
     /// <summary>The version whose notes a file (by its canonical path) is, when it is notes the app carries or a window was
     /// given (<see cref="Give"/>); null for any other file, read without a string made for it but a Markdown file's, as each

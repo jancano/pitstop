@@ -126,7 +126,7 @@ jobs:
         run: tools/package-mac.sh ${{ matrix.rid }}
 
   # The Windows installer installed silently (per user, no administrator), an agent debugging a project through the
-  # Passenger it installed (so its Roslyn server and debugger run from the install), then uninstalled, with what each
+  # Pitstop it installed (so its Roslyn server and debugger run from the install), then uninstalled, with what each
   # step must leave checked. Unsigned: a check need not spend signatures.
   installer:
     name: Windows installer (x64)
@@ -171,33 +171,33 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $state = Join-Path $env:LOCALAPPDATA 'Passenger'
+          $state = Join-Path $env:LOCALAPPDATA 'Pitstop'
           New-Item -ItemType Directory -Force -Path $state | Out-Null
           Set-Content -Path (Join-Path $state 'kept-by-uninstall.txt') -Value 'a person''s state'
-          $setup = Start-Process -FilePath artifacts/package/Passenger-windows-x64.exe -ArgumentList '--silent' -Wait -PassThru
+          $setup = Start-Process -FilePath artifacts/package/Pitstop-windows-x64.exe -ArgumentList '--silent' -Wait -PassThru
           if ($setup.ExitCode -ne 0) { throw "Setup --silent exited $($setup.ExitCode)" }
-          $root = Join-Path $env:LOCALAPPDATA 'PassengerIDE'
-          $exe = Join-Path $root 'current\Passenger.exe'
-          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'Passenger.lnk'
+          $root = Join-Path $env:LOCALAPPDATA 'PitstopIDE'
+          $exe = Join-Path $root 'current\Pitstop.exe'
+          $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'Pitstop.lnk'
           foreach ($path in $exe, (Join-Path $root 'Update.exe'), (Join-Path $root 'current\roslyn'), (Join-Path $root 'current\roslyn-extension'), (Join-Path $root 'current\debugger'), $shortcut) {
             if (-not (Test-Path $path)) { throw "The install has no $path" }
           }
-          $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\PassengerIDE'
-          if ($entry.DisplayName -ne 'Passenger') { throw "Settings > Apps lists the install as '$($entry.DisplayName)'" }
-          # The runner's Visual Studio keeps these types' default, so Passenger is among the programs that open them.
+          $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\PitstopIDE'
+          if ($entry.DisplayName -ne 'Pitstop') { throw "Settings > Apps lists the install as '$($entry.DisplayName)'" }
+          # The runner's Visual Studio keeps these types' default, so Pitstop is among the programs that open them.
           foreach ($extension in '.sln', '.slnx', '.csproj') {
-            $command = (Get-Item "HKCU:\Software\Classes\Passenger$extension\shell\open\command").GetValue('')
-            if ($command -ne "`"$exe`" `"%1`"") { throw "Passenger$extension opens with '$command', not Passenger.exe" }
-            if ((Get-Item "HKCU:\Software\Classes\$extension\OpenWithProgids").GetValueNames() -notcontains "Passenger$extension") {
-              throw "$extension does not list Passenger among the programs that open it"
+            $command = (Get-Item "HKCU:\Software\Classes\Pitstop$extension\shell\open\command").GetValue('')
+            if ($command -ne "`"$exe`" `"%1`"") { throw "Pitstop$extension opens with '$command', not Pitstop.exe" }
+            if ((Get-Item "HKCU:\Software\Classes\$extension\OpenWithProgids").GetValueNames() -notcontains "Pitstop$extension") {
+              throw "$extension does not list Pitstop among the programs that open it"
             }
           }
-          "PASSENGER_EXECUTABLE=$exe" >> $env:GITHUB_ENV
+          "PITSTOP_EXECUTABLE=$exe" >> $env:GITHUB_ENV
 
       - name: Build the tests
         run: dotnet build tests/Passenger.Tests
 
-      - name: An agent debugs through the installed Passenger, whose helpers run on its own runtime
+      - name: An agent debugs through the installed Pitstop, whose helpers run on its own runtime
         run: dotnet test tests/Passenger.Tests --no-build --filter "FullyQualifiedName~McpDebuggingTests.An_agent_with_a_windowless_Passenger_finds_code_reads_its_warnings_and_debugs_it|FullyQualifiedName~McpDebuggingTests.Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on" $(python -I tools/test-shards.py hang)
 
       # Update.exe removes the folder a few seconds after it exits; the person's state and Velopack's own logs
@@ -207,8 +207,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $root = Join-Path $env:LOCALAPPDATA 'PassengerIDE'
-          $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\PassengerIDE'
+          $root = Join-Path $env:LOCALAPPDATA 'PitstopIDE'
+          $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\PitstopIDE'
           $quiet = (Get-ItemProperty $key).QuietUninstallString
           if ($quiet -ne "`"$root\Update.exe`" --uninstall --silent") { throw "Settings > Apps uninstalls it silently with '$quiet'" }
           $uninstall = Start-Process -FilePath (Join-Path $root 'Update.exe') -ArgumentList '--uninstall', '--silent' -Wait -PassThru
@@ -217,27 +217,27 @@ jobs:
           $left = @()
           if (Test-Path $root) { $left += "$root, with $(@(Get-ChildItem -Recurse -Force $root).Count) files" }
           if (Test-Path $key) { $left += 'its entry in Settings > Apps' }
-          if (Test-Path (Join-Path ([Environment]::GetFolderPath('Programs')) 'Passenger.lnk')) { $left += 'its Start menu entry' }
+          if (Test-Path (Join-Path ([Environment]::GetFolderPath('Programs')) 'Pitstop.lnk')) { $left += 'its Start menu entry' }
           foreach ($extension in '.sln', '.slnx', '.csproj') {
-            if (Test-Path "HKCU:\Software\Classes\Passenger$extension") { $left += "the Passenger$extension file type" }
+            if (Test-Path "HKCU:\Software\Classes\Pitstop$extension") { $left += "the Pitstop$extension file type" }
             $openWith = Get-Item "HKCU:\Software\Classes\$extension\OpenWithProgids" -ErrorAction SilentlyContinue
-            if ($openWith -and $openWith.GetValueNames() -contains "Passenger$extension") { $left += "Passenger among the programs that open $extension" }
+            if ($openWith -and $openWith.GetValueNames() -contains "Pitstop$extension") { $left += "Pitstop among the programs that open $extension" }
             $type = Get-Item "HKCU:\Software\Classes\$extension" -ErrorAction SilentlyContinue
-            if ($type -and $type.GetValue('') -eq "Passenger$extension") { $left += "Passenger as what opens $extension" }
+            if ($type -and $type.GetValue('') -eq "Pitstop$extension") { $left += "Pitstop as what opens $extension" }
           }
           if ($left) { throw "The uninstall left $($left -join '; ')" }
-          if (-not (Test-Path (Join-Path $env:LOCALAPPDATA 'Passenger\kept-by-uninstall.txt'))) { throw "The uninstall took the person's state" }
+          if (-not (Test-Path (Join-Path $env:LOCALAPPDATA 'Pitstop\kept-by-uninstall.txt'))) { throw "The uninstall took the person's state" }
 
       # For trying a pull request's installer by hand; not a release.
       - name: Upload the installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Passenger-windows-x64
-          path: artifacts/package/Passenger-windows-x64.exe
+          name: Pitstop-windows-x64
+          path: artifacts/package/Pitstop-windows-x64.exe
           retention-days: 7
 
   # The Linux archive installed by its install.sh (for one person, then for everyone), an agent debugging a project
-  # through each install's Passenger (read-only to the person in /opt), then uninstalled, with what each step must leave
+  # through each install's Pitstop (read-only to the person in /opt), then uninstalled, with what each step must leave
   # checked: the desktop entry as desktops read it, and the file types it opens among them.
   archive:
     name: Linux archive (x64)
@@ -257,7 +257,7 @@ jobs:
           dotnet-version: 10.0.x
 
       # The libraries a person installs (site/linux.html), and the desktop's own tools that read what install.sh adds.
-      - name: The libraries Passenger needs, and the desktop's tools
+      - name: The libraries Pitstop needs, and the desktop's tools
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends file git libx11-6 libice6 libsm6 libfontconfig1 \
@@ -287,74 +287,74 @@ jobs:
       # A person's state, which the uninstall must leave, is there before the install, as it is for one who reinstalls.
       - name: Install for one person
         run: |
-          state=$HOME/.local/share/Passenger
+          state=$HOME/.local/share/Pitstop
           mkdir -p "$state"
           echo "a person's state" > "$state/kept-by-uninstall.txt"
           mkdir -p "$RUNNER_TEMP/download"
-          tar -C "$RUNNER_TEMP/download" -xzf artifacts/package/Passenger-linux-x64.tar.gz
-          "$RUNNER_TEMP/download/passenger/install.sh"
-          opt=$HOME/.local/opt/passenger
-          for path in "$opt/passenger" "$opt/app/Passenger" "$opt/app/roslyn" "$opt/app/roslyn-extension" "$opt/app/debugger" \
-            "$HOME/.local/share/icons/hicolor/256x256/apps/io.github.zaneris.passenger.png" \
-            "$HOME/.local/share/icons/hicolor/scalable/apps/io.github.zaneris.passenger.svg"; do
+          tar -C "$RUNNER_TEMP/download" -xzf artifacts/package/Pitstop-linux-x64.tar.gz
+          "$RUNNER_TEMP/download/pitstop/install.sh"
+          opt=$HOME/.local/opt/pitstop
+          for path in "$opt/pitstop" "$opt/app/Pitstop" "$opt/app/roslyn" "$opt/app/roslyn-extension" "$opt/app/debugger" \
+            "$HOME/.local/share/icons/hicolor/256x256/apps/io.github.jancano.pitstop.png" \
+            "$HOME/.local/share/icons/hicolor/scalable/apps/io.github.jancano.pitstop.svg"; do
             [ -e "$path" ] || { echo "::error::The install has no $path"; exit 1; }
           done
-          [ "$(readlink -f "$HOME/.local/bin/passenger-ide")" = "$opt/passenger" ] || { echo "::error::~/.local/bin/passenger-ide does not lead to the install"; exit 1; }
-          entry=$HOME/.local/share/applications/io.github.zaneris.passenger.desktop
+          [ "$(readlink -f "$HOME/.local/bin/pitstop-ide")" = "$opt/pitstop" ] || { echo "::error::~/.local/bin/pitstop-ide does not lead to the install"; exit 1; }
+          entry=$HOME/.local/share/applications/io.github.jancano.pitstop.desktop
           desktop-file-validate "$entry"
-          grep -qx "Exec=\"$opt/passenger\" %f" "$entry" || { echo "::error::The menu entry does not start the install's launcher"; cat "$entry"; exit 1; }
+          grep -qx "Exec=\"$opt/pitstop\" %f" "$entry" || { echo "::error::The menu entry does not start the install's launcher"; cat "$entry"; exit 1; }
           for type in sln slnx csproj; do
             grep -qx "[0-9]*:application/x-ms-$type:\*\.$type" "$HOME/.local/share/mime/globs2" \
               || { echo "::error::The shared MIME database does not know a .$type file as application/x-ms-$type"; exit 1; }
-            grep -q "^application/x-ms-$type=.*io\.github\.zaneris\.passenger\.desktop" "$HOME/.local/share/applications/mimeinfo.cache" \
-              || { echo "::error::Passenger is not among the programs that open .$type"; exit 1; }
+            grep -q "^application/x-ms-$type=.*io\.github\.zaneris\.pitstop\.desktop" "$HOME/.local/share/applications/mimeinfo.cache" \
+              || { echo "::error::Pitstop is not among the programs that open .$type"; exit 1; }
           done
 
-      - name: An agent debugs through the Passenger installed for one person, whose helpers run on its own runtime
+      - name: An agent debugs through the Pitstop installed for one person, whose helpers run on its own runtime
         run: |
-          export PASSENGER_EXECUTABLE=$HOME/.local/bin/passenger-ide
+          export PITSTOP_EXECUTABLE=$HOME/.local/bin/pitstop-ide
           dotnet test tests/Passenger.Tests --no-build --filter "FullyQualifiedName~McpDebuggingTests.An_agent_with_a_windowless_Passenger_finds_code_reads_its_warnings_and_debugs_it|FullyQualifiedName~McpDebuggingTests.Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on" $(python3 -I tools/test-shards.py hang)
 
       - name: Uninstall for one person
         if: ${{ !cancelled() }}
         run: |
-          "$HOME/.local/opt/passenger/install.sh" --uninstall
+          "$HOME/.local/opt/pitstop/install.sh" --uninstall
           left=
-          for path in "$HOME/.local/opt/passenger" "$HOME/.local/bin/passenger-ide" "$HOME/.local/bin/passenger" \
-            "$HOME/.local/share/applications/io.github.zaneris.passenger.desktop" \
-            "$HOME/.local/share/icons/hicolor/256x256/apps/io.github.zaneris.passenger.png" \
-            "$HOME/.local/share/icons/hicolor/scalable/apps/io.github.zaneris.passenger.svg" \
-            "$HOME/.local/share/mime/packages/io.github.zaneris.passenger.xml"; do
+          for path in "$HOME/.local/opt/pitstop" "$HOME/.local/bin/pitstop-ide" "$HOME/.local/bin/pitstop" \
+            "$HOME/.local/share/applications/io.github.jancano.pitstop.desktop" \
+            "$HOME/.local/share/icons/hicolor/256x256/apps/io.github.jancano.pitstop.png" \
+            "$HOME/.local/share/icons/hicolor/scalable/apps/io.github.jancano.pitstop.svg" \
+            "$HOME/.local/share/mime/packages/io.github.jancano.pitstop.xml"; do
             if [ -e "$path" ] || [ -L "$path" ]; then left="$left $path"; fi
           done
           [ -z "$left" ] || { echo "::error::The uninstall left$left"; exit 1; }
-          [ -f "$HOME/.local/share/Passenger/kept-by-uninstall.txt" ] || { echo "::error::The uninstall took the person's state"; exit 1; }
+          [ -f "$HOME/.local/share/Pitstop/kept-by-uninstall.txt" ] || { echo "::error::The uninstall took the person's state"; exit 1; }
 
       - name: Install for everyone
         id: system
         run: |
-          sudo "$RUNNER_TEMP/download/passenger/install.sh" --system
-          for path in /opt/passenger/app/Passenger /usr/local/bin/passenger-ide /usr/share/applications/io.github.zaneris.passenger.desktop \
-            /usr/share/icons/hicolor/256x256/apps/io.github.zaneris.passenger.png /usr/share/mime/packages/io.github.zaneris.passenger.xml; do
+          sudo "$RUNNER_TEMP/download/pitstop/install.sh" --system
+          for path in /opt/pitstop/app/Pitstop /usr/local/bin/pitstop-ide /usr/share/applications/io.github.jancano.pitstop.desktop \
+            /usr/share/icons/hicolor/256x256/apps/io.github.jancano.pitstop.png /usr/share/mime/packages/io.github.jancano.pitstop.xml; do
             [ -e "$path" ] || { echo "::error::The install for everyone has no $path"; exit 1; }
           done
-          owned=$(find /opt/passenger ! -user root | head -n 3)
+          owned=$(find /opt/pitstop ! -user root | head -n 3)
           [ -z "$owned" ] || { echo "::error::The install for everyone has files not root's: $owned"; exit 1; }
-          desktop-file-validate /usr/share/applications/io.github.zaneris.passenger.desktop
+          desktop-file-validate /usr/share/applications/io.github.jancano.pitstop.desktop
 
-      - name: An agent debugs through the Passenger installed for everyone, whose helpers run on its own runtime
+      - name: An agent debugs through the Pitstop installed for everyone, whose helpers run on its own runtime
         run: |
-          export PASSENGER_EXECUTABLE=/usr/local/bin/passenger-ide
+          export PITSTOP_EXECUTABLE=/usr/local/bin/pitstop-ide
           dotnet test tests/Passenger.Tests --no-build --filter "FullyQualifiedName~McpDebuggingTests.An_agent_with_a_windowless_Passenger_finds_code_reads_its_warnings_and_debugs_it|FullyQualifiedName~McpDebuggingTests.Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on" $(python3 -I tools/test-shards.py hang)
 
       - name: Uninstall for everyone
         if: ${{ !cancelled() && steps.system.outcome != 'skipped' }}
         run: |
-          sudo /opt/passenger/install.sh --uninstall --system
+          sudo /opt/pitstop/install.sh --uninstall --system
           left=
-          for path in /opt/passenger /usr/local/bin/passenger-ide /usr/local/bin/passenger /usr/share/applications/io.github.zaneris.passenger.desktop \
-            /usr/share/icons/hicolor/256x256/apps/io.github.zaneris.passenger.png \
-            /usr/share/icons/hicolor/scalable/apps/io.github.zaneris.passenger.svg /usr/share/mime/packages/io.github.zaneris.passenger.xml; do
+          for path in /opt/pitstop /usr/local/bin/pitstop-ide /usr/local/bin/pitstop /usr/share/applications/io.github.jancano.pitstop.desktop \
+            /usr/share/icons/hicolor/256x256/apps/io.github.jancano.pitstop.png \
+            /usr/share/icons/hicolor/scalable/apps/io.github.jancano.pitstop.svg /usr/share/mime/packages/io.github.jancano.pitstop.xml; do
             if [ -e "$path" ] || [ -L "$path" ]; then left="$left $path"; fi
           done
           [ -z "$left" ] || { echo "::error::The uninstall for everyone left$left"; exit 1; }
@@ -363,8 +363,8 @@ jobs:
       - name: Upload the archive
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Passenger-linux-x64
-          path: artifacts/package/Passenger-linux-x64.tar.gz
+          name: Pitstop-linux-x64
+          path: artifacts/package/Pitstop-linux-x64.tar.gz
           compression-level: 0
           retention-days: 7
 

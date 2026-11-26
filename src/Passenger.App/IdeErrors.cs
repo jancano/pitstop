@@ -5,7 +5,7 @@ using Avalonia.Threading;
 namespace Passenger.App;
 
 /// <summary>The IDE's internal errors: an exception that escapes on the UI thread or from a task nobody awaited is
-/// written to the log in the settings folder (<c>logs/passenger.log</c>, through <see cref="IdeLog"/>) and shown in the
+/// written to the log in the settings folder (<c>logs/pitstop.log</c>, through <see cref="IdeLog"/>) and shown in the
 /// status bar, and the IDE keeps running. Repeats of one error are one entry with its count, and the list holds a
 /// hundred. Avalonia's warnings and errors, and the programs the IDE runs that fail, go to the log. The process's: an
 /// error caught on the one UI thread or a task is no one window's, so every window counts the same list, and the window
@@ -15,7 +15,7 @@ public static class IdeErrors
     /// <summary>The different errors listed at most: past it, they are only in the log.</summary>
     public const int Limit = 100;
 
-    /// <summary>The rotated logs kept beside the current one, <c>passenger.1.log</c> the newest.</summary>
+    /// <summary>The rotated logs kept beside the current one, <c>pitstop.1.log</c> the newest.</summary>
     public const int Rotations = IdeLog.Rotations;
 
     private static readonly object Gate = new();

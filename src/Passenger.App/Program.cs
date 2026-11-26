@@ -37,18 +37,20 @@ internal static class Program
         }
         catch (FormatException error)
         {
-            Console.Error.WriteLine($"passenger: {error.Message}");
+            Console.Error.WriteLine($"pitstop: {error.Message}");
             return 2;
         }
-        // Before anything reads the state folder, or leaves the folder a relative PASSENGER_SETTINGS is read from.
+        // Before anything reads the state folder, or leaves the folder a relative PITSTOP_SETTINGS is read from.
         State.StateStore.NameWhole();
         // Before anything of the IDE starts, so a start that fails before its log is set up still leaves why.
         CrashFile.Watch();
-        // First, as Velopack asks; an update never installs as a second Passenger starts, which would end the first.
-        if (Installation.Installed)
+        // Velopack handles installer callbacks only. Normal starts keep their own identity and logs.
+        if (Installation.IsInstallerHook(args))
         {
             Installation.Hooked(VelopackApp.Build().SetArgs(args).SetAutoApplyOnStartup(false)).Run();
+            return 0;
         }
+        Installation.RegisterProcessIdentity();
         LaunchOptions options;
         try
         {
@@ -83,7 +85,7 @@ internal static class Program
         }
         catch (FormatException error)
         {
-            Console.Error.WriteLine($"passenger: {error.Message}");
+            Console.Error.WriteLine($"pitstop: {error.Message}");
             return 2;
         }
 
@@ -100,7 +102,7 @@ internal static class Program
             input?.Dispose();
             return 0;
         }
-        // A screenshot's state is a folder of its own (Apart) unless PASSENGER_SETTINGS names one, fatal where it cannot be made.
+        // A screenshot's state is a folder of its own (Apart) unless PITSTOP_SETTINGS names one, fatal where it cannot be made.
         if ((options.Screenshot is null || State.StateStore.Named is not null) && !State.StateStore.Own() && State.StateStore.Named is not null)
         {
             return 2;
@@ -158,7 +160,7 @@ internal static class Program
         }
     }
 
-    /// <summary>A screenshot keeps nothing of the person's: unless PASSENGER_SETTINGS names a folder, its state and logs
+    /// <summary>A screenshot keeps nothing of the person's: unless PITSTOP_SETTINGS names a folder, its state and logs
     /// (Roslyn's server's among them) go to a temporary one, a portable copy's too, removed when it ends, and its
     /// terminal's shell never reads or writes the person's history or startup files.</summary>
     private static int Apart(Func<int> run)
@@ -166,7 +168,7 @@ internal static class Program
         string? scratch = null;
         if (State.StateStore.Named is not { } root)
         {
-            scratch = Directory.CreateTempSubdirectory("passenger-screenshot-").FullName;
+            scratch = Directory.CreateTempSubdirectory("pitstop-screenshot-").FullName;
             root = scratch;
             Environment.SetEnvironmentVariable(State.StateStore.Variable, scratch);
         }
@@ -210,7 +212,7 @@ internal static class Program
     public static void SayNotStarted(string why)
     {
         IdeErrors.Write($"Launch: {why}");
-        Console.Error.WriteLine($"passenger: {why}");
+        Console.Error.WriteLine($"pitstop: {why}");
     }
 
     /// <summary>The theme, its dark or light and the code's colours the command line names, over those in force.</summary>

@@ -16,19 +16,19 @@ public sealed partial record AndroidApp(string Serial, string Adb, string Packag
     public const string RelayProfiler = "{7A3E5B2C-8D41-4F6A-9C0E-5B1D2E3F4A50}";
 
     /// <summary>The relay's file name in the app's fast-deployment folder.</summary>
-    public const string RelayFile = "libpassenger-debug.so";
+    public const string RelayFile = "libpitstop-debug.so";
 
     /// <summary>The abstract socket the relay listens on in the app, named afresh for each session.</summary>
     [IdentifierHome]
-    public const string RelaySocketVariable = "PASSENGER_DEBUG_SOCKET";
+    public const string RelaySocketVariable = "PITSTOP_DEBUG_SOCKET";
 
     /// <summary>The token the relay takes a client by, which only the session that put it there knows.</summary>
     [IdentifierHome]
-    public const string RelayTokenVariable = "PASSENGER_DEBUG_TOKEN";
+    public const string RelayTokenVariable = "PITSTOP_DEBUG_TOKEN";
 
     /// <summary>How long the relay holds the app's start for Passenger to attach, in milliseconds.</summary>
     [IdentifierHome]
-    public const string RelayWaitVariable = "PASSENGER_DEBUG_WAIT_MS";
+    public const string RelayWaitVariable = "PITSTOP_DEBUG_WAIT_MS";
 
     /// <summary>The app's start as MSBuild answered <see cref="Properties"/> after <c>ComputeRunArguments</c>, run on the
     /// device by <paramref name="adb"/>; why not where it launches no activity.</summary>
@@ -44,7 +44,7 @@ public sealed partial record AndroidApp(string Serial, string Adb, string Packag
         if (activity.Length == 0)
         {
             return (null, said.Property(MSBuildNames.AndroidInstrumentation) is { Length: > 0 }
-                ? $"{package} starts through its instrumentation, which Passenger does not run: give it a launcher activity"
+                ? $"{package} starts through its instrumentation, which Pitstop does not run: give it a launcher activity"
                 : $"{package} has no launcher activity to start");
         }
         string folder = Path.DirectorySeparatorChar == '\\' ? intermediate : intermediate.Replace('\\', '/');
@@ -107,7 +107,7 @@ public sealed partial record AndroidApp(string Serial, string Adb, string Packag
     public string Deployed(string abi) => Path.Combine(Intermediate, "android", "assets", abi);
 
     /// <summary>Where a Debug start leaves the relay and its environment for the app to copy in.</summary>
-    public string Staged(string what) => $"/data/local/tmp/passenger-{Package}-{what}";
+    public string Staged(string what) => $"/data/local/tmp/pitstop-{Package}-{what}";
 
     /// <summary>The variables a Debug start puts in the app's environment: the runtime's profiler, Passenger's relay in the
     /// app's folder listening on <paramref name="socket"/> for a client that says <paramref name="token"/>.</summary>
@@ -123,7 +123,7 @@ public sealed partial record AndroidApp(string Serial, string Adb, string Packag
 
     /// <summary>Where a start puts the inspector's files in the app, a folder of their own beside its fast-deployment
     /// folder, so none takes the place of an assembly the app deployed.</summary>
-    public string Carried => $"/data/user/0/{Package}/files/.passenger";
+    public string Carried => $"/data/user/0/{Package}/files/.pitstop";
 
     /// <summary>The app's own shell putting the staged relay and environment in its folder, saying first where its own
     /// environment file pointed (a link fast deployment made), which <see cref="TakeRelayOut"/> puts back.</summary>

@@ -18,14 +18,14 @@ public sealed class FirstStartPicturesTests
         using JsonDocument kept = JsonDocument.Parse(Resource(FirstStartPictures.VersionFile));
         string? version = JsonMembers.Text(kept.RootElement, "version");
         Assert.True(version == Product.Version,
-            $"The first start's tiles show Passenger {version ?? "of no version"}, where this build is {Product.Version}: a person's first start would "
-            + "show an earlier Passenger. Take them again on macOS with just first-start-shots, and commit src/Passenger.App/Assets/FirstStart.");
+            $"The first start's tiles show Pitstop {version ?? "of no version"}, where this build is {Product.Version}: a person's first start would "
+            + "show an earlier Pitstop. Take them again on macOS with just first-start-shots, and commit src/Passenger.App/Assets/FirstStart.");
     }
 
     [Fact]
     public void Every_theme_offered_has_a_lossless_picture_sharp_at_the_largest_scale_in_dark_and_light()
     {
-        string[] themes = ["Passenger", .. CarriedThemes()];
+        string[] themes = ["Pitstop", .. CarriedThemes()];
         Assert.Contains("Cubicle", themes);
         List<string> wrong = [];
         HashSet<(int, int)> sizes = [];

@@ -32,7 +32,7 @@ public static class OpenApiAddresses
         {
             return (null, "Name the path the app serves its OpenAPI document at (/openapi/v1.json), or its URL on this machine");
         }
-        return WebAddress.OnThisMachine(address) ? (address.ToString(), null) : (null, $"{address.Host} is not this machine: Passenger asks for a document only of the app on this machine");
+        return WebAddress.OnThisMachine(address) ? (address.ToString(), null) : (null, $"{address.Host} is not this machine: Pitstop asks for a document only of the app on this machine");
     }
 
     private static bool SameOrigin(Uri one, Uri other) =>

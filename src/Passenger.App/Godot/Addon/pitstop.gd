@@ -19,7 +19,7 @@ const LOOK_EVERY_MS := 2000
 ## How long a game held at its start waits for Passenger to take it before Play is stopped, rather than leave it waiting.
 const HOLD_LIMIT_MS := 60 * 1000
 ## The one key of a dictionary that stands for an object the game sent by its id, which Passenger reads back as that id.
-const OBJECT_KEY := "passenger:object"
+const OBJECT_KEY := "pitstop:object"
 ## What an agent asks of the scenes this editor edits, through Passenger.
 const Scenes := preload("scenes.gd")
 
@@ -52,7 +52,7 @@ var scenes_told := ""
 var scenes_looked := 0
 ## How often the scenes this editor holds are looked at for a change to tell.
 const SCENES_EVERY_MS := 300
-## Whether each act an agent asks of the edited scene is printed with its answer (PASSENGER_ADDON_TRACE, a test's).
+## Whether each act an agent asks of the edited scene is printed with its answer (PITSTOP_ADDON_TRACE, a test's).
 var trace := false
 
 
@@ -62,7 +62,7 @@ class Sessions extends EditorDebuggerPlugin:
 
 	# Passenger's helper answers it through the game's debugger, which the editor would warn of as a message it does not know.
 	func _has_capture(capture: String) -> bool:
-		return capture == "passenger"
+		return capture == "pitstop"
 
 	func _capture(_message: String, _data: Array, _session_id: int) -> bool:
 		return true
@@ -72,8 +72,8 @@ class Sessions extends EditorDebuggerPlugin:
 		session.started.connect(func(): addon.started(session_id))
 		session.stopped.connect(func(): addon.stopped(session_id))
 		var tab := Label.new()
-		tab.name = "Passenger"
-		tab.text = "While Passenger is open on this project, this session's game is shown there: its tree, errors and values."
+		tab.name = "Pitstop"
+		tab.text = "While Pitstop is open on this project, this session's game is shown there: its tree, errors and values."
 		session.add_session_tab(tab)
 		addon.tabs[session_id] = tab
 		# Its debugger holds the tab once the session is set up.
@@ -81,7 +81,7 @@ class Sessions extends EditorDebuggerPlugin:
 
 
 func _enter_tree() -> void:
-	trace = OS.has_environment("PASSENGER_ADDON_TRACE")
+	trace = OS.has_environment("PITSTOP_ADDON_TRACE")
 	sessions.addon = self
 	add_debugger_plugin(sessions)
 	scene_changed.connect(func(_root): _tell_scene())
@@ -106,7 +106,7 @@ func _process(_delta: float) -> void:
 		play_held = false
 	for session_id in holding.keys():
 		if Time.get_ticks_msec() - holding[session_id] > HOLD_LIMIT_MS:
-			_stop_held("Passenger did not take the game within %d s" % (HOLD_LIMIT_MS / 1000))
+			_stop_held("Pitstop did not take the game within %d s" % (HOLD_LIMIT_MS / 1000))
 			break
 	if peer == null:
 		if Time.get_ticks_msec() - looked_at >= LOOK_EVERY_MS:
@@ -149,14 +149,14 @@ func _build() -> bool:
 	if not welcomed:
 		return true
 	# Godot draws nothing while a build callback runs: Passenger's window shows the build as it goes.
-	print("Passenger: building the game's C# in Passenger, whose window shows the build as it goes")
+	print("Pitstop: building the game's C# in Pitstop, whose window shows the build as it goes")
 	var answer = _ask("build", {"editor": OS.get_process_id()}, BUILD_LIMIT_MS)
 	if not (answer is Dictionary and answer.get("result") is Dictionary):
 		_lost()
 		return _built_by_godot()
 	var result: Dictionary = answer["result"]
 	if not result.get("built", false):
-		push_error("Passenger: " + str(result.get("said", "the build failed")))
+		push_error("Pitstop: " + str(result.get("said", "the build failed")))
 		return false
 	_hold(result.get("variables", {}))
 	return true
@@ -257,7 +257,7 @@ func _connect() -> void:
 			if hello is Dictionary and hello.get("result") is Dictionary:
 				welcomed = true
 				_skip_godot_build(true)
-				print("Passenger: ", str(hello["result"].get("said", "Play builds and debugs in Passenger")))
+				print("Pitstop: ", str(hello["result"].get("said", "Play builds and debugs in Pitstop")))
 				_tell_scene()
 				# Games playing already are relayed from now, none of them held.
 				for session_id in tabs.keys():
@@ -288,21 +288,21 @@ func _listed(folder: String) -> Array:
 	return found
 
 
-## Passenger's state folder, as Passenger finds it: PASSENGER_SETTINGS, else the user's local application data.
+## Passenger's state folder, as Passenger finds it: PITSTOP_SETTINGS, else the user's local application data.
 func _state_root() -> String:
-	var named := OS.get_environment("PASSENGER_SETTINGS")
+	var named := OS.get_environment("PITSTOP_SETTINGS")
 	if named != "":
 		return named
 	match OS.get_name():
 		"Windows":
-			return OS.get_environment("LOCALAPPDATA").path_join("Passenger")
+			return OS.get_environment("LOCALAPPDATA").path_join("Pitstop")
 		"macOS":
-			return OS.get_environment("HOME").path_join("Library/Application Support/Passenger")
+			return OS.get_environment("HOME").path_join("Library/Application Support/Pitstop")
 		_:
 			var data := OS.get_environment("XDG_DATA_HOME")
 			if not data.is_absolute_path():
 				data = OS.get_environment("HOME").path_join(".local/share")
-			return data.path_join("Passenger")
+			return data.path_join("Pitstop")
 
 
 func _same(one: String, other: String) -> bool:
@@ -387,7 +387,7 @@ func _heard(message: Dictionary) -> void:
 	elif method == "released":
 		holding.erase(int(params.get("session", -1)))
 		if str(params.get("said", "")) != "":
-			print("Passenger: ", str(params["said"]))
+			print("Pitstop: ", str(params["said"]))
 	elif method == "play":
 		# Played once this message is read through, as Play's build asks Passenger itself.
 		_play.call_deferred(str(params.get("scene", "")))
@@ -398,13 +398,13 @@ func _heard(message: Dictionary) -> void:
 		var unsaved = EditorInterface.call("get_unsaved_scenes") if EditorInterface.has_method("get_unsaved_scenes") else [path]
 		if path in EditorInterface.get_open_scenes() and not path in unsaved:
 			EditorInterface.reload_scene_from_path(path)
-			print("Passenger: ", path, " read again, as Passenger wrote it")
+			print("Pitstop: ", path, " read again, as Pitstop wrote it")
 		_send({"id": int(message.get("id", 0)), "result": {}})
 	elif method.begins_with("scene_"):
 		var answer = Scenes.asked(method, params)
 		if trace:
 			var edited := EditorInterface.get_edited_scene_root()
-			print("Passenger trace: ", method, " ", JSON.stringify(params), " in ", edited.scene_file_path if edited != null else "no scene", " -> ", JSON.stringify(answer))
+			print("Pitstop trace: ", method, " ", JSON.stringify(params), " in ", edited.scene_file_path if edited != null else "no scene", " -> ", JSON.stringify(answer))
 		if answer is String:
 			_send({"id": int(message.get("id", 0)), "error": answer})
 		else:
@@ -415,7 +415,7 @@ func _heard(message: Dictionary) -> void:
 		_send({"id": int(message.get("id", 0)), "result": {}})
 	elif message.has("id"):
 		# JSON reads every number as a float, which Passenger would not take for its request's id.
-		_send({"id": int(message["id"]), "error": "Passenger's addon %d takes no %s" % [VERSION, method]})
+		_send({"id": int(message["id"]), "error": "Pitstop's addon %d takes no %s" % [VERSION, method]})
 
 
 ## Play, as Passenger asks it: the scene given (res://), else the main scene, as Godot's own Play plays it.
@@ -458,7 +458,7 @@ func _lost() -> void:
 	scenes_told = ""
 	_skip_godot_build(false)
 	if play_held:
-		_stop_held("Passenger went before it took the game")
+		_stop_held("Pitstop went before it took the game")
 
 
 ## Play stopped where a game held at its start would wait for good for a Passenger that will not take it.
@@ -466,7 +466,7 @@ func _stop_held(why: String) -> void:
 	holding.clear()
 	play_held = false
 	if EditorInterface.is_playing_scene():
-		push_warning("Passenger: %s, which waited at its start for Passenger's debugger: Play stopped; play again" % why)
+		push_warning("Pitstop: %s, which waited at its start for Pitstop's debugger: Play stopped; play again" % why)
 		EditorInterface.stop_playing_scene()
 
 

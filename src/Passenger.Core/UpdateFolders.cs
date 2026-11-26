@@ -2,14 +2,14 @@ using System.Text.Json;
 
 namespace Passenger.Core;
 
-/// <summary>The folder a Linux update keeps beside the install it updates (<c>~/.local/opt/.passenger.update-1.2.0</c>),
+/// <summary>The folder a Linux update keeps beside the install it updates (<c>~/.local/opt/.pitstop.update-1.2.0</c>),
 /// named by the release unpacked into it: it holds that release until the two trade places, then the release it replaced
 /// until the new one starts. Whichever copy runs, a folder named for a version newer than its own is an update not yet in
 /// place, and any other is what an update left behind.</summary>
 public static class UpdateFolders
 {
     /// <summary>What every such folder's name begins with, the version after it.</summary>
-    public const string Prefix = ".passenger.update-";
+    public const string Prefix = ".pitstop.update-";
 
     /// <summary>The folder beside an install for a release of this version.</summary>
     public static string Beside(string install, string version) =>
@@ -34,8 +34,8 @@ public static class UpdateFolders
         {
             using JsonDocument deps = JsonDocument.Parse(depsJson);
             return JsonMembers.Properties(deps.RootElement, "libraries")
-                .Where(library => library.Name.StartsWith("Passenger/", StringComparison.Ordinal) && JsonMembers.Text(library.Value, "type") == "project")
-                .Select(library => library.Name["Passenger/".Length..])
+                .Where(library => library.Name.StartsWith("Pitstop/", StringComparison.Ordinal) && JsonMembers.Text(library.Value, "type") == "project")
+                .Select(library => library.Name["Pitstop/".Length..])
                 .FirstOrDefault();
         }
         catch (JsonException)

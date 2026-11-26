@@ -296,11 +296,11 @@ public static partial class NoticesFile
         StringBuilder text = new();
         string copyright = File.ReadLines(inputs.License).FirstOrDefault(l => l.StartsWith("Copyright", StringComparison.Ordinal))?.Trim() ?? "";
         text.Append(inputs.ForTools ? Invariant($"""
-            Third-party notices for Passenger's container tools
+            Third-party notices for Pitstop's container tools
             ===================================================
 
             Passenger is {copyright}, under the MIT License in LICENSE.txt beside this file. Its container tools
-            (passenger-tools, which Passenger runs inside a Linux container to debug and profile the .NET programs there)
+            (pitstop-tools, which Passenger runs inside a Linux container to debug and profile the .NET programs there)
             carry the software named below, each part under its own licence:
 
             1. Packages: each with the copyright its package states and the full text of its licence: the .NET runtime
@@ -316,7 +316,7 @@ public static partial class NoticesFile
             ===========
 
             """) : Invariant($"""
-            Third-party notices for Passenger
+            Third-party notices for Pitstop
             =================================
 
             Passenger is {copyright}, under the MIT License in LICENSE.txt beside this file. It carries the software

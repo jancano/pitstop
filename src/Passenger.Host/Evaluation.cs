@@ -32,7 +32,7 @@ internal static class Evaluation
         EvaluationContext context = EvaluationContext.Create(EvaluationContext.SharingPolicy.Shared);
         ConcurrentDictionary<string, (EvaluatedProject Outer, IReadOnlyList<string> Frameworks)> targeted = new(PathNames.Comparer);
         // Each worker takes the next project in the order asked: the active file's first.
-        ApartScheduler.ForEach("Passenger evaluator", [.. asked.Projects], 0, cancel, path =>
+        ApartScheduler.ForEach("Pitstop evaluator", [.. asked.Projects], 0, cancel, path =>
         {
             (EvaluatedProject outer, IReadOnlyList<string> frameworks) = Outer(path, collection, context, asked.Of(path));
             evaluated(outer);
@@ -43,7 +43,7 @@ internal static class Evaluation
         });
         List<(EvaluatedProject Outer, IReadOnlyList<string> Frameworks)> inOrder =
             [.. asked.Projects.Distinct(PathNames.Comparer).Where(targeted.ContainsKey).Select(p => targeted[p])];
-        ApartScheduler.ForEach("Passenger evaluator", inOrder, 0, cancel,
+        ApartScheduler.ForEach("Pitstop evaluator", inOrder, 0, cancel,
             t => evaluated(Frameworks(t.Outer, t.Frameworks, collection, context, asked.Of(t.Outer.Path))));
     }
 

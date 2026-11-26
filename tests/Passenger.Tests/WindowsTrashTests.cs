@@ -40,7 +40,7 @@ public sealed class WindowsTrashTests : IDisposable
         File.WriteAllText(file, "class Shop { }\n");
 
         Trashed went = await Waiting.Apart(() => Trash.Move(file), TestContext.Current.CancellationToken)
-            ?? throw new InvalidOperationException("The Recycle Bin kept Shop.cs nowhere Passenger could find");
+            ?? throw new InvalidOperationException("The Recycle Bin kept Shop.cs nowhere Pitstop could find");
         Assert.False(File.Exists(file), "Shop.cs is still where it was after it went to the Recycle Bin");
         Assert.True(Trash.Holds(went), $"The Recycle Bin does not hold Shop.cs where it was said to go, {went.At}");
         Trash.PutBack(went);

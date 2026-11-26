@@ -49,18 +49,18 @@ public sealed partial class SettingsDialog
         ThemeExplorer = new ThemeExplorer(() => Working, Change, () => ThemePicker.Refill());
         ThemeExplorer.Under(ThemePicker.Box, ThemePicker.AddFile);
         Add(Appearance, "VS Code themes", ThemeExplorer, "theme themes vscode vs code visual studio code open vsx openvsx extension vsix colour color dracula monokai one dark solarized github",
-            "Colour themes made for VS Code, from Open VSX, most downloaded first. Passenger reaches Open VSX only while this is open; a theme "
+            "Colour themes made for VS Code, from Open VSX, most downloaded first. Pitstop reaches Open VSX only while this is open; a theme "
             + "you choose is shown at once, kept so it works offline, and follows the window and the code's colours at AA contrast.");
 
         void List()
         {
-            ThemeSourceList.ItemsSource = (string[])[ThemeSource.Repository.Shown, .. Working.ThemeSources];
-            RemoveThemeSourceButton.IsEnabled = ThemeSourceList.SelectedIndex > 0;
+            ThemeSourceList.ItemsSource = (string[])[.. ThemeSource.ConfiguredSources.Select(source => source.Shown), .. Working.ThemeSources];
+            RemoveThemeSourceButton.IsEnabled = ThemeSourceList.SelectedIndex >= ThemeSource.ConfiguredSources.Count;
         }
-        ThemeSourceList.SelectionChanged += (_, _) => RemoveThemeSourceButton.IsEnabled = ThemeSourceList.SelectedIndex > 0;
+        ThemeSourceList.SelectionChanged += (_, _) => RemoveThemeSourceButton.IsEnabled = ThemeSourceList.SelectedIndex >= ThemeSource.ConfiguredSources.Count;
         RemoveThemeSourceButton.Click += (_, _) =>
         {
-            if (ThemeSourceList.SelectedIndex > 0 && ThemeSourceList.SelectedItem is string source)
+            if (ThemeSourceList.SelectedIndex >= ThemeSource.ConfiguredSources.Count && ThemeSourceList.SelectedItem is string source)
             {
                 Change(s => s with { ThemeSources = [.. s.ThemeSources.Where(t => t != source)] });
                 List();
@@ -93,7 +93,7 @@ public sealed partial class SettingsDialog
             },
         };
         Add(Appearance, "Theme sources", sources, "theme themes colour color scheme source sources repository github folder address url add remove refresh passenger-themes",
-            "Where themes and code colour schemes come from. Passenger reads a source only when you look at its themes, choose one or "
+            "Where themes and code colour schemes come from. Pitstop reads a source only when you look at its themes, choose one or "
             + "refresh. A theme you choose is kept, so it works offline; Refresh takes a newer copy.");
 
         // Sources read again in the lists, as one is added or removed.
@@ -128,13 +128,13 @@ public sealed partial class SettingsDialog
         }
         if (source.Kind is not (ThemeSourceKind.Folder or ThemeSourceKind.GitHub or ThemeSourceKind.Web))
         {
-            return $"{words.Trim()} names Passenger's own themes, listed always";
+            return $"{words.Trim()} names Pitstop's own themes, listed always";
         }
         if (source.Kind == ThemeSourceKind.Folder && Directory.Exists(source.Name))
         {
             source = new ThemeSource(ThemeSourceKind.Folder, PathNames.Canonical(source.Name));
         }
-        if (source == ThemeSource.Repository || Working.ThemeSources.Contains(source.Name, StringComparer.Ordinal))
+        if (ThemeSource.ConfiguredSources.Contains(source) || Working.ThemeSources.Contains(source.Name, StringComparer.Ordinal))
         {
             return $"{source.Shown} is listed already";
         }
@@ -152,7 +152,7 @@ public sealed partial class SettingsDialog
         RefreshThemesButton.IsEnabled = false;
         try
         {
-            ThemeSource[] sources = [ThemeSource.Repository, .. Working.ThemeSources.Select(s => ThemeSource.Of(s, out _)).OfType<ThemeSource>()];
+            ThemeSource[] sources = [.. ThemeSource.ConfiguredSources, .. Working.ThemeSources.Select(s => ThemeSource.Of(s, out _)).OfType<ThemeSource>()];
             int taken = await ThemeListing.RefreshAsync(sources);
             string[] refused = [.. sources.Select(ThemeListing.Read).OfType<SourceRead>().Where(r => r.Refused is not null).Select(r => $"{r.Source.Shown} could not be read: {r.Refused}")];
             SayOfSources(refused.Length > 0 ? string.Join("\n", refused) : taken == 0 ? "Every kept theme is as its source has it" : $"{Plural.Of(taken, "kept theme")} taken anew from {Plural.Agreeing(taken, "its source", "their sources")}",

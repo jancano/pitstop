@@ -38,11 +38,11 @@ public class GodotAgentTests
 
     private void A_helpers_error_is_told_by_its_scripts_file_wherever_its_stack_says_it_was_raised()
     {
-        GodotError own = new(0, "/state/cache/godot/passenger_agent.gd", "click", 12, "Invalid call", string.Empty, false, []);
+        GodotError own = new(0, "/state/cache/godot/pitstop_agent.gd", "click", 12, "Invalid call", string.Empty, false, []);
         GodotError deeper = new(0, "scene/gui/control.cpp", "grab_focus", 1, "Not in tree", string.Empty, false,
-            [new GodotFrame("/state/cache/godot/passenger_agent.gd", "_focus", 3)]);
+            [new GodotFrame("/state/cache/godot/pitstop_agent.gd", "_focus", 3)]);
         GodotError games = new(0, "res://Main.cs", "_Process", 19, "Spinner fell over", string.Empty, false, [new GodotFrame("res://Main.cs", "_Process", 19)]);
-        Assert.True(GodotAgent.Raised(own) && GodotAgent.Raised(deeper), "An error Passenger's helper raised was taken for the game's");
-        Assert.False(GodotAgent.Raised(games), "The game's own error was taken for Passenger's helper's");
+        Assert.True(GodotAgent.Raised(own) && GodotAgent.Raised(deeper), "An error Pitstop's helper raised was taken for the game's");
+        Assert.False(GodotAgent.Raised(games), "The game's own error was taken for Pitstop's helper's");
     }
 }

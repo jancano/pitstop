@@ -611,7 +611,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
                 // Passenger's own helper failed: the asks waiting on it say so, and the game's problems stay its own.
                 foreach (TaskCompletionSource<List<object?>> asked in agentAsked.Values.Where(_ => !error.Warning))
                 {
-                    asked.TrySetException(new LiveAppException($"Passenger's helper in {Name} failed: {error.Said}"));
+                    asked.TrySetException(new LiveAppException($"Pitstop's helper in {Name} failed: {error.Said}"));
                 }
                 break;
             case GodotWords.Error when GodotError.Read(message.Data) is { } error && Scripts?.Claims(error) == true:
@@ -795,7 +795,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
         CancellationToken giveUp = asking?.GiveUp ?? CancellationToken.None;
         if (!writing.Wait(0))
         {
-            Mcp.AgentCall.Say($"Waiting to tell {Name} {name}, as Passenger tells it something else");
+            Mcp.AgentCall.Say($"Waiting to tell {Name} {name}, as Pitstop tells it something else");
             try
             {
                 await writing.WaitAsync(giveUp);
@@ -819,7 +819,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
         catch (OperationCanceledException) when (giveUp.IsCancellationRequested)
         {
             stream?.Dispose();
-            throw new LiveAppException(GivenUp(asking!, $"for its connection to take {name}, which it would not: Passenger let go of the connection"));
+            throw new LiveAppException(GivenUp(asking!, $"for its connection to take {name}, which it would not: Pitstop let go of the connection"));
         }
         catch (Exception lost) when (lost is IOException or SocketException or ObjectDisposedException or OperationCanceledException)
         {
@@ -872,7 +872,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
             }
             if (System.Diagnostics.Stopwatch.GetElapsedTime(began) >= limit)
             {
-                throw new LiveAppException($"{Name} has opened no scene in the {Durations.Said(limit)} since it connected, and Passenger's helper comes into the game beside one");
+                throw new LiveAppException($"{Name} has opened no scene in the {Durations.Said(limit)} since it connected, and Pitstop's helper comes into the game beside one");
             }
             Mcp.AgentCall.Say($"Waiting for {Name} to open its first scene");
             await Task.Delay(TimeSpan.FromMilliseconds(250), cancel);
@@ -891,11 +891,11 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
         }
         if (Debugged is { State: Debugging.DebugState.Paused } || stoppedInEditor)
         {
-            throw new LiveAppException($"{Name} is paused in a script before Passenger's helper came into it, which it does once the game runs on");
+            throw new LiveAppException($"{Name} is paused in a script before Pitstop's helper came into it, which it does once the game runs on");
         }
         TimeSpan limit = Waits.Of(AnswerLimit);
         AgentAsking? asking = Asking.Value;
-        Mcp.AgentCall.Say($"Waiting for {Name} to run its loop, before which Passenger's helper cannot come into its tree");
+        Mcp.AgentCall.Say($"Waiting for {Name} to run its loop, before which Pitstop's helper cannot come into its tree");
         Task beat = nextBeat.Task;
         Task stopped = nextStop.Task;
         try
@@ -903,7 +903,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
             Task came = await Task.WhenAny(beat, stopped, over.Task).WaitAsync(limit, asking?.GiveUp ?? CancellationToken.None);
             if (came == stopped)
             {
-                throw new LiveAppException($"{Name} stopped under the debugger before Passenger's helper came into it, which it does once the game runs on: "
+                throw new LiveAppException($"{Name} stopped under the debugger before Pitstop's helper came into it, which it does once the game runs on: "
                     + "debug_state says where");
             }
             if (came == over.Task)
@@ -913,12 +913,12 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
         }
         catch (OperationCanceledException) when (asking is { GiveUp.IsCancellationRequested: true })
         {
-            throw new LiveAppException(GivenUp(asking, "for it to run its loop, before which Passenger's helper cannot come into its tree"));
+            throw new LiveAppException(GivenUp(asking, "for it to run its loop, before which Pitstop's helper cannot come into its tree"));
         }
         catch (TimeoutException)
         {
             throw new LiveAppException($"{Name} ran no loop in {Durations.Said(limit)}, its tree setting nodes up all that time (a node's _ready running, or "
-                + "a script stopped in one), where Godot adds no node: Passenger's helper comes in once the game has run its loop");
+                + "a script stopped in one), where Godot adds no node: Pitstop's helper comes in once the game has run its loop");
         }
     }
 
@@ -948,7 +948,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
         int sent = stops;
         await AskingAsync(asked.Task, GodotWords.RequestSceneTree);
         (GodotNode? told, int moved) = await Answer(asked.Task, sent, "with its scene tree");
-        return (told ?? throw new LiveAppException($"{Name} sent a scene tree Passenger could not read"), (int)asked.Task.AsyncState!, moved);
+        return (told ?? throw new LiveAppException($"{Name} sent a scene tree Pitstop could not read"), (int)asked.Task.AsyncState!, moved);
     }
 
     /// <summary>Sends a question whose answer is waited for after: where it cannot be sent, no one waits for that answer, and
@@ -1049,13 +1049,13 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
 
     /// <summary>Why a game Godot runs headless has no picture.</summary>
     public string HeadlessPicture => Unseen && OperatingSystem.IsLinux() && PassengerApp.ForAgent
-        ? $"{Name} runs headless, and Godot draws nothing for a headless game, so there is no picture of it: an agent's own Passenger draws its games on Linux "
+        ? $"{Name} runs headless, and Godot draws nothing for a headless game, so there is no picture of it: an agent's own Pitstop draws its games on Linux "
             + (Programs.OnPath(GodotExecutables.VirtualDisplay) is null
                 ? "on an X server of its own that shows nowhere, Xvfb, which is not installed here: install it (the xvfb package), then run the game again"
-                : "on an X server of its own that shows nowhere, Xvfb, which did not start here (Passenger's log says why)")
+                : "on an X server of its own that shows nowhere, Xvfb, which did not start here (Pitstop's log says why)")
         : Unseen
-        ? $"{Name} runs headless, as every Godot game a Passenger nobody sees starts does (an agent's own, a test's, a screenshot's), and Godot draws "
-            + "nothing for a headless game, so there is no picture of it: a person's Passenger runs it with a window"
+        ? $"{Name} runs headless, as every Godot game a Pitstop nobody sees starts does (an agent's own, a test's, a screenshot's), and Godot draws "
+            + "nothing for a headless game, so there is no picture of it: a person's Pitstop runs it with a window"
         : $"{Name} runs headless (--headless among its arguments), and Godot draws nothing for a headless game, "
             + "so there is no picture of it: run it without --headless to take one";
 
@@ -1149,7 +1149,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
             GodotNode tree = asked.Value.Tree;
             List<GodotNode> all = [.. tree.All()];
             named = (tree.Children.Select(c => c.SceneFile).FirstOrDefault(f => f.Length > 0 && all.Count(n => n.SceneFile == f) == 1)
-                ?? throw new LiveAppException($"{Name} has no scene open once under its root, beside which Passenger's helper comes into the game"), asked.Value.Moves);
+                ?? throw new LiveAppException($"{Name} has no scene open once under its root, beside which Pitstop's helper comes into the game"), asked.Value.Moves);
             if (!tree.Children.Any(GodotAgent.Is))
             {
                 await LoopedAsync();
@@ -1173,7 +1173,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
             catch (Exception unwritten) when (unwritten is IOException or UnauthorizedAccessException)
             {
                 bringing = null;
-                throw new LiveAppException($"Passenger's helper could not be written for {Name}: {unwritten.Message}");
+                throw new LiveAppException($"Pitstop's helper could not be written for {Name}: {unwritten.Message}");
             }
         }
         long ask = ++asks;
@@ -1196,7 +1196,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
             List<object?> said;
             try
             {
-                said = await Answer(answer.Task, sent, $"Passenger's helper's {call}");
+                said = await Answer(answer.Task, sent, $"Pitstop's helper's {call}");
             }
             catch (LiveAppException)
             {
@@ -1205,7 +1205,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
             }
             beside = (scene, namedAt);
             return said[1] is true ? said[2..]
-                : throw new LiveAppException(said is [_, _, string why, ..] ? why : $"Passenger's helper in {Name} did not say why it could not");
+                : throw new LiveAppException(said is [_, _, string why, ..] ? why : $"Pitstop's helper in {Name} did not say why it could not");
         }
         finally
         {
@@ -1220,7 +1220,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
     {
         foreach (TaskCompletionSource<List<object?>> waiting in agentAsked.Values)
         {
-            waiting.TrySetException(new LiveAppException($"{Name} freed Passenger's helper before it answered its {waiting.Task.AsyncState}: the next call brings it in again"));
+            waiting.TrySetException(new LiveAppException($"{Name} freed Pitstop's helper before it answered its {waiting.Task.AsyncState}: the next call brings it in again"));
         }
     }
 
@@ -1247,7 +1247,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
     {
         List<object?> asked = [.. asks.Select(a => (object?)new List<object?> { a.Script, (long)a.Chosen, new List<object?>(a.Names) })];
         List<object?> said = await AskAsync("values", asked);
-        return GodotScriptRead.Read(said, asks) ?? throw new LiveAppException($"Passenger's helper in {Name} answered with values Passenger could not read");
+        return GodotScriptRead.Read(said, asks) ?? throw new LiveAppException($"Pitstop's helper in {Name} answered with values Pitstop could not read");
     }
 
     /// <summary>The object a node's property holds (a resource), by its id, class and file, read through Passenger's helper:
@@ -1262,7 +1262,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
         List<object?> said = await AskAsync("held", element, property);
         if (said is not [long id, string named, string path, ..])
         {
-            throw new LiveAppException($"Passenger's helper in {Name} said no object for {property}");
+            throw new LiveAppException($"Pitstop's helper in {Name} said no object for {property}");
         }
         heldObjects.Add((ulong)id);
         heldPaths[(ulong)id] = path;
@@ -1543,7 +1543,7 @@ public sealed class GodotGame : ILiveTreeSource, ILiveTreeValues, IGodotValues, 
             throw new LiveAppException($"{Name}'s loop runs: hold it to step it a frame");
         }
         List<object?> said = await AskAsync("step", [Headless], () => SendAsync(GodotWords.NextFrame));
-        long stepped = said is [long frame, ..] ? frame : throw new LiveAppException($"Passenger's helper in {Name} said no frame count");
+        long stepped = said is [long frame, ..] ? frame : throw new LiveAppException($"Pitstop's helper in {Name} said no frame count");
         Frame = stepped;
         LoopChanged?.Invoke(this, EventArgs.Empty);
         return stepped;

@@ -102,7 +102,7 @@ public sealed class JsonSchemaTests
             window.OpenFile(Path.Combine(folder, "far.json"));
             Ui.Settle();
             OpenDocument far = window.EditorArea.Active!;
-            Ui.WaitFor(() => far.Markers.Any(m => m.Message.Contains("Passenger reads a schema's file only from this machine's own disks", StringComparison.Ordinal)),
+            Ui.WaitFor(() => far.Markers.Any(m => m.Message.Contains("Pitstop reads a schema's file only from this machine's own disks", StringComparison.Ordinal)),
                 () => $"the mark saying another machine's schema is not read, where far.json has [{string.Join("; ", far.Markers.Select(m => m.Message))}]");
             Assert.True(!far.Markers.Any(m => m.Message.Contains("Incorrect type", StringComparison.Ordinal)),
                 $"far.json was checked by a schema read from another machine: [{string.Join("; ", far.Markers.Select(m => m.Message))}]");
@@ -135,7 +135,7 @@ public sealed class JsonSchemaTests
             window.OpenFile(Path.Combine(folder, "far.yaml"));
             Ui.Settle();
             OpenDocument far = window.EditorArea.Active!;
-            Ui.WaitFor(() => far.Markers.Any(m => m.Message.Contains("Passenger reads a schema's file only from this machine's own disks", StringComparison.Ordinal)),
+            Ui.WaitFor(() => far.Markers.Any(m => m.Message.Contains("Pitstop reads a schema's file only from this machine's own disks", StringComparison.Ordinal)),
                 () => $"the mark saying another machine's schema is not read, where far.yaml has [{string.Join("; ", far.Markers.Select(m => m.Message))}]");
             Assert.True(!far.Markers.Any(m => m.Message.Contains("Incorrect type", StringComparison.Ordinal)),
                 $"far.yaml was checked by a schema read from another machine: [{string.Join("; ", far.Markers.Select(m => m.Message))}]");

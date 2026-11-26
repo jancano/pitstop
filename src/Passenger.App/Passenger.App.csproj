@@ -1,14 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <AssemblyName>Passenger</AssemblyName>
+    <AssemblyName>Pitstop</AssemblyName>
     <RootNamespace>Passenger.App</RootNamespace>
+    <Product>Pitstop</Product>
+    <AssemblyTitle>Pitstop</AssemblyTitle>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- Passenger.exe's icon on Windows, so its Start menu entry's and its file types' (tools/app-icon.sh). -->
-    <ApplicationIcon>Assets/Passenger.ico</ApplicationIcon>
+    <!-- Pitstop.exe's icon on Windows, so its Start menu entry's and its file types' (tools/app-icon.sh). -->
+    <ApplicationIcon>Assets/Pitstop.ico</ApplicationIcon>
     <!-- Every window wears AppIcon's, so no second copy of the file is carried as the icon of a window with none. -->
     <AvaloniaIncludeApplicationIconAsWindowIcon>false</AvaloniaIncludeApplicationIconAsWindowIcon>
-    <!-- The passenger-ide command this build carries (src/Passenger.Launcher, PassengerCommand.cs): Windows' program, or
+    <!-- The pitstop-ide command this build carries (src/Passenger.Launcher, PassengerCommand.cs): Windows' program, or
          macOS's script; Linux's archive carries its own launcher (tools/linux). -->
     <CommandFor Condition="$(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows')))">windows</CommandFor>
     <CommandFor Condition="$(RuntimeIdentifier.StartsWith('osx')) Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX')))">macos</CommandFor>
@@ -18,9 +20,9 @@
 
   <ItemGroup>
     <!-- Every window's icon (AppIcon), at each size Windows draws one. -->
-    <AvaloniaResource Include="Assets/Passenger.ico" />
-    <!-- The mark About, the Welcome page, the first start and What's New show, drawn from Assets/passenger.svg. -->
-    <AvaloniaResource Include="Assets/passenger.png" />
+    <AvaloniaResource Include="Assets/Pitstop.ico" />
+    <!-- The mark About, the Welcome page, the first start and What's New show, drawn from Assets/pitstop.svg. -->
+    <AvaloniaResource Include="Assets/pitstop.png" />
     <!-- The window's typeface (Theme/WindowFonts.cs): Inter 4.1's hinted faces as rsms/inter's release gives them. -->
     <AvaloniaResource Include="Fonts/*.ttf" />
     <!-- The themes Passenger carries beside its own, a source in theme format 1 (Theme/BuiltInThemes.cs, docs/themes.md). -->
@@ -38,19 +40,19 @@
     <EmbeddedResource Include="Godot/PassengerClasses.gd" LogicalName="Godot/PassengerClasses.gd" />
     <!-- Passenger's own addon for Godot's editor, written into a Godot project when the person asks (Godot/GodotAddonFiles.cs). -->
     <EmbeddedResource Include="Godot/Addon/plugin.cfg" LogicalName="Godot/Addon/plugin.cfg" />
-    <EmbeddedResource Include="Godot/Addon/passenger.gd" LogicalName="Godot/Addon/passenger.gd" />
+    <EmbeddedResource Include="Godot/Addon/pitstop.gd" LogicalName="Godot/Addon/pitstop.gd" />
     <EmbeddedResource Include="Godot/Addon/scenes.gd" LogicalName="Godot/Addon/scenes.gd" />
-    <!-- The passenger-ide command on macOS, under bin/ beside the app (a bundle's Resources/bin: CarriedFiles). -->
-    <None Include="../Passenger.Launcher/passenger-ide" Link="bin/passenger-ide" CopyToOutputDirectory="PreserveNewest" Condition="'$(CommandFor)' == 'macos'" />
+    <!-- The pitstop-ide command on macOS, under bin/ beside the app (a bundle's Resources/bin: CarriedFiles). -->
+    <None Include="../Passenger.Launcher/passenger-ide" Link="bin/pitstop-ide" CopyToOutputDirectory="PreserveNewest" Condition="'$(CommandFor)' == 'macos'" />
     <!-- Passenger's own Prettier runner (Web/Prettier.cs), carried beside the web language servers. -->
-    <None Include="Web/prettier.cjs" Link="web/passenger/prettier.cjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Web/prettier.cjs" Link="web/pitstop/prettier.cjs" CopyToOutputDirectory="PreserveNewest" />
     <!-- Passenger's preload for the Dockerfile server, which keeps it from Docker Hub while Settings says so
          (Web/DockerHubTags.cs). -->
-    <None Include="Web/docker-hub.cjs" Link="web/passenger/docker-hub.cjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Web/docker-hub.cjs" Link="web/pitstop/docker-hub.cjs" CopyToOutputDirectory="PreserveNewest" />
     <!-- Passenger's preload for the YAML server, which has it ask Passenger for each schema's file (Web/JsonSchemas.cs). -->
-    <None Include="Web/yaml-schemas.mjs" Link="web/passenger/yaml-schemas.mjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Web/yaml-schemas.mjs" Link="web/pitstop/yaml-schemas.mjs" CopyToOutputDirectory="PreserveNewest" />
     <!-- The empty Bun configuration Bun takes in place of a folder's own as it runs the servers (Web/NodeRuntime.cs). -->
-    <None Include="Web/bunfig.toml" Link="web/passenger/bunfig.toml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Web/bunfig.toml" Link="web/pitstop/bunfig.toml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -91,7 +93,7 @@
     <PackageReference Include="NLayer" />
     <!-- An SVG file's picture beside its text (Editors/SvgPreview.cs). -->
     <PackageReference Include="Svg.Skia" />
-    <!-- The Windows install's hooks: what its installer and uninstaller ask of Passenger.exe (Installation.cs). -->
+    <!-- The Windows install's hooks: what its installer and uninstaller ask of Pitstop.exe (Installation.cs). -->
     <PackageReference Include="Velopack" />
   </ItemGroup>
 
@@ -106,6 +108,8 @@
     <ProjectReference Include="../Passenger.Vcs/Passenger.Vcs.csproj" />
     <ProjectReference Include="../Passenger.Workspace/Passenger.Workspace.csproj" />
     <ProjectReference Include="../Passenger.Xaml/Passenger.Xaml.csproj" />
+    <ProjectReference Include="../Pitstop.Xmake/Pitstop.Xmake.csproj" />
+    <ProjectReference Include="../Pitstop.Cpp/Pitstop.Cpp.csproj" />
     <ProjectReference Include="../Passenger.Profiler/Passenger.Profiler.csproj" />
     <ProjectReference Include="../Passenger.Dap/Passenger.Dap.csproj" />
     <!-- Built first and carried, never linked: the adapter runs in its own process, on the runtime Passenger runs on (the
@@ -116,7 +120,7 @@
          run in it (ChildProcesses.HelperCommand). -->
     <ProjectReference Include="../Passenger.Helper/Passenger.Helper.csproj" ReferenceOutputAssembly="false" Private="false"
                       GlobalPropertiesToRemove="PublishReadyToRun" />
-    <!-- Built first, for a publish's system on its runtime pack, and carried beside the app, never linked: the passenger-ide
+    <!-- Built first, for a publish's system on its runtime pack, and carried beside the app, never linked: the pitstop-ide
          command on Windows (IncludeLauncher). -->
     <ProjectReference Include="../Passenger.Launcher/Passenger.Launcher.csproj" ReferenceOutputAssembly="false" Private="false"
                       GlobalPropertiesToRemove="PublishReadyToRun" Condition="'$(CommandFor)' == 'windows'" />
@@ -189,7 +193,6 @@
 
   <!-- Every version's release notes beside the app (release-notes/X.Y.Z.md), for What's New: carried, never fetched. -->
   <ItemGroup>
-    <None Include="../../docs/release-notes/*.md" Link="release-notes/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 
   <Target Name="NoticeInputs" DependsOnTargets="ResolvePackageAssets;ResolveRuntimePackAssets;IncludeDebugAdapter;IncludeProjectHost;IncludeMauiPreview">
@@ -397,7 +400,7 @@
     </ItemGroup>
   </Target>
 
-  <!-- The passenger-ide command on Windows becomes this project's output beside the app: its assembly, .deps.json and
+  <!-- The pitstop-ide command on Windows becomes this project's output beside the app: its assembly, .deps.json and
        runtimeconfig.json, and its apphost alone in bin\, the folder the installer puts on the person's Path. -->
   <Target Name="IncludeLauncher" BeforeTargets="AssignTargetPaths" Condition="'$(CommandFor)' == 'windows'">
     <MSBuild Projects="../Passenger.Launcher/Passenger.Launcher.csproj" Targets="GetLauncher"
@@ -428,11 +431,11 @@
            An iOS simulator's app (on Apple silicon) and a Mac Catalyst app load their own, of the Mac's processor,
            copied from where a Mac's Passenger carries it (its bundle's Resources: CarriedFiles); an iOS device's waits
            until one proves it. -->
-      <DebugRelayFile Include="$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/**/libpassenger-debug.so" />
-      <DebugRelayFile Include="$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/iossimulator-arm64*/libpassenger-debug.dylib;$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/maccatalyst-arm64*/libpassenger-debug.dylib"
+      <DebugRelayFile Include="$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/**/libpitstop-debug.so" />
+      <DebugRelayFile Include="$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/iossimulator-arm64*/libpitstop-debug.dylib;$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/maccatalyst-arm64*/libpitstop-debug.dylib"
                       Condition="'$(RuntimeIdentifier)' == 'osx-arm64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX'))
                                  And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64')" />
-      <DebugRelayFile Include="$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/maccatalyst-x64*/libpassenger-debug.dylib"
+      <DebugRelayFile Include="$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))debug-relay/maccatalyst-x64*/libpitstop-debug.dylib"
                       Condition="'$(RuntimeIdentifier)' == 'osx-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX'))
                                  And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64')" />
       <None Include="@(DebugRelayFile)" Link="debugger/relay/%(DebugRelayFile.RecursiveDir)%(DebugRelayFile.Filename)%(DebugRelayFile.Extension)"

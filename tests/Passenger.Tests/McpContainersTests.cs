@@ -39,7 +39,7 @@ public sealed class McpContainersTests : McpRig, IClassFixture<RestoredFolders>
     public void An_attached_agents_container_command_waits_for_the_person_and_a_gone_Passengers_containers_are_removed_but_another_machines()
     {
         Flow.StepApart("an agents command in a container waits for the person to allow it", () => new McpContainersTests(restored), t => t.An_agents_command_in_a_container_waits_for_the_person_to_allow_it());
-        Flow.StepApart("containers a passenger of this machine that is gone left are removed as the next one starts and another machines stay", () => new McpContainersTests(restored), t => t.Containers_a_passenger_of_this_machine_that_is_gone_left_are_removed_as_the_next_one_starts_and_another_machines_stay());
+        Flow.StepApart("containers a pitstop of this machine that is gone left are removed as the next one starts and another machines stay", () => new McpContainersTests(restored), t => t.Containers_a_passenger_of_this_machine_that_is_gone_left_are_removed_as_the_next_one_starts_and_another_machines_stay());
     }
 
     private async Task An_agent_lists_the_engines_containers_reads_a_log_and_stops_and_starts_one()
@@ -251,10 +251,10 @@ public sealed class McpContainersTests : McpRig, IClassFixture<RestoredFolders>
         string elsewhere = Docker.Container("elsewhere", "sleep 600", state, $"{ContainerLabels.Machine}=0123456789abcdef", gone);
         // Taken here, on the UI thread, where the folder is restored.
         string taken = Folder;
-        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], environment: new() { [StateStore.Variable] = TestRun.Settings }, languageServer: false)), "Passenger starting");
+        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], environment: new() { [StateStore.Variable] = TestRun.Settings }, languageServer: false)), "Pitstop starting");
         try
         {
-            Ui.WaitFor(() => Docker.State(left) is null, $"{left}, labelled with this state and a process that is gone, removed as Passenger started",
+            Ui.WaitFor(() => Docker.State(left) is null, $"{left}, labelled with this state and a process that is gone, removed as Pitstop started",
                 TimeSpan.FromSeconds(60));
             Assert.Equal("running", Docker.State(living));
             Assert.Equal("running", Docker.State(elsewhere));

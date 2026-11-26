@@ -25,7 +25,7 @@ public sealed class AndroidDeviceTests
 {
     private static readonly TimeSpan Slow = TimeSpan.FromMinutes(6);
 
-    private const string Package = "net.passengeride.tests.androidapp";
+    private const string Package = "net.pitstopide.tests.androidapp";
 
     /// <summary>An app on an emulator: run and stopped at a breakpoint, its locals shown, an edit taken by Run and by Debug
     /// with Hot Reload and its update handler called, a MAUI app's live tree and an Avalonia app's shared code stopped in.
@@ -59,7 +59,7 @@ public sealed class AndroidDeviceTests
             A_debug_start_stopped_once_its_relay_is_in_the_app_leaves_nothing_of_it_on_the_emulator);
         Flow.Step("a run stopped once its relay is in the app never starts the app on the emulator",
             A_run_stopped_once_its_relay_is_in_the_app_never_starts_the_app_on_the_emulator);
-        Flow.Step("Passenger ending while a debugged app's end on the emulator is held waits until nothing of it is left there",
+        Flow.Step("Pitstop ending while a debugged app's end on the emulator is held waits until nothing of it is left there",
             Passenger_ending_while_a_debugged_apps_end_on_the_emulator_is_held_waits_until_nothing_of_it_is_left_there);
         Flow.Step("a relay a vanished end left in the app is out before its next run starts it",
             A_relay_a_vanished_end_left_in_the_app_is_out_before_its_next_run_starts_it);
@@ -75,7 +75,7 @@ public sealed class AndroidDeviceTests
         {
             Choose(window, project, target);
             Ui.Launched(window, window.RunAsync(), "the build, the install and the start on the emulator", Slow);
-            Ui.WaitFor(() => Output(window).Contains("Hello from Passenger's test app, 42", StringComparison.Ordinal),
+            Ui.WaitFor(() => Output(window).Contains("Hello from Pitstop's test app, 42", StringComparison.Ordinal),
                 () => $"the app's log in the Run window; it shows:\n{Output(window)}\n{Ui.Said(window)}", Slow);
             Ui.Run(window, AppActions.Stop);
             Ui.WaitFor(() => window.Runner.Ended.IsCompleted, "the run to end once stopped");
@@ -211,7 +211,7 @@ public sealed class AndroidDeviceTests
             : Ui.Await(Waiting.Apart(() => AndroidDevices.BootAsync(tools, target.Avd ?? target.Id, unseen: true, _ => { }, CancellationToken.None)), "the emulator's start", Slow).Serial
                 ?? throw new InvalidOperationException($"{target.Name} did not start");
         string abi = Adb(tools, serial, "shell", "getprop", "ro.product.cpu.abi").Trim();
-        const string Unknown = "net.passengeride.tests.notinstalled";
+        const string Unknown = "net.pitstopide.tests.notinstalled";
         string intermediate = Path.Combine(folder, "obj", "Debug");
         string built = Path.Combine(intermediate, "fastdeploy2-environment", abi, "environment");
         Directory.CreateDirectory(Path.GetDirectoryName(built)!);
@@ -226,11 +226,11 @@ public sealed class AndroidDeviceTests
             (RelaySession? relay, string? unrelayed) = Ui.Await(debugged.PutRelayAsync(null, null, CancellationToken.None), "the relay's put into an app run-as does not know", Slow);
             Assert.True(relay is null && unrelayed is not null && unrelayed.Contains($"run-as: unknown package: {Unknown}", StringComparison.Ordinal),
                 $"A Debug start whose relay could not go in was not refused in run-as's words, so it would wait for a relay that is not there: {unrelayed ?? "nothing said"}");
-            DeviceInspector inspector = new("passenger-inspector-test", "token", [inspectorFile], []);
+            DeviceInspector inspector = new("pitstop-inspector-test", "token", [inspectorFile], []);
             string? uninspected = Ui.Await(inspected.PutInspectorAsync(inspector, CancellationToken.None), "the inspector's put into an app run-as does not know", Slow);
             Assert.True(uninspected is not null && uninspected.Contains($"run-as: unknown package: {Unknown}", StringComparison.Ordinal),
                 $"A Run whose inspector could not go in did not say so in run-as's words: {uninspected ?? "nothing said"}");
-            string staged = Adb(tools, serial, "shell", $"ls /data/local/tmp | grep -F passenger-{Unknown}-; true").Trim();
+            string staged = Adb(tools, serial, "shell", $"ls /data/local/tmp | grep -F pitstop-{Unknown}-; true").Trim();
             Assert.True(staged.Length == 0, $"What the refused starts staged on the emulator stayed there: {staged}");
             Assert.True(Left(tools, serial).Length == 0, $"A refused start left its debugging on the emulator: {Left(tools, serial)}");
         }
@@ -327,7 +327,7 @@ public sealed class AndroidDeviceTests
             Ui.Launched(window, window.DebugAsync(), "the debug session's start on the emulator", Slow);
             string serial = AndroidSerials.Of(window, target);
             Ui.WaitFor(() => Pid(tools, serial).Length > 0, () => $"the debugged app to run on the emulator: {Ui.Said(window)}\n{Console(window)}", Slow);
-            Assert.True(Left(tools, serial).Length > 0, "The debug start put nothing of its own on the emulator, so there is nothing Passenger's end must take out");
+            Assert.True(Left(tools, serial).Length > 0, "The debug start put nothing of its own on the emulator, so there is nothing Pitstop's end must take out");
 
             DeviceLaunches.HeldEnds = () =>
             {
@@ -337,18 +337,18 @@ public sealed class AndroidDeviceTests
             Ui.CloseAsQuit(window);
             closed = true;
             Task ended = window.Ended ?? throw new InvalidOperationException("The window closed with no end to wait for");
-            Ui.PumpUntil(() => reached.Task.IsCompleted, "the debugged app's end on the emulator to begin as Passenger ends", Slow);
-            Ui.Hold(MainWindow.EndLimit + TimeSpan.FromSeconds(2), "past the limit Passenger's end gives the rest of what it started");
+            Ui.PumpUntil(() => reached.Task.IsCompleted, "the debugged app's end on the emulator to begin as Pitstop ends", Slow);
+            Ui.Hold(MainWindow.EndLimit + TimeSpan.FromSeconds(2), "past the limit Pitstop's end gives the rest of what it started");
             if (ended.IsCompleted)
             {
-                Assert.Fail($"Passenger would have gone with {Left(tools, serial)} still on the emulator, its app's end there held");
+                Assert.Fail($"Pitstop would have gone with {Left(tools, serial)} still on the emulator, its app's end there held");
             }
             go.TrySetResult();
-            Ui.AwaitPumped(ended, "Passenger's end once the app's end on the emulator goes on", Slow);
+            Ui.AwaitPumped(ended, "Pitstop's end once the app's end on the emulator goes on", Slow);
             string left = Left(tools, serial);
-            Assert.True(left.Length == 0, $"Passenger's end was done with {left} still on the emulator");
+            Assert.True(left.Length == 0, $"Pitstop's end was done with {left} still on the emulator");
             string running = Pid(tools, serial);
-            Assert.True(running.Length == 0, $"Passenger's end was done with its debugged app still running on the emulator as {running}");
+            Assert.True(running.Length == 0, $"Pitstop's end was done with its debugged app still running on the emulator as {running}");
         }
         finally
         {
@@ -425,7 +425,7 @@ public sealed class AndroidDeviceTests
             Assert.True(Left(tools, app.Serial).Contains("the relay in the app", StringComparison.Ordinal), "The relay was not left in the app as a vanished end leaves it");
 
             Ui.Launched(window, window.RunAsync(), "the next run's start on the emulator", Slow);
-            Ui.WaitFor(() => Output(window).Contains("Hello from Passenger's test app, 42", StringComparison.Ordinal),
+            Ui.WaitFor(() => Output(window).Contains("Hello from Pitstop's test app, 42", StringComparison.Ordinal),
                 () => $"the app to start at once, its log in the Run window; it shows:\n{Output(window)}\n{Ui.Said(window)}", TimeSpan.FromSeconds(40));
             string pid = Pid(tools, app.Serial);
             string loaded = Adb(tools, app.Serial, "shell", $"run-as {Package} cat /proc/{pid}/maps");
@@ -471,7 +471,7 @@ public sealed class AndroidDeviceTests
             string loaded = string.Empty;
             Ui.WaitFor(() => (pid = Pid(tools, serial)).Length > 0
                 && ((loaded = Adb(tools, serial, "shell", $"run-as {Package} cat /proc/{pid}/maps")).Contains(AndroidApp.RelayFile, StringComparison.Ordinal)
-                    || Adb(tools, serial, "logcat", "-d", $"--pid={pid}", "-s", "PassengerTest:I").Contains("Hello from Passenger's test app", StringComparison.Ordinal)),
+                    || Adb(tools, serial, "logcat", "-d", $"--pid={pid}", "-s", "PassengerTest:I").Contains("Hello from Pitstop's test app", StringComparison.Ordinal)),
                 () => $"the app started from its launcher to greet, or to load the relay; it runs as {(pid.Length > 0 ? pid : "nothing yet")}", TimeSpan.FromSeconds(30));
             Assert.False(loaded.Contains(AndroidApp.RelayFile, StringComparison.Ordinal),
                 "The app started from its launcher loaded the relay of a debugging whose end had not reached the emulator, so its start waits a minute for a debugger");
@@ -499,7 +499,7 @@ public sealed class AndroidDeviceTests
         string relay = CarriedFiles.Relay(runtime, AndroidApp.RelayFile);
         string environment = Path.Combine(TestFolders.Create("android-left"), "environment");
         File.WriteAllBytes(environment, AndroidEnvironment.Write(AndroidEnvironment.With(AndroidEnvironment.Read(File.ReadAllBytes(app.BuiltEnvironment(abi))),
-            app.RelayVariables(abi, "passenger-debug-left", "left"))));
+            app.RelayVariables(abi, "pitstop-debug-left", "left"))));
         Adb(tools, app.Serial, "push", relay, app.Staged("relay"));
         Adb(tools, app.Serial, "push", environment, app.Staged("environment"));
         IReadOnlyList<string> put = app.PutIn(abi, relay: true, []);
@@ -576,9 +576,9 @@ public sealed class AndroidDeviceTests
         string reverses = Adb(tools, serial, "reverse", "--list");
         string relay = Adb(tools, serial, "shell", $"run-as {Package} ls files/.__override__/arm64-v8a files/.__override__/x86_64 2>/dev/null");
         string debugged = Adb(tools, serial, "shell", "dumpsys activity processes | grep mDebugApp=");
-        return string.Join("; ", [.. forwards.Split('\n').Where(l => l.StartsWith(serial + " ", StringComparison.Ordinal) && l.Contains("localabstract:passenger-debug-", StringComparison.Ordinal))
+        return string.Join("; ", [.. forwards.Split('\n').Where(l => l.StartsWith(serial + " ", StringComparison.Ordinal) && l.Contains("localabstract:pitstop-debug-", StringComparison.Ordinal))
                 .Select(l => l.Trim()),
-            .. reverses.Split('\n').Where(l => l.Contains("localabstract:passenger-handlers-", StringComparison.Ordinal)).Select(l => l.Trim()),
+            .. reverses.Split('\n').Where(l => l.Contains("localabstract:pitstop-handlers-", StringComparison.Ordinal)).Select(l => l.Trim()),
             .. relay.Contains(AndroidApp.RelayFile, StringComparison.Ordinal) ? ["the relay in the app"] : (string[])[],
             .. debugged.Contains($"mDebugApp={Package}/", StringComparison.Ordinal) ? [$"{Package} marked as debugged"] : (string[])[]]);
     }

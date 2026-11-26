@@ -37,7 +37,7 @@ public static class DotnetInstall
             throw new DotnetInstallFailed($"The .NET SDK {sdk.Version} would come over {sdk.Url.Scheme}, not HTTPS ({sdk.Url})");
         }
         bool made = !Directory.Exists(into);
-        string staging = Path.Combine(into, $".passenger-install-{Guid.NewGuid():N}");
+        string staging = Path.Combine(into, $".pitstop-install-{Guid.NewGuid():N}");
         Steps steps = new(sdk.Version);
         DotnetMerge merge = new(sdk.Version, stage);
         bool installed = false;

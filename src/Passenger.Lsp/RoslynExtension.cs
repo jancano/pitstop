@@ -20,16 +20,16 @@ public static class RoslynExtension
     {
         if (!File.Exists(Assembly))
         {
-            return "Passenger's extension to the C# language server is missing from the app's folder";
+            return "Pitstop's extension to the C# language server is missing from the app's folder";
         }
         JsonElement answer = await server.RequestAsync<JsonElement>("server/_vs_activateExtension", new ActivateExtensionParams(Assembly), cancel).ConfigureAwait(false);
         if (Thrown(answer) is { } thrown)
         {
-            return $"the C# language server could not load Passenger's extension: {thrown}";
+            return $"the C# language server could not load Pitstop's extension: {thrown}";
         }
         HashSet<string> active = [.. Named(answer, "documentMessageHandlers"), .. Named(answer, "workspaceMessageHandlers")];
         string[] missing = [.. Handlers.All.Concat(HotReloadHandlers.All).Where(h => !active.Contains(h))];
-        return missing.Length == 0 ? null : $"the C# language server did not take Passenger's {string.Join(", ", missing.Select(m => m[(m.LastIndexOf('.') + 1)..]))}";
+        return missing.Length == 0 ? null : $"the C# language server did not take Pitstop's {string.Join(", ", missing.Select(m => m[(m.LastIndexOf('.') + 1)..]))}";
 
         static IEnumerable<string> Named(JsonElement answer, string kind) => JsonMembers.Texts(answer, kind);
     }
@@ -87,13 +87,13 @@ public static class RoslynExtension
     {
         if (Thrown(answer) is { } thrown)
         {
-            throw new LanguageServerFailed($"Passenger's extension to the C# language server failed: {thrown}", handler);
+            throw new LanguageServerFailed($"Pitstop's extension to the C# language server failed: {thrown}", handler);
         }
         if (JsonMembers.Text(answer, "response") is not { Length: > 0 } json)
         {
-            throw new LanguageServerFailed("the C# language server gave no answer from Passenger's extension", handler);
+            throw new LanguageServerFailed("the C# language server gave no answer from Pitstop's extension", handler);
         }
-        return JsonSerializer.Deserialize<T>(json) ?? throw new LanguageServerFailed("Passenger's extension answered with nothing", handler);
+        return JsonSerializer.Deserialize<T>(json) ?? throw new LanguageServerFailed("Pitstop's extension answered with nothing", handler);
     }
 
     /// <summary>A refactoring's changes as the protocol's workspace edit: each new file created, then each file's edits, in

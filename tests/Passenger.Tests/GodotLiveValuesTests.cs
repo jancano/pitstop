@@ -156,7 +156,7 @@ public sealed class GodotLiveValuesTests : IClassFixture<GodotLiveValuesTests.Ga
             Ui.WaitFor(() => Hint(script, sparks)?.StartsWith("sparks: ", StringComparison.Ordinal) == true, () => $"the spark count's hint ({Unread(window, script)})", TimeSpan.FromMinutes(1));
             string first = Hint(script, sparks)!;
             Ui.WaitFor(() => Hint(script, sparks) is { } now && now != first, () => $"the spark count's hint to change from {first} as the game runs ({Hints(script)})", TimeSpan.FromSeconds(20));
-            Assert.False(Run(window).Contains(GodotAgentFile, StringComparison.Ordinal), $"Passenger's helper raised errors in the game as it read its values:\n{Run(window)}");
+            Assert.False(Run(window).Contains(GodotAgentFile, StringComparison.Ordinal), $"Pitstop's helper raised errors in the game as it read its values:\n{Run(window)}");
         }
         finally
         {
@@ -165,7 +165,7 @@ public sealed class GodotLiveValuesTests : IClassFixture<GodotLiveValuesTests.Ga
     }
 
     /// <summary>The file of Passenger's helper in the game, which an error it raises names.</summary>
-    private const string GodotAgentFile = "passenger_agent.gd";
+    private const string GodotAgentFile = "pitstop_agent.gd";
 
     /// <summary>Watching a game never runs its code: a member with a getter of its own shows no value, the rest of its script's
     /// do, and an object in a container is said by what it is, so what they count stays at nothing however long it is watched.</summary>

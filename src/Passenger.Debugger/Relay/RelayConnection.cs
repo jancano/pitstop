@@ -109,7 +109,7 @@ internal sealed class RelayConnection : IDisposable, IRelayLink
         ProcessId = BinaryPrimitives.ReadUInt32LittleEndian(hello.AsSpan(1));
         CorDebug = BinaryPrimitives.ReadUInt64LittleEndian(hello.AsSpan(5));
         Callback = BinaryPrimitives.ReadUInt64LittleEndian(hello.AsSpan(13));
-        Thread reader = new(ReadAll) { IsBackground = true, Name = "Passenger relay reader" };
+        Thread reader = new(ReadAll) { IsBackground = true, Name = "Pitstop relay reader" };
         reader.Start();
     }
 

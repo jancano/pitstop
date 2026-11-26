@@ -138,7 +138,7 @@ internal sealed class NodeServer
                 catch (Godot.GodotScripts.Unstarted)
                 {
                     // Nothing to start yet: its files are Passenger's own reading's until one is asked for, which starts it then.
-                    State = "Passenger's own reading";
+                    State = "Pitstop's own reading";
                     Unasked?.Invoke();
                     return null;
                 }

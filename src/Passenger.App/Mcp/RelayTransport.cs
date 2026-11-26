@@ -49,7 +49,7 @@ internal sealed partial class RelayTransport : ITransport
         {
             if (session.Initialize is { } asked)
             {
-                string id = $"passenger-relay-{Guid.NewGuid():N}";
+                string id = $"pitstop-relay-{Guid.NewGuid():N}";
                 own.Add(new RequestId(id));
                 Received(Encoding.UTF8.GetBytes(new JsonObject
                 {
@@ -70,7 +70,7 @@ internal sealed partial class RelayTransport : ITransport
             }
             begun = Convert.FromBase64String(session.Begun);
         }
-        Thread reader = new(() => Read(input)) { IsBackground = true, Name = "Passenger relay input" };
+        Thread reader = new(() => Read(input)) { IsBackground = true, Name = "Pitstop relay input" };
         reader.Start();
     }
 

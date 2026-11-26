@@ -71,7 +71,7 @@ public sealed class HeadStart
             return null;
         }
         HeadStart head = new(folder, fileNamed ? full : null);
-        IdeErrors.Write($"Opening {folder} as Passenger starts, ahead of its window: its projects read and evaluated"
+        IdeErrors.Write($"Opening {folder} as Pitstop starts, ahead of its window: its projects read and evaluated"
             + (languageServer ? ", built at design time, and loaded by a C# language server started now" : string.Empty));
         head.Start(languageServer);
         return head;

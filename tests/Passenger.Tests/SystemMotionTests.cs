@@ -61,8 +61,8 @@ public sealed class SystemMotionTests
     {
         EditorRig rig = new("class One { }\n");
         long blinks = rig.Editor.Blinks;
-        Ui.Hold(ThreeBlinks, "three of Passenger's own blinks");
-        Assert.True(rig.Editor.Blinks > blinks, "The editor's caret never blinked at Passenger's own rate, so a steady one proves nothing");
+        Ui.Hold(ThreeBlinks, "three of Pitstop's own blinks");
+        Assert.True(rig.Editor.Blinks > blinks, "The editor's caret never blinked at Pitstop's own rate, so a steady one proves nothing");
 
         using (SystemMotion.StandIn(Steady))
         {
@@ -83,14 +83,14 @@ public sealed class SystemMotionTests
         {
             Ui.Settle();
             long blinks = rig.Editor.Blinks;
-            Ui.Hold(ThreeBlinks, "three of Passenger's own blinks, inside one of the system's");
+            Ui.Hold(ThreeBlinks, "three of Pitstop's own blinks, inside one of the system's");
             Assert.True(rig.Editor.Blinks == blinks, $"With the system's caret shown five seconds at a time the editor's blinked {rig.Editor.Blinks - blinks} times in {ThreeBlinks.TotalSeconds} s");
         }
         using (SystemMotion.StandIn(Blinking(100, 100)))
         {
             Ui.Settle();
             long blinks = rig.Editor.Blinks;
-            Ui.Hold(TimeSpan.FromMilliseconds(1200), "twelve of the system's blinks, two of Passenger's own");
+            Ui.Hold(TimeSpan.FromMilliseconds(1200), "twelve of the system's blinks, two of Pitstop's own");
             Assert.True(rig.Editor.Blinks - blinks >= 4, $"With the system's caret blinking every tenth of a second the editor's blinked {rig.Editor.Blinks - blinks} times in 1.2 s");
         }
         rig.Window.Close();
@@ -106,7 +106,7 @@ public sealed class SystemMotionTests
             Ui.Settle();
             TerminalView view = window.TerminalPanel.View;
             long blinks = view.Blinks;
-            Ui.Hold(ThreeBlinks, "three of Passenger's own blinks");
+            Ui.Hold(ThreeBlinks, "three of Pitstop's own blinks");
             Assert.True(view.Blinks > blinks, "The terminal's cursor never blinked with its setting on, so a steady one proves nothing");
 
             using (SystemMotion.StandIn(Steady))

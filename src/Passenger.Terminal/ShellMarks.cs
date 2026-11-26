@@ -13,14 +13,14 @@ public static class ShellMarks
 {
     /// <summary>What sets bash's marks up at its first prompt, after its startup files.</summary>
     [IdentifierHome]
-    public const string BashVariable = "PASSENGER_SHELL_MARKS";
+    public const string BashVariable = "PITSTOP_SHELL_MARKS";
 
     /// <summary>bash's marks, run once at the first prompt: the status taken first at every prompt, before anything else
     /// in PROMPT_COMMAND changes it, then given back to what follows there (through &amp;&amp;, so an ERR trap runs no second
     /// time); PS0 saying a command runs where bash has it (4.4 on).</summary>
     private static readonly string BashMarks = $$"""
-        {{BashTakeOut(BashVariable)}}__passenger_marks() { printf '\033]133;D;%s\007\033]133;A\007' "$1"; return "$1"; }
-        PROMPT_COMMAND='__passenger_marks "$?" && :'"${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+        {{BashTakeOut(BashVariable)}}__pitstop_marks() { printf '\033]133;D;%s\007\033]133;A\007' "$1"; return "$1"; }
+        PROMPT_COMMAND='__pitstop_marks "$?" && :'"${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
         if [ "${BASH_VERSINFO[0]}" -gt 4 ] || { [ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -ge 4 ]; }; then PS0='\e]133;C\a'"${PS0-}"; fi
         printf '\033]133;A\007'
         unset {{BashVariable}}
@@ -33,7 +33,7 @@ public static class ShellMarks
 
     /// <summary>What ends <see cref="BashMarks"/> where Passenger's environment gave bash a PROMPT_COMMAND, which its children
     /// take as they would elsewhere, Passenger's function with it.</summary>
-    private const string BashExported = "export -f __passenger_marks\n";
+    private const string BashExported = "export -f __pitstop_marks\n";
 
     /// <summary>bash's PROMPT_COMMAND running a variable's text first, before what it held (<paramref name="after"/>), a
     /// separator between only where it held anything, so a startup file's own added after a separator of its own leaves a
@@ -51,32 +51,32 @@ public static class ShellMarks
     /// <summary>zsh's hooks, defined in Passenger's .zshenv: the status taken by the first of the precmd functions. Every
     /// array is read with a default, as the person's startup files may have turned nounset on.</summary>
     internal const string ZshHooks = """
-        __passenger_marks_precmd() {
-        __passenger_status=$?
-        [ -n "${__passenger_ran-}" ] && printf '\033]133;D;%s\007' "$__passenger_status"
-        __passenger_ran=
+        __pitstop_marks_precmd() {
+        __pitstop_status=$?
+        [ -n "${__pitstop_ran-}" ] && printf '\033]133;D;%s\007' "$__pitstop_status"
+        __pitstop_ran=
         printf '\033]133;A\007'
         }
-        __passenger_marks_preexec() {
-        __passenger_ran=1
+        __pitstop_marks_preexec() {
+        __pitstop_ran=1
         printf '\033]133;C\007'
         }
-        precmd_functions=(__passenger_marks_precmd ${precmd_functions-})
-        preexec_functions+=(__passenger_marks_preexec)
+        precmd_functions=(__pitstop_marks_precmd ${precmd_functions-})
+        preexec_functions+=(__pitstop_marks_preexec)
 
         """;
 
     /// <summary>What puts zsh's hooks back first at its first prompt, where the person's startup files may have moved them.</summary>
     internal const string ZshFirst = """
-        precmd_functions=(__passenger_marks_precmd ${${precmd_functions-}:#__passenger_marks_precmd})
-        (( ${preexec_functions[(I)__passenger_marks_preexec]-0} )) || preexec_functions+=(__passenger_marks_preexec)
+        precmd_functions=(__pitstop_marks_precmd ${${precmd_functions-}:#__pitstop_marks_precmd})
+        (( ${preexec_functions[(I)__pitstop_marks_preexec]-0} )) || preexec_functions+=(__pitstop_marks_preexec)
 
         """;
 
     private const string FishMarks =
-        "function __passenger_marks_prompt --on-event fish_prompt; printf '\\e]133;A\\a'; end; "
-        + "function __passenger_marks_preexec --on-event fish_preexec; printf '\\e]133;C\\a'; end; "
-        + "function __passenger_marks_postexec --on-event fish_postexec; printf '\\e]133;D;%s\\a' $status; end";
+        "function __pitstop_marks_prompt --on-event fish_prompt; printf '\\e]133;A\\a'; end; "
+        + "function __pitstop_marks_preexec --on-event fish_preexec; printf '\\e]133;C\\a'; end; "
+        + "function __pitstop_marks_postexec --on-event fish_postexec; printf '\\e]133;D;%s\\a' $status; end";
 
     /// <summary>PowerShell's prompt wrapped: a command line its history gained since the last prompt ran, failed where $?
     /// said so (its exit code, else 1); $? and $LASTEXITCODE given back to the prompt it wraps.</summary>

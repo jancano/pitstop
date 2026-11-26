@@ -19,7 +19,7 @@ namespace Passenger.Tests;
 /// the person chooses, Passenger's icon and button and the time since the solution opened; nothing once the setting
 /// goes off, the solution closes or Passenger quits. An older Passenger's settings, never turned on, come up naming
 /// only Passenger. With no Discord one line says so, and Discord is found when it starts. A stand-in listens in each
-/// test's own place, and the run points <c>PASSENGER_DISCORD_IPC</c> where nothing listens, so no window reaches the
+/// test's own place, and the run points <c>PITSTOP_DISCORD_IPC</c> where nothing listens, so no window reaches the
 /// person's Discord.</summary>
 public sealed class DiscordTests : DiscordFolders
 {
@@ -30,11 +30,11 @@ public sealed class DiscordTests : DiscordFolders
     [AvaloniaFact]
     public void Discord_shows_what_the_person_chose_from_their_own_window_alone()
     {
-        Flow.StepApart<DiscordTests>("a fresh Passenger shows only itself in Discord and turning it off clears it", t => t.A_fresh_Passenger_shows_only_itself_in_Discord_and_turning_it_off_clears_it());
+        Flow.StepApart<DiscordTests>("a fresh Pitstop shows only itself in Discord and turning it off clears it", t => t.A_fresh_Passenger_shows_only_itself_in_Discord_and_turning_it_off_clears_it());
         Flow.StepApart<DiscordTests>("switching files names the file only while the solution and the file are chosen", t => t.Switching_files_names_the_file_only_while_the_solution_and_the_file_are_chosen());
         Flow.StepApart<DiscordTests>("of two solution windows the one in front alone shows its activity and the other takes over as it closes", t => t.Of_two_solution_windows_the_one_in_front_alone_shows_its_activity_and_the_other_takes_over_as_it_closes());
-        Flow.StepApart<DiscordTests>("closing the solution or Passenger clears the activity", t => t.Closing_the_solution_or_Passenger_clears_the_activity());
-        Flow.StepApart<DiscordTests>("without Discord one line is logged and Passenger finds Discord when it starts and again when it comes back", t => t.Without_Discord_one_line_is_logged_and_Passenger_finds_Discord_when_it_starts_and_again_when_it_comes_back());
+        Flow.StepApart<DiscordTests>("closing the solution or Pitstop clears the activity", t => t.Closing_the_solution_or_Passenger_clears_the_activity());
+        Flow.StepApart<DiscordTests>("without Discord one line is logged and Pitstop finds Discord when it starts and again when it comes back", t => t.Without_Discord_one_line_is_logged_and_Passenger_finds_Discord_when_it_starts_and_again_when_it_comes_back());
         Flow.StepApart<DiscordTests>("only the persons window reaches Discord and a tests never the persons own", t => t.Only_the_persons_window_reaches_Discord_and_a_tests_never_the_persons_own());
         Flow.StepApart<DiscordTests>("an older settings file never turned on stays off and one turned on keeps its choice", t => t.An_older_settings_file_never_turned_on_stays_off_and_one_turned_on_keeps_its_choice());
     }
@@ -46,27 +46,27 @@ public sealed class DiscordTests : DiscordFolders
         MainWindow window = Started();
         DateTimeOffset after = DateTimeOffset.UtcNow;
 
-        JsonObject activity = WaitForActivity(a => a is not null, "the activity a fresh Passenger shows");
+        JsonObject activity = WaitForActivity(a => a is not null, "the activity a fresh Pitstop shows");
         Frame handshake = discord.Frames[0];
-        Assert.True(handshake.Op == 0 && handshake.Json.ToJsonString() == """{"v":1,"client_id":"1559714715847098468"}""",
-            $"The first frame was not the handshake naming Passenger's Discord application: op {handshake.Op}, {handshake.Json.ToJsonString()}");
+        Assert.True(handshake.Op == 0 && handshake.Json.ToJsonString() == """{"v":1,"client_id":"0"}""",
+            $"The first frame was not the handshake naming Pitstop's Discord application: op {handshake.Op}, {handshake.Json.ToJsonString()}");
         Frame command = discord.Frames.Last(f => f.Op == 1);
         Assert.Equal("SET_ACTIVITY", (string?)command.Json["cmd"]);
-        Assert.True((int?)command.Json["args"]?["pid"] == Environment.ProcessId, $"The activity names process {command.Json["args"]?["pid"]}, not Passenger's own, {Environment.ProcessId}");
+        Assert.True((int?)command.Json["args"]?["pid"] == Environment.ProcessId, $"The activity names process {command.Json["args"]?["pid"]}, not Pitstop's own, {Environment.ProcessId}");
         Assert.True(((string?)activity["details"], (string?)activity["state"]) == ("An IDE for C# and .NET", "Open source · Windows, macOS and Linux"),
-            $"A fresh Passenger's activity is not Passenger's own words alone: {activity.ToJsonString()}");
+            $"A fresh Pitstop's activity is not Pitstop's own words alone: {activity.ToJsonString()}");
         Assert.DoesNotContain("Shop", activity.ToJsonString(), StringComparison.Ordinal);
-        Assert.Equal("passenger-1024", (string?)activity["assets"]?["large_image"]);
-        Assert.Equal("Passenger: an IDE for C# and .NET, open to your coding agent", (string?)activity["assets"]?["large_text"]);
-        Assert.True(activity["assets"]!.AsObject().Count == 2, $"The activity carries more art than Passenger's icon: {activity["assets"]!.ToJsonString()}");
-        Assert.Equal("""[{"label":"Get Passenger","url":"https://passenger-ide.net"}]""", activity["buttons"]?.ToJsonString());
+        Assert.Equal("pitstop-1024", (string?)activity["assets"]?["large_image"]);
+        Assert.Equal("Pitstop: an IDE for C# and .NET, open to your coding agent", (string?)activity["assets"]?["large_text"]);
+        Assert.True(activity["assets"]!.AsObject().Count == 2, $"The activity carries more art than Pitstop's icon: {activity["assets"]!.ToJsonString()}");
+        Assert.Equal("""[{"label":"Get Pitstop","url":"https://github.com/jancano/pitstop"}]""", activity["buttons"]?.ToJsonString());
         long start = (long)activity["timestamps"]!["start"]!;
         Assert.True(start >= before.ToUnixTimeMilliseconds() && start <= after.ToUnixTimeMilliseconds(),
             $"The activity's time starts at {DateTimeOffset.FromUnixTimeMilliseconds(start):O}, not when the solution opened, between {before:O} and {after:O}");
         string[] keys = [.. activity.Select(p => p.Key).Order(StringComparer.Ordinal)];
         Assert.True(keys.SequenceEqual(["assets", "buttons", "details", "state", "timestamps"]), $"The activity carries more than it was to: {string.Join(", ", keys)}");
         Assert.True(window.Settings is { ShowInDiscord: true, DiscordShows: DiscordShown.PassengerOnly },
-            $"A fresh Passenger's Discord settings are {window.Settings.ShowInDiscord}, {window.Settings.DiscordShows}");
+            $"A fresh Pitstop's Discord settings are {window.Settings.ShowInDiscord}, {window.Settings.DiscordShows}");
 
         SetShown(window, false);
         Ui.WaitFor(() => discord.Ended == 1, "Discord to be let go of once the setting went off");
@@ -83,7 +83,7 @@ public sealed class DiscordTests : DiscordFolders
     {
         discord.Start();
         MainWindow window = Started();
-        WaitForActivity(a => a is not null, "Passenger's own activity");
+        WaitForActivity(a => a is not null, "Pitstop's own activity");
         window.OpenFile(Path.Combine(solution, "One.cs"));
         Wait(TimeSpan.FromMilliseconds(500));
         Assert.True(Activities().All(a => a is null || !a.ToJsonString().Contains("One.cs", StringComparison.Ordinal)),
@@ -106,10 +106,10 @@ public sealed class DiscordTests : DiscordFolders
         Wait(TimeSpan.FromMilliseconds(500));
         Assert.True(Activities().Skip(sent).All(a => a?["state"] is null), "With the solution alone chosen, switching files still named one in Discord");
 
-        Choose(window, "Passenger only");
-        JsonObject only = WaitForActivity(a => (string?)a?["details"] == "An IDE for C# and .NET", "the activity to name nothing but Passenger");
+        Choose(window, "Pitstop only");
+        JsonObject only = WaitForActivity(a => (string?)a?["details"] == "An IDE for C# and .NET", "the activity to name nothing but Pitstop");
         Assert.True((string?)only["state"] == "Open source · Windows, macOS and Linux" && only["timestamps"] is not null
-            && (string?)only["assets"]?["large_image"] == "passenger-1024", $"Passenger only showed {only.ToJsonString()}");
+            && (string?)only["assets"]?["large_image"] == "pitstop-1024", $"Pitstop only showed {only.ToJsonString()}");
         window.Close();
     }
 
@@ -136,7 +136,7 @@ public sealed class DiscordTests : DiscordFolders
         Assert.Equal(0, discord.Ended);
         second.Close();
         Ui.WaitFor(() => discord.Ended == 1, "Discord to be let go of as the last window closed", TimeSpan.FromSeconds(3));
-        Assert.True(Activities().Last() is null, "Passenger quit without clearing its activity");
+        Assert.True(Activities().Last() is null, "Pitstop quit without clearing its activity");
     }
 
     private void Closing_the_solution_or_Passenger_clears_the_activity()
@@ -154,8 +154,8 @@ public sealed class DiscordTests : DiscordFolders
         JsonObject again = WaitForActivity(a => (string?)a?["details"] == "Shop", "the activity once the solution opened again", connection: 2);
         Assert.True((long)again["timestamps"]!["start"]! > first, "The solution opened again, yet its time counts from when it first opened");
         window.Close();
-        Ui.WaitFor(() => discord.Ended == 2, "Discord to be let go of as Passenger quit", TimeSpan.FromSeconds(3));
-        Assert.True(Activities().Last() is null, "Passenger quit without clearing its activity");
+        Ui.WaitFor(() => discord.Ended == 2, "Discord to be let go of as Pitstop quit", TimeSpan.FromSeconds(3));
+        Assert.True(Activities().Last() is null, "Pitstop quit without clearing its activity");
     }
 
     private void Without_Discord_one_line_is_logged_and_Passenger_finds_Discord_when_it_starts_and_again_when_it_comes_back()
@@ -196,19 +196,15 @@ public sealed class DiscordTests : DiscordFolders
         other.Close();
 
         Assert.Equal(TestRun.DiscordNowhere, Environment.GetEnvironmentVariable(DiscordIpc.Variable));
-        int before = Ui.IdeLog().Split('\n').Length;
         MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings };
         Assert.True(window.DiscordIpc.Places.SequenceEqual([TestRun.DiscordNowhere]),
-            $"A test's window looks for Discord at {string.Join(", ", window.DiscordIpc.Places)}, not only the run's own place");
+            $"The test window's Discord endpoints were {string.Join(", ", window.DiscordIpc.Places)}");
+        Assert.Null(window.DiscordIpc.ApplicationId);
         window.Show();
         window.ApplySettings(window.Settings with { ShowInDiscord = true });
         window.ShowActivityInDiscord();
         window.OpenFolder(solution);
-        string[] said = [];
-        Ui.PumpUntil(() => (said = [.. Ui.IdeLog().Split('\n').Skip(before - 1).Where(l => l.Contains("Discord: ", StringComparison.Ordinal))]).Length > 0,
-            "a line saying where the window looked for Discord", TimeSpan.FromSeconds(10));
-        Assert.True(said.Length == 1 && said[0].Contains($"nothing at {TestRun.DiscordNowhere}-0", StringComparison.Ordinal),
-            $"The test's window looked for Discord other than in the run's own place:\n{string.Join('\n', said)}");
+        Assert.False(window.SharesActivity, "A window without an application ID enabled Discord presence");
         window.Close();
     }
 
@@ -222,9 +218,9 @@ public sealed class DiscordTests : DiscordFolders
             "{\n  \"version\": 1,\n  \"editorFontSize\": 15,\n  \"showInDiscord\": false,\n  \"discordShows\": \"SolutionAndFile\"\n}\n");
         MainWindow window = Started();
         Assert.True(window.Settings is { ShowInDiscord: false, DiscordShows: DiscordShown.PassengerOnly, EditorFontSize: 15 },
-            $"An older Passenger's settings, Discord never turned on, came up as {window.Settings.ShowInDiscord}, {window.Settings.DiscordShows}, font {window.Settings.EditorFontSize}");
+            $"An older Pitstop's settings, Discord never turned on, came up as {window.Settings.ShowInDiscord}, {window.Settings.DiscordShows}, font {window.Settings.EditorFontSize}");
         Wait(TimeSpan.FromSeconds(1));
-        Assert.True(discord.Connections == 0, "Upgraded from settings that never turned Discord on, Passenger reached Discord");
+        Assert.True(discord.Connections == 0, "Upgraded from settings that never turned Discord on, Pitstop reached Discord");
         window.Close();
 
         string chosen = TestFolders.Create("dc-chosen-");
@@ -233,7 +229,7 @@ public sealed class DiscordTests : DiscordFolders
             File.WriteAllText(Path.Combine(chosen, "settings.json"), "{\n  \"version\": 1,\n  \"showInDiscord\": true,\n  \"discordShows\": \"SolutionAndFile\"\n}\n");
             MainWindow kept = Started(state: chosen);
             Assert.True(kept.Settings is { ShowInDiscord: true, DiscordShows: DiscordShown.SolutionAndFile },
-                $"An older Passenger's settings that had turned Discord on, naming the solution and the file, came up as {kept.Settings.ShowInDiscord}, {kept.Settings.DiscordShows}");
+                $"An older Pitstop's settings that had turned Discord on, naming the solution and the file, came up as {kept.Settings.ShowInDiscord}, {kept.Settings.DiscordShows}");
             kept.Close();
         }
         finally
@@ -254,7 +250,7 @@ public sealed class DiscordResponsivenessTests : DiscordFolders
     public void A_Discord_that_never_answers_or_an_idle_person_changes_nothing_the_window_does()
     {
         Flow.StepApart<DiscordResponsivenessTests>("a Discord that never answers never slows the window", t => t.A_Discord_that_never_answers_never_slows_the_window());
-        Flow.StepApart<DiscordResponsivenessTests>("after the idle time only Passenger shows until the person is back", t => t.After_the_idle_time_only_Passenger_shows_until_the_person_is_back());
+        Flow.StepApart<DiscordResponsivenessTests>("after the idle time only Pitstop shows until the person is back", t => t.After_the_idle_time_only_Passenger_shows_until_the_person_is_back());
     }
 
     private void A_Discord_that_never_answers_never_slows_the_window()
@@ -272,7 +268,7 @@ public sealed class DiscordResponsivenessTests : DiscordFolders
         Assert.True(Discords().Length == 1 && Discords()[0].Contains("did not answer the handshake", StringComparison.Ordinal),
             $"A Discord that never answers was said other than once:\n{string.Join('\n', Discords())}");
         window.Close();
-        Ui.WaitFor(() => discord.Ended == discord.Connections, "Passenger to let go of the Discord that never answers as it quit", TimeSpan.FromSeconds(3));
+        Ui.WaitFor(() => discord.Ended == discord.Connections, "Pitstop to let go of the Discord that never answers as it quit", TimeSpan.FromSeconds(3));
     }
 
     private void After_the_idle_time_only_Passenger_shows_until_the_person_is_back()
@@ -286,10 +282,10 @@ public sealed class DiscordResponsivenessTests : DiscordFolders
         // At work in the editor, however long the window took to start.
         Ui.Press(window, "right");
         WaitForActivity(a => (string?)a?["state"] == "Editing One.cs", "the activity naming the file");
-        JsonObject idle = WaitForActivity(a => (string?)a?["details"] == "An IDE for C# and .NET" && a["timestamps"] is null, "only Passenger once the person was idle");
+        JsonObject idle = WaitForActivity(a => (string?)a?["details"] == "An IDE for C# and .NET" && a["timestamps"] is null, "only Pitstop once the person was idle");
         string[] keys = [.. idle.Select(p => p.Key).Order(StringComparer.Ordinal)];
         Assert.True(keys.SequenceEqual(["assets", "buttons", "details", "state"]) && (string?)idle["state"] == "Open source · Windows, macOS and Linux",
-            $"Idle, the activity names more than Passenger: {idle.ToJsonString()}");
+            $"Idle, the activity names more than Pitstop: {idle.ToJsonString()}");
         Ui.Press(window, "right");
         WaitForActivity(a => (string?)a?["state"] == "Editing One.cs", "the solution and the file once a key was pressed");
         window.Close();
@@ -301,7 +297,7 @@ public sealed class DiscordResponsivenessTests : DiscordFolders
 public abstract class DiscordFolders : IDisposable
 {
     protected const string Show = "Show activity in Discord";
-    protected const string Idle = "Only Passenger when idle for";
+    protected const string Idle = "Only Pitstop when idle for";
 
     protected readonly string folder = TestFolders.Create("dc-");
     protected readonly string settings = TestFolders.Create("dc-settings-");
@@ -388,7 +384,7 @@ public abstract class DiscordFolders : IDisposable
         [.. Ui.IdeLog().Split('\n').Where(l => l.Contains("Discord: ", StringComparison.Ordinal) && l.Contains(discord.Base, StringComparison.Ordinal))];
 
     /// <summary>Lets the window run a while, its timers and Passenger's looks for Discord with it.</summary>
-    protected static void Wait(TimeSpan time) => Ui.Hold(time, "the window running a while, its timers and Passenger's looks for Discord with it");
+    protected static void Wait(TimeSpan time) => Ui.Hold(time, "the window running a while, its timers and Pitstop's looks for Discord with it");
 
     /// <summary>What edits an option, beside its label in the page shown.</summary>
     protected static T Editor<T>(SettingsDialog dialog, string label) where T : Control =>
@@ -411,12 +407,13 @@ public abstract class DiscordFolders : IDisposable
         private int ended;
 
         public string Base { get; } = OperatingSystem.IsWindows()
-            ? $"passenger-test-{Guid.NewGuid().ToString("N")[..12]}-discord-ipc"
+            ? $"pitstop-test-{Guid.NewGuid().ToString("N")[..12]}-discord-ipc"
             : Path.Combine(folder, "discord-ipc");
 
         /// <summary>Where the test's window looks for it, trying again every 200 ms.</summary>
         public DiscordIpc Ipc => new([Base])
         {
+            ApplicationId = "0",
             Retry = TimeSpan.FromMilliseconds(200),
             Pause = TimeSpan.FromMilliseconds(100),
             Timeout = TimeSpan.FromSeconds(1),

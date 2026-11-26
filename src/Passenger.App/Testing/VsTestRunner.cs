@@ -24,7 +24,7 @@ public sealed class VsTestRunner : ITestRunner
 
     /// <summary>Names a file for VSTest's own diagnostic log, for a run that goes wrong inside it.</summary>
     [IdentifierHome]
-    public const string LogVariable = "PASSENGER_VSTEST_LOG";
+    public const string LogVariable = "PITSTOP_VSTEST_LOG";
 
     /// <summary>The translation layer's constructor that names the dotnet running vstest.console.dll: the public ones run
     /// the .dll under this process's own executable, which is right inside dotnet and wrong under Passenger's apphost (it

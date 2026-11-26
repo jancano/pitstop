@@ -58,14 +58,14 @@ public static partial class LaunchHandOff
                 using JsonDocument answer = JsonDocument.Parse(line);
                 if (JsonMembers.Text(answer.RootElement, "taken") is { } taken)
                 {
-                    IdeErrors.Write($"Launch: taken by the Passenger at {path}, {(taken.Length > 0 ? $"in its window on {taken}" : "in its window with no folder")}");
+                    IdeErrors.Write($"Launch: taken by the Pitstop at {path}, {(taken.Length > 0 ? $"in its window on {taken}" : "in its window with no folder")}");
                     if (OperatingSystem.IsMacOS() && Mcp.McpHost.ProcessOf(path) is int running)
                     {
                         await ActivateAsync(running, cancel);
                     }
                     return true;
                 }
-                IdeErrors.Write($"Launch: the Passenger at {path} would not take it: {JsonMembers.Text(answer.RootElement, "refused") ?? line}");
+                IdeErrors.Write($"Launch: the Pitstop at {path} would not take it: {JsonMembers.Text(answer.RootElement, "refused") ?? line}");
             }
             catch (Exception error) when (error is SocketException or IOException or JsonException
                 || (error is OperationCanceledException && !cancel.IsCancellationRequested))
@@ -88,7 +88,7 @@ public static partial class LaunchHandOff
         string? executable = Libc.ExecutableOf(running);
         if (MacBundles.Of(executable) is not { } bundle)
         {
-            IdeErrors.Write($"Launch: the Passenger that took it (process {running}) is in no app bundle, so it comes in front by itself");
+            IdeErrors.Write($"Launch: the Pitstop that took it (process {running}) is in no app bundle, so it comes in front by itself");
             return;
         }
         try

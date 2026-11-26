@@ -165,7 +165,7 @@ public sealed class AgentSocket : IDisposable
             await using NetworkStream stream = new(client, ownsSocket: true);
             // Its tools are made once a process, off the UI thread, which the first connection's would hold; nothing drawn changes.
             McpServerOptions options = await BackgroundWork.Unheld(() => McpHost.Options(window, connection));
-            StreamServerTransport transport = new(stream, new Lines(stream, this), "passenger");
+            StreamServerTransport transport = new(stream, new Lines(stream, this), "pitstop");
             await using McpServer server = McpServer.Create(new PeerTransport(transport), options);
             Task running = server.RunAsync(gone.Token);
             // The server waits out the calls still running when the agent goes, so its going is watched for here.
@@ -355,7 +355,7 @@ public sealed class AgentConnection(CancellationToken gone, bool attached)
     }
 
     /// <summary>The window as an answer names it.</summary>
-    internal static string Where(MainWindow window) => window.Folder is { } folder ? $"the Passenger window on {folder}" : "the Passenger window";
+    internal static string Where(MainWindow window) => window.Folder is { } folder ? $"the Pitstop window on {folder}" : "the Pitstop window";
 
     /// <summary>The window's limit on a question, as an answer says it.</summary>
     internal static string Limit(MainWindow window) => Durations.Said(window.AgentAnswerLimit);
@@ -402,7 +402,7 @@ public sealed class AgentConnection(CancellationToken gone, bool attached)
         }
         bool own = OnOwnWindows(arguments);
         string key = own ? $"{tool.Name} {PassengerTools.OwnWindows}" : tool.Name;
-        string named = own ? $"{tool.Name} in Passenger's own windows (app {PassengerTools.OwnWindows})" : tool.Name;
+        string named = own ? $"{tool.Name} in Pitstop's own windows (app {PassengerTools.OwnWindows})" : tool.Name;
         (Admission said, string? folder) = await AnswerAsync(window, key, named, takenAway => window.AllowAgentAsync(Agent, tool.Name, tool.Title ?? tool.Name, own,
             [.. (arguments ?? new Dictionary<string, JsonElement>()).Select(a => (a.Key, Shown(a.Value)))], takenAway), call, cancel);
         return said switch
@@ -415,7 +415,7 @@ public sealed class AgentConnection(CancellationToken gone, bool attached)
     }
 
     /// <summary>What a request for every tool answers on the agent's own IDE, which asks nobody.</summary>
-    public const string NothingAsks = "Nothing asks here: this Passenger is the agent's own (--mcp), whose every tool goes on without a question.";
+    public const string NothingAsks = "Nothing asks here: this Pitstop is the agent's own (--mcp), whose every tool goes on without a question.";
 
     /// <summary>Whether the person lets every tool that changes something go on unasked for the session (request_full_access),
     /// as if each were allowed for the session by its own question, in words for the agent, with whether they refuse: asked

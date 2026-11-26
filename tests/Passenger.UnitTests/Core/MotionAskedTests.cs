@@ -41,7 +41,7 @@ public class MotionAskedTests
         Assert.Equal(new MotionAsked(false, Blink(530, 530)), MotionAsked.OfWindows(animates: true, 530));
         Assert.Equal(new MotionAsked(true, CaretBlink.Steady), MotionAsked.OfWindows(animates: false, MotionAsked.WindowsNeverBlinks));
         Assert.True(MotionAsked.OfWindows(animates: true, 0).Blink == CaretBlink.Default,
-            "Windows' caret blink time read as 0, its answer when it could not say, gave a caret no blink of Passenger's own");
+            "Windows' caret blink time read as 0, its answer when it could not say, gave a caret no blink of Pitstop's own");
     }
 
     private void Macs_insertion_point_blinks_its_periods_each_way_never_where_a_steady_cursor_is_preferred()

@@ -29,7 +29,7 @@ public sealed class ThemeFontsTests : IDisposable
     {
         IReadOnlyList<string> code = Ui.Await(CodeFonts.InstalledAsync(), "the installed monospaced fonts");
         IReadOnlyList<string> words = Ui.Await(WindowFonts.InstalledAsync(), "the installed fonts");
-        Assert.SkipWhen(code.Count < 2 || words.Count == 0, "Fewer than two monospaced fonts, or no other font, are installed beside those Passenger carries");
+        Assert.SkipWhen(code.Count < 2 || words.Count == 0, "Fewer than two monospaced fonts, or no other font, are installed beside those Pitstop carries");
         File.WriteAllText(Path.Combine(folder, "One.cs"), "class One { }\n");
         MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings };
         window.Show();
@@ -63,7 +63,7 @@ public sealed class ThemeFontsTests : IDisposable
             window.ApplySettings(window.Settings with { Look = null, EditorFontSize = null, EditorFontFamily = null, WindowFontFamily = null });
             Ui.Settle();
             Assert.True((editor.FontFamily.Name, editor.FontSize) == (CodeEditor.CodeFont.Name, AppSettings.OwnCodeSize),
-                $"Passenger's own theme, nothing set, drew the code in {editor.FontFamily.Name} at {editor.FontSize}");
+                $"Pitstop's own theme, nothing set, drew the code in {editor.FontFamily.Name} at {editor.FontSize}");
             Assert.Equal(WindowFonts.Carried.Name, WindowFont());
         }
         finally

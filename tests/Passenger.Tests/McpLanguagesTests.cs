@@ -17,7 +17,7 @@ namespace Passenger.Tests;
 public sealed class McpLanguagesTests(McpLanguagesTests.Restored restored) : McpRig, IClassFixture<McpLanguagesTests.Restored>
 {
     /// <summary>The user secrets of the Aspire test's AppHost, the run's own.</summary>
-    private const string AspireSecretsId = "passenger-mcp-aspire-host";
+    private const string AspireSecretsId = "pitstop-mcp-aspire-host";
 
     /// <summary>An agent's languages beyond C# as one flow, each step one test's check in an instance of its own: a C#
     /// file nested past what Passenger reads left out, Avalonia's and WPF's XAML read, navigated, renamed and
@@ -27,7 +27,7 @@ public sealed class McpLanguagesTests(McpLanguagesTests.Restored restored) : Mcp
     [Fact]
     public async Task An_agent_reads_navigates_and_renames_XAML_Aspire_project_files_and_Razor_through_Passengers_own_readers()
     {
-        await Flow.StepApartAsync("an agent is told a cs file nested past what passenger reads is left out while the rest of its project answers", () => new McpLanguagesTests(restored), t => t.An_agent_is_told_a_cs_file_nested_past_what_passenger_reads_is_left_out_while_the_rest_of_its_project_answers());
+        await Flow.StepApartAsync("an agent is told a cs file nested past what pitstop reads is left out while the rest of its project answers", () => new McpLanguagesTests(restored), t => t.An_agent_is_told_a_cs_file_nested_past_what_passenger_reads_is_left_out_while_the_rest_of_its_project_answers());
         await Flow.StepApartAsync("an agent reads navigates renames and refactors avalonia xaml through passengers own xaml and a library type decompiled once", () => new McpLanguagesTests(restored), t => t.An_agent_reads_navigates_renames_and_refactors_avalonia_xaml_through_passengers_own_xaml_and_a_library_type_decompiled_once());
         await Flow.StepApartAsync("an agent goes to sets and renames aspire resources as the window does", () => new McpLanguagesTests(restored), t => t.An_agent_goes_to_sets_and_renames_aspire_resources_as_the_window_does());
         await Flow.StepApartAsync("an agent reads navigates renames and refactors wpf xaml through passengers own xaml", () => new McpLanguagesTests(restored), t => t.An_agent_reads_navigates_renames_and_refactors_wpf_xaml_through_passengers_own_xaml());
@@ -487,7 +487,7 @@ public sealed class McpLanguagesTests(McpLanguagesTests.Restored restored) : Mcp
     {
         string shop = Made("mcpmsbuild-", made =>
         {
-            File.WriteAllText(Path.Combine(made, "Directory.Build.props"), "<Project>\n  <PropertyGroup>\n    <Company>Passenger</Company>\n  </PropertyGroup>\n</Project>\n");
+            File.WriteAllText(Path.Combine(made, "Directory.Build.props"), "<Project>\n  <PropertyGroup>\n    <Company>Pitstop</Company>\n  </PropertyGroup>\n</Project>\n");
             File.WriteAllText(Path.Combine(made, "Directory.Build.targets"), "<Project>\n  <!-- Pasted:\ra\rb -->\n  <Target Name=\"Bow\" />\n"
                 + "  <Target Name=\"Curtsy\" DependsOnTargets=\"Bow\" />\n</Project>\n");
             File.WriteAllText(Path.Combine(made, "Shop.csproj"), $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n"
@@ -501,11 +501,11 @@ public sealed class McpLanguagesTests(McpLanguagesTests.Restored restored) : Mcp
         Dictionary<string, object?> company = At(project, "Shop.csproj", "$(Comp");
         // The hover card's lines end as the system's do (Windows' "\r\n").
         string said = (await Call(client, McpTools.SymbolInfo, company)).GetString()!.ReplaceLineEndings("\n");
-        Assert.True(said.StartsWith("Company = Passenger\nMSBuild property, set in Directory.Build.props, line 3", StringComparison.Ordinal),
+        Assert.True(said.StartsWith("Company = Pitstop\nMSBuild property, set in Directory.Build.props, line 3", StringComparison.Ordinal),
             $"symbol_info on a property did not say its evaluated value and where it was set: {said}");
         JsonElement set = Assert.Single((await Call(client, McpTools.Definition, company)).EnumerateArray());
         Assert.Equal(("Directory.Build.props", 3), (set.GetProperty("path").GetString(), set.GetProperty("line").GetInt32()));
-        Assert.Equal("<Company>Passenger</Company>", set.GetProperty("text").GetString());
+        Assert.Equal("<Company>Pitstop</Company>", set.GetProperty("text").GetString());
         JsonElement target = Assert.Single((await Call(client, McpTools.Definition, At(project, "Shop.csproj", "DependsOnTargets=\"Gre"))).EnumerateArray());
         Assert.Equal(("Shop.csproj", 6), (target.GetProperty("path").GetString(), target.GetProperty("line").GetInt32()));
         JsonElement bow = Assert.Single((await Call(client, McpTools.Definition,

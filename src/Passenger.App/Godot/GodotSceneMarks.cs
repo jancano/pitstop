@@ -31,7 +31,7 @@ internal sealed class GodotSceneMarks(GodotSceneIndex index, Func<string, string
     private static readonly TimeSpan Settle = TimeSpan.FromMilliseconds(300);
 
     /// <summary>Who checks a scene, as an agent is told while a check is under way.</summary>
-    private const string Checker = "Passenger's reading of its scene";
+    private const string Checker = "Pitstop's reading of its scene";
 
     protected override (string Checker, Scene Kept)? Follow(OpenDocument document) => GodotFileKinds.IsText(document.Path) ? (Checker, new Scene()) : null;
 

@@ -20,19 +20,20 @@ public sealed class UpdateFoldersTests : IDisposable
     public void An_update_lands_only_as_its_sums_name_it_and_a_copy_keeps_a_release_not_yet_in_place() => Cases.All(
         ("the sums give a files SHA 256 in lowercase whichever mode sha256sum wrote it in", () => Cases.Each<(string, string)>(
         [
-            ($"{Sum}  Passenger-linux-x64.tar.gz\n", "Passenger-linux-x64.tar.gz"),
-            ($"{Sum} *Passenger-linux-x64.tar.gz\r\n", "Passenger-linux-x64.tar.gz"),
-            ($"0000000000000000000000000000000000000000000000000000000000000000  Passenger-linux-arm64.tar.gz\n{Sum}  Passenger-linux-x64.tar.gz", "Passenger-linux-x64.tar.gz"),
+            ($"{Sum}  Pitstop-linux-x64.tar.gz\n", "Pitstop-linux-x64.tar.gz"),
+            ($"{Sum} *Pitstop-linux-x64.tar.gz\r\n", "Pitstop-linux-x64.tar.gz"),
+            ($"0000000000000000000000000000000000000000000000000000000000000000  Pitstop-linux-arm64.tar.gz\n{Sum}  Pitstop-linux-x64.tar.gz", "Pitstop-linux-x64.tar.gz"),
         ], row => The_sums_give_a_files_SHA_256_in_lowercase_whichever_mode_sha256sum_wrote_it_in(row.Item1, row.Item2))),
         ("the sums give no SHA 256 to a file they do not name exactly", () => Cases.Each<string>(
         [
-            "Passenger-linux-x64.tar.gz.sig",
-            "passenger-linux-x64.tar.gz",
+            "Pitstop-linux-x64.tar.gz.sig",
+            "pitstop-linux-x64.tar.gz",
         ], The_sums_give_no_SHA_256_to_a_file_they_do_not_name_exactly)),
         ("the apps version is the one its deps json gives its own project", () => Cases.Each<(string, string?)>(
         [
-            ("""{"libraries":{"Avalonia/12.0.0":{"type":"package"},"Passenger/0.3.0":{"type":"project","serviceable":false}}}""", "0.3.0"),
-            ("""{"libraries":{"Passenger/0.3.0":{"type":"package"}}}""", null),
+            ("""{"libraries":{"Avalonia/12.0.0":{"type":"package"},"Pitstop/0.3.0":{"type":"project","serviceable":false}}}""", "0.3.0"),
+            ("""{"libraries":{"Pitstop/0.3.0":{"type":"package"}}}""", null),
+            ("""{"libraries":{"Passenger/0.4.5":{"type":"project"}}}""", null),
             ("not json", null),
         ], row => The_apps_version_is_the_one_its_deps_json_gives_its_own_project(row.Item1, row.Item2))),
         ("a folder is beside the install named for the release unpacked into it", A_folder_is_beside_the_install_named_for_the_release_unpacked_into_it),
@@ -46,7 +47,7 @@ public sealed class UpdateFoldersTests : IDisposable
         ("a package managers file names the manager and the command that updates the copy and one that is no such file is refused", () => Cases.Each<(string, string?, string?, bool)>(
         [
             ("pacman\n", "pacman", null, false),
-            ("\uFEFFAUR\r\nyay -Syu passenger-ide-bin\r\n\r\n", "AUR", "yay -Syu passenger-ide-bin", false),
+            ("\uFEFFAUR\r\nyay -Syu pitstop-ide-bin\r\n\r\n", "AUR", "yay -Syu pitstop-ide-bin", false),
             ("", null, null, false),
             ("\nbrew upgrade passenger\n", null, null, true),
             ("pacman\nyay -Syu\nanother line\n", null, null, true),
@@ -64,30 +65,30 @@ public sealed class UpdateFoldersTests : IDisposable
 
     private void The_sums_give_no_SHA_256_to_a_file_they_do_not_name_exactly(string file)
     {
-        string? read = ReleaseSums.Of($"{Sum}  Passenger-linux-x64.tar.gz\nnot a line\n", file);
-        Assert.True(read is null, $"SHA256SUMS naming Passenger-linux-x64.tar.gz alone gave {file} the SHA-256 {read}, so another file would be taken for it");
+        string? read = ReleaseSums.Of($"{Sum}  Pitstop-linux-x64.tar.gz\nnot a line\n", file);
+        Assert.True(read is null, $"SHA256SUMS naming Pitstop-linux-x64.tar.gz alone gave {file} the SHA-256 {read}, so another file would be taken for it");
     }
 
     private void The_apps_version_is_the_one_its_deps_json_gives_its_own_project(string deps, string? version)
     {
         string? read = UpdateFolders.AppVersion(deps);
-        Assert.True(read == version, $"The deps.json '{deps}' was read as Passenger {read ?? "of no version"}, not {version ?? "of no version"}, "
+        Assert.True(read == version, $"The deps.json '{deps}' was read as Pitstop {read ?? "of no version"}, not {version ?? "of no version"}, "
             + "so an archive of another release would be taken for this one, or this one refused");
     }
 
     private void A_folder_is_beside_the_install_named_for_the_release_unpacked_into_it()
     {
-        string beside = UpdateFolders.Beside(Path.Combine(Opt, "passenger") + Path.DirectorySeparatorChar, "1.2.0");
-        Assert.True(beside == Path.Combine(Opt, ".passenger.update-1.2.0"), $"The update's folder is {beside}, not beside the install, where the two can trade places");
+        string beside = UpdateFolders.Beside(Path.Combine(Opt, "pitstop") + Path.DirectorySeparatorChar, "1.2.0");
+        Assert.True(beside == Path.Combine(Opt, ".pitstop.update-1.2.0"), $"The update's folder is {beside}, not beside the install, where the two can trade places");
         Assert.True(UpdateFolders.VersionOf(beside) == "1.2.0", $"The update's folder {beside} was read as {UpdateFolders.VersionOf(beside)}'s");
-        Assert.True(UpdateFolders.VersionOf(Path.Combine(Opt, "passenger")) is null, "The install itself was read as an update's folder, which a copy removes");
-        Assert.True(UpdateFolders.VersionOf(Path.Combine(Opt, ".passenger.update-")) is null, "A folder named for no version was read as an update's");
+        Assert.True(UpdateFolders.VersionOf(Path.Combine(Opt, "pitstop")) is null, "The install itself was read as an update's folder, which a copy removes");
+        Assert.True(UpdateFolders.VersionOf(Path.Combine(Opt, ".pitstop.update-")) is null, "A folder named for no version was read as an update's");
     }
 
     private void A_copy_removes_what_an_update_left_but_a_release_not_yet_in_place(string folder, string running, string? keep, bool removed)
     {
         bool stale = UpdateFolders.Stale(folder, running, keep);
-        Assert.True(stale == removed, $"Passenger {running}{(keep is null ? string.Empty : $" making {keep} ready")} {(stale ? "removes" : "keeps")} the update's folder of {folder}, "
+        Assert.True(stale == removed, $"Pitstop {running}{(keep is null ? string.Empty : $" making {keep} ready")} {(stale ? "removes" : "keeps")} the update's folder of {folder}, "
             + (removed ? "which is the release it replaced or one no longer wanted, left on the disk" : "which holds a release still to install"));
     }
 
@@ -97,31 +98,31 @@ public sealed class UpdateFoldersTests : IDisposable
         PackageManagerMark? read = ThisCopy.MarkOf(System.Text.Encoding.UTF8.GetBytes(text));
         Assert.True(refused ? read is null : read == new PackageManagerMark(manager, command),
             $"A package manager's file reading '{text[..Math.Min(text.Length, 60)]}' was read as {read?.ToString() ?? "none"}, "
-            + (refused ? "where Passenger is to refuse it as it starts" : $"not {manager ?? "an unnamed manager"} with {command ?? "no command"}, so the person is told the wrong way to update"));
+            + (refused ? "where Pitstop is to refuse it as it starts" : $"not {manager ?? "an unnamed manager"} with {command ?? "no command"}, so the person is told the wrong way to update"));
     }
 
     private void A_copys_folder_is_where_a_person_keeps_it_and_its_data_folder_makes_it_portable()
     {
-        string windows = Directory.CreateDirectory(Path.Combine(root, "stick", "Passenger")).FullName;
+        string windows = Directory.CreateDirectory(Path.Combine(root, "stick", "Pitstop")).FullName;
         Assert.True(ThisCopy.Of(windows, []) is { Data: null, PackageManager: null } plain && plain.Folder == windows,
             $"A copy with no data folder beside it was read as {ThisCopy.Of(windows, [])}, not one keeping its state where an installed copy does");
         string data = Directory.CreateDirectory(Path.Combine(windows, ThisCopy.DataName)).FullName;
         Assert.True(ThisCopy.Of(windows + Path.DirectorySeparatorChar, []).Data == PathNames.Canonical(data),
             $"A copy with {data} beside its executable keeps its state in {ThisCopy.Of(windows, []).Data ?? "the person's own folders"}");
 
-        string linux = Directory.CreateDirectory(Path.Combine(root, "unpacked", "passenger")).FullName;
+        string linux = Directory.CreateDirectory(Path.Combine(root, "unpacked", "pitstop")).FullName;
         string app = Directory.CreateDirectory(Path.Combine(linux, "app")).FullName;
         Assert.True(ThisCopy.FolderOf(app) == app, "An app folder with no launcher above it was taken for the Linux archive's, its folder above it the copy's");
-        File.WriteAllText(Path.Combine(linux, "passenger"), "#!/bin/sh\n");
-        Assert.True(ThisCopy.FolderOf(app) == linux, $"The Linux archive's copy is kept in {ThisCopy.FolderOf(app)}, not its passenger folder {linux}, where its data folder goes");
+        File.WriteAllText(Path.Combine(linux, "pitstop"), "#!/bin/sh\n");
+        Assert.True(ThisCopy.FolderOf(app) == linux, $"The Linux archive's copy is kept in {ThisCopy.FolderOf(app)}, not its pitstop folder {linux}, where its data folder goes");
 
-        string bundle = Path.Combine(root, "Apps", "Passenger.app");
+        string bundle = Path.Combine(root, "Apps", "Pitstop.app");
         Assert.True(ThisCopy.FolderOf(Path.Combine(bundle, "Contents", "MacOS")) == Path.Combine(root, "Apps"),
             $"A Mac app's copy is kept in {ThisCopy.FolderOf(Path.Combine(bundle, "Contents", "MacOS"))}, inside its bundle, whose seal a data folder would break");
 
         string packages = Path.Combine(root, "WinGet", "Packages");
-        string installed = Directory.CreateDirectory(Path.Combine(packages, "PassengerIDE.Passenger_Microsoft.Winget.Source_8wekyb3d8bbwe", "Passenger")).FullName;
-        Assert.True(ThisCopy.Of(installed, [packages]).PackageManager == new PackageManagerMark("WinGet", "winget upgrade --id PassengerIDE.Passenger"),
+        string installed = Directory.CreateDirectory(Path.Combine(packages, "PitstopIDE.Pitstop_Microsoft.Winget.Source_8wekyb3d8bbwe", "Pitstop")).FullName;
+        Assert.True(ThisCopy.Of(installed, [packages]).PackageManager == new PackageManagerMark("WinGet", "winget upgrade --id PitstopIDE.Pitstop"),
             $"A copy WinGet unpacked was read as {ThisCopy.Of(installed, [packages]).PackageManager?.ToString() ?? "no package manager's"}, so it would not name winget upgrade");
         File.WriteAllText(Path.Combine(installed, ThisCopy.PackageManagerName), "Scoop\nscoop update passenger\n");
         Assert.True(ThisCopy.Of(installed, [packages]).PackageManager == new PackageManagerMark("Scoop", "scoop update passenger"),
@@ -134,7 +135,7 @@ public sealed class UpdateFoldersTests : IDisposable
         string data = Path.Combine(copy, ThisCopy.DataName);
         File.WriteAllText(data, "not a folder\n");
         FormatException file = Assert.Throws<FormatException>(() => ThisCopy.Of(copy, []));
-        Assert.True(file.Message.StartsWith($"{data} is no folder", StringComparison.Ordinal), $"A data file beside Passenger was refused saying: {file.Message}");
+        Assert.True(file.Message.StartsWith($"{data} is no folder", StringComparison.Ordinal), $"A data file beside Pitstop was refused saying: {file.Message}");
         File.Delete(data);
 
         string marker = Path.Combine(copy, ThisCopy.PackageManagerName);

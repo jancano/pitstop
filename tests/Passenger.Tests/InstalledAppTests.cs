@@ -35,7 +35,7 @@ public sealed class InstalledAppTests : McpRig, IClassFixture<RestoredFolders>
         Assert.SkipUnless(OperatingSystem.IsMacOS(), "An app bundle, whose seal a file added inside breaks, is macOS's");
         string bundle = TestFolders.Create("bundle-");
         DeleteAtEnd(bundle);
-        string app = Path.Combine(Directory.CreateDirectory(Path.Combine(bundle, "Passenger.app", "Contents")).FullName, "MacOS");
+        string app = Path.Combine(Directory.CreateDirectory(Path.Combine(bundle, "Pitstop.app", "Contents")).FullName, "MacOS");
         await CopyBuild(app);
         // Through dotnet: macOS takes a program started inside a bundle whose seal fails for a damaged app.
         await RunsFromCopy(app, "wrote inside the app bundle, breaking its seal", throughDotnet: true);
@@ -45,12 +45,12 @@ public sealed class InstalledAppTests : McpRig, IClassFixture<RestoredFolders>
     {
         if (OperatingSystem.IsWindows())
         {
-            Assert.Skip("A folder's read-only mode keeps no one from writing in it on Windows, where Passenger installs per user");
+            Assert.Skip("A folder's read-only mode keeps no one from writing in it on Windows, where Pitstop installs per user");
             return;
         }
         string install = TestFolders.Create("install-");
         DeleteAtEnd(install);
-        string app = Path.Combine(install, "passenger");
+        string app = Path.Combine(install, "pitstop");
         await CopyBuild(app);
         // The server's folder as a root-owned install's is to its user (install.sh --system).
         string roslyn = Path.Combine(app, "roslyn");
@@ -88,7 +88,7 @@ public sealed class InstalledAppTests : McpRig, IClassFixture<RestoredFolders>
     private static async Task CopyBuild(string to)
     {
         string build = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "Passenger.App", new DirectoryInfo(AppContext.BaseDirectory).Name));
-        Assert.True(File.Exists(Path.Combine(build, "Passenger")), $"The app's build is not at {build}");
+        Assert.True(File.Exists(Path.Combine(build, "Pitstop")), $"The app's build is not at {build}");
         ChildResult copied = await ChildProcesses.RunAsync(ChildProcesses.Command("/bin/cp", [OperatingSystem.IsMacOS() ? "-c" : "-l", "-R", build, to]),
             limit: TimeSpan.FromMinutes(2).Scaled(), cancel: Cancel);
         if (!copied.Succeeded)
@@ -138,8 +138,8 @@ public sealed class InstalledAppTests : McpRig, IClassFixture<RestoredFolders>
         File.SetLastWriteTimeUtc(Path.Combine(stale, ".used"), DateTime.UtcNow - TimeSpan.FromDays(2));
         await TakeFolderAsync();
         await using (McpClient client = throughDotnet
-            ? await Start([Path.Combine(app, "Passenger.dll"), "--mcp", Folder], executable: Dotnet.Host())
-            : await Start(["--mcp", Folder], executable: Path.Combine(app, "Passenger")))
+            ? await Start([Path.Combine(app, "Pitstop.dll"), "--mcp", Folder], executable: Dotnet.Host())
+            : await Start(["--mcp", Folder], executable: Path.Combine(app, "Pitstop")))
         {
             Assert.Contains((await Call(client, McpTools.Diagnostics, new() { ["path"] = "Helper.cs" })).EnumerateArray(),
                 d => d.GetProperty("code").GetString() == "CS0219");
@@ -147,7 +147,7 @@ public sealed class InstalledAppTests : McpRig, IClassFixture<RestoredFolders>
             Assert.True(await Waiting.UntilAsync(() => Copies().Append(roslyn).SelectMany(Caches).Any(), TimeSpan.FromMinutes(1), Cancel),
                 $"The server wrote no MEF cache, in the state's cache or beside itself in the app.{Said()}");
         }
-        Assert.True(LastPassenger().WaitForExit(TimeSpan.FromMinutes(1).Scaled()), $"Passenger did not end once its agent went.{Said()}");
+        Assert.True(LastPassenger().WaitForExit(TimeSpan.FromMinutes(1).Scaled()), $"Pitstop did not end once its agent went.{Said()}");
 
         string[] after = Listing(roslyn);
         Assert.True(before.SequenceEqual(after), $"The C# server {wrote}: "

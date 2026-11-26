@@ -588,7 +588,7 @@ public sealed class Snapshot
         }
         string? cutShort = through.CutShort;
         // Each read's index of its own, never beside the trace: a folder it cannot write, or another read of it, is no matter.
-        string etlx = Path.Combine(Path.GetTempPath(), $"passenger-{Guid.NewGuid():N}.etlx");
+        string etlx = Path.Combine(Path.GetTempPath(), $"pitstop-{Guid.NewGuid():N}.etlx");
         try
         {
             using (FileStream trace = Opened(nettrace))

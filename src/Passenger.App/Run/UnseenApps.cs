@@ -33,10 +33,10 @@ public static class UnseenApps
         string unseen = OperatingSystem.IsWindows()
             ? "Its configuration's Run console, not the Terminal, starts it on a desktop of its own, where nobody sees it"
             : app.Called == DesktopPrograms.Avalonia
-            ? past ?? "This build of Passenger carries no inspector to start it on Avalonia's headless platform"
+            ? past ?? "This build of Pitstop carries no inspector to start it on Avalonia's headless platform"
             : $"Such an app runs where nobody sees it only on Windows, on a desktop of its own; an Avalonia {StartupHooks.AvaloniaMajor} app runs so everywhere, on Avalonia's headless platform";
-        return $"Could not {verb} {Path.GetFileNameWithoutExtension(app.File)} where nobody sees it: it is {app.Called}, whose windows would open on the person's screen, and a Passenger nobody "
-            + $"sees opens none there. {unseen}; a person's Passenger (--mcp-attach) runs it on their screen";
+        return $"Could not {verb} {Path.GetFileNameWithoutExtension(app.File)} where nobody sees it: it is {app.Called}, whose windows would open on the person's screen, and a Pitstop nobody "
+            + $"sees opens none there. {unseen}; a person's Pitstop (--mcp-attach) runs it on their screen";
     }
 
     /// <summary>What desktop app a plan starts where nobody is to see it (<see cref="LaunchPlan.DesktopApp"/>); null

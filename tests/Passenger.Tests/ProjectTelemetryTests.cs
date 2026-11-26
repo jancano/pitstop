@@ -69,8 +69,8 @@ public sealed class ProjectTelemetryTests : McpRig
             RunDashboard dashboard = Assert.Single(window.Session.Dashboards);
             project = dashboard.ProjectName;
             string container = ContainerRunsTests.Container(project, ContainerTelemetry.Service);
-            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"net.passenger-ide.state\"}}", container));
-            Assert.Equal(ContainerLabels.FolderValue(folder), Docker.Run("inspect", "-f", "{{index .Config.Labels \"net.passenger-ide.folder\"}}", container));
+            Assert.Equal(ContainerLabels.StateValue, Docker.Run("inspect", "-f", "{{index .Config.Labels \"io.github.jancano.pitstop.state\"}}", container));
+            Assert.Equal(ContainerLabels.FolderValue(folder), Docker.Run("inspect", "-f", "{{index .Config.Labels \"io.github.jancano.pitstop.folder\"}}", container));
             // Its API and OTLP endpoints are this machine's loopback's alone.
             foreach (string inside in (string[])["18888", "18889", "18890"])
             {
@@ -105,7 +105,7 @@ public sealed class ProjectTelemetryTests : McpRig
             Task<JsonElement> logs = Waiting.Apart(() => Call(client, McpTools.Telemetry, new() { ["limit"] = 50 }));
             Press(Admission(window, "the window to ask whether the agent may work there"), AgentAdmissionDialog.Allow);
             JsonElement read = Await(logs, "the agent's telemetry of the project run, the only run there is");
-            Assert.Contains(read.GetProperty("logs").EnumerateArray(), item => item.GetProperty("message").GetString()?.Contains("Passenger order 42", StringComparison.Ordinal) == true);
+            Assert.Contains(read.GetProperty("logs").EnumerateArray(), item => item.GetProperty("message").GetString()?.Contains("Pitstop order 42", StringComparison.Ordinal) == true);
             JsonElement named = Await(Waiting.Apart(() => Call(client, McpTools.Telemetry, new() { ["resource"] = "shop-web", ["kind"] = "traces", ["traceId"] = log.TraceId })),
                 "the agent's telemetry of the request's trace, by the name its records go by");
             Assert.True(Assert.Single(named.GetProperty("traces").EnumerateArray()).GetProperty("spans").GetArrayLength() >= 3, named.ToString());
@@ -167,7 +167,7 @@ public sealed class ProjectTelemetryTests : McpRig
         MainWindow window = ContainerRunsTests.Open(folder, engine: new ContainerEngine(cli: null, search: false));
         Collect(window);
         string? had = Environment.GetEnvironmentVariable(OtelVariables.ExporterEndpoint);
-        OwnEnvironment.Set(OtelVariables.ExporterEndpoint, "http://collector.passenger-test.invalid:4318");
+        OwnEnvironment.Set(OtelVariables.ExporterEndpoint, "http://collector.pitstop-test.invalid:4318");
         try
         {
             string? refused = Ui.Await(window.RunAsync(), "the project to run on its inherited endpoint", TimeSpan.FromMinutes(5));
@@ -176,7 +176,7 @@ public sealed class ProjectTelemetryTests : McpRig
             string? answered = null;
             Assert.True(Ui.Pumped(() => (answered = Answer(port)) == "in stock", TimeSpan.FromMinutes(1)), $"web did not answer: {answered}\n{ContainerRunsTests.Run(window)}");
             string said = ContainerRunsTests.Run(window);
-            Assert.Contains($"{Name} sends its logs and traces where its own {OtelVariables.ExporterEndpoint} says, so Passenger's dashboard is not started for it", said, StringComparison.Ordinal);
+            Assert.Contains($"{Name} sends its logs and traces where its own {OtelVariables.ExporterEndpoint} says, so Pitstop's dashboard is not started for it", said, StringComparison.Ordinal);
             Assert.Empty(window.Session.Dashboards);
         }
         finally
@@ -260,7 +260,7 @@ public sealed class ProjectTelemetryTests : McpRig
         app.MapGet("/", async (HttpContext context, ILogger<Program> log, IHttpClientFactory clients, IHostApplicationLifetime lifetime) =>
         {
             string stock = await clients.CreateClient().GetStringAsync($"{context.Request.Scheme}://{context.Request.Host}/stock");
-            log.LogError("Passenger order {Order} failed: {Stock}", 42, stock);
+            log.LogError("Pitstop order {Order} failed: {Stock}", 42, stock);
             lifetime.StopApplication();
             return stock;
         });
@@ -272,7 +272,7 @@ public sealed class ProjectTelemetryTests : McpRig
 
     /// <summary>web's last log, of the order that failed, once the view lists it.</summary>
     private static AspireStructuredLog? Failed(TelemetryView telemetry) =>
-        telemetry.Logs.FirstOrDefault(log => log.ToString().Contains("Passenger order 42 failed", StringComparison.Ordinal));
+        telemetry.Logs.FirstOrDefault(log => log.ToString().Contains("Pitstop order 42 failed", StringComparison.Ordinal));
 
     /// <summary>An agent turns a project run's logs and traces on as it runs it (run's telemetry), kept for its configuration
     /// as Edit Configurations' box keeps it, and the run collects them into a dashboard of its own, which Stop takes down.</summary>
@@ -349,7 +349,7 @@ public sealed class ProjectTelemetryTests : McpRig
             WebApplication app = builder.Build();
             app.MapGet("/", async (HttpContext context, ILogger<Program> log, IHttpClientFactory clients) =>
             {
-                log.LogInformation("Passenger order {Order} placed", 42);
+                log.LogInformation("Pitstop order {Order} placed", 42);
                 return await clients.CreateClient().GetStringAsync($"{context.Request.Scheme}://{context.Request.Host}/stock");
             });
             app.MapGet("/stock", () => "in stock");
@@ -359,7 +359,7 @@ public sealed class ProjectTelemetryTests : McpRig
 
     /// <summary>web's log of the order it placed, once the Telemetry tab lists it.</summary>
     internal static AspireStructuredLog? Logged(TelemetryView telemetry) =>
-        telemetry.Logs.FirstOrDefault(log => log.ToString().Contains("Passenger order 42", StringComparison.Ordinal));
+        telemetry.Logs.FirstOrDefault(log => log.ToString().Contains("Pitstop order 42", StringComparison.Ordinal));
 
     internal static string? Answer(int port)
     {

@@ -187,7 +187,7 @@ public sealed class GDScriptTypesTests
                 "MISSING_AWAIT: \"await\" keyword might be desired because the expression is a coroutine.",
             ];
             Ui.PumpUntil(() => marked.All(m => document.Markers.Any(k => k.Message == m)),
-                "Godot's error and three warnings marked from Passenger's reading, the project's settings turning two on", TimeSpan.FromSeconds(60));
+                "Godot's error and three warnings marked from Pitstop's reading, the project's settings turning two on", TimeSpan.FromSeconds(60));
             Assert.Equal(MarkerKind.Error, document.Markers.First(m => m.Message == marked[0]).Kind);
             Assert.True(window.Session.Web?.For(document) is not { Serving: true }, "Godot's server answered: the test's hold of its start did not hold");
 

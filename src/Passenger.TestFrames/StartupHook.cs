@@ -28,7 +28,7 @@ internal static class StartupHook
                 return;
             }
             string self = typeof(StartupHook).Assembly.Location;
-            Assembly inside = new AppAvaloniaContext("Passenger test frames", self).LoadFromAssemblyPath(self);
+            Assembly inside = new AppAvaloniaContext("Pitstop test frames", self).LoadFromAssemblyPath(self);
             inside.GetType("Passenger.TestFrames.Frames", throwOnError: true)!
                 .GetMethod("Watch", BindingFlags.Public | BindingFlags.Static)!
                 .Invoke(null, null);

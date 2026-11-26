@@ -469,7 +469,7 @@ public sealed partial class FolderPackages
         {
             return null;
         }
-        Line?.Invoke(this, $"Passenger writes {PackageOutcome.Named([.. writes.Texts.Keys])} where {project.Name}'s evaluation keeps its package versions");
+        Line?.Invoke(this, $"Pitstop writes {PackageOutcome.Named([.. writes.Texts.Keys])} where {project.Name}'s evaluation keeps its package versions");
         string? unwritten = await BackgroundWork.Run(() =>
         {
             try

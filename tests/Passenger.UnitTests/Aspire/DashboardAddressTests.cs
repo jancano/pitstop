@@ -81,7 +81,7 @@ public sealed class DashboardAddressTests
     {
         Assert.True(DashboardAddress.PlacedIn(hostingVersion) == placed, placed
             ? $"An AppHost of Aspire {hostingVersion ?? "unknown"} is handed a port chosen and let go, which another program can take before its dashboard binds it"
-            : $"An AppHost of Aspire {hostingVersion} is handed port 0, which its dashboard binds itself, saying the port nowhere Passenger reads");
+            : $"An AppHost of Aspire {hostingVersion} is handed port 0, which its dashboard binds itself, saying the port nowhere Pitstop reads");
     }
 
     /// <summary>A resource as the resource stream's snapshot writes it: its names, its URLs by endpoint name, hidden.</summary>

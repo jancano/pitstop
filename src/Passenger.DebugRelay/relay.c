@@ -52,7 +52,7 @@ struct timespec { long tv_sec; long tv_nsec; };
 extern int clock_gettime(int, struct timespec *);
 #if defined(__ANDROID__)
 extern int __android_log_print(int, const char *, const char *, ...);
-#define LOG(...) __android_log_print(4, "passenger-relay", __VA_ARGS__)
+#define LOG(...) __android_log_print(4, "pitstop-relay", __VA_ARGS__)
 #define RTLD_NOW 2
 #define RTLD_NOLOAD 4
 #define CORECLR_NAME "libcoreclr.so"
@@ -354,7 +354,7 @@ static void *serve(void *unused) {
         }
         free(body);
     }
-    LOG("Passenger's connection ended");
+    LOG("Pitstop's connection ended");
     pthread_mutex_lock(g_writeLock);
     close(g_conn); g_conn = -1;
     pthread_mutex_unlock(g_writeLock);
@@ -410,7 +410,7 @@ static void attachLocally(void) {
 
 #if defined(__APPLE__)
 // A Mac Catalyst app's sandbox takes a listener only in its own container: a Unix socket at the path
-// PASSENGER_DEBUG_SOCKET names there, whatever a dead start left at it taken away first.
+// PITSTOP_DEBUG_SOCKET names there, whatever a dead start left at it taken away first.
 static int listenAt(const char *path, char *said, size_t saidSize) {
     struct { uint8_t len, family; char path[104]; } addr;
     memset(&addr, 0, sizeof addr);
@@ -426,12 +426,12 @@ static int listenAt(const char *path, char *said, size_t saidSize) {
     return s;
 }
 
-// The socket PASSENGER_DEBUG_SOCKET names where it is a path (a Mac Catalyst app's), else TCP on the loopback at
-// PASSENGER_DEBUG_PORT: a simulator shares the Mac's network and usbmux reaches a device's ports.
+// The socket PITSTOP_DEBUG_SOCKET names where it is a path (a Mac Catalyst app's), else TCP on the loopback at
+// PITSTOP_DEBUG_PORT: a simulator shares the Mac's network and usbmux reaches a device's ports.
 static int listenSocket(char *said, size_t saidSize) {
-    const char *path = getenv("PASSENGER_DEBUG_SOCKET");
+    const char *path = getenv("PITSTOP_DEBUG_SOCKET");
     if (path && path[0] == '/') return listenAt(path, said, saidSize);
-    const char *port = getenv("PASSENGER_DEBUG_PORT");
+    const char *port = getenv("PITSTOP_DEBUG_PORT");
     int p = port ? atoi(port) : 5599;
     int s = socket(2 /* AF_INET */, 1 /* SOCK_STREAM */, 0);
     struct { uint8_t len, family; uint16_t port; uint32_t addr; uint8_t zero[8]; } addr;
@@ -447,8 +447,8 @@ static int listenSocket(char *said, size_t saidSize) {
 #else
 // Android: an abstract socket, no file, which adb forward tcp:N localabstract:NAME reaches.
 static int listenSocket(char *said, size_t saidSize) {
-    const char *name = getenv("PASSENGER_DEBUG_SOCKET");
-    if (!name || !*name) name = "passenger-debug";
+    const char *name = getenv("PITSTOP_DEBUG_SOCKET");
+    if (!name || !*name) name = "pitstop-debug";
     int s = socket(1 /* AF_UNIX */, 1 /* SOCK_STREAM */, 0);
     struct { uint16_t family; char path[108]; } addr;
     memset(&addr, 0, sizeof addr);
@@ -484,18 +484,18 @@ static int givesToken(int c, const char *token) {
     return differs == 0;
 }
 
-// Takes the first client that gives PASSENGER_DEBUG_TOKEN, where the environment names one: any other is closed unheard.
+// Takes the first client that gives PITSTOP_DEBUG_TOKEN, where the environment names one: any other is closed unheard.
 static int waitForPassenger(int waitMs) {
     char said[128];
     int s = listenSocket(said, sizeof said);
     if (s < 0) { LOG("listen on %s failed", said); return 0; }
-    const char *token = getenv("PASSENGER_DEBUG_TOKEN");
-    LOG("waiting %d ms for Passenger on %s", waitMs, said);
+    const char *token = getenv("PITSTOP_DEBUG_TOKEN");
+    LOG("waiting %d ms for Pitstop on %s", waitMs, said);
     long end = nowMs() + waitMs;
     for (;;) {
         long left = end - nowMs();
         struct pollfd pfd = {s, 1, 0};
-        if (left <= 0 || poll(&pfd, 1, (int)left) <= 0) { LOG("Passenger did not come"); close(s); return 0; }
+        if (left <= 0 || poll(&pfd, 1, (int)left) <= 0) { LOG("Pitstop did not come"); close(s); return 0; }
         int c = accept(s, 0, 0);
         if (c < 0) continue;
         if (token && *token && !givesToken(c, token)) {
@@ -514,9 +514,9 @@ static HRESULT start(void) {
     pthread_mutex_init(g_stateLock, 0);
     pthread_cond_init(g_stateCond, 0);
     initCallbacks();
-    const char *local = getenv("PASSENGER_DEBUG_LOCAL");
+    const char *local = getenv("PITSTOP_DEBUG_LOCAL");
     g_local = local && *local == '1';
-    const char *wait = getenv("PASSENGER_DEBUG_WAIT_MS");
+    const char *wait = getenv("PITSTOP_DEBUG_WAIT_MS");
     int waitMs = wait ? atoi(wait) : 60000;
     if (createCordb() < 0) return S_OK;
     if (g_local) { attachLocally(); return S_OK; }

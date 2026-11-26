@@ -183,7 +183,7 @@ public sealed class NewSolutionTests : IDisposable
         Assert.True(Directory.Exists(Path.Combine(folder, ".git")), $"New Solution made no Git repository in {folder}");
         string ignore = File.ReadAllText(Path.Combine(folder, ".gitignore"));
         Assert.True(ignore.Contains("[Bb]in/", StringComparison.Ordinal) && ignore.EndsWith($"\n\n{RepositoryFiles.PassengerIgnores}", StringComparison.Ordinal),
-            $"The new repository's .gitignore is not dotnet new's with Passenger's section after it:\n{ignore}");
+            $"The new repository's .gitignore is not dotnet new's with Pitstop's section after it:\n{ignore}");
         Assert.Equal(RepositoryFiles.GitAttributes, File.ReadAllText(Path.Combine(folder, ".gitattributes")));
         string editorConfig = File.ReadAllText(Path.Combine(folder, ".editorconfig"));
         string[] all = [.. editorConfig.Split('\n').SkipWhile(l => l != "[*]").Skip(1).TakeWhile(l => !l.StartsWith('['))];
@@ -211,7 +211,7 @@ public sealed class NewSolutionTests : IDisposable
         NewProjectDialog dialog = Templates(window);
         dialog.Folder = place;
         NewServiceSetupTests.Choose(dialog, "wpf");
-        Assert.True((dialog.WindowsNote is { } note && note.StartsWith("WPF runs only on Windows: Passenger builds the project here", StringComparison.Ordinal)) != OperatingSystem.IsWindows(),
+        Assert.True((dialog.WindowsNote is { } note && note.StartsWith("WPF runs only on Windows: Pitstop builds the project here", StringComparison.Ordinal)) != OperatingSystem.IsWindows(),
             $"WPF Application says \"{dialog.WindowsNote}\" before Create here");
         dialog.SolutionName = "Gallery";
         dialog.Framework = WpfApp.Framework;

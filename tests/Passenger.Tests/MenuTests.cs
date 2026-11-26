@@ -63,7 +63,7 @@ public sealed class MenuTests : IDisposable
         Ui.Settle();
 
         Assert.True(ReferenceEquals(given, NativeMenu.GetMenu(window)),
-            "The window was given a second menu bar, which macOS's menu exporter refuses, ending Passenger at start");
+            "The window was given a second menu bar, which macOS's menu exporter refuses, ending Pitstop at start");
         Assert.Equal(menus, given.Items.Count);
         Assert.Equal(given.Items.OfType<NativeMenuItem>().Select(i => i.Header).Distinct().Count(), given.Items.OfType<NativeMenuItem>().Count());
         window.Close();
@@ -77,17 +77,17 @@ public sealed class MenuTests : IDisposable
     {
         Assert.SkipUnless(OperatingSystem.IsMacOS(), "The application menu is macOS's");
         NativeMenu taken = TestApp.ApplicationMenuAtSetup
-            ?? throw new Xunit.Sdk.XunitException("The application had no menu as its setup ended, where macOS takes it, so macOS's menu bar shows Avalonia's About and none of Passenger's");
+            ?? throw new Xunit.Sdk.XunitException("The application had no menu as its setup ended, where macOS takes it, so macOS's menu bar shows Avalonia's About and none of Pitstop's");
         MainWindow window = Ui.OpenFolder(folder, languageServer: false);
         Assert.True(ReferenceEquals(taken, MainWindow.ApplicationMenu),
-            "The window gave the application another menu than the one macOS took as Passenger started, which macOS never shows");
+            "The window gave the application another menu than the one macOS took as Pitstop started, which macOS never shows");
         string[] Shown() => [.. taken.Items.Select(i => (i as NativeMenuItem)?.Header ?? "-")];
-        Assert.Equal(["About Passenger", "Check for Updates…", "-", "Settings…"], Shown());
+        Assert.Equal(["About Pitstop", "Check for Updates…", "-", "Settings…"], Shown());
         NativeMenuItem Item(string title) => taken.Items.OfType<NativeMenuItem>().Single(i => i.Header == title);
         Assert.True(new KeyGesture(Key.OemComma, KeyModifiers.Meta).Equals(Item("Settings…").Gesture),
             $"Settings… shows {Item("Settings…").Gesture?.ToString() ?? "no keys"} in the application menu, not ⌘,");
 
-        Item("About Passenger").Command!.Execute(null);
+        Item("About Pitstop").Command!.Execute(null);
         Ui.Settle();
         Assert.IsType<AboutDialog>(window.Frontmost).Close();
         Ui.Settle();
@@ -102,11 +102,11 @@ public sealed class MenuTests : IDisposable
 
         MainWindow second = PassengerApp.NewWindow(window);
         Ui.Settle();
-        Assert.Equal(["About Passenger", "Check for Updates…", "-", "Settings…"], Shown());
-        Item("About Passenger").Command!.Execute(null);
+        Assert.Equal(["About Pitstop", "Check for Updates…", "-", "Settings…"], Shown());
+        Item("About Pitstop").Command!.Execute(null);
         Ui.Settle();
         Assert.True(second.Frontmost is AboutDialog && window.Frontmost is not AboutDialog,
-            "About Passenger chosen from the application menu did not open over the window in front, the newer one");
+            "About Pitstop chosen from the application menu did not open over the window in front, the newer one");
         second.Frontmost.Close();
         second.Close();
         window.Close();
@@ -222,7 +222,7 @@ public sealed class MenuTests : IDisposable
 
             // A dialog over the window (an agent's question) answered gives the window back the focus it had before the menu.
             ClickOpen(window, widget);
-            ConfirmDialog question = new("Allow app_key?", "An agent wants to press keys in Passenger.", "Allow", "Deny");
+            ConfirmDialog question = new("Allow app_key?", "An agent wants to press keys in Pitstop.", "Allow", "Deny");
             _ = question.ShowDialog<bool>(window);
             Ui.Settle();
             question.Close(true);

@@ -640,7 +640,7 @@ public sealed class DebugController : IDisposable
     }
 
     /// <summary>Why a program in a container or on another machine shows an update only as its code next runs.</summary>
-    internal const string HandlersUnreached = "Hot Reload: Passenger's hook cannot reach a program in a container or on another machine, so its update handlers "
+    internal const string HandlersUnreached = "Hot Reload: Pitstop's hook cannot reach a program in a container or on another machine, so its update handlers "
         + "are not called: a Blazor component shows an edit only as it next renders";
 
     /// <summary>A tab's program that took an apply's C#, whatever its XAML came to: the files' lines as the update was made of
@@ -1818,7 +1818,7 @@ public sealed class DebugController : IDisposable
     /// Hot Reload changed it (<see cref="LetsNoDebuggerGo"/>).</summary>
     private string? WhyNotDetach(DebugSession? session) => session is not { State: not DebugState.Ended } ? Refusals.NothingDebugged
         : !session.Attached ? "The debugger started this program: Stop ends it, and Detach lets go only of a program attached to"
-        : TabOf(session) is { FollowedStarts: true } ? "Passenger started this program through the one that starts it, which ends with it: Stop ends both, and Detach lets go only of a program attached to as it ran"
+        : TabOf(session) is { FollowedStarts: true } ? "Pitstop started this program through the one that starts it, which ends with it: Stop ends both, and Detach lets go only of a program attached to as it ran"
         : session.State == DebugState.Starting ? StillStarting
         : HotReloadChanged(session) ? LetsNoDebuggerGo(TabOf(session)?.Name ?? running.FirstOrDefault(r => r.Session == session)?.Name ?? session.Program)
         : null;
@@ -3016,7 +3016,7 @@ public sealed class DebugController : IDisposable
     /// <summary>The continue or step the person last asked for, and when, until the stop it comes to is shown.</summary>
     private (string Action, long At)? asked;
 
-    /// <summary>How long the last stop took to show, as passenger.log has it.</summary>
+    /// <summary>How long the last stop took to show, as pitstop.log has it.</summary>
     public StopTimes? LastStopTimes { get; private set; }
 
     private void FramesShown()
@@ -3028,7 +3028,7 @@ public sealed class DebugController : IDisposable
     }
 
     /// <summary>The stop's locals are shown: how long it took, from the step that came to it and from the stop, goes to
-    /// passenger.log, since it is what a person waits on at every step.</summary>
+    /// pitstop.log, since it is what a person waits on at every step.</summary>
     private void LocalsShown()
     {
         if (showing is not { } stop)

@@ -136,7 +136,7 @@ public sealed class ProfilingSession : IAsyncDisposable
         string trace = TraceIn(folder, target.Name, Named);
         // Named for this process first, so a later Passenger takes away one a crash left; never .sock, which agents look for.
         string port = OperatingSystem.IsWindows()
-            ? $"passenger-profile-{Environment.ProcessId}-{Guid.NewGuid():N}"
+            ? $"pitstop-profile-{Environment.ProcessId}-{Guid.NewGuid():N}"
             : Path.Combine(sockets, $"{Environment.ProcessId}-{Guid.NewGuid().ToString("N")[..8]}.profiler");
         using CancellationTokenSource limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         limit.CancelAfter(TimeSpan.FromSeconds(30));

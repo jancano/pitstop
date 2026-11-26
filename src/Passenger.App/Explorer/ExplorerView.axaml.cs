@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Passenger.App.Docking;
 using Passenger.App.ToolWindows;
+using Passenger.App.Workspace;
 using Passenger.Core;
 using Passenger.Editor;
 using Passenger.Workspace;
@@ -23,6 +24,7 @@ public enum ExplorerViewKind
 {
     Solution,
     Files,
+    Xmake,
 }
 
 public partial class ExplorerView : UserControl
@@ -169,13 +171,13 @@ public partial class ExplorerView : UserControl
     /// chosen, and the filter as it was.</summary>
     public void Refresh()
     {
-        static string Key(ExplorerNode row) => (row.Kind == NodeKind.SolutionFolder ? row.SolutionPath : row.Path) ?? $"{row.Owner}/{row.Depth}/{row.Kind}/{row.Name}";
+        static string Key(ExplorerNode row) => row.ViewKey ?? (row.Kind == NodeKind.SolutionFolder ? row.SolutionPath : row.Path) ?? $"{row.Owner}/{row.Depth}/{row.Kind}/{row.Name}";
         // The rows open are those open before the filter, which it opens again over them.
         Tree.Unfilter();
         HashSet<string> open = new(Tree.Rows.Where(r => r.IsExpanded).Select(Key), StringComparer.Ordinal);
         string? chosen = Selected is { } selected ? Key(selected) : null;
         ExplorerNode? again = null;
-        Show(viewAsked == ExplorerViewKind.Solution);
+        ShowRequested();
         // Down the rows as they open: a folder's rows come in after it, so each folder is reached once its holder is open.
         for (int at = 0; at < Tree.Rows.Count; at++)
         {
@@ -222,6 +224,7 @@ public partial class ExplorerView : UserControl
 
     private string? folder;
     private SolutionModel? solution;
+    private XmakeWorkspaceSession? xmake;
 
     /// <summary>The folder's projects, by which the File System view knows the folders the SDK reads.</summary>
     private IReadOnlyList<ProjectModel> projects = [];
@@ -243,7 +246,7 @@ public partial class ExplorerView : UserControl
         folder = workspace.Folder;
         viewAsked = view;
         Take(workspace);
-        Show(solutionView: view == ExplorerViewKind.Solution);
+        ShowRequested();
         Rows.IsVisible = true;
         filterBar.IsVisible = true;
         ShowHint();
@@ -258,6 +261,7 @@ public partial class ExplorerView : UserControl
         programs = [];
         projects = [];
         project = null;
+        xmake = null;
         ViewSwitch.IsVisible = false;
         Tree.Clear();
         Rows.IsVisible = false;
@@ -327,7 +331,37 @@ public partial class ExplorerView : UserControl
         programs = [.. workspace.Programs];
         projects = workspace.Projects;
         project = workspace.ProjectFile is null ? null : workspace.Projects.FirstOrDefault();
-        ViewSwitch.IsVisible = HasSolutionView;
+        ViewSwitch.IsVisible = HasProjectView;
+    }
+
+    internal void BindXmake(XmakeWorkspaceSession? workspace) => xmake = workspace;
+
+    internal void FollowXmake()
+    {
+        ViewSwitch.IsVisible = HasProjectView;
+        if (folder is not null && viewAsked != ExplorerViewKind.Files
+            && (Tree.IsXmakeView || viewAsked == ExplorerViewKind.Xmake || !HasSolutionView))
+        {
+            Refresh();
+            if (revealing is { } waiting)
+            {
+                Reveal(waiting);
+            }
+        }
+    }
+
+    private void ShowRequested()
+    {
+        if (xmake is { IsXmake: true } && folder is not null
+            && (viewAsked == ExplorerViewKind.Xmake || viewAsked == ExplorerViewKind.Solution && !HasSolutionView))
+        {
+            Tree.LoadXmake(folder, xmake);
+            ViewName.Text = "Xmake";
+        }
+        else
+        {
+            Show(solutionView: viewAsked != ExplorerViewKind.Files);
+        }
     }
 
     private void Show(bool solutionView)
@@ -364,8 +398,17 @@ public partial class ExplorerView : UserControl
     /// <summary>Whether a solution or project is open, so it has a Solution view to switch to.</summary>
     public bool HasSolutionView => solution is not null || project is not null;
 
+    internal bool HasProjectView => HasSolutionView || xmake is { IsXmake: true };
+
+    internal ExplorerViewKind NextView => ViewShown switch
+    {
+        ExplorerViewKind.Xmake when HasSolutionView => ExplorerViewKind.Solution,
+        ExplorerViewKind.Xmake or ExplorerViewKind.Solution => ExplorerViewKind.Files,
+        _ => xmake is { IsXmake: true } ? ExplorerViewKind.Xmake : ExplorerViewKind.Solution,
+    };
+
     /// <summary>The view it shows; the Files view with nothing open.</summary>
-    public ExplorerViewKind ViewShown => Tree.IsSolutionView ? ExplorerViewKind.Solution : ExplorerViewKind.Files;
+    public ExplorerViewKind ViewShown => Tree.IsXmakeView ? ExplorerViewKind.Xmake : Tree.IsSolutionView ? ExplorerViewKind.Solution : ExplorerViewKind.Files;
 
     /// <summary>Shows a view, its rows made anew and narrowed to the filter's files, the keys kept on the rows if they had
     /// them; nothing while it shows already, or with no Solution view to switch to, the view asked for kept even
@@ -373,12 +416,12 @@ public partial class ExplorerView : UserControl
     public void ShowView(ExplorerViewKind view)
     {
         viewAsked = view;
-        if (folder is null || !HasSolutionView || view == ViewShown)
+        if (folder is null || !HasProjectView || view == ViewShown)
         {
             return;
         }
         bool keys = Rows.IsKeyboardFocusWithin;
-        Show(solutionView: view == ExplorerViewKind.Solution);
+        ShowRequested();
         Narrow();
         if (keys && !Rows.IsKeyboardFocusWithin)
         {
@@ -593,7 +636,7 @@ public partial class ExplorerView : UserControl
         }
         else
         {
-            revealing = Tree.IsSolutionView && (File.Exists(path) || Directory.Exists(path)) ? path : null;
+            revealing = (Tree.IsSolutionView || Tree.IsXmakeView) && (File.Exists(path) || Directory.Exists(path)) ? path : null;
         }
     }
 
@@ -606,7 +649,7 @@ public partial class ExplorerView : UserControl
     {
         string full = PathNames.Canonical(path);
         ExplorerNode? node = Tree.Reveal(full);
-        if (node is null && Tree.IsSolutionView && folder is not null && PathNames.IsUnder(full, folder) && (File.Exists(full) || Directory.Exists(full)))
+        if (node is null && (Tree.IsSolutionView || Tree.IsXmakeView) && folder is not null && PathNames.IsUnder(full, folder) && (File.Exists(full) || Directory.Exists(full)))
         {
             Show(solutionView: false);
             node = Tree.Reveal(full);

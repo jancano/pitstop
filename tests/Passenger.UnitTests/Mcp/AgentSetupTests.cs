@@ -14,9 +14,9 @@ public sealed class AgentSetupTests
     /// <summary>Where Passenger may be installed: folders holding what each shell reads as more than a name.</summary>
     private static readonly string[] Paths =
     [
-        "C:\\Users\\O'Brien\\R&D\\Passenger.exe",
-        "C:\\Program Files\\R&D (x86)\\Passenger\\Passenger.exe",
-        "C:\\Users\\a$b\\5^2 100%\\Passenger.exe",
+        "C:\\Users\\O'Brien\\R&D\\Pitstop.exe",
+        "C:\\Program Files\\R&D (x86)\\Passenger\\Pitstop.exe",
+        "C:\\Users\\a$b\\5^2 100%\\Pitstop.exe",
         "/opt/my apps/$(touch ran);`x`|y/Passenger",
     ];
 
@@ -30,9 +30,9 @@ public sealed class AgentSetupTests
             Assert.Equal(ShellKind.Zsh, AgentSetup.ShellOf("/bin/zsh -l"));
             Assert.Equal(ShellKind.Fish, AgentSetup.ShellOf("/opt/homebrew/bin/fish"));
         }),
-        ("PowerShell runs the commands with Passenger's path as one word", () => Cases.Each(Paths, path => Check(path, ShellKind.PowerShell, PowerShellReads))),
-        ("cmd runs the commands with Passenger's path as one word", () => Cases.Each(Paths, path => Check(path, ShellKind.Cmd, CmdReads))),
-        ("sh runs the commands with Passenger's path as one word", () => Cases.Each(Paths, path => Check(path, ShellKind.Posix, ShReads))));
+        ("PowerShell runs the commands with Pitstop's path as one word", () => Cases.Each(Paths, path => Check(path, ShellKind.PowerShell, PowerShellReads))),
+        ("cmd runs the commands with Pitstop's path as one word", () => Cases.Each(Paths, path => Check(path, ShellKind.Cmd, CmdReads))),
+        ("sh runs the commands with Pitstop's path as one word", () => Cases.Each(Paths, path => Check(path, ShellKind.Posix, ShReads))));
 
     /// <summary>Both commands, read by <paramref name="shell"/>'s rules, give the words they were made of.</summary>
     private static void Check(string path, ShellKind shell, Func<string, List<string>?> reads)
@@ -40,11 +40,11 @@ public sealed class AgentSetupTests
         AgentSetup setup = new(path, null, shell);
         foreach ((string agent, string command) in new[] { ("claude", setup.ClaudeCode), ("codex", setup.Codex) })
         {
-            string[] meant = [agent, "mcp", "add", "passenger", "--", path, "--mcp-attach"];
+            string[] meant = [agent, "mcp", "add", "pitstop", "--", path, "--mcp-attach"];
             List<string>? read = reads(command);
             Assert.True(read is not null && read.SequenceEqual(meant),
                 $"{shell} runs {command} as {(read is null ? "something else: a character in the path runs, expands or ends the line" : $"[{string.Join(", ", read)}]")}, "
-                + $"so {agent} adds no Passenger at {path}");
+                + $"so {agent} adds no Pitstop at {path}");
         }
     }
 

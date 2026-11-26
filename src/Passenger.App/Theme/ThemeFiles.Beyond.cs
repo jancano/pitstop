@@ -269,7 +269,7 @@ public static partial class ThemeFiles
         {
             if (language.Name.Length > LongestLanguage || language.Name.Any(char.IsControl) || (LanguageIds.Count > 0 && !LanguageIds.Contains(language.Name)))
             {
-                problems.Add($"{file}: {language.Name} in languages is no language this Passenger knows, so it was passed over");
+                problems.Add($"{file}: {language.Name} in languages is no language this Pitstop knows, so it was passed over");
                 continue;
             }
             if (language.Value.ValueKind != JsonValueKind.Object)

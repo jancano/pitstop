@@ -13,7 +13,7 @@ namespace Passenger.Tests;
 [Collection(Beside.Name)]
 public sealed class GitDifferentialTests
 {
-    /// <summary>The run's seed, unless PASSENGER_GIT_SEED names one to replay.</summary>
+    /// <summary>The run's seed, unless PITSTOP_GIT_SEED names one to replay.</summary>
     private const int Seed = 2095;
 
     private const int Rounds = 24;
@@ -32,7 +32,7 @@ public sealed class GitDifferentialTests
     [Fact]
     public async Task Passengers_status_diffs_partial_stages_and_line_breaks_agree_with_gits_own_over_random_repositories()
     {
-        int seed = Environment.GetEnvironmentVariable("PASSENGER_GIT_SEED") is { Length: > 0 } given ? int.Parse(given, CultureInfo.InvariantCulture) : Seed;
+        int seed = Environment.GetEnvironmentVariable("PITSTOP_GIT_SEED") is { Length: > 0 } given ? int.Parse(given, CultureInfo.InvariantCulture) : Seed;
         Random rounds = new(seed);
         for (int round = 0; round < Rounds; round++)
         {
@@ -41,7 +41,7 @@ public sealed class GitDifferentialTests
             if (await DifferenceAsync(repository) is { } difference)
             {
                 Repository smallest = await ShrunkAsync(repository);
-                Assert.Fail($"Passenger and git differ on round {round} of seed {seed} (its own seed {roundSeed}): {await DifferenceAsync(smallest) ?? difference}\n"
+                Assert.Fail($"Pitstop and git differ on round {round} of seed {seed} (its own seed {roundSeed}): {await DifferenceAsync(smallest) ?? difference}\n"
                     + $"The smallest repository found that still differs:\n{smallest}");
             }
         }
@@ -297,7 +297,7 @@ public sealed class GitDifferentialTests
         {
             await GitAsync(folder, "init", "-q", "-b", "main");
             await GitAsync(folder, "config", GitConfigKeys.UserEmail, "tests@passenger.invalid");
-            await GitAsync(folder, "config", "user.name", "Passenger Tests");
+            await GitAsync(folder, "config", "user.name", "Pitstop Tests");
             await GitAsync(folder, "config", "core.autocrlf", AutoCrlf);
             await GitAsync(folder, "commit", "-q", "--allow-empty", "-m", "Empty");
             foreach (FileMade file in Files.Where(f => f.Committed))

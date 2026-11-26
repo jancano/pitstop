@@ -247,9 +247,9 @@ public sealed class MauiCatalystTests : McpRig
                 "the app's run configuration");
             JsonElement ran = await Call(client, McpTools.Run, new() { ["configuration"] = MauiApp.Name, ["waitSeconds"] = 0 });
             Assert.True(ran.GetProperty("stillRunning").GetBoolean(), $"run did not leave the app running: {ran}");
-            string log = Path.Combine(OwnState, "logs", "passenger.log");
+            string log = Path.Combine(OwnState, "logs", "pitstop.log");
             await Until(() => (app = Opened(folder)) is int id && File.Exists(log) && Ui.Shared(log).Contains($"Process {id} started", StringComparison.Ordinal),
-                "the app to run and Passenger to take it on, as its log says");
+                "the app to run and Pitstop to take it on, as its log says");
 
             System.Diagnostics.Process passenger = LastPassenger();
             int[] killed = [.. Processes.Descendants(passenger.Id).Reverse(), passenger.Id];
@@ -257,8 +257,8 @@ public sealed class MauiCatalystTests : McpRig
             {
                 OwnProcess.Of(id).Kill(alone: true);
             }
-            await Until(() => killed.All(id => !Processes.IsRunning(id)), "Passenger and every process of its tree killed");
-            await Until(() => Opened(folder) is null, $"the app (process {app}) to end with the Passenger that ran it, though no process of its tree is left");
+            await Until(() => killed.All(id => !Processes.IsRunning(id)), "Pitstop and every process of its tree killed");
+            await Until(() => Opened(folder) is null, $"the app (process {app}) to end with the Pitstop that ran it, though no process of its tree is left");
         }
         finally
         {

@@ -23,7 +23,7 @@ public sealed class GodotExportTests
 {
     /// <summary>The variable naming a .tpz of Godot's export templates of the Godot found, its version's, which the export
     /// test installs from.</summary>
-    public const string TemplatesVariable = "PASSENGER_TEST_GODOT_TEMPLATES";
+    public const string TemplatesVariable = "PITSTOP_TEST_GODOT_TEMPLATES";
 
     internal const string Preset = "Here";
 
@@ -201,7 +201,7 @@ public sealed class GodotExportTests
               </packageSources>
             </configuration>
             """);
-        string options = OperatingSystem.IsMacOS() ? $"binary_format/architecture=\"{Arch}\"\napplication/bundle_identifier=\"net.passenger-ide.spinner\"\ncodesign/codesign=0\nnotarization/notarization=0\n"
+        string options = OperatingSystem.IsMacOS() ? $"binary_format/architecture=\"{Arch}\"\napplication/bundle_identifier=\"io.github.jancano.pitstop.spinner\"\ncodesign/codesign=0\nnotarization/notarization=0\n"
             : OperatingSystem.IsWindows() ? $"binary_format/architecture=\"{Arch}\"\napplication/modify_resources=false\ncodesign/enable=false\n"
             : $"binary_format/architecture=\"{Arch}\"\n";
         string platform = OperatingSystem.IsMacOS() ? "macOS" : OperatingSystem.IsWindows() ? "Windows Desktop" : "Linux";
@@ -222,7 +222,7 @@ public sealed class GodotExportTests
         TestFolders.Write(folder, "main.tscn", "[gd_scene load_steps=2 format=3]\n\n[ext_resource type=\"Script\" path=\"res://ticker.gd\" id=\"1\"]\n\n"
             + "[node name=\"Main\" type=\"Node\"]\nscript = ExtResource(\"1\")\n");
         TestFolders.Write(folder, "ticker.gd", "extends Node\n\nfunc _ready() -> void:\n\tprint(\"ready\")\n");
-        string options = OperatingSystem.IsMacOS() ? "application/bundle_identifier=\"net.passenger-ide.ticker\"\ncodesign/codesign=0\nnotarization/notarization=0\n"
+        string options = OperatingSystem.IsMacOS() ? "application/bundle_identifier=\"io.github.jancano.pitstop.ticker\"\ncodesign/codesign=0\nnotarization/notarization=0\n"
             : OperatingSystem.IsWindows() ? $"binary_format/architecture=\"{Arch}\"\napplication/modify_resources=false\ncodesign/enable=false\n"
             : $"binary_format/architecture=\"{Arch}\"\n";
         string platform = OperatingSystem.IsMacOS() ? "macOS" : OperatingSystem.IsWindows() ? "Windows Desktop" : "Linux";

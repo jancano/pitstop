@@ -2,9 +2,9 @@ using Passenger.Core;
 
 namespace Passenger.App;
 
-/// <summary><c>passenger-ide</c>, Passenger's command in a terminal on every system, which runs Passenger with a folder, a
+/// <summary><c>pitstop-ide</c>, Passenger's command in a terminal on every system, which runs Passenger with a folder, a
 /// solution or a file and its flags, a Passenger running already taking it. Linux's install.sh links it (tools/linux).
-/// Windows' installer puts the folder of the program this build carries (bin\passenger-ide.exe, src/Passenger.Launcher)
+/// Windows' installer puts the folder of the program this build carries (bin\pitstop-ide.exe, src/Passenger.Launcher)
 /// on the person's own Path as it installs and updates, and takes it off as it uninstalls (<see cref="Installation"/>).
 /// On macOS, whose disk image installs nothing, the person adds it from the Tools menu and removes it there: a link in
 /// ~/.local/bin, where Linux's is too and no administrator is asked, to the script the app's bundle carries, the folder
@@ -12,7 +12,7 @@ namespace Passenger.App;
 public static class PassengerCommand
 {
     /// <summary>The command's name, never <c>passenger</c>: Phusion Passenger's is.</summary>
-    public const string Name = "passenger-ide";
+    public const string Name = "pitstop-ide";
 
     /// <summary>A test's app bundle in place of the one this Passenger runs from.</summary>
     public static string? BundleStandIn { get; set; }
@@ -91,7 +91,7 @@ public static class PassengerCommand
         if (now.Held != CommandHeld.This)
         {
             Directory.CreateDirectory(Folder);
-            string made = $"{Link}.passenger-{Environment.ProcessId}";
+            string made = $"{Link}.pitstop-{Environment.ProcessId}";
             File.Delete(made);
             File.CreateSymbolicLink(made, now.Launcher!);
             if (now.Held == CommandHeld.Passengers)

@@ -490,7 +490,7 @@ public sealed class FolderWatchTests : IDisposable
         Write("TestResults/run.trx", "");
         Write(".vs/state", "");
         Git("init", "-q", "-b", "main");
-        Git("-c", "user.email=tests@passenger.invalid", "-c", "user.name=Passenger Tests", "commit", "-q", "--allow-empty", "-m", "First");
+        Git("-c", "user.email=tests@passenger.invalid", "-c", "user.name=Pitstop Tests", "commit", "-q", "--allow-empty", "-m", "First");
         MainWindow window = Open(FolderWatching.Inotify);
         window.OpenFile("src/App/App.cs");
         Ui.Landed(() => window.Vcs.Branch == "main", "the branch");
@@ -592,7 +592,7 @@ public sealed class FolderWatchTests : IDisposable
             "the status bar to say the inotify watches ran out");
         Ui.Settle();
         IdeError error = Assert.Single(IdeErrors.Errors);
-        Assert.StartsWith("Changes made outside Passenger in some folders will go unseen", error.Message, StringComparison.Ordinal);
+        Assert.StartsWith("Changes made outside Pitstop in some folders will go unseen", error.Message, StringComparison.Ordinal);
         Assert.Contains("sudo sysctl --system", error.Message, StringComparison.Ordinal);
         Assert.Contains("fs.inotify.max_user_watches", Ui.IdeLog(), StringComparison.Ordinal);
         Assert.Equal(["."], Watched(window));
@@ -646,7 +646,7 @@ public sealed class FolderWatchTests : IDisposable
     /// made in a new folder and one deleted among the dropped changes reach Git's status and Go to File.</summary>
     private void Changes_macOS_drops_from_a_stream_read_late_are_found_as_its_word_of_the_drop_comes()
     {
-        Assert.SkipUnless(FolderWatching.ReadsMacEvents, "Only macOS's stream of Passenger's own says when the system dropped its changes");
+        Assert.SkipUnless(FolderWatching.ReadsMacEvents, "Only macOS's stream of Pitstop's own says when the system dropped its changes");
         Write("One.cs", "class One { }\n");
         Write("Old/Gone.cs", "class Gone { }\n");
         TestGit.Init(folder);

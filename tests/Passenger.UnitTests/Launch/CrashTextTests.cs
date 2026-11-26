@@ -21,9 +21,9 @@ public class CrashTextTests
         KeptCrash? read = CrashText.Read(text, DateTime.MinValue);
 
         Assert.True(read is not null && read.At == At && read.Kind == "InvalidOperationException"
-            && read.Message == "Passenger ended on this error as it last ran: No font is listed",
+            && read.Message == "Pitstop ended on this error as it last ran: No font is listed",
             $"The next start would say the crash otherwise than it came: {read}");
-        Assert.True(read.Details == text.Trim() && read.Details.StartsWith("2026-11-14 09:30:15.250 [4321] Passenger 0.4.0 (abc1234) ended on this error:", StringComparison.Ordinal)
+        Assert.True(read.Details == text.Trim() && read.Details.StartsWith("2026-11-14 09:30:15.250 [4321] Pitstop 0.4.0 (abc1234) ended on this error:", StringComparison.Ordinal)
             && read.Details.Contains(nameof(Thrown), StringComparison.Ordinal),
             $"The error's details would not hold the file's text, its version and where it was thrown:\n{read.Details}");
     }
@@ -36,9 +36,9 @@ public class CrashTextTests
         KeptCrash? read = CrashText.Read(text, DateTime.MinValue);
         KeptCrash? plain = CrashText.Read(bare, DateTime.MinValue);
 
-        Assert.True(read is { Kind: "AggregateException" } && read.Message.StartsWith("Passenger ended on this error as it last ran: One or more errors occurred.", StringComparison.Ordinal),
+        Assert.True(read is { Kind: "AggregateException" } && read.Message.StartsWith("Pitstop ended on this error as it last ran: One or more errors occurred.", StringComparison.Ordinal),
             $"An exception holding another would be said as {read}");
-        Assert.True(plain is { Kind: "NotSupportedException", Message: "Passenger ended on this error as it last ran" },
+        Assert.True(plain is { Kind: "NotSupportedException", Message: "Pitstop ended on this error as it last ran" },
             $"An exception with no message would be said as {plain}");
     }
 
@@ -51,7 +51,7 @@ public class CrashTextTests
         Assert.Null(CrashText.Read(string.Empty, written));
         Assert.Null(CrashText.Read("\n\n", written));
         Assert.Null(CrashText.Read(CrashText.Of(string.Empty, At, 1, "0.4.0").Trim(), written));
-        Assert.True(edited is { Kind: "IOException", Message: "Passenger ended on this error as it last ran: Disk full" } && edited.At == written,
+        Assert.True(edited is { Kind: "IOException", Message: "Pitstop ended on this error as it last ran: Disk full" } && edited.At == written,
             $"A crash's text with no first line of its own would be said as {edited}");
     }
 

@@ -37,7 +37,7 @@ public sealed class WebAddressTests
         "http://example.com/a.localhost",
     ], address =>
     {
-        Assert.False(WebAddress.OnThisMachine(new Uri(address)), $"{address} was taken for this machine's, so what Passenger keeps to this machine would go to it");
+        Assert.False(WebAddress.OnThisMachine(new Uri(address)), $"{address} was taken for this machine's, so what Pitstop keeps to this machine would go to it");
     });
 
     private void A_program_names_its_own_machine_on_every_interface_or_its_own_loopback() => Cases.Each<(string address, bool own)>(

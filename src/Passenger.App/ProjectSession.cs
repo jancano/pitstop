@@ -19,6 +19,7 @@ using Passenger.Inspector;
 using Passenger.Profiler;
 using Passenger.Workspace;
 using Passenger.Xaml.Projects;
+using Pitstop.Xmake;
 
 namespace Passenger.App;
 
@@ -64,6 +65,9 @@ public sealed record SessionSetup(
     /// <summary>The opening of a folder begun as the process started, which the session that opens that folder takes up:
     /// the first of a windowless Passenger's window.</summary>
     public HeadStart? HeadStart { get; init; }
+
+    internal Func<string, string, CancellationToken, Task<XmakeWorkspace>>? EvaluateXmake { get; init; }
+    internal Func<string, string, string, CancellationToken, Task<Passenger.Lsp.LanguageSession>>? StartClangd { get; init; }
 }
 
 /// <summary>Projects whose evaluation landed, as the workspace now has them, and whether which projects hold tests (or the
@@ -252,10 +256,12 @@ public sealed class ProjectSession : IAsyncDisposable
         ProjectSession session = new(setup, folder)
         {
             NamedSolution = named,
+            Xmake = new(folder, setup.EvaluateXmake),
             LocalHistory = History.LocalHistory.Open(folder, setup.StateFolder, setup.HistoryKeeping),
             ahead = ahead,
             Trusted = trusted,
         };
+        session.Cpp = new(folder, setup.StateFolder, session.Xmake!, setup.StartClangd);
         // Where the log's timing of the language server's start (CSharpService) begins.
         IdeErrors.Write($"Opened {folder}{(withSolution is { } read && read.OpenedAs != folder ? $" with {Path.GetFileName(read.OpenedAs)}" : string.Empty)}"
             + (trusted ? string.Empty : ", not trusted: none of its code runs"));
@@ -307,6 +313,10 @@ public sealed class ProjectSession : IAsyncDisposable
 
     /// <summary>The folder open, canonical; null for a window with none.</summary>
     public string? Folder { get; }
+
+    public XmakeWorkspaceSession? Xmake { get; private init; }
+
+    public CppLanguageService? Cpp { get; private set; }
 
     /// <summary>Whether the folder is trusted (<see cref="WorkspaceTrust"/>), as it was as it opened or once trusted since
     /// (<see cref="Trust"/>). Untrusted, the session runs none of its code: no evaluation or design-time build of its
@@ -413,6 +423,7 @@ public sealed class ProjectSession : IAsyncDisposable
         Evaluate();
         ReadBuildChoices();
         Web?.Trust();
+        Xmake?.Refresh();
         TrustChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -436,6 +447,7 @@ public sealed class ProjectSession : IAsyncDisposable
         IdeErrors.Observe(BackgroundWork.Run(() => ProjectHosts.EndServingAsync(folder, $"the trust of {folder} was taken back")));
         IdeErrors.Observe(Vcs.RefreshAsync());
         Web?.Untrust();
+        Xmake?.Refresh();
         TrustChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -1510,6 +1522,7 @@ public sealed class ProjectSession : IAsyncDisposable
         document.Language == Languages.Language.Markdown ? new Editors.MarkdownOutline(document.Text)
         : document.Language == Languages.Language.Gherkin ? new Editors.FeatureOutline(document.Text, () => FeatureProjectFolder(document.Path))
         : Godot.GodotScriptTypes.IsScript(document.Path) ? new Godot.GDScriptOutline(document.Text)
+        : Cpp?.For(document)?.Lsp is { } cpp && cpp.Supports("documentSymbolProvider") ? Passenger.App.Navigation.FileOutline.Served(cpp)
         : (CSharp?.For(document)?.Lsp ?? Web?.For(document)?.Lsp) is { } lsp ? Passenger.App.Navigation.FileOutline.Served(lsp)
         : Passenger.Workspace.GodotFileKinds.IsText(document.Path) && GodotOf(document.Path) is { } folder ? new Godot.GodotSceneOutline.Source(GodotScenes, folder)
         : null;
@@ -1775,6 +1788,7 @@ public sealed class ProjectSession : IAsyncDisposable
     /// its gutter showing their marks.</summary>
     public void Attach(OpenDocument document)
     {
+        Cpp?.Attach(document);
         CSharp?.Attach(document);
         Web?.Attach(document);
         Xaml.Attach(document);
@@ -1821,6 +1835,7 @@ public sealed class ProjectSession : IAsyncDisposable
     /// <summary>A file the editor closed, which they follow no more.</summary>
     public void Detach(OpenDocument document)
     {
+        Cpp?.Detach(document);
         CSharp?.Detach(document);
         Web?.Detach(document);
         Xaml.Detach(document);
@@ -1868,6 +1883,8 @@ public sealed class ProjectSession : IAsyncDisposable
             CSharp?.Attach(document);
             Web?.Detach(document);
             Web?.Attach(document);
+            Cpp?.Detach(document);
+            Cpp?.Attach(document);
             Xaml.Detach(document);
             Xaml.Attach(document);
             MSBuild.Detach(document);
@@ -1901,6 +1918,7 @@ public sealed class ProjectSession : IAsyncDisposable
     public void Reopen(string? named, WorkspaceModel? withSolution, UnreadSolution? unread, string? none)
     {
         NamedSolution = named;
+        Xmake?.Refresh();
         OpenedByPerson(withSolution);
         Read(withSolution, unread, none);
     }
@@ -1932,6 +1950,7 @@ public sealed class ProjectSession : IAsyncDisposable
     /// server, and the walk for its programs (and, for a folder without a solution, its projects).</summary>
     public void Start()
     {
+        Xmake?.Refresh();
         IdeErrors.Observe(Vcs.OpenAsync(Folder!));
         StartCSharp();
         // The walk begun ahead is the first, and what the session has not taken of the opening once it lands is ended.
@@ -2021,6 +2040,8 @@ public sealed class ProjectSession : IAsyncDisposable
     /// started ahead waits for it.</summary>
     public void FilesChanged(FolderChanges changes)
     {
+        Cpp?.FilesChanged(changes);
+        Xmake?.FilesChanged(changes);
         programArrivals?.Heard(changes.Paths);
         if (CSharp is { } csharp)
         {
@@ -2180,6 +2201,14 @@ public sealed class ProjectSession : IAsyncDisposable
         Models.Close();
         DesignTimeBuilds.Close();
         Watcher?.Dispose();
+        if (Cpp is { } cpp)
+        {
+            parts.Add(("clangd", cpp.DisposeAsync().AsTask()));
+        }
+        if (Xmake is { } native)
+        {
+            parts.Add(("the Xmake workspace", native.CloseAsync()));
+        }
         LocalHistory?.Release();
         // Files left open are the next session's to follow; what each store kept of them stays where it was carried.
         Bookmarks.DetachAll();

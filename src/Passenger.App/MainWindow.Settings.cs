@@ -65,7 +65,7 @@ public partial class MainWindow
         Take(kept);
     }
 
-    /// <summary>A window nobody sees opens on the settings given (those kept where PASSENGER_SETTINGS names), its own from
+    /// <summary>A window nobody sees opens on the settings given (those kept where PITSTOP_SETTINGS names), its own from
     /// then on: kept nowhere, so its changes stay its own and no other Passenger's reach it.</summary>
     public void OpenOnSettings(AppSettings opening)
     {
@@ -74,7 +74,7 @@ public partial class MainWindow
     }
 
     /// <summary>The window of a process nobody sees (an agent's <c>--mcp</c>, a screenshot) opens on the settings kept where
-    /// PASSENGER_SETTINGS names, as the process read them (<see cref="SettingsStore.KeptWhereNamed"/>), as a person's window
+    /// PITSTOP_SETTINGS names, as the process read them (<see cref="SettingsStore.KeptWhereNamed"/>), as a person's window
     /// opens on theirs, keeping nothing; with none (no folder named, or no settings kept there) on the defaults, so the
     /// person's own reach no Passenger they don't see. The command line's theme stands.</summary>
     public void OpenOnNamedSettings(LaunchOptions launch, AppSettings? named)

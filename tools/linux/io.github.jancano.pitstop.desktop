@@ -1,13 +1,13 @@
 [Desktop Entry]
 Type=Application
-Name=Passenger
+Name=Pitstop
 GenericName=Integrated Development Environment
-Comment=An IDE for C# and .NET
-Exec=passenger-ide %f
-TryExec=passenger-ide
-Icon=io.github.zaneris.passenger
+Comment=A modules-first C++ IDE in development
+Exec=pitstop-ide %f
+TryExec=pitstop-ide
+Icon=io.github.jancano.pitstop
 Terminal=false
 Categories=Development;IDE;
 Keywords=C#;csharp;.NET;dotnet;Roslyn;debugger;profiler;
 MimeType=application/x-ms-sln;application/x-ms-slnx;application/x-ms-slnf;application/x-ms-csproj;
-StartupWMClass=Passenger
+StartupWMClass=Pitstop

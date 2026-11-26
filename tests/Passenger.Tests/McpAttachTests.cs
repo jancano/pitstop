@@ -54,7 +54,7 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         string sockets = McpHost.SocketFolderFor(state);
         DeleteAtEnd(sockets);
         Assert.NotEqual(McpHost.SocketFolder, sockets);
-        Assert.True(Started(proxy).Length == 0, $"Listing the tools started a Passenger: {string.Join("; ", Started(proxy).Select(Processes.Describe))}");
+        Assert.True(Started(proxy).Length == 0, $"Listing the tools started a Pitstop: {string.Join("; ", Started(proxy).Select(Processes.Describe))}");
 
         using CancellationTokenSource giveUp = CancellationTokenSource.CreateLinkedTokenSource(Cancel);
         Task<CallToolResult> waiting = CallGivingUp(client, McpTools.Workspace, new(), giveUp.Token);
@@ -62,23 +62,23 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         // The window writes its socket's .folder as it opens, so the read must not fail beside that write.
         await Until(() => (window = Directory.Exists(sockets) ? Directory.GetFiles(sockets, "*.sock").FirstOrDefault(s =>
             Ui.Shared(Path.ChangeExtension(s, ".folder")) == PathNames.Canonical(notes)) : null) is not null,
-            "Passenger to start with a window on the agent's folder");
+            "Pitstop to start with a window on the agent's folder");
         Assert.Contains(McpHostProcess(window!), Started(proxy));
         Assert.True(System.Text.Encoding.UTF8.GetByteCount(window!) < 104, $"The window's socket is {window!.Length} characters long: {window}");
         if (!OperatingSystem.IsWindows())
         {
             Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, File.GetUnixFileMode(sockets));
         }
-        string log = Path.Combine(state, "logs", "passenger.log");
+        string log = Path.Combine(state, "logs", "pitstop.log");
         await Until(() => File.Exists(log) && Ui.Shared(log).Contains($"Agents: Test Agent asks to work in the window on {PathNames.Canonical(notes)}", StringComparison.Ordinal),
-            "the started Passenger's window to ask the person to let Test Agent in");
+            "the started Pitstop's window to ask the person to let Test Agent in");
         Assert.False(waiting.IsCompleted, $"The call was answered before the person answered: {waiting.Status}");
 
         giveUp.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
         int started = McpHostProcess(window!);
         await client.DisposeAsync();
-        await Until(() => !Processes.IsRunning(started), "the Passenger the agent started to end with its session");
+        await Until(() => !Processes.IsRunning(started), "the Pitstop the agent started to end with its session");
     }
 
     /// <summary>An agent's client that asks the system to end its server 20 ms after closing the server's input (OpenCode
@@ -100,7 +100,7 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         Task<CallToolResult> waiting = CallGivingUp(client, McpTools.Workspace, new(), giveUp.Token);
         string? socket = null;
         await Until(() => (socket = Directory.Exists(sockets) ? Directory.GetFiles(sockets, "*.sock").FirstOrDefault() : null) is not null,
-            "Passenger to start with a window on the agent's folder");
+            "Pitstop to start with a window on the agent's folder");
         int started = McpHostProcess(socket!);
         giveUp.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
@@ -112,7 +112,7 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         asked.Terminate();
         await Until(() => !DotnetProcesses.Runs(proxy), "the agent's server to end");
         Assert.Equal(0, proxy.ExitCode);
-        await Until(() => !Processes.IsRunning(started), "the Passenger the agent started to end with it");
+        await Until(() => !Processes.IsRunning(started), "the Pitstop the agent started to end with it");
         Assert.Empty(Directory.Exists(sockets) ? Directory.GetFiles(sockets, "*.sock") : []);
     }
 
@@ -124,7 +124,7 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
     [AvaloniaFact]
     public void An_attached_agent_opens_its_folder_in_a_window_of_its_own_asking_first_in_its_own_protocol()
     {
-        Flow.StepApart("an agents first call has the running Passenger open its folder in a window of its own which asks first", () => new McpAttachTests(restored), t => t.An_agents_first_call_has_the_running_Passenger_open_its_folder_in_a_window_of_its_own_which_asks_first());
+        Flow.StepApart("an agents first call has the running Pitstop open its folder in a window of its own which asks first", () => new McpAttachTests(restored), t => t.An_agents_first_call_has_the_running_Passenger_open_its_folder_in_a_window_of_its_own_which_asks_first());
         Flow.StepApart("an agent on an older protocol is answered in its own version through attach", () => new McpAttachTests(restored), t => t.An_agent_on_an_older_protocol_is_answered_in_its_own_version_through_attach());
         Flow.StepApart("an agent giving up on its call takes the windows question away", () => new McpAttachTests(restored), t => t.An_agent_giving_up_on_its_call_takes_the_windows_question_away());
         Flow.StepApart("settings gives each agent its setup for this copy and copies it whole", () => new McpAttachTests(restored), t => t.Settings_gives_each_agent_its_setup_for_this_copy_and_copies_it_whole());
@@ -154,7 +154,7 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         Flow.StepApart("an agents question taken away is let go", () => new McpAttachTests(restored), t => t.An_agents_question_taken_away_is_let_go());
         Flow.StepApart("a folder opened while an agents question shows takes the question away and refuses its call", () => new McpAttachTests(restored), t => t.A_folder_opened_while_an_agents_question_shows_takes_the_question_away_and_refuses_its_call());
         Flow.StepApart("an agents question leaves the keys in the editor and an Enter never allows", () => new McpAttachTests(restored), t => t.An_agents_question_leaves_the_keys_in_the_editor_and_an_Enter_never_allows());
-        Flow.StepApart("an agents edit allowed once is asked again at its next and one allowed for the session is not its input to passenger asked apart", () => new McpAttachTests(restored), t => t.An_agents_edit_allowed_once_is_asked_again_at_its_next_and_one_allowed_for_the_session_is_not_its_input_to_passenger_asked_apart());
+        Flow.StepApart("an agents edit allowed once is asked again at its next and one allowed for the session is not its input to pitstop asked apart", () => new McpAttachTests(restored), t => t.An_agents_edit_allowed_once_is_asked_again_at_its_next_and_one_allowed_for_the_session_is_not_its_input_to_passenger_asked_apart());
         Flow.StepApart("an agents request for every tool lets each go on unasked once allowed and denied holds for the session", () => new McpAttachTests(restored), t => t.An_agents_request_for_every_tool_lets_each_go_on_unasked_once_allowed_and_denied_holds_for_the_session());
     }
 
@@ -186,7 +186,7 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         try
         {
             Task<CallToolResult> denied = Waiting.Apart(() => Result(client, McpTools.Workspace));
-            WaitFor(() => PassengerApp.Windows.Count == 2, "the running Passenger to open the agent's folder in a window of its own");
+            WaitFor(() => PassengerApp.Windows.Count == 2, "the running Pitstop to open the agent's folder in a window of its own");
             MainWindow second = PassengerApp.Windows.Single(w => w != first);
             Assert.Equal(PathNames.Canonical(wanted), second.Folder);
             AgentAdmissionDialog asked = Admission(second, "the window to ask whether the agent may work there");
@@ -394,21 +394,21 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
             Assert.Equal(["Claude Code", "A repository's .mcp.json", "Codex", "Codex's config.toml", "Claude Desktop", "OpenCode", "OpenCode 2"], dialog.AgentSetups.Select(s => s.Heading));
 
             string claude = setups["Claude Code"];
-            Assert.StartsWith("claude mcp add passenger -- ", claude, StringComparison.Ordinal);
+            Assert.StartsWith("claude mcp add pitstop -- ", claude, StringComparison.Ordinal);
             Assert.EndsWith(" --mcp-attach", claude, StringComparison.Ordinal);
-            string passenger = claude["claude mcp add passenger -- ".Length..^" --mcp-attach".Length];
+            string passenger = claude["claude mcp add pitstop -- ".Length..^" --mcp-attach".Length];
             Assert.True(File.Exists(passenger) && PathNames.Same(passenger, PathNames.Canonical(passenger)), $"Claude Code's command names no program: {claude}");
-            Assert.Equal($"codex mcp add passenger -- {passenger} --mcp-attach", setups["Codex"]);
-            Assert.Equal($"[mcp_servers.passenger]\ncommand = {JsonSerializer.Serialize(passenger)}\nargs = [\"--mcp-attach\"]", setups["Codex's config.toml"]);
+            Assert.Equal($"codex mcp add pitstop -- {passenger} --mcp-attach", setups["Codex"]);
+            Assert.Equal($"[mcp_servers.pitstop]\ncommand = {JsonSerializer.Serialize(passenger)}\nargs = [\"--mcp-attach\"]", setups["Codex's config.toml"]);
             foreach ((string heading, string[] arguments) in new (string, string[])[] { ("A repository's .mcp.json", ["--mcp-attach"]), ("Claude Desktop", ["--mcp-attach", PathNames.Canonical(project)]) })
             {
-                JsonElement server = JsonDocument.Parse(setups[heading]).RootElement.GetProperty("mcpServers").GetProperty("passenger");
+                JsonElement server = JsonDocument.Parse(setups[heading]).RootElement.GetProperty("mcpServers").GetProperty("pitstop");
                 Assert.Equal(passenger, server.GetProperty("command").GetString());
                 Assert.Equal(arguments, server.GetProperty("args").EnumerateArray().Select(a => a.GetString()!));
             }
             // OpenCode's in each version's shape, OpenCode 2's tools called directly rather than through Code Mode.
-            JsonElement openCode = JsonDocument.Parse(setups["OpenCode"]).RootElement.GetProperty("mcp").GetProperty("passenger");
-            JsonElement openCode2 = JsonDocument.Parse(setups["OpenCode 2"]).RootElement.GetProperty("mcp").GetProperty("servers").GetProperty("passenger");
+            JsonElement openCode = JsonDocument.Parse(setups["OpenCode"]).RootElement.GetProperty("mcp").GetProperty("pitstop");
+            JsonElement openCode2 = JsonDocument.Parse(setups["OpenCode 2"]).RootElement.GetProperty("mcp").GetProperty("servers").GetProperty("pitstop");
             foreach (JsonElement server in (JsonElement[])[openCode, openCode2])
             {
                 Assert.Equal("local", server.GetProperty("type").GetString());
@@ -460,10 +460,10 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         }
 
         // The agent's own Passenger has nobody to ask.
-        McpClient own = Await(Waiting.Apart(() => Start(["--mcp", theirs])), "the agent's own Passenger starting");
+        McpClient own = Await(Waiting.Apart(() => Start(["--mcp", theirs])), "the agent's own Pitstop starting");
         try
         {
-            Assert.Equal(PathNames.Canonical(elsewhere), Await(Waiting.Apart(() => Call(own, McpTools.Open, new() { ["path"] = elsewhere })), "the open on the agent's own Passenger")
+            Assert.Equal(PathNames.Canonical(elsewhere), Await(Waiting.Apart(() => Call(own, McpTools.Open, new() { ["path"] = elsewhere })), "the open on the agent's own Pitstop")
                 .GetProperty("folder").GetString());
         }
         finally
@@ -659,15 +659,15 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
             Press(app, AgentToolDialog.AllowForSession);
             Assert.Contains("No Avalonia, WPF or MAUI app", Text(Await(clicking, "the click in an app")), StringComparison.Ordinal);
             Task<CallToolResult> clickingOwn = Waiting.Apart(() => Result(client, McpTools.AppClick, new() { ["app"] = "ide", ["control"] = "#RunConfigButton" }));
-            Window own = Question(window, "the question for the agent's click in Passenger's own windows");
+            Window own = Question(window, "the question for the agent's click in Pitstop's own windows");
             string[] said = Texts(own);
-            Assert.True(said.Contains("Allow app_click in Passenger's windows?") && said.Any(t => t.Contains("the app being Passenger's own windows", StringComparison.Ordinal))
+            Assert.True(said.Contains("Allow app_click in Pitstop's windows?") && said.Any(t => t.Contains("the app being Pitstop's own windows", StringComparison.Ordinal))
                 && said.Any(t => t.Contains("app: ide", StringComparison.Ordinal)),
-                $"The question for the agent's click in Passenger's own windows said: {string.Join(" | ", said)}");
+                $"The question for the agent's click in Pitstop's own windows said: {string.Join(" | ", said)}");
             Press(own, AgentToolDialog.Deny);
-            CallToolResult refused = Await(clickingOwn, "the click in Passenger's own windows the person denied");
-            Assert.True(refused.IsError == true && Text(refused).Contains("did not allow app_click in Passenger's own windows (app ide)", StringComparison.Ordinal),
-                $"The agent's click in Passenger's own windows, denied, was answered: {Text(refused)}");
+            CallToolResult refused = Await(clickingOwn, "the click in Pitstop's own windows the person denied");
+            Assert.True(refused.IsError == true && Text(refused).Contains("did not allow app_click in Pitstop's own windows (app ide)", StringComparison.Ordinal),
+                $"The agent's click in Pitstop's own windows, denied, was answered: {Text(refused)}");
         }
         finally
         {
@@ -696,8 +696,8 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
             WaitFor(() => EveryTool(window) is not null, "the question for every tool");
             AgentToolDialog asked = DialogButtonsTests.Check(EveryTool(window)!);
             string[] said = Texts(asked);
-            Assert.True(said.Contains(AgentToolDialog.AllowEveryTool) && said.Any(t => t.StartsWith("Test Agent, connected through Passenger's MCP server, asks to use the tools below", StringComparison.Ordinal)
-                && t.Contains("click or type in the apps it runs and in Passenger's own windows", StringComparison.Ordinal)),
+            Assert.True(said.Contains(AgentToolDialog.AllowEveryTool) && said.Any(t => t.StartsWith("Test Agent, connected through Pitstop's MCP server, asks to use the tools below", StringComparison.Ordinal)
+                && t.Contains("click or type in the apps it runs and in Pitstop's own windows", StringComparison.Ordinal)),
                 $"The question for every tool said: {string.Join(" | ", said)}");
             string[] listed = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(asked).OfType<SelectableTextBlock>().Single().Text!.Split(", ");
             Assert.True(((string[])[McpTools.Edit, McpTools.Build, McpTools.AppClick, McpTools.VcsCommit, McpTools.DebugEvaluate, McpTools.TerminalRun]).All(listed.Contains)
@@ -759,10 +759,10 @@ public sealed class McpAttachTests : McpRig, IClassFixture<RestoredFolders>
         }
 
         // The agent's own Passenger has nobody to ask.
-        McpClient own = Await(Waiting.Apart(() => Start(["--mcp", folder], languageServer: false)), "the agent's own Passenger starting");
+        McpClient own = Await(Waiting.Apart(() => Start(["--mcp", folder], languageServer: false)), "the agent's own Pitstop starting");
         try
         {
-            Assert.Equal(AgentConnection.NothingAsks, Await(Waiting.Apart(() => Call(own, McpTools.RequestFullAccess)), "the request on the agent's own Passenger").GetString());
+            Assert.Equal(AgentConnection.NothingAsks, Await(Waiting.Apart(() => Call(own, McpTools.RequestFullAccess)), "the request on the agent's own Pitstop").GetString());
         }
         finally
         {

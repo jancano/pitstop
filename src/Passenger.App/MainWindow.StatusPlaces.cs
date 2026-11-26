@@ -67,7 +67,7 @@ public partial class MainWindow
         : new($"download the .NET SDK{(missing.Asked is { } asked ? $" {asked}" : string.Empty)}", () => Browse(missing.Download));
 
     /// <summary>The latest release's Passenger for this system's own processor, downloaded in the browser.</summary>
-    private StatusPlace SystemsOwnPlace => new("download the Passenger built for this computer", () => Browse(Updates.Releases.ThisSystemsDownload));
+    private StatusPlace SystemsOwnPlace => new("download the Pitstop built for this computer", () => Browse(Updates.Releases.ThisSystemsDownload));
 
     /// <summary>Restart C# Language Server, run as its menu item runs it.</summary>
     private StatusPlace RestartCSharpPlace => StartAgainPlace(() => Request(AppActions.RestartCSharpServer));

@@ -20,6 +20,22 @@ internal sealed partial class CSharpAssist(AssistContext context, PopupPlacement
     {
         char last = text[^1];
         int caret = context.Caret;
+        if (context.Current is CppEditorDocument native)
+        {
+            if (native.Lsp is { } served)
+            {
+                string? trigger = text.Length == 1 && served.CompletionTriggers.Contains(text) ? text : null;
+                if (trigger is not null || context.StartsName(last, caret))
+                {
+                    IdeErrors.Observe(completion.Start(trigger));
+                }
+                if (served.Supports("signatureHelpProvider"))
+                {
+                    parameters.AfterTyped(last);
+                }
+            }
+            return true;
+        }
         if (last == '.' || (context.InRazor && last is '<' or '@'))
         {
             IdeErrors.Observe(completion.Start(last.ToString()));
@@ -50,6 +66,14 @@ internal sealed partial class CSharpAssist(AssistContext context, PopupPlacement
         {
             return true;
         }
+        if (context.Current is CppEditorDocument)
+        {
+            if (lsp.Supports("completionProvider"))
+            {
+                await completion.ServerListAsync(lsp, trigger, incomplete, null);
+            }
+            return true;
+        }
         await completion.ServerListAsync(lsp, trigger, incomplete, null,
             async (text, caret, cancel) => await LocalizedCompletionAsync(lsp, text, caret, cancel) is { } keys ? new CodeCompletion.OwnItems(keys.Start, keys.Items, keys.Tail)
                 : await GodotCompletionAsync(lsp, text, caret, cancel),
@@ -62,6 +86,14 @@ internal sealed partial class CSharpAssist(AssistContext context, PopupPlacement
     /// declares (a GDScript member, a node, a res:// path's file), that in place of the server's description of a string.</summary>
     public override async Task<bool> HoverAsync(IHoverCard card, OpenDocument document, int offset, CancellationToken cancel)
     {
+        if (context.ServerOf(document) is CppEditorDocument native)
+        {
+            if (native.Lsp is { } cpp && cpp.Supports("hoverProvider"))
+            {
+                await QuickInfo.ServerHoverAsync(cpp, card, offset, cancel);
+            }
+            return true;
+        }
         (string? godot, FilePreview? preview, bool ofString) = await GodotHoverAsync(document, offset, cancel);
         // What a string names is what it says; the server would describe System.String.
         if (preview is null && !(ofString && godot is not null) && context.ServerOf(document)?.Lsp is { } lsp)
@@ -124,6 +156,16 @@ internal sealed partial class CSharpAssist(AssistContext context, PopupPlacement
         if (context.ServerOf(document)?.Lsp is not { } lsp)
         {
             return null;
+        }
+        if (context.ServerOf(document) is CppEditorDocument)
+        {
+            int version = document.Text.Version;
+            IReadOnlyList<LspLocation> native = lsp.Supports("declarationProvider") ? await lsp.DeclarationAsync(offset) : [];
+            if (native.Count == 0 && lsp.Supports("definitionProvider"))
+            {
+                native = await lsp.DefinitionAsync(offset);
+            }
+            return context.ServerOf(document)?.Lsp == lsp && version == document.Text.Version ? new Declared(native, Refusals.NoDeclaration) : null;
         }
         if ((await AspireDeclaredAsync(lsp, document, offset) ?? await ConfigurationDeclaredAsync(lsp, document, offset) ?? await LocalizationDeclaredAsync(lsp, document, offset)
             ?? await JsInteropDeclaredAsync(lsp, document, offset) ?? await GodotDeclaredAsync(lsp, document, offset)) is { } own)

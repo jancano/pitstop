@@ -19,8 +19,8 @@ public sealed class TraceFailuresTests
         }),
         ("any other exception goes on to the boundary", () =>
         {
-            Assert.False(TraceFailures.Of(new NullReferenceException()), "A fault of Passenger's own was taken as a trace's failure");
-            Assert.False(TraceFailures.Of(new ArgumentOutOfRangeException("index")), "A fault of Passenger's own was taken as a trace's failure");
+            Assert.False(TraceFailures.Of(new NullReferenceException()), "A fault of Pitstop's own was taken as a trace's failure");
+            Assert.False(TraceFailures.Of(new ArgumentOutOfRangeException("index")), "A fault of Pitstop's own was taken as a trace's failure");
         }));
 
 }

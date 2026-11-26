@@ -9,7 +9,7 @@
   <ItemGroup>
     <!-- What the app's part of the folder and nuget.config's editing read as they did inside one assembly (JsonText's
          layout, XmlText). -->
-    <InternalsVisibleTo Include="Passenger" />
+    <InternalsVisibleTo Include="Pitstop" />
     <InternalsVisibleTo Include="Passenger.Packages" />
     <!-- How a program's includes match its files, unit tested in folders that tell letter case apart and that ignore it. -->
     <InternalsVisibleTo Include="Passenger.UnitTests" />

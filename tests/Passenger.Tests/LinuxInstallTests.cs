@@ -15,13 +15,13 @@ public sealed class LinuxInstallTests
     private const string NoShell = "install.sh is a POSIX shell script for Linux, which Windows has no shell to run";
 
     /// <summary>The name of the desktop entry and the files beside it.</summary>
-    private const string App = "io.github.zaneris.passenger";
+    private const string App = "io.github.jancano.pitstop";
 
     private const UnixFileMode Runnable = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead
         | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute;
 
     /// <summary>The command's name on the PATH.</summary>
-    private const string Command = "passenger-ide";
+    private const string Command = "pitstop-ide";
 
     /// <summary>install.sh installs a release and refreshes its menu entry, leaves another program's command of its
     /// name, takes over only a link to a passenger, keeps the release replaced among the updates and leaves the install
@@ -32,10 +32,10 @@ public sealed class LinuxInstallTests
     {
         await Flow.StepApartAsync("an install leaves another programs command of its name and refuses naming it (\"program\")", () => new LinuxInstallTests(), t => t.An_install_leaves_another_programs_command_of_its_name_and_refuses_naming_it("program"));
         await Flow.StepApartAsync("an install leaves another programs command of its name and refuses naming it (\"folder\")", () => new LinuxInstallTests(), t => t.An_install_leaves_another_programs_command_of_its_name_and_refuses_naming_it("folder"));
-        await Flow.StepApartAsync("an install moves its former passenger link to the new name and leaves phusions passenger as it was (\"ours\")", () => new LinuxInstallTests(), t => t.An_install_moves_its_former_passenger_link_to_the_new_name_and_leaves_phusions_passenger_as_it_was("ours"));
-        await Flow.StepApartAsync("an install moves its former passenger link to the new name and leaves phusions passenger as it was (\"link\")", () => new LinuxInstallTests(), t => t.An_install_moves_its_former_passenger_link_to_the_new_name_and_leaves_phusions_passenger_as_it_was("link"));
+        await Flow.StepApartAsync("an install moves its former pitstop link to the new name and leaves phusions pitstop as it was (\"ours\")", () => new LinuxInstallTests(), t => t.An_install_moves_its_former_passenger_link_to_the_new_name_and_leaves_phusions_passenger_as_it_was("ours"));
+        await Flow.StepApartAsync("an install moves its former pitstop link to the new name and leaves phusions pitstop as it was (\"link\")", () => new LinuxInstallTests(), t => t.An_install_moves_its_former_passenger_link_to_the_new_name_and_leaves_phusions_passenger_as_it_was("link"));
         await Flow.StepApartAsync("an install takes over a link that leads to a passenger", () => new LinuxInstallTests(), t => t.An_install_takes_over_a_link_that_leads_to_a_passenger());
-        await Flow.StepApartAsync("an update whose last move fails leaves the installed passenger as it was", () => new LinuxInstallTests(), t => t.An_update_whose_last_move_fails_leaves_the_installed_passenger_as_it_was());
+        await Flow.StepApartAsync("an update whose last move fails leaves the installed pitstop as it was", () => new LinuxInstallTests(), t => t.An_update_whose_last_move_fails_leaves_the_installed_passenger_as_it_was());
         await Flow.StepApartAsync("an installed install sh installs the release from names and run again refreshes the menu entry", () => new LinuxInstallTests(), t => t.An_installed_install_sh_installs_the_release_from_names_and_run_again_refreshes_the_menu_entry());
         await Flow.StepApartAsync("an install keeping the release replaced leaves it in the updates folder and nothing beside the install", () => new LinuxInstallTests(), t => t.An_install_keeping_the_release_replaced_leaves_it_in_the_updates_folder_and_nothing_beside_the_install());
         await Flow.StepApartAsync("an install finding fonts fontconfig lists not refreshes its cache or says to (true)", () => new LinuxInstallTests(), t => t.An_install_finding_fonts_fontconfig_lists_not_refreshes_its_cache_or_says_to(true));
@@ -75,12 +75,12 @@ public sealed class LinuxInstallTests
         Assert.False(install.Succeeded, $"An install over {what} at ~/.local/bin/{Command} went ahead without its command: {install.Output}");
         Assert.True(install.Error.Contains(command, StringComparison.Ordinal),
             $"An install refused over {what} at ~/.local/bin/{Command} did not say where: {install.Said}");
-        Assert.False(Directory.Exists(Path.Combine(home, ".local", "opt", "passenger")),
+        Assert.False(Directory.Exists(Path.Combine(home, ".local", "opt", "pitstop")),
             $"An install refused over {what} at ~/.local/bin/{Command} installed the app all the same, with no command to start it");
     }
 
     /// <summary>The command's former name, <c>passenger</c>: an earlier install's link of it, leading to the install, moves
-    /// to <c>passenger-ide</c> as the install is updated, and an uninstall takes either away; Phusion Passenger's own
+    /// to <c>pitstop-ide</c> as the install is updated, and an uninstall takes either away; Phusion Passenger's own
     /// <c>passenger</c>, a program or a link to one, is left as it was, the install going ahead beside it.</summary>
     private async Task An_install_moves_its_former_passenger_link_to_the_new_name_and_leaves_phusions_passenger_as_it_was(string what)
     {
@@ -92,21 +92,21 @@ public sealed class LinuxInstallTests
         string root = PathNames.Canonical(TestFolders.Create("install-"));
         string home = Directory.CreateDirectory(Path.Combine(root, "home")).FullName;
         string bin = Directory.CreateDirectory(Path.Combine(home, ".local", "bin")).FullName;
-        string former = Path.Combine(bin, "passenger");
+        string former = Path.Combine(bin, "pitstop");
         string command = Path.Combine(bin, Command);
-        string installed = Path.Combine(home, ".local", "opt", "passenger");
+        string installed = Path.Combine(home, ".local", "opt", "pitstop");
         ChildResult install = await Install(Unpacked(Path.Combine(root, "first"), "1"), home);
         Assert.True(install.Succeeded, $"The first release's install failed: {install.Said}");
         switch (what)
         {
             case "ours":
-                File.CreateSymbolicLink(former, Path.Combine(installed, "passenger"));
+                File.CreateSymbolicLink(former, Path.Combine(installed, "pitstop"));
                 break;
             case "program":
                 Program(former);
                 break;
             default:
-                File.CreateSymbolicLink(former, Program(Path.Combine(Directory.CreateDirectory(Path.Combine(root, "gems", "bin")).FullName, "passenger")));
+                File.CreateSymbolicLink(former, Program(Path.Combine(Directory.CreateDirectory(Path.Combine(root, "gems", "bin")).FullName, "pitstop")));
                 break;
         }
         string before = Held(former);
@@ -114,13 +114,13 @@ public sealed class LinuxInstallTests
         install = await Install(Unpacked(Path.Combine(root, "second"), "2"), home);
 
         Assert.True(install.Succeeded, $"An update with {what} at ~/.local/bin/passenger refused: {install.Said}");
-        Assert.True(new FileInfo(command).LinkTarget == Path.Combine(installed, "passenger"),
+        Assert.True(new FileInfo(command).LinkTarget == Path.Combine(installed, "pitstop"),
             $"An update with {what} at ~/.local/bin/passenger left ~/.local/bin/{Command} {Held(command)}, not leading to the install");
         if (what == "ours")
         {
             Assert.True(!File.Exists(former) && new FileInfo(former).LinkTarget is null,
                 $"An update left the earlier install's ~/.local/bin/passenger {Held(former)} beside ~/.local/bin/{Command}");
-            File.CreateSymbolicLink(former, Path.Combine(installed, "passenger"));
+            File.CreateSymbolicLink(former, Path.Combine(installed, "pitstop"));
             install = await Install(Path.Combine(installed, "install.sh"), home, uninstall: true);
             Assert.True(install.Succeeded, $"The uninstall refused: {install.Said}");
             Assert.True(new FileInfo(former).LinkTarget is null && new FileInfo(command).LinkTarget is null,
@@ -129,14 +129,14 @@ public sealed class LinuxInstallTests
         else
         {
             Assert.True(Held(former) == before,
-                $"An update made Phusion Passenger's {what} at ~/.local/bin/passenger {Held(former)} where it was {before}: the person's program is gone");
+                $"An update made Phusion Pitstop's {what} at ~/.local/bin/passenger {Held(former)} where it was {before}: the person's program is gone");
         }
     }
 
     [UnsupportedOSPlatform("windows")]
     private static string Program(string path)
     {
-        File.WriteAllText(path, "#!/bin/sh\necho 'Phusion Passenger(R) 6.0.27'\n");
+        File.WriteAllText(path, "#!/bin/sh\necho 'Phusion Pitstop(R) 6.0.27'\n");
         File.SetUnixFileMode(path, Runnable);
         return path;
     }
@@ -153,21 +153,21 @@ public sealed class LinuxInstallTests
         string root = PathNames.Canonical(TestFolders.Create("install-"));
         string home = Directory.CreateDirectory(Path.Combine(root, "home")).FullName;
         string command = Path.Combine(Directory.CreateDirectory(Path.Combine(home, ".local", "bin")).FullName, Command);
-        string installed = Path.Combine(home, ".local", "opt", "passenger");
+        string installed = Path.Combine(home, ".local", "opt", "pitstop");
         string earlier = Unpacked(Path.Combine(root, "earlier"), "1");
-        File.CreateSymbolicLink(command, Path.Combine(Path.GetDirectoryName(earlier)!, "passenger"));
+        File.CreateSymbolicLink(command, Path.Combine(Path.GetDirectoryName(earlier)!, "pitstop"));
 
         ChildResult install = await Install(Unpacked(Path.Combine(root, "download"), "2"), home);
 
-        Assert.True(install.Succeeded, $"An install over a link to another unpacked Passenger refused: {install.Said}");
-        Assert.True(new FileInfo(command).LinkTarget == Path.Combine(installed, "passenger"),
-            $"An install over a link to another unpacked Passenger left the command {Held(command)}, not leading to the install");
+        Assert.True(install.Succeeded, $"An install over a link to another unpacked Pitstop refused: {install.Said}");
+        Assert.True(new FileInfo(command).LinkTarget == Path.Combine(installed, "pitstop"),
+            $"An install over a link to another unpacked Pitstop left the command {Held(command)}, not leading to the install");
 
         Directory.Delete(installed, recursive: true);
-        install = await Install(Path.Combine(root, "download", "passenger", "install.sh"), home);
+        install = await Install(Path.Combine(root, "download", "pitstop", "install.sh"), home);
 
         Assert.True(install.Succeeded, $"An install whose command's link leads to its own deleted folder refused: {install.Said}");
-        Assert.True(File.Exists(Path.Combine(installed, "app", "Passenger")), "An install over a link to its own deleted folder did not put the app back");
+        Assert.True(File.Exists(Path.Combine(installed, "app", "Pitstop")), "An install over a link to its own deleted folder did not put the app back");
     }
 
     /// <summary>An update whose move of the new release into place fails, once the installed one is set aside, leaves the
@@ -184,7 +184,7 @@ public sealed class LinuxInstallTests
         string root = PathNames.Canonical(TestFolders.Create("install-"));
         string home = Directory.CreateDirectory(Path.Combine(root, "home")).FullName;
         string opt = Path.Combine(home, ".local", "opt");
-        string installed = Path.Combine(opt, "passenger");
+        string installed = Path.Combine(opt, "pitstop");
         ChildResult install = await Install(Unpacked(Path.Combine(root, "first"), "1"), home);
         Assert.True(install.Succeeded, $"The first release's install failed: {install.Said}");
         string before = Held(installed);
@@ -197,17 +197,17 @@ public sealed class LinuxInstallTests
         install = await Install(update, home, programs);
 
         Assert.True(Held(installed) == before,
-            $"An update whose last move failed left ~/.local/opt/passenger {Held(installed)} where it was {before}: the person's Passenger is gone");
+            $"An update whose last move failed left ~/.local/opt/pitstop {Held(installed)} where it was {before}: the person's Pitstop is gone");
         Assert.False(install.Succeeded, $"An update whose last move failed said it was installed: {install.Output}");
-        Assert.True(Directory.EnumerateFileSystemEntries(opt).Select(Path.GetFileName).SequenceEqual(["passenger"]),
+        Assert.True(Directory.EnumerateFileSystemEntries(opt).Select(Path.GetFileName).SequenceEqual(["pitstop"]),
             $"An update whose last move failed left {string.Join(", ", Directory.EnumerateFileSystemEntries(opt).Select(Path.GetFileName))} in ~/.local/opt");
 
         install = await Install(update, home);
 
         Assert.True(install.Succeeded, $"The update run again after its last move failed refused: {install.Said}");
         Assert.True(File.ReadAllText(Path.Combine(installed, "app", "release.txt")) == "2",
-            $"The update run again after its last move failed left ~/.local/opt/passenger {Held(installed)}, not the second release");
-        Assert.True(Directory.EnumerateFileSystemEntries(opt).Select(Path.GetFileName).SequenceEqual(["passenger"]),
+            $"The update run again after its last move failed left ~/.local/opt/pitstop {Held(installed)}, not the second release");
+        Assert.True(Directory.EnumerateFileSystemEntries(opt).Select(Path.GetFileName).SequenceEqual(["pitstop"]),
             $"The update left {string.Join(", ", Directory.EnumerateFileSystemEntries(opt).Select(Path.GetFileName))} in ~/.local/opt");
     }
 
@@ -222,7 +222,7 @@ public sealed class LinuxInstallTests
         }
         string root = PathNames.Canonical(TestFolders.Create("install-"));
         string home = Directory.CreateDirectory(Path.Combine(root, "home")).FullName;
-        string installed = Path.Combine(home, ".local", "opt", "passenger");
+        string installed = Path.Combine(home, ".local", "opt", "pitstop");
         string entry = Path.Combine(home, ".local", "share", "applications", App + ".desktop");
         ChildResult install = await Install(Unpacked(Path.Combine(root, "first"), "1"), home);
         Assert.True(install.Succeeded, $"The first release's install failed: {install.Said}");
@@ -232,8 +232,8 @@ public sealed class LinuxInstallTests
 
         Assert.True(install.Succeeded, $"The installed install.sh given --from {second} refused: {install.Said}");
         Assert.True(File.ReadAllText(Path.Combine(installed, "app", "release.txt")) == "2",
-            $"The installed install.sh given --from the second release left ~/.local/opt/passenger {Held(installed)}");
-        Assert.True(Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(installed)!).Select(Path.GetFileName).SequenceEqual(["passenger"]),
+            $"The installed install.sh given --from the second release left ~/.local/opt/pitstop {Held(installed)}");
+        Assert.True(Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(installed)!).Select(Path.GetFileName).SequenceEqual(["pitstop"]),
             $"The install --from left {string.Join(", ", Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(installed)!).Select(Path.GetFileName))} in ~/.local/opt");
 
         File.Delete(entry);
@@ -258,7 +258,7 @@ public sealed class LinuxInstallTests
         }
         string root = PathNames.Canonical(TestFolders.Create("install-"));
         string home = Directory.CreateDirectory(Path.Combine(root, "home")).FullName;
-        string installed = Path.Combine(home, ".local", "opt", "passenger");
+        string installed = Path.Combine(home, ".local", "opt", "pitstop");
         ChildResult install = await Install(Unpacked(Path.Combine(root, "first"), "1"), home);
         Assert.True(install.Succeeded, $"The first release's install failed: {install.Said}");
         string update = Path.Combine(root, "updates", "2");
@@ -268,11 +268,11 @@ public sealed class LinuxInstallTests
 
         Assert.True(install.Succeeded, $"The installed install.sh given --from {second} --keep-replaced refused: {install.Said}");
         Assert.True(File.ReadAllText(Path.Combine(installed, "app", "release.txt")) == "2",
-            $"The install keeping the release replaced left ~/.local/opt/passenger {Held(installed)}, not the second release");
+            $"The install keeping the release replaced left ~/.local/opt/pitstop {Held(installed)}, not the second release");
         string kept = Path.Combine(update, "replaced");
         Assert.True(File.Exists(Path.Combine(kept, "app", "release.txt")) && File.ReadAllText(Path.Combine(kept, "app", "release.txt")) == "1",
             $"The install keeping the release replaced left the update's folder {Held(update)}, without the first release");
-        Assert.True(Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(installed)!).Select(Path.GetFileName).SequenceEqual(["passenger"]),
+        Assert.True(Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(installed)!).Select(Path.GetFileName).SequenceEqual(["pitstop"]),
             $"The install keeping the release replaced left {string.Join(", ", Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(installed)!).Select(Path.GetFileName))} in ~/.local/opt");
     }
 
@@ -348,12 +348,12 @@ public sealed class LinuxInstallTests
     private static string Unpacked(string folder, string release)
     {
         string linux = Path.Combine(XamlTests.Repository, "tools", "linux");
-        string passenger = Directory.CreateDirectory(Path.Combine(folder, "passenger")).FullName;
+        string passenger = Directory.CreateDirectory(Path.Combine(folder, "pitstop")).FullName;
         string app = Directory.CreateDirectory(Path.Combine(passenger, "app")).FullName;
-        File.WriteAllText(Path.Combine(app, "Passenger"), $"#!/bin/sh\necho 'Passenger {release}'\n");
-        File.SetUnixFileMode(Path.Combine(app, "Passenger"), Runnable);
+        File.WriteAllText(Path.Combine(app, "Pitstop"), $"#!/bin/sh\necho 'Pitstop {release}'\n");
+        File.SetUnixFileMode(Path.Combine(app, "Pitstop"), Runnable);
         File.WriteAllText(Path.Combine(app, "release.txt"), release);
-        foreach (string script in (string[])["install.sh", "passenger"])
+        foreach (string script in (string[])["install.sh", "pitstop"])
         {
             File.Copy(Path.Combine(linux, script), Path.Combine(passenger, script));
             File.SetUnixFileMode(Path.Combine(passenger, script), Runnable);

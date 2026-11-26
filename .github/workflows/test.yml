@@ -49,7 +49,7 @@ jobs:
         exclude:
           - lane: gate
             shard: 3
-        # time_scale multiplies every test's wall-clock limit, written as the Mac's time (PASSENGER_TEST_TIME_SCALE):
+        # time_scale multiplies every test's wall-clock limit, written as the Mac's time (PITSTOP_TEST_TIME_SCALE):
         # the 90th percentile, to the nearest half, of how much longer a test of 1 s or more took on the runner
         # (October: macOS 2.23, Windows 2.64, Linux 1.96). processes is how many test processes run a job's window and
         # Beside classes at once, its Alone classes after them in one: two on macOS (3 processors, 7 GB: two kept 1.4 GB
@@ -303,7 +303,7 @@ jobs:
             docker save -o "$IMAGES" $images
             echo "saved=true" >> "$GITHUB_OUTPUT"
           fi
-          echo "PASSENGER_TEST_PULL=never" >> "$GITHUB_ENV"
+          echo "PITSTOP_TEST_PULL=never" >> "$GITHUB_ENV"
 
       - name: Cache container images
         if: runner.os == 'Linux' && matrix.lane == 'gate' && matrix.shard == 1 && steps.images.outputs.cache-hit != 'true' && steps.pulled.outputs.saved == 'true'
@@ -489,7 +489,7 @@ jobs:
         env:
           RESULTS: artifacts/test-results
           SHARD: ${{ matrix.shard }}
-          PASSENGER_TEST_TIME_SCALE: ${{ matrix.time_scale }}
+          PITSTOP_TEST_TIME_SCALE: ${{ matrix.time_scale }}
           GODOT: ${{ matrix.lane == 'report' && steps.godot.outputs.path || '' }}
           # On macOS a mobile shard boots the iOS tests' simulator once and shuts it down again, after its other classes
           # and before its classes apart (tools/simulator-first-boot.sh): the runner's first boot of it and the minutes
@@ -545,7 +545,7 @@ jobs:
           LANE: report
           SHARD: ${{ steps.report-deal.outputs.shard }}
           LABEL: ${{ steps.report-deal.outputs.label }}
-          PASSENGER_TEST_TIME_SCALE: ${{ matrix.time_scale }}
+          PITSTOP_TEST_TIME_SCALE: ${{ matrix.time_scale }}
           GODOT: ${{ steps.godot.outputs.path }}
         run: |
           $python = if ($IsWindows) { 'python' } else { 'python3' }

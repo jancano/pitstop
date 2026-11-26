@@ -49,14 +49,14 @@ public abstract class InPlaceUpdater(Func<string, Task> start) : Updater
         }
         if (Asks is not null && !restart)
         {
-            IdeErrors.Write($"Updates: Passenger {version} stays ready: installing it asks for an administrator's password, which only Restart to Update asks for");
+            IdeErrors.Write($"Updates: Pitstop {version} stays ready: installing it asks for an administrator's password, which only Restart to Update asks for");
             return;
         }
         string staged = Staged(version);
         if (!Path.Exists(staged))
         {
             NotInstalled = $"{staged} is gone";
-            IdeErrors.Write($"Updates: Passenger {version} was not installed: {NotInstalled}");
+            IdeErrors.Write($"Updates: Pitstop {version} was not installed: {NotInstalled}");
             return;
         }
         IReadOnlyList<OtherCopy> others = Others();
@@ -71,13 +71,13 @@ public abstract class InPlaceUpdater(Func<string, Task> start) : Updater
         if (why is not null)
         {
             NotInstalled = why;
-            IdeErrors.Write($"Updates: Passenger {version} was not installed in {Installed}: {why}");
+            IdeErrors.Write($"Updates: Pitstop {version} was not installed in {Installed}: {why}");
             Restart(restart);
             IdeErrors.Flush();
             return;
         }
         Placed();
-        IdeErrors.Write($"Updates: Passenger {version} installed in {Installed}{(restart ? ", and started" : string.Empty)}");
+        IdeErrors.Write($"Updates: Pitstop {version} installed in {Installed}{(restart ? ", and started" : string.Empty)}");
         Restart(restart);
         Ready = null;
         Tidy(version);
@@ -112,8 +112,8 @@ public abstract class InPlaceUpdater(Func<string, Task> start) : Updater
             }
             catch (Exception back) when (back is IOException or UnauthorizedAccessException)
             {
-                return ($"{Clause(error.Message)}, and the Passenger installed could not be put back ({Clause(back.Message)}): it is in {aside}, "
-                    + $"and Passenger {version} in {release}", true);
+                return ($"{Clause(error.Message)}, and the Pitstop installed could not be put back ({Clause(back.Message)}): it is in {aside}, "
+                    + $"and Pitstop {version} in {release}", true);
             }
         }
     }

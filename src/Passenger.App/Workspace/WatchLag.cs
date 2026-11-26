@@ -18,7 +18,7 @@ public static class WatchLag
     private const string CanaryName = "beat";
 
     /// <summary>What begins the name of each process's folder of the beat, its id after it.</summary>
-    private const string Prefix = "passenger-watch-";
+    private const string Prefix = "pitstop-watch-";
 
     private static readonly Lock Gate = new();
     private static Action<DateTime>? behind;

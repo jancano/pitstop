@@ -671,7 +671,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
     /// class, never its ground bound by hand without its mark.</summary>
     private void No_list_or_tab_draws_its_choice_by_a_ground_of_its_own()
     {
-        Regex ground = new(@"\bTokenKeys\.(?:RowSelected|Tab_Active|Stripe_Selected)\b|Passenger\.(?:RowSelected|Tab\.Active|Stripe\.Selected)\b");
+        Regex ground = new(@"\bTokenKeys\.(?:RowSelected|Tab_Active|Stripe_Selected)\b|Pitstop\.(?:RowSelected|Tab\.Active|Stripe\.Selected)\b");
         string[] found = [.. from file in UiFiles(theme: false)
                              from line in file.Text.Split('\n').Select((text, at) => (Text: text, At: at + 1))
                              where ground.IsMatch(line.Text)
@@ -2903,7 +2903,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
             string[] Given(ThemeVariant variant) => [.. Named(theme.Keys).Where(k => !shapes.Contains(k))
                 .Concat(theme.ThemeDictionaries.TryGetValue(variant, out IThemeVariantProvider? held) ? Named(((ResourceDictionary)held).Keys) : []).Distinct().Order(StringComparer.Ordinal)];
             Assert.True(keys.SequenceEqual(Given(ThemeVariant.Dark)) && keys.SequenceEqual(Given(ThemeVariant.Light)),
-                $"{look} does not give every colour Tokens.axaml gives, in Dark and Light, and no other: a colour it lacks shows Passenger's own under it");
+                $"{look} does not give every colour Tokens.axaml gives, in Dark and Light, and no other: a colour it lacks shows Pitstop's own under it");
             Assert.True(shapes.SequenceEqual(Named(theme.Keys).Where(k => !keys.Contains(k)).Order(StringComparer.Ordinal)), $"{look} does not give every shape Tokens.axaml gives");
         }
         foreach (string choice in index.Read.CodeColours.Select(Path.GetFileNameWithoutExtension).OfType<string>())
@@ -2925,7 +2925,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         {
             string[] others = [.. theme.Keys.Concat(theme.ThemeDictionaries.Values.SelectMany(v => ((ResourceDictionary)v).Keys)).Select(k => k.ToString()!)
                 .Where(k => !k.StartsWith("Passenger.", StringComparison.Ordinal)).Distinct().Order(StringComparer.Ordinal)];
-            Assert.True(others.Length == 0, $"{file} gives {string.Join(", ", others)}, which are not Passenger's tokens: name Fluent's keys once for every theme in FluentKeys.axaml");
+            Assert.True(others.Length == 0, $"{file} gives {string.Join(", ", others)}, which are not Pitstop's tokens: name Fluent's keys once for every theme in FluentKeys.axaml");
         }
     }
 
@@ -2972,8 +2972,8 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
             }
             mapped.Add(key);
         }
-        Assert.True(unmapped.Count == 0, $"Fluent gives {unmapped.Count} keys Passenger's controls can reach that no theme answers for, each showing Fluent's own colour "
-            + $"under every look: name each in FluentKeys.axaml as the token it is, or say in this test why no control of Passenger's reads it:\n{string.Join("\n", unmapped)}");
+        Assert.True(unmapped.Count == 0, $"Fluent gives {unmapped.Count} keys Pitstop's controls can reach that no theme answers for, each showing Fluent's own colour "
+            + $"under every look: name each in FluentKeys.axaml as the token it is, or say in this test why no control of Pitstop's reads it:\n{string.Join("\n", unmapped)}");
         foreach (string look in (string[])[CarriedThemes.Own, .. CarriedThemes.BuiltInNames, .. CarriedThemes.ThemeNames])
         {
             using IDisposable worn = CarriedThemes.Wearing(look);
@@ -3001,7 +3001,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         // Fluent's palette colours, read only into its own brushes: nothing of Passenger's asks for a colour by name.
         if (value is Color)
         {
-            return Regex.IsMatch(source, $@"\b{key}\b") ? $"!Passenger's source reads {key}, a colour Fluent's palette gives" : "a palette colour";
+            return Regex.IsMatch(source, $@"\b{key}\b") ? $"!Pitstop's source reads {key}, a colour Fluent's palette gives" : "a palette colour";
         }
         // ControlThemes.axaml's scrollbar is Passenger's whole, so Fluent's scrollbar keys are never read.
         if (key.StartsWith("ScrollBar", StringComparison.Ordinal))
@@ -3009,12 +3009,12 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
             Application.Current!.TryGetResource(typeof(ScrollBar), null, out object? ours);
             FluentTheme fluent = Application.Current.Styles.OfType<FluentTheme>().Single();
             fluent.TryGetResource(typeof(ScrollBar), null, out object? theirs);
-            return ReferenceEquals(ours, theirs) ? "!the scrollbar's control theme is Fluent's, not ControlThemes.axaml's" : "Passenger's own scrollbar";
+            return ReferenceEquals(ours, theirs) ? "!the scrollbar's control theme is Fluent's, not ControlThemes.axaml's" : "Pitstop's own scrollbar";
         }
         // Fluent's Button.accent alone reads these; Passenger's emphasised button is Button.primary (Shell.axaml).
         if (key.StartsWith("AccentButton", StringComparison.Ordinal))
         {
-            return Regex.IsMatch(source, "\"accent\"") ? "!a control of Passenger's takes Fluent's accent class" : "Fluent's accent button";
+            return Regex.IsMatch(source, "\"accent\"") ? "!a control of Pitstop's takes Fluent's accent class" : "Fluent's accent button";
         }
         // Controls Passenger never shows: none of its windows names one.
         foreach ((string prefix, string[] controls) in Unshown)
@@ -3022,7 +3022,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
             if (key.StartsWith(prefix, StringComparison.Ordinal))
             {
                 string? shown = controls.FirstOrDefault(c => Regex.IsMatch(source, $@"\b{c}\b"));
-                return shown is null ? $"no {controls[0]}" : $"!Passenger shows a {shown}, whose {prefix} keys must be named in FluentKeys.axaml";
+                return shown is null ? $"no {controls[0]}" : $"!Pitstop shows a {shown}, whose {prefix} keys must be named in FluentKeys.axaml";
             }
         }
         return null;
@@ -3240,7 +3240,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         Regex attribute = new(@"(?<![\w.])FontSize=""([^""{][^""]*)""");
         Regex setter = new(@"Property=""(?:TextElement\.)?FontSize""\s+Value=""([^""{][^""]*)""");
         Regex selector = new(@"<Style Selector=""([^""]*)""");
-        Regex body = new(@"<x:Double x:Key=""Passenger\.BodySize"">([^<]*)</x:Double>");
+        Regex body = new(@"<x:Double x:Key=""Pitstop\.BodySize"">([^<]*)</x:Double>");
         double[] steps = [.. typeof(TypeRamp).GetFields().Where(f => f.IsLiteral).Select(f => (double)f.GetRawConstantValue()!).Distinct().Order()];
         bool HasNumber(string written) => number.IsMatch(written);
         List<string> found = [];
@@ -3917,7 +3917,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         }
         Assert.True(told >= 3, $"The rule found {told} changes told through PeerChanges, so it no longer reads how peers tell one");
         Assert.True(found.Count == 0, $"{found.Count} changes are told to a reader past PeerChanges.Tell, which may tell a pattern's change while the peer "
-            + $"refuses the pattern, so macOS's bridge asks it and ends Passenger:\n{string.Join("\n", found)}");
+            + $"refuses the pattern, so macOS's bridge asks it and ends Pitstop:\n{string.Join("\n", found)}");
         Assert.True(unknown.Count == 0, $"PeerChanges tells these properties as of no pattern, so a change of one is told while the peer may refuse its pattern: {string.Join(", ", unknown)}");
     }
 
@@ -4525,7 +4525,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         // A control of Passenger's is styled as the nearest of its own kinds that says, else as itself.
         string StyledAs(Type type)
         {
-            for (Type? kind = type; kind is not null && kind.Assembly.GetName().Name?.StartsWith("Passenger", StringComparison.Ordinal) == true; kind = kind.BaseType)
+            for (Type? kind = type; kind is not null && kind.Assembly.GetName().Name is { } name && (name == "Pitstop" || name.StartsWith("Passenger", StringComparison.Ordinal)); kind = kind.BaseType)
             {
                 if (styledAs.TryGetValue(kind.Name, out string? key))
                 {
@@ -4654,7 +4654,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
             }
         }
         return AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => a.GetName().Name is { } name && (name.StartsWith("Avalonia", StringComparison.Ordinal) || name.StartsWith("Passenger", StringComparison.Ordinal)))
+            .Where(a => a.GetName().Name is { } name && (name == "Pitstop" || name.StartsWith("Avalonia", StringComparison.Ordinal) || name.StartsWith("Passenger", StringComparison.Ordinal)))
             .SelectMany(Of).Where(t => typeof(StyledElement).IsAssignableFrom(t))
             .GroupBy(t => t.Name.Split('`')[0], StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.Ordinal);
     }
@@ -5159,7 +5159,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         };
     }
 
-    private static readonly XNamespace ReadNamespace = "urn:passenger:contrast";
+    private static readonly XNamespace ReadNamespace = "urn:pitstop:contrast";
     private static readonly XNamespace XamlNamespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
     /// <summary>What each colour is read on, as Tokens.axaml declares it on its Dark dictionary's colours: read:Text at WCAG
@@ -5207,7 +5207,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
     }
 
     private static ResourceDictionary Dictionary(string file) =>
-        (ResourceDictionary)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(new Uri($"avares://Passenger/Theme/{file}"));
+        (ResourceDictionary)Avalonia.Markup.Xaml.AvaloniaXamlLoader.Load(new Uri($"avares://Pitstop/Theme/{file}"));
 
     private static string[] Keys(ResourceDictionary dictionary, ThemeVariant variant) =>
         [.. ((ResourceDictionary)dictionary.ThemeDictionaries[variant]).Keys.Select(k => k.ToString()!).Where(k => k.StartsWith("Passenger.", StringComparison.Ordinal)).Order(StringComparer.Ordinal)];

@@ -176,7 +176,7 @@ public sealed partial class HtmlPreviewTests : IDisposable
     {
         if (PassengerApp.ShowsNoWindow)
         {
-            Assert.Skip("A window nobody sees makes no web view of the system's, the only one to load a page: this runs where Passenger's window is seen");
+            Assert.Skip("A window nobody sees makes no web view of the system's, the only one to load a page: this runs where Pitstop's window is seen");
         }
         if (HtmlPreview.WhyNone() is { } why)
         {

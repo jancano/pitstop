@@ -1,17 +1,17 @@
 #!/bin/sh
-# Passenger as an MCP server over a folder (the current one by default), for an agent to start: `just mcp`.
-# It runs from a clone of the last Debug build, so building Passenger while an agent uses it never changes a
+# Pitstop as an MCP server over a folder (the current one by default), for an agent to start: `just mcp`.
+# It runs from a clone of the last Debug build, so building Pitstop while an agent uses it never changes a
 # file under the running IDE. The clone is APFS's (or a reflink), so it costs no space, and it goes when the
 # server does. Standard output is the protocol's.
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 build="$root/artifacts/bin/Passenger.App/debug"
-if [ ! -x "$build/Passenger" ]; then
-    echo "passenger: no build at $build; run just build first" >&2
+if [ ! -x "$build/Pitstop" ]; then
+    echo "pitstop: no build at $build; run just build first" >&2
     exit 1
 fi
 # The app host finds .NET by DOTNET_ROOT, else the installer's: name ~/.dotnet where it alone holds the build's runtime.
-runtime=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$build/Passenger.runtimeconfig.json" | head -n 1)
+runtime=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$build/Pitstop.runtimeconfig.json" | head -n 1)
 if [ -z "${DOTNET_ROOT:-}" ] && [ -n "$runtime" ] && [ -d "$HOME/.dotnet/shared/Microsoft.NETCore.App/$runtime" ] \
     && [ ! -d "/usr/local/share/dotnet/shared/Microsoft.NETCore.App/$runtime" ]; then
     DOTNET_ROOT="$HOME/.dotnet"
@@ -19,11 +19,11 @@ if [ -z "${DOTNET_ROOT:-}" ] && [ -n "$runtime" ] && [ -d "$HOME/.dotnet/shared/
 fi
 copies="$root/artifacts/mcp"
 mkdir -p "$copies"
-# A copy named for a shell no longer running is left from a server that was killed, unless a Passenger still runs from it.
+# A copy named for a shell no longer running is left from a server that was killed, unless a Pitstop still runs from it.
 for old in "$copies"/*; do
     [ -d "$old" ] || continue
     kill -0 "$(basename "$old")" 2>/dev/null && continue
-    pgrep -f "$old/Passenger" >/dev/null 2>&1 && continue
+    pgrep -f "$old/Pitstop" >/dev/null 2>&1 && continue
     rm -rf "$old"
 done
 copy="$copies/$$"
@@ -33,7 +33,7 @@ else
     cp -R --reflink=auto "$build" "$copy"
 fi
 # A signal to this shell is passed on to the server, and the copy goes only once the server has ended.
-"$copy/Passenger" --mcp "${1:-$PWD}" <&0 &
+"$copy/Pitstop" --mcp "${1:-$PWD}" <&0 &
 server=$!
 trap 'kill -TERM "$server" 2>/dev/null || true' INT TERM HUP
 trap 'rm -rf "$copy"' EXIT

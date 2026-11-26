@@ -5,7 +5,7 @@ using Passenger.Core;
 
 namespace Passenger.Helper;
 
-/// <summary>Runs one of Passenger's own helper programs on the runtime Passenger runs on: <c>passenger-helper ASSEMBLY
+/// <summary>Runs one of Passenger's own helper programs on the runtime Passenger runs on: <c>pitstop-helper ASSEMBLY
 /// [ARGUMENTS]</c>. The helper is loaded into the default context as its own host would load it, every assembly and native
 /// library from what its .deps.json names, with its runtimeconfig's properties, its folder as the base directory and itself
 /// as the entry assembly, and its Main is run with the arguments after it. This program's own .deps.json names the runtime
@@ -17,13 +17,13 @@ public static class Program
     {
         if (args is not [{ Length: > 0 } named, ..])
         {
-            Console.Error.WriteLine("passenger-helper: name a helper's assembly, then its arguments");
+            Console.Error.WriteLine("pitstop-helper: name a helper's assembly, then its arguments");
             return 2;
         }
         string assembly = Path.GetFullPath(named);
         if (!File.Exists(assembly))
         {
-            Console.Error.WriteLine($"passenger-helper: {assembly} does not exist");
+            Console.Error.WriteLine($"pitstop-helper: {assembly} does not exist");
             return 2;
         }
         string folder = Path.GetDirectoryName(assembly)!;
@@ -33,7 +33,7 @@ public static class Program
         {
             if (RuntimeConfig.Read(assembly) is not { } config)
             {
-                Console.Error.WriteLine($"passenger-helper: {runtimeConfig} does not read as a runtime configuration");
+                Console.Error.WriteLine($"pitstop-helper: {runtimeConfig} does not read as a runtime configuration");
                 return 2;
             }
             // As its host gives them to the runtime, which AppContext's switches and data read.

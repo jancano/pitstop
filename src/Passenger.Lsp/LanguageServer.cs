@@ -38,7 +38,7 @@ public sealed class LanguageServer : IAsyncDisposable
 
     /// <summary>The check: the folding ranges of a document never opened, which Roslyn answers with none, finding no
     /// document. Its URI is no file's, so no server takes it in as a loose file to load, on any system.</summary>
-    private static readonly FoldingRangeParams Check = new(new TextDocumentIdentifier("passenger:is-the-server-answering.cs"));
+    private static readonly FoldingRangeParams Check = new(new TextDocumentIdentifier("pitstop:is-the-server-answering.cs"));
 
     /// <summary>Servers started in this IDE, for the handshake salt of each one's MSBuild nodes.</summary>
     private static int started;
@@ -392,7 +392,7 @@ public sealed class LanguageServer : IAsyncDisposable
         Action<IReadOnlyList<WorkspaceDocumentDiagnosticReport>> streamed, CancellationToken cancel = default, IReadOnlyDictionary<string, string>? frameworks = null,
         Action? analysed = null)
     {
-        string token = $"passenger-workspace-diagnostic-{Interlocked.Increment(ref partialResults)}";
+        string token = $"pitstop-workspace-diagnostic-{Interlocked.Increment(ref partialResults)}";
         client.Partials[token] = report =>
         {
             if (report is { Items.Count: > 0 })
@@ -521,7 +521,7 @@ public sealed class LanguageServer : IAsyncDisposable
             catch (LanguageServerFailed failed)
             {
                 // The server runs on without it.
-                server2.ExtensionProblem = $"the C# language server did not activate Passenger's extension: {failed.Reason}";
+                server2.ExtensionProblem = $"the C# language server did not activate Pitstop's extension: {failed.Reason}";
             }
         }
         catch
@@ -816,6 +816,11 @@ public sealed class LanguageServer : IAsyncDisposable
     /// <see cref="LanguageServerFailed"/> when the server does not answer it.</summary>
     public async Task<T?> RequestAsync<T>(string method, object parameters, CancellationToken cancel = default, string? about = null)
     {
+        CancellationToken lifetime = RequestLifetime;
+        using CancellationTokenSource? linked = lifetime.CanBeCanceled && cancel.CanBeCanceled
+            ? CancellationTokenSource.CreateLinkedTokenSource(lifetime, cancel) : null;
+        CancellationToken request = linked?.Token ?? (lifetime.CanBeCanceled ? lifetime : cancel);
+        request.ThrowIfCancellationRequested();
         long id = Interlocked.Increment(ref requests);
         lock (waiting)
         {
@@ -824,7 +829,9 @@ public sealed class LanguageServer : IAsyncDisposable
         try
         {
             // Not back on the caller's thread: an answer read where it arrives (completion's) must not wait for a window's.
-            return await InvokeAsync<T>(method, parameters, cancel).ConfigureAwait(false);
+            T? result = await InvokeAsync<T>(method, parameters, request).ConfigureAwait(false);
+            request.ThrowIfCancellationRequested();
+            return result;
         }
         finally
         {
@@ -834,6 +841,9 @@ public sealed class LanguageServer : IAsyncDisposable
             }
         }
     }
+
+    /// <summary>Requests are discarded when the owner replaces this server's compilation context.</summary>
+    public CancellationToken RequestLifetime { get; set; }
 
     /// <summary>Marks the rest of an async method's flow as asking what nobody waits on (an open file's diagnostics pulled
     /// as the window keeps its marks): a request of it past <see cref="Patience"/> is the log's alone, unless the server
@@ -1178,11 +1188,11 @@ public sealed class LanguageServer : IAsyncDisposable
         [
             asking.Count == 0 ? "no request waits on it" : $"{Plural.Of(asking.Count, "request")} {Plural.Agreeing(asking.Count, "waits", "wait")} on it ("
                 + string.Join(", ", asking.Take(6).Select(a => $"{a.Method} {Durations.Said(a.Age)}")) + (asking.Count > 6 ? ", …" : string.Empty) + ")",
-            check == 0 ? "it has answered no check" : $"it answered Passenger's check {Durations.Said(Stopwatch.GetElapsedTime(check))} ago",
+            check == 0 ? "it has answered no check" : $"it answered Pitstop's check {Durations.Said(Stopwatch.GetElapsedTime(check))} ago",
             heard == 0 ? "it has sent nothing" : $"it last sent a message {Durations.Said(Stopwatch.GetElapsedTime(heard))} ago",
-            unanswered.Count == 0 ? "Passenger owes it no answer"
-                : "Passenger has not yet answered its " + string.Join(", ", unanswered.Take(4).Select(u => $"{u.Method} ({Durations.Said(Stopwatch.GetElapsedTime(u.Since))})")),
-            unsent == 0 ? "every message Passenger wrote has reached it" : $"{Numbers.Said(unsent)} of Passenger's messages have not yet reached its input",
+            unanswered.Count == 0 ? "Pitstop owes it no answer"
+                : "Pitstop has not yet answered its " + string.Join(", ", unanswered.Take(4).Select(u => $"{u.Method} ({Durations.Said(Stopwatch.GetElapsedTime(u.Since))})")),
+            unsent == 0 ? "every message Pitstop wrote has reached it" : $"{Numbers.Said(unsent)} of Pitstop's messages have not yet reached its input",
         ];
         return $"{who}: {string.Join("; ", parts)}. Its last messages: {string.Join(", ", messages.Recent())}";
     }
@@ -1601,7 +1611,7 @@ public sealed class LanguageServer : IAsyncDisposable
             };
             if (uri is null || Owner?.content is not { } content)
             {
-                throw new LocalRpcException($"Passenger has no content for {uri ?? asked.ToString()}") { ErrorCode = -32603 };
+                throw new LocalRpcException($"Pitstop has no content for {uri ?? asked.ToString()}") { ErrorCode = -32603 };
             }
             try
             {
@@ -1633,7 +1643,7 @@ public sealed class LanguageServer : IAsyncDisposable
         {
             if (Owner is not { } owner || Volatile.Read(ref owner.commandRun) is not { } run || JsonMembers.Value(request, "edit") is not { } edit)
             {
-                return new { applied = false, failureReason = "Passenger makes a server's edits only for a command it runs" };
+                return new { applied = false, failureReason = "Pitstop makes a server's edits only for a command it runs" };
             }
             string? refused = await run.Apply(edit.Clone()).ConfigureAwait(false);
             return refused is null ? new { applied = true } : new { applied = false, failureReason = refused };
@@ -1801,7 +1811,7 @@ public sealed class LanguageServer : IAsyncDisposable
         {
             if (Owner is not { Feed: { } feed } owner)
             {
-                return new Roslyn.Extension.ProjectInfoResult(null, "Passenger has no design-time builds to give");
+                return new Roslyn.Extension.ProjectInfoResult(null, "Pitstop has no design-time builds to give");
             }
             DateTime at = DateTime.UtcNow;
             owner.Changing(Roslyn.Extension.ProjectMethods.Info);

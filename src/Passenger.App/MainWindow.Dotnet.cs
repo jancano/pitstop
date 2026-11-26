@@ -62,7 +62,7 @@ public partial class MainWindow
         });
         installLink = DotnetBanner.Link(actions[AppActions.InstallDotnetSdk]!.Title, () => Request(AppActions.InstallDotnetSdk));
         downloadLink = DotnetBanner.Link("Download Page", () => Browse(DotnetReleases.PageOf(DotnetWant.Install?.Channel ?? Channel(DotnetWant.Install?.Version))));
-        systemsOwnLink = DotnetBanner.Link(OperatingSystem.IsMacOS() ? "Download Passenger for Apple Silicon" : "Download Passenger for Arm64", () => SystemsOwnPlace.Go());
+        systemsOwnLink = DotnetBanner.Link(OperatingSystem.IsMacOS() ? "Download Pitstop for Apple Silicon" : "Download Pitstop for Arm64", () => SystemsOwnPlace.Go());
         globalJsonLink = DotnetBanner.Link("Open global.json", OpenGlobalJson);
         pathLink = DotnetBanner.Link(actions[AppActions.AddDotnetToPath]!.Title, () => Request(AppActions.AddDotnetToPath));
         hideLink = DotnetBanner.Link("Hide", HideOffPath);
@@ -257,14 +257,14 @@ public partial class MainWindow
             }
             ShellPath? onPath = await BackgroundWork.Run(() => ShellPath.For(into));
             long? size = await BackgroundWork.Run(() => DotnetReleases.SizeAsync(sdk, installing.Stopping));
-            CheckBox? addToPath = onPath is null ? null : new CheckBox { Name = "AddDotnetToPath", IsChecked = true, Content = $"Also add it to your shell's PATH: Passenger {onPath.Shown}" };
+            CheckBox? addToPath = onPath is null ? null : new CheckBox { Name = "AddDotnetToPath", IsChecked = true, Content = $"Also add it to your shell's PATH: Pitstop {onPath.Shown}" };
             installing.Say($"Asking to install the .NET SDK {sdk.Version}");
             string runtime = sdk.Runtime.Length > 0 ? $" (with the .NET runtime {sdk.Runtime})" : string.Empty;
             string sized = size is > 0 ? $", {Sizes.Said(size.Value)}," : string.Empty;
             string replacing = machine?.Found is { } found && !PathNames.Same(found.Root, into) ? $" in place of the one in {PathNames.Shown(found.Root, null)}" : string.Empty;
             string title = $"Install the .NET SDK {sdk.Version}?";
-            string text = $"Passenger downloads the .NET SDK {sdk.Version}{runtime}{sized} from Microsoft ({sdk.Url.Host}), checks it against the SHA-512 Microsoft publishes, "
-                + $"and installs it into {PathNames.Shown(into, null)}, for you alone: no administrator rights are needed. Passenger, its terminal and the programs it starts use it at once{replacing}.";
+            string text = $"Pitstop downloads the .NET SDK {sdk.Version}{runtime}{sized} from Microsoft ({sdk.Url.Host}), checks it against the SHA-512 Microsoft publishes, "
+                + $"and installs it into {PathNames.Shown(into, null)}, for you alone: no administrator rights are needed. Pitstop, its terminal and the programs it starts use it at once{replacing}.";
             if (context.ByAgent)
             {
                 if (await AskAgentInstallAsync(sdk, text, addToPath, installing) is { } refused)
@@ -300,7 +300,7 @@ public partial class MainWindow
             {
                 DotnetCame();
             }
-            Told(installing, true, $"The .NET SDK {sdk.Version} is installed in {PathNames.Shown(installed.Root, null)}: Passenger uses it now{pathSaid}");
+            Told(installing, true, $"The .NET SDK {sdk.Version} is installed in {PathNames.Shown(installed.Root, null)}: Pitstop uses it now{pathSaid}");
         }
     }
 
@@ -310,7 +310,7 @@ public partial class MainWindow
     {
         string agent = Mcp.AgentCall.Current?.Agent ?? "an agent";
         ConfirmDialog dialog = new($"Let {agent} install the .NET SDK {sdk.Version}?",
-            $"{char.ToUpperInvariant(agent[0])}{agent[1..]}, connected through Passenger's MCP server, asks to install it. {text}", "Install", "Don't Install", addToPath)
+            $"{char.ToUpperInvariant(agent[0])}{agent[1..]}, connected through Pitstop's MCP server, asks to install it. {text}", "Install", "Don't Install", addToPath)
         {
             EnterAgrees = false,
         };
@@ -338,7 +338,7 @@ public partial class MainWindow
         }
         using (adding)
         {
-            if (!await ConfirmAsync("Add .NET to your shell's PATH?", $"Passenger {change.Shown}.", "Add to PATH", null, Refusals.AgentChangesPath))
+            if (!await ConfirmAsync("Add .NET to your shell's PATH?", $"Pitstop {change.Shown}.", "Add to PATH", null, Refusals.AgentChangesPath))
             {
                 Told(adding, false, "Your shell's PATH was left as it was");
                 return;

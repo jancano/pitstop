@@ -172,7 +172,7 @@ public static partial class XamlRefactorings
 
     /// <summary>Why a change of every use in a file cannot be made: a use past where reading stopped would go unseen.</summary>
     private static string? WhyNotChanged(XamlFile file) =>
-        file.Tree.Stopped is null ? null : $"{Path.GetFileName(file.Path)} is nested too deeply for Passenger to read whole";
+        file.Tree.Stopped is null ? null : $"{Path.GetFileName(file.Path)} is nested too deeply for Pitstop to read whole";
 
     /// <summary>The member of the type a use of a symbol's member is read from that the use's new name would name instead:
     /// one of that name declared elsewhere (a method's overload aside, which its signature tells apart); null for none.</summary>

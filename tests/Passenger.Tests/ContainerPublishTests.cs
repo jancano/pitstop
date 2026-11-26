@@ -256,7 +256,7 @@ public sealed class ContainerPublishTests : IClassFixture<StandInAppHost>, IDisp
         string notes = Path.Combine(deploy, "notes.txt");
         string compose = Path.Combine(deploy, "docker-compose.yaml");
         File.WriteAllBytes(certificate, had);
-        const string Publishes = "PASSENGER_STAND_IN_PUBLISHES";
+        const string Publishes = "PITSTOP_STAND_IN_PUBLISHES";
         string? was = Environment.GetEnvironmentVariable(Publishes);
         OwnEnvironment.Set(Publishes, given);
         MainWindow window = appHost.Open(appHost.Program, languageServer: false);

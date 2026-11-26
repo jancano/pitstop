@@ -27,18 +27,18 @@ public class MacBundlesTests
 
     private void A_path_under_a_bundles_Contents_is_held_by_it_and_one_beside_it_is_not()
     {
-        string bundle = Path.Combine(Applications, "Passenger.app");
+        string bundle = Path.Combine(Applications, "Pitstop.app");
         Assert.True(MacBundles.Holds(Path.Combine(bundle, "Contents", "MonoBundle", "roslyn")),
             "A folder inside the app was taken to be outside it, so a server writing its caches there would break the app's seal");
         Assert.True(MacBundles.Holds(Path.Combine(bundle, "Contents")));
         Assert.False(MacBundles.Holds(bundle));
-        Assert.False(MacBundles.Holds(Path.Combine(Applications, "Passenger", "Contents", "roslyn")));
+        Assert.False(MacBundles.Holds(Path.Combine(Applications, "Pitstop", "Contents", "roslyn")));
     }
 
     private void A_bundles_programs_are_in_its_Contents_MacOS_folder()
     {
-        string bundle = Path.Combine(Applications, "Passenger.app");
-        Assert.Equal(bundle, MacBundles.Of(Path.Combine(MacBundles.Programs(bundle), "Passenger")));
-        Assert.True(MacBundles.Named(bundle + Path.DirectorySeparatorChar) && !MacBundles.Named(Path.Combine(Applications, "Passenger.apps")));
+        string bundle = Path.Combine(Applications, "Pitstop.app");
+        Assert.Equal(bundle, MacBundles.Of(Path.Combine(MacBundles.Programs(bundle), "Pitstop")));
+        Assert.True(MacBundles.Named(bundle + Path.DirectorySeparatorChar) && !MacBundles.Named(Path.Combine(Applications, "Pitstop.apps")));
     }
 }

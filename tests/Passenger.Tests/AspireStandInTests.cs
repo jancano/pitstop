@@ -42,7 +42,7 @@ public sealed class AspireStandInTests(StandInAppHost project) : IClassFixture<S
         Flow.StepApart("an AppHost given no dashboard address has its logs read where its orchestrator placed the dashboard", () => new AspireStandInTests(project), t => t.An_AppHost_given_no_dashboard_address_has_its_logs_read_where_its_orchestrator_placed_the_dashboard());
         Flow.StepApart("a run of an AppHost ends with its own AppHosts while another configurations runs on", () => new AspireStandInTests(project), t => t.A_run_of_an_AppHost_ends_with_its_own_AppHosts_while_another_configurations_runs_on());
         Flow.StepApart("run or Debug of a configuration that runs starts it again and only the Run consoles own is said running", () => new AspireStandInTests(project), t => t.Run_or_Debug_of_a_configuration_that_runs_starts_it_again_and_only_the_Run_consoles_own_is_said_running());
-        Flow.StepApart("an AppHost an older Passenger kept as a plain project opens with its Aspire configuration", () => new AspireStandInTests(project), t => t.An_AppHost_an_older_Passenger_kept_as_a_plain_project_opens_with_its_Aspire_configuration());
+        Flow.StepApart("an AppHost an older Pitstop kept as a plain project opens with its Aspire configuration", () => new AspireStandInTests(project), t => t.An_AppHost_an_older_Passenger_kept_as_a_plain_project_opens_with_its_Aspire_configuration());
         Flow.StepApart("a service an AppHost adds by path beside the open folder starts lent its trust and one above it is refused saying why", () => new AspireStandInTests(project), t => t.A_service_an_AppHost_adds_by_path_beside_the_open_folder_starts_lent_its_trust_and_one_above_it_is_refused_saying_why());
     }
 
@@ -1149,7 +1149,7 @@ public sealed class AspireStandInTests(StandInAppHost project) : IClassFixture<S
                 using System.Threading;
 
                 // Each start records the port it is given; the first says it was taken, in ASP.NET Core's server's words.
-                string starts = Environment.GetEnvironmentVariable("PASSENGER_STAND_IN_STARTS")!;
+                string starts = Environment.GetEnvironmentVariable("PITSTOP_STAND_IN_STARTS")!;
                 Uri endpoint = new(Environment.GetEnvironmentVariable("ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL")!);
                 File.AppendAllText(starts, $"{endpoint.Port}\n");
                 if (File.ReadAllLines(starts).Length == 1)
@@ -1163,7 +1163,7 @@ public sealed class AspireStandInTests(StandInAppHost project) : IClassFixture<S
                 """),
             ($"{Taken}/Properties/launchSettings.json", JsonSerializer.Serialize(new { profiles = new { http = new { commandName = "Project", environmentVariables = new Dictionary<string, string>
             {
-                ["PASSENGER_STAND_IN_STARTS"] = starts,
+                ["PITSTOP_STAND_IN_STARTS"] = starts,
                 [AspireVariables.AllowUnsecuredTransport] = "true",
             } } } })),
             ("StandIn.slnx", $"<Solution>\n  <Project Path=\"{StandInAppHost.Name}/{StandInAppHost.Name}.csproj\" />\n  <Project Path=\"{StandInAppHost.Api}/{StandInAppHost.Api}.csproj\" />\n" +
@@ -1254,7 +1254,7 @@ public sealed class AspireStandInTests(StandInAppHost project) : IClassFixture<S
             ($"{Second}/Program.cs", File.ReadAllText(project.Program)),
             ($"{Second}/Properties/launchSettings.json", JsonSerializer.Serialize(new { profiles = new { http = new { commandName = "Project", environmentVariables = new Dictionary<string, string>
             {
-                ["PASSENGER_STAND_IN_KEY"] = secondKey,
+                ["PITSTOP_STAND_IN_KEY"] = secondKey,
                 [AspireVariables.AllowUnsecuredTransport] = "true",
                 [AspireVariables.ResourceServiceEndpoint] = second.Endpoint.AbsoluteUri,
             } } } })),
@@ -2951,7 +2951,7 @@ public sealed class AspireStandInTests(StandInAppHost project) : IClassFixture<S
                 Assert.True(second.Session.Models.Evaluations > 0,
                     "A folder whose kept evaluations say nothing of AppHosts was shown from them, its AppHost a plain program until it changes");
                 Ui.WaitFor(() => second.Configurations.Any(configuration => configuration.Name == StandInAppHost.Configuration),
-                    "the AppHost's Aspire configuration after the older Passenger's evaluations");
+                    "the AppHost's Aspire configuration after the older Pitstop's evaluations");
             }
             finally
             {
@@ -3502,7 +3502,7 @@ public sealed class StandInAppHost : SharedProject
                 File.WriteAllText(Path.Combine(output, "docker-compose.yaml"),
                     "services:\n  api:\n    image: \"standin-api:latest\"\n    environment:\n      ASPNETCORE_URLS: \"http://+:8080\"\n    ports:\n      - \"8080\"\n");
                 // Beside it what a test gives, as a publisher's certificate or archive.
-                if (Environment.GetEnvironmentVariable("PASSENGER_STAND_IN_PUBLISHES") is { Length: > 0 } more)
+                if (Environment.GetEnvironmentVariable("PITSTOP_STAND_IN_PUBLISHES") is { Length: > 0 } more)
                 {
                     foreach (string file in Directory.GetFiles(more))
                     {
@@ -3513,7 +3513,7 @@ public sealed class StandInAppHost : SharedProject
                 Console.WriteLine("Generating Compose output");
                 return;
             }
-            string keyFile = Environment.GetEnvironmentVariable("PASSENGER_STAND_IN_KEY")!;
+            string keyFile = Environment.GetEnvironmentVariable("PITSTOP_STAND_IN_KEY")!;
             File.WriteAllText(keyFile + ".urls", $"{Environment.GetEnvironmentVariable("ASPNETCORE_URLS")}\n{Environment.GetEnvironmentVariable("ASPIRE_ALLOW_UNSECURED_TRANSPORT")}");
             File.WriteAllText(keyFile + ".dashboard", Environment.GetEnvironmentVariable("AppHost__DashboardApiKey"));
             File.WriteAllText(keyFile + ".session", $"{Environment.GetEnvironmentVariable("DEBUG_SESSION_PORT")}\n{Environment.GetEnvironmentVariable("DEBUG_SESSION_TOKEN")}\n{Environment.GetEnvironmentVariable("DEBUG_SESSION_INFO")}");
@@ -3943,7 +3943,7 @@ public sealed class StandInAppHost : SharedProject
     {
         Dictionary<string, string> environment = new()
         {
-            ["PASSENGER_STAND_IN_KEY"] = KeyFile,
+            ["PITSTOP_STAND_IN_KEY"] = KeyFile,
         };
         if (https is null)
         {

@@ -109,12 +109,12 @@ public class ThemeFilesTests
             ("ControlRadius", "\"8\"", "a radius"),
             ("SyntaxStyle.Comment", "\"italic\"", "\"Normal\", \"Bold\", \"Italic\" or \"Bold Italic\""),
         ], row => A_value_of_the_wrong_kind_refuses_the_whole_file_naming_the_token_and_what_it_takes(row.Item1, row.Item2, row.Item3))),
-        ("a token this Passenger does not know is passed over and named", A_token_this_Passenger_does_not_know_is_passed_over_and_named),
+        ("a token this Pitstop does not know is passed over and named", A_token_this_Passenger_does_not_know_is_passed_over_and_named),
         ("a file that is no theme is refused whole saying why", () => Cases.Each<(string, string)>(
         [
             ("{\"format\": 1, \"name\": \"Mine\"", "is not JSON"),
             ("[1, 2]", "is no JSON object"),
-            ("{\"format\": 2, \"name\": \"Mine\"}", "is format 2, which this Passenger does not read: it reads format 1"),
+            ("{\"format\": 2, \"name\": \"Mine\"}", "is format 2, which this Pitstop does not read: it reads format 1"),
             ("{\"format\": 1}", "gives no name"),
             ("{\"format\": 1, \"name\": \"Mine\", \"dark\": {\"Frame\": \"#000000\", \"Frame\": \"#111111\"}}", "is not JSON"),
             ("{\"format\": 1, \"name\": \"Mine\", \"tokens\": {\"Frame\": \"#000000\"}, \"light\": {\"Frame\": \"#111111\"}}", "gives Frame in tokens and in light"),
@@ -136,8 +136,8 @@ public class ThemeFilesTests
         ThemeRead<ThemeFile> read = Theme("""{"format": 1, "name": "Mine", "dark": {"Fram": "#000000", "Passenger.Frame": "#000000", "Frame": "#111111"}}""");
         Assert.NotNull(read.Read);
         Assert.Equal(["Frame"], read.Read.Dark.Keys);
-        Assert.Equal(["Mine.json: Fram in dark is no token this Passenger knows, so it was passed over",
-            "Mine.json: Passenger.Frame in dark is no token this Passenger knows (a token is named without \"Passenger.\"), so it was passed over"], read.Problems);
+        Assert.Equal(["Mine.json: Fram in dark is no token this Pitstop knows, so it was passed over",
+            "Mine.json: Passenger.Frame in dark is no token this Pitstop knows (a token is named without \"Passenger.\"), so it was passed over"], read.Problems);
     }
 
     private void A_file_that_is_no_theme_is_refused_whole_saying_why(string json, string why)
@@ -197,7 +197,7 @@ public class ThemeFilesTests
             """));
         Assert.Equal(["Harbour.json", "anime/Sakura/theme.json"], read.Read!.Themes);
         Assert.Equal(["Code.json"], read.Read.CodeColours);
-        Assert.Equal(["passenger-themes.json: extra is no member of an index this Passenger knows, so it was passed over"], read.Problems);
+        Assert.Equal(["passenger-themes.json: extra is no member of an index this Pitstop knows, so it was passed over"], read.Problems);
     }
 
     private void An_index_entry_that_is_no_path_inside_the_source_refuses_the_index(string path)

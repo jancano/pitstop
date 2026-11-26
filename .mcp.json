@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "passenger": {
+    "pitstop": {
       "command": "tools/mcp.sh",
       "args": []
     }

@@ -304,7 +304,7 @@ public sealed record RunConfiguration
             string name = Path.GetFileNameWithoutExtension(start.Project);
             if (start.Action is null)
             {
-                return $"its action for {name} is one Passenger does not know";
+                return $"its action for {name} is one Pitstop does not know";
             }
             if (loaded.FirstOrDefault(p => p.Exists && Core.PathNames.Same(p.Path, start.Project)) is not { } project)
             {

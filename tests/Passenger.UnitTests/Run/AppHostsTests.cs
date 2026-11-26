@@ -49,7 +49,7 @@ public sealed class AppHostsTests : IDisposable
         (AppHost? emulated, string? why) = AppHosts.Of(Evaluated("Hello", runtime: "osx-x64", defaultHost: null), Target("Hello"));
         (AppHost? linux, string? elsewhere) = AppHosts.Of(Evaluated("Hello", runtime: "linux-arm64", defaultHost: null), Target("Hello"));
         (AppHost? x64, string? onArm) = AppHosts.Of(Evaluated("Hello.exe", runtime: "win-x64", defaultHost: null, sdk: "win-arm64"), Target("Hello"));
-        Assert.True(emulated is null && linux is null && x64 is null, "An apphost for another machine started, which the .NET Passenger builds with does not run");
+        Assert.True(emulated is null && linux is null && x64 is null, "An apphost for another machine started, which the .NET Pitstop builds with does not run");
         Assert.True(why?.Contains("osx-x64", StringComparison.Ordinal) == true && elsewhere?.Contains("linux-arm64", StringComparison.Ordinal) == true
             && onArm?.Contains("win-x64", StringComparison.Ordinal) == true, $"The run says nothing of why it is no apphost's: {why} / {elsewhere} / {onArm}");
     }

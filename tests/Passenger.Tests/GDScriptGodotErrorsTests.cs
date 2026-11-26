@@ -313,15 +313,15 @@ public sealed class GDScriptGodotErrorsTests
                 Assert.Null(window.OpenFile(Path.Combine(folder, file)));
                 OpenDocument document = window.EditorArea.Active!;
                 Ui.WaitFor(() => window.Session.Web?.For(document) is { Serving: true } served && served.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error)
-                    && served.Passengers.Any(m => m.Kind == MarkerKind.Error), () => $"Godot's and Passenger's errors in {file}", TimeSpan.FromMinutes(2));
+                    && served.Passengers.Any(m => m.Kind == MarkerKind.Error), () => $"Godot's and Pitstop's errors in {file}", TimeSpan.FromMinutes(2));
                 WebDocument web = window.Session.Web!.For(document)!;
                 TextSnapshot text = document.Text.Snapshot;
                 SortedSet<string> godots = [.. web.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => $"{d.Range.Start.Line + 1}: {d.Message}")];
                 SortedSet<string> passengers = [.. web.Passengers.Where(m => m.Kind == MarkerKind.Error).Select(m => $"{text.GetLineFromOffset(m.Range.Start) + 1}: {m.Message}")];
                 differ.AddRange(godots.Except(passengers).Select(e => $"{file}:{e} (Godot's alone)"));
-                differ.AddRange(passengers.Except(godots).Select(e => $"{file}:{e} (Passenger's alone)"));
+                differ.AddRange(passengers.Except(godots).Select(e => $"{file}:{e} (Pitstop's alone)"));
             }
-            Assert.True(differ.Count == 0, $"Passenger's errors are not Godot's server's:\n{string.Join('\n', differ)}");
+            Assert.True(differ.Count == 0, $"Pitstop's errors are not Godot's server's:\n{string.Join('\n', differ)}");
         }
         finally
         {

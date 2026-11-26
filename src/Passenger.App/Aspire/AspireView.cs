@@ -413,7 +413,7 @@ public sealed class AspireView : DockPanel, IDisposable
         {
             string? whyNot = model.Executing ? Refusals.CommandRunning
                 : !command.Enabled ? Refusals.CommandDisabled
-                : command.HasArguments && model.ArgumentCommand is null ? "This command needs an argument form. Use the Aspire CLI; Passenger will not send incomplete arguments."
+                : command.HasArguments && model.ArgumentCommand is null ? "This command needs an argument form. Use the Aspire CLI; Pitstop will not send incomplete arguments."
                 : null;
             MenuItem item = ListMenus.Item(command.DisplayName, () => model.AskCommand(selected, command.Name, () => requestAction?.Invoke(AppActions.AspireCommand)), whyNot);
             if (whyNot is null)

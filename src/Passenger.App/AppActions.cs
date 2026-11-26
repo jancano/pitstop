@@ -149,7 +149,7 @@ public static class AppActions
     public const string InstallDotnetSdk = "app.dotnet.install";
     public const string AddDotnetToPath = "app.dotnet.addToPath";
 
-    // The passenger-ide command on macOS, linked in ~/.local/bin and taken away again: no keys of Rider's.
+    // The pitstop-ide command on macOS, linked in ~/.local/bin and taken away again: no keys of Rider's.
     public const string AddCommand = "app.command.add";
     public const string RemoveCommand = "app.command.remove";
 
@@ -384,6 +384,7 @@ public static class AppActions
     public const string QuickFix = "app.code.quickFix";
     public const string Rename = "app.code.rename";
     public const string GoToDeclaration = "app.code.goToDeclaration";
+    public const string GoToCppDefinition = "app.code.goToCppDefinition";
     public const string GoToImplementation = "app.code.goToImplementation";
 
     // Rider's GotoTypeDeclaration, and GotoSuperMethod and GotoImplementation, which it names Base Symbols and Derived

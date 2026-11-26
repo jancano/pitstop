@@ -202,7 +202,7 @@ public sealed class TerminalPanel : DockPanel, ToolTabs.ITabbed
         }
         catch (Exception failed) when (failed is IOException or InvalidOperationException or ArgumentException or System.ComponentModel.Win32Exception)
         {
-            session.Screen.Feed($"Passenger could not start a shell: {failed.Message}\r\n");
+            session.Screen.Feed($"Pitstop could not start a shell: {failed.Message}\r\n");
         }
         return session;
     }
@@ -285,8 +285,8 @@ public sealed class TerminalPanel : DockPanel, ToolTabs.ITabbed
             }
             catch (Exception failed) when (failed is IOException or InvalidOperationException or ArgumentException or System.ComponentModel.Win32Exception)
             {
-                session.Screen.Feed($"Passenger could not start a shell: {failed.Message}\r\n");
-                return (session, $"Passenger could not start the Agent Shell's shell, '{program}': {failed.Message}");
+                session.Screen.Feed($"Pitstop could not start a shell: {failed.Message}\r\n");
+                return (session, $"Pitstop could not start the Agent Shell's shell, '{program}': {failed.Message}");
             }
             // Its first prompt before anything is typed: output alone is not it, since ConPTY clears the screen before the shell starts.
             long began = Stopwatch.GetTimestamp();

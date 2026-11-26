@@ -29,9 +29,9 @@ public sealed class McpGodotFramesTests : McpRig
             : $"The Godot found cannot run a Godot 4 game: {godot.WhyNotScripts}");
         Assert.SkipUnless(GodotExecutables.DrawsWithoutWindow(godot!.Version), OperatingSystem.IsMacOS()
             ? $"Godot {godot.Version} has no embedded display: Godot 4.5 and newer draw a game on macOS with no window"
-            : OperatingSystem.IsLinux() ? "Xvfb is not installed: an agent's own Passenger draws a game on Linux in an X server of its own that shows nowhere, "
+            : OperatingSystem.IsLinux() ? "Xvfb is not installed: an agent's own Pitstop draws a game on Linux in an X server of its own that shows nowhere, "
                 + "and without one runs it headless, with no frames (install the xvfb package)"
-            : $"Godot {godot.Version} is no Godot 4, which an agent's own Passenger draws on a desktop of its own");
+            : $"Godot {godot.Version} is no Godot 4, which an agent's own Pitstop draws on a desktop of its own");
         File.WriteAllText(Path.Combine(folder, "project.godot"), "; Engine configuration file.\nconfig_version=5\n\n[application]\n\nconfig/name=\"Stepper\"\n"
             + "run/main_scene=\"res://main.tscn\"\nconfig/features=PackedStringArray(\"4.7\")\n\n[display]\n\nwindow/size/viewport_width=640\nwindow/size/viewport_height=360\n");
         File.WriteAllText(Path.Combine(folder, "main.tscn"), "[gd_scene load_steps=2 format=3]\n\n[ext_resource type=\"Script\" path=\"res://main.gd\" id=\"1\"]\n\n"

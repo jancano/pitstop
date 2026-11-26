@@ -23,7 +23,7 @@ public partial class App : Application
     /// <summary>Makes the start fail in <see cref="Initialize"/>, the exception's message its value: what a start that fails
     /// before the log is set up leaves (<see cref="CrashFile"/>) is held by making one.</summary>
     [IdentifierHome]
-    public const string FailVariable = "PASSENGER_START_FAILS";
+    public const string FailVariable = "PITSTOP_START_FAILS";
 
     public override void Initialize()
     {
@@ -82,11 +82,9 @@ public partial class App : Application
         // The screenshot mode has no lifetime and makes its own window.
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Only the person's window updates Passenger, and only a copy its installer or disk image put in place.
-            Updates.Updater? updater = Updates.Updater.OfThisCopy(State.StateStore.DefaultRoot, out string notUpdating);
             MainWindow window = new()
             {
-                AgentsAllowed = Program.Options.ListenForAgents, SelfUpdate = updater, UpdatesElsewhere = Updates.Updater.LeftElsewhere(), SaysLastCrash = true,
+                AgentsAllowed = Program.Options.ListenForAgents, SaysLastCrash = true,
             };
             // The person's windows open on the layout and settings they left; headless ones keep the defaults.
             window.KeepLayout();
@@ -98,23 +96,10 @@ public partial class App : Application
             window.OpenWherePlaced();
             window.Opened += (_, _) =>
             {
-                IdeErrors.Write($"Passenger {Product.Version} ({Product.Commit ?? "no commit"}) on {RuntimeInformation.OSDescription} "
+                IdeErrors.Write($"Pitstop {Product.Version} ({Product.Commit ?? "no commit"}) on {RuntimeInformation.OSDescription} "
                     + $"({Product.Runtime}): window shown {Durations.Said(Stopwatch.GetElapsedTime(Program.StartedAt))} after launch");
                 window.Start(Program.Options);
                 IdeErrors.Observe(Program.EndUnlessStartedAsync(window, desktop.Shutdown));
-                // The process asks for the latest release once, in this window, which hands the watch on as it closes.
-                IdeErrors.Observe(SayUpdatesAsync(updater, notUpdating));
-                window.WatchForUpdates();
-                // The notes of a version updated to, once; one an agent started to work in leaves them to the person's next start.
-                if (Mcp.McpProxy.StartedForAgent)
-                {
-                    IdeErrors.Write("What's New: started for an agent, so no notes are shown");
-                }
-                else
-                {
-                    window.ShowWhatsNewOnce();
-                }
-                window.ShowActivityInDiscord();
             };
             desktop.MainWindow = window;
             // macOS hands the running Passenger what the Finder or the Dock's icon opens, rather than starting another.
@@ -124,20 +109,6 @@ public partial class App : Application
             }
         }
         base.OnFrameworkInitializationCompleted();
-    }
-
-    /// <summary>Logs what this copy does about updates: only says a release is out, or, once whether a package manager owns
-    /// it is known, is updated by that manager, by hand, or by itself.</summary>
-    private static async Task SayUpdatesAsync(Updates.Updater? updater, string notUpdating)
-    {
-        if (updater is null)
-        {
-            IdeErrors.Write($"Updates: this copy only says when a newer release is out: {notUpdating}");
-            return;
-        }
-        // Not held: the package databases asked answer a line of the log, which nothing drawn waits for.
-        string updated = await BackgroundWork.Unheld(() => updater.UpdatedByAsync(CancellationToken.None));
-        IdeErrors.Write($"Updates: {updated}");
     }
 
     private static void OnActivated(object? sender, ActivatedEventArgs e)

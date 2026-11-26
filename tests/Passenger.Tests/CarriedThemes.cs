@@ -10,7 +10,7 @@ namespace Passenger.Tests;
 public static class CarriedThemes
 {
     /// <summary>Passenger's own theme, Tokens.axaml, by the name Settings lists it under.</summary>
-    public const string Own = "Passenger";
+    public const string Own = "Pitstop";
 
     /// <summary>The folder the repository's copy is in.</summary>
     public static string Folder => Path.Combine(AppContext.BaseDirectory, "Themes");

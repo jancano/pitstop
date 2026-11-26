@@ -17,7 +17,7 @@ public sealed record XamlFormatted(IReadOnlyList<TextEdit> Edits, string? Proble
 public static class XamlFormatter
 {
     /// <summary>Why a file nested past what Passenger reads, or past the stack its thread has left, is not laid out.</summary>
-    public const string TooDeep = "the XAML is nested too deeply for Passenger to read whole";
+    public const string TooDeep = "the XAML is nested too deeply for Pitstop to read whole";
 
     public static XamlFormatted Format(string text, XamlFormatSettings settings, IndentOptions indent, string eol, TextRange? within = null)
     {

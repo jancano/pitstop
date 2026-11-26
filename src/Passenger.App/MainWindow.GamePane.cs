@@ -137,7 +137,7 @@ public partial class MainWindow
         }
         catch (LiveAppException unheard)
         {
-            status.Text = $"Only a click in Passenger takes the keys back from {game.Name}: {unheard.Message}";
+            status.Text = $"Only a click in Pitstop takes the keys back from {game.Name}: {unheard.Message}";
         }
     }
 

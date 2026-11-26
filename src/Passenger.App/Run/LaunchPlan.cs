@@ -218,7 +218,7 @@ public sealed partial record LaunchPlan
 
     /// <summary>Why the program runs on a desktop of its own, for the log of its start.</summary>
     public string OwnDesktopWhy => OwnDesktop ? $"{Name} is an agent's game, drawn where no one sees it for its frames"
-        : $"{Name} is a desktop app a Passenger nobody sees runs, whose windows reach no one's screen";
+        : $"{Name} is a desktop app a Pitstop nobody sees runs, whose windows reach no one's screen";
 
     /// <summary>Whether its Godot game is to draw in the window's Game window (<see cref="RunConfiguration.GodotInPane"/>).</summary>
     public bool GodotInPane { get; init; }

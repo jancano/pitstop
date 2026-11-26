@@ -20,7 +20,7 @@ public sealed class AspireExternalDataTests(AspireApp project) : IClassFixture<A
     public void An_external_AppHost_is_found_and_its_environment_values_are_masked_in_the_window()
     {
         project.Reset();
-        const string Variable = "PASSENGER_EXTERNAL_SECRET";
+        const string Variable = "PITSTOP_EXTERNAL_SECRET";
         const string Secret = "private-fixture-value-243";
         string host = Path.Combine(Path.GetDirectoryName(project.Host)!, "AppHost.cs");
         string source = File.ReadAllText(host);

@@ -53,7 +53,7 @@ public sealed class MSBuildItemsTests
                 differences.Add($"Seed {seed}: {smallest} (drawn as {value}) {left}, of the files {string.Join(", ", files.Select(f => $"\"{f}\""))}");
             }
         }
-        Assert.True(differences.Count == 0, $"Passenger names other files than MSBuild's evaluation does, so a move, a shared project's items or a "
+        Assert.True(differences.Count == 0, $"Pitstop names other files than MSBuild's evaluation does, so a move, a shared project's items or a "
             + $"build's check follows the wrong files; kept apart on purpose: {Kept}.\n{string.Join("\n", differences)}");
     }
 
@@ -67,7 +67,7 @@ public sealed class MSBuildItemsTests
     private sealed record Difference(IReadOnlyList<string> MSBuildAlone, IReadOnlyList<string> PassengerAlone)
     {
         public override string ToString() =>
-            $"names {Listed(MSBuildAlone)} by MSBuild's evaluation alone and {Listed(PassengerAlone)} by Passenger's reading alone";
+            $"names {Listed(MSBuildAlone)} by MSBuild's evaluation alone and {Listed(PassengerAlone)} by Pitstop's reading alone";
 
         private static string Listed(IReadOnlyList<string> files) => files.Count == 0 ? "nothing" : string.Join(", ", files.Select(f => $"\"{f}\""));
     }

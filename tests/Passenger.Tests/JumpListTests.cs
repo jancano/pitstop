@@ -28,7 +28,7 @@ public sealed class JumpListTests
     [Fact]
     public async Task Windows_jump_list_links_each_recent_one_and_follows_the_systems_choice()
     {
-        await Flow.StepApartAsync("each recent one is a link starting Passenger on its path two of one name told apart by their folders beside New Window", () => new JumpListTests(), async t =>
+        await Flow.StepApartAsync("each recent one is a link starting Pitstop on its path two of one name told apart by their folders beside New Window", () => new JumpListTests(), async t =>
         {
             if (OperatingSystem.IsWindows())
             {

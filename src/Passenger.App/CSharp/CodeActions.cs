@@ -387,7 +387,7 @@ internal sealed partial class CodeActions(AssistContext context, PopupPlacement 
     /// <see cref="ServerCommands"/>.</summary>
     private async Task<(RefactorOutcome Outcome, bool Applied)> ApplyChosenAsync(OpenDocument document, CodeAction chosen, string what, Asked? asked, Patience? patience)
     {
-        if (chosen.Command is { } run && (context.CSharp?.For(document)?.Lsp ?? context.WebOf(document)?.Lsp) is { } server && server.Runs(run))
+        if (chosen.Command is { } run && context.ServerOf(document)?.Lsp is { } server && server.Runs(run))
         {
             RefactorOutcome ran = await ServerCommands.RunAsync(context.Editors, what, what, chosen.Edit, taking => server.ExecuteCommandAsync(run, taking), asked, patience, context.Say);
             return (ran, ran.Problem is null && ran.Left.Count == 0 && ran.Files.Count > 0);
@@ -422,7 +422,7 @@ internal sealed partial class CodeActions(AssistContext context, PopupPlacement 
             && await service.ClassFileAsync(className, document.Path) is { } xaml ? [xaml] : [];
 
     /// <summary>What the status bar says of a command left unrun: one its server does not run itself (<see cref="LanguageServer.Runs"/>).</summary>
-    internal static string NotRun(string what, LspCommand command) => $"{what} needs {command.Command}, which Passenger cannot run";
+    internal static string NotRun(string what, LspCommand command) => $"{what} needs {command.Command}, which Pitstop cannot run";
 
     /// <summary>A refactoring by its own key, over the selection: the language server's action of that kind applied at
     /// once, as the work of the action <paramref name="id"/>, and for Extract Method its new method's name then offered to
@@ -699,14 +699,15 @@ internal sealed partial class CodeActions(AssistContext context, PopupPlacement 
                 : await context.Languages.Xaml.XamlRenameAsync(elementFile, element.Name, name, patience) ?? RefactorOutcome.Refused(XamlAssist.Unread(elementFile));
         }
         // A component's file at its start is the class Razor makes of it, which the server takes in the C# made of the file.
-        TypeRename.Component? component = context.WebOf(document) is null
+        bool native = context.ServerOf(document) is CppEditorDocument;
+        TypeRename.Component? component = !native && context.WebOf(document) is null
             ? await TypeRename.ComponentAtAsync(context.CSharp?.Session, document.Path, document.Text.Snapshot, at.Offset) : null;
         // Asked before the rename, where the type is declared still.
-        TypeRename.Named? type = component?.Type ?? (context.WebOf(document) is null && context.CSharp?.Session?.Folder is { } folder
+        TypeRename.Named? type = component?.Type ?? (!native && context.WebOf(document) is null && context.CSharp?.Session?.Folder is { } folder
             ? await TypeRename.NamedAsync(context.Editors, folder, context.Now(document), at.Offset) : null);
         TextSnapshot text = document.Text.Snapshot;
         string old = component?.Type.Type ?? text.GetText(RenamedAt(document, text, at.Offset));
-        if (context.WebOf(document) is null && !IsCSharpName(name))
+        if (!native && context.WebOf(document) is null && !IsCSharpName(name))
         {
             return RefactorOutcome.Refused($"'{name}' is not a C# identifier, so {old} keeps its name");
         }

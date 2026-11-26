@@ -95,7 +95,7 @@ public sealed record HeadEdits(string Project, string Name)
         get
         {
             List<string> edits = [];
-            string mono = $"(Passenger builds, runs and debugs mobile apps from .NET {MobilePlatforms.FirstOnCoreClr}, on CoreCLR)";
+            string mono = $"(Pitstop builds, runs and debugs mobile apps from .NET {MobilePlatforms.FirstOnCoreClr}, on CoreCLR)";
             if (Moves is [var (framework, moved)])
             {
                 edits.Add($"{moved} in place of {framework}, whose {MobilePlatforms.Named(FrameworkNames.PlatformOf(framework)!)} apps run on Mono {mono}");

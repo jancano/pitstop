@@ -19,7 +19,7 @@ public sealed class AspireFunctionsApp : SharedProject
     /// <summary>The line of the function the tests stop at, and what its answer says.</summary>
     public const string Answering = "response.WriteString";
 
-    public const string Answer = "Hello from Passenger's function, 42";
+    public const string Answer = "Hello from Pitstop's function, 42";
 
     public AspireFunctionsApp() : base("functions-") => WhyNot = FuncMissing;
 
@@ -105,7 +105,7 @@ public sealed class AspireFunctionsApp : SharedProject
                 {
                     int answer = 42;
                     HttpResponseData response = request.CreateResponse(HttpStatusCode.OK);
-                    {{Answering}}($"Hello from Passenger's function, {answer}");
+                    {{Answering}}($"Hello from Pitstop's function, {answer}");
                     return response;
                 }
             }

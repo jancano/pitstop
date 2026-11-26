@@ -234,7 +234,7 @@ public static class DeviceLaunches
     /// <summary>The variable holding each app's end on a device that many milliseconds as it begins, where
     /// <see cref="HeldEnds"/> holds nothing: a test's hold of a clean-up in a Passenger of its own (<c>--mcp</c>).</summary>
     [IdentifierHome]
-    public const string EndHoldVariable = "PASSENGER_DEVICE_END_HOLD_MS";
+    public const string EndHoldVariable = "PITSTOP_DEVICE_END_HOLD_MS";
 
     /// <summary>How long each app's end on a device is held as it begins: none, or what <see cref="EndHoldVariable"/> gives;
     /// a value there that is no whole number of milliseconds above 0 is fatal.</summary>
@@ -259,21 +259,21 @@ public static class DeviceLaunches
         {
             if (AndroidApp.RelayRuntime(abi) is not { } runtime)
             {
-                return (null, null, $"Passenger's debugger does not reach an app on an {(abi.Length > 0 ? abi : "unknown")} device: it debugs arm64-v8a and x86_64 ones");
+                return (null, null, $"Pitstop's debugger does not reach an app on an {(abi.Length > 0 ? abi : "unknown")} device: it debugs arm64-v8a and x86_64 ones");
             }
             relay = CarriedFiles.Relay(runtime, AndroidApp.RelayFile);
             if (!File.Exists(relay))
             {
-                return (null, null, $"This Passenger carries no debug relay for {runtime} ({relay})");
+                return (null, null, $"This Pitstop carries no debug relay for {runtime} ({relay})");
             }
         }
         string built = app.BuiltEnvironment(abi);
         if (!File.Exists(built))
         {
-            return (null, null, $"{app.Package} is not a Debug build Passenger can {(relayed ? "debug" : "inspect")}: its build left no environment for {abi} ({built})");
+            return (null, null, $"{app.Package} is not a Debug build Pitstop can {(relayed ? "debug" : "inspect")}: its build left no environment for {abi} ({built})");
         }
         string token = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
-        string socket = $"passenger-debug-{Convert.ToHexString(RandomNumberGenerator.GetBytes(4)).ToLowerInvariant()}";
+        string socket = $"pitstop-debug-{Convert.ToHexString(RandomNumberGenerator.GetBytes(4)).ToLowerInvariant()}";
         IReadOnlyList<KeyValuePair<string, string>> variables = AndroidEnvironment.Read(await File.ReadAllBytesAsync(built, cancel));
         if (relayed)
         {
@@ -298,7 +298,7 @@ public static class DeviceLaunches
         {
             pushed.Add((file, app.Staged(Path.GetFileName(file))));
         }
-        string staged = Path.Combine(Path.GetTempPath(), $"passenger-{Guid.NewGuid():N}-environment");
+        string staged = Path.Combine(Path.GetTempPath(), $"pitstop-{Guid.NewGuid():N}-environment");
         try
         {
             // Only the person reads it: it holds the tokens.
@@ -307,7 +307,7 @@ public static class DeviceLaunches
             {
                 if (await AndroidDevices.AdbAsync(app.Adb, app.On("push", local, remote), cancel) is { Succeeded: false } unpushed)
                 {
-                    return (null, null, $"Passenger's {(relayed ? "debug relay" : "inspector")} could not be copied to the device: {ChildResult.FirstLineOf(unpushed.Error + unpushed.Output)}");
+                    return (null, null, $"Pitstop's {(relayed ? "debug relay" : "inspector")} could not be copied to the device: {ChildResult.FirstLineOf(unpushed.Error + unpushed.Output)}");
                 }
             }
         }
@@ -324,7 +324,7 @@ public static class DeviceLaunches
         {
             // What went in before the step that failed comes out again, the build's environment put back.
             await EndAsync(app, placed, stop: false);
-            return (null, null, $"Passenger's {(relayed ? "debug relay" : "inspector")} could not be put in {app.Package}: {why}");
+            return (null, null, $"Pitstop's {(relayed ? "debug relay" : "inspector")} could not be put in {app.Package}: {why}");
         }
         RelaySession? session = null;
         try
@@ -355,7 +355,7 @@ public static class DeviceLaunches
                 }
                 else
                 {
-                    inspector.Unreached("adb could not forward a port to Passenger's inspector in the app");
+                    inspector.Unreached("adb could not forward a port to Pitstop's inspector in the app");
                 }
             }
             if (handlers is not null)
@@ -375,7 +375,7 @@ public static class DeviceLaunches
         catch (OperationCanceledException)
         {
             // Stopped partway: what the device holds of the start comes out again, as where a step fails.
-            inspector?.Unreached("The start was stopped before Passenger's inspector was reached in the app");
+            inspector?.Unreached("The start was stopped before Pitstop's inspector was reached in the app");
             await EndAsync(app, placed, stop: false);
             throw;
         }

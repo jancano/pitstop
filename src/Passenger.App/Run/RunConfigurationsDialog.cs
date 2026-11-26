@@ -213,7 +213,7 @@ public sealed class RunConfigurationsDialog : IdeWindow
         });
         LaunchServiceBox = Field("The first .NET service");
         ModeBox = new FormDropDown { ItemsSource = (string[])[FastMode, ImagesMode] };
-        ToolTip.SetTip(ModeBox, "Fast runs each .NET service in its image's runtime stage with Passenger's build mounted in, so a code change needs no image rebuild; the other builds every image as Compose says");
+        ToolTip.SetTip(ModeBox, "Fast runs each .NET service in its image's runtime stage with Pitstop's build mounted in, so a code change needs no image rebuild; the other builds every image as Compose says");
         TextBlock keepWords = new() { Text = "Keep backing services running after Stop" };
         KeepBackingBox = new CheckBox { Content = keepWords };
         TextBlock telemetryWords = new() { Text = TelemetryWords };
@@ -479,7 +479,7 @@ public sealed class RunConfigurationsDialog : IdeWindow
     public ComboBox GodotBox { get; }
 
     /// <summary>The choices of <see cref="GodotBox"/>, the game's first.</summary>
-    public static readonly string[] GodotStarts = ["The game", "Godot's editor on the project", "The game, in Godot's editor", "The game, in Passenger's Game window"];
+    public static readonly string[] GodotStarts = ["The game", "Godot's editor on the project", "The game, in Godot's editor", "The game, in Pitstop's Game window"];
 
     private readonly ComboBoxItem[] godotStartItems = [.. GodotStarts.Select(start => new ComboBoxItem { Content = start })];
 
@@ -678,7 +678,7 @@ public sealed class RunConfigurationsDialog : IdeWindow
     private const string SaveAsTip = "Applies the changes here, then saves this configuration as a new profile of its project's Properties/launchSettings.json (a file-based program's .run.json), "
         + "which the repository shares and it is then generated from; what a profile has no place for stays kept with the folder. One step Undo takes back";
 
-    private const string FastMode = "Fast, from Passenger's build";
+    private const string FastMode = "Fast, from Pitstop's build";
 
     private const string ImagesMode = "Build images, as deployed";
 

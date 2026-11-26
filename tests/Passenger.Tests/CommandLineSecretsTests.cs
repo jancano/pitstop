@@ -26,7 +26,7 @@ public sealed class CommandLineSecretsTests
         Flow.StepApart<CommandLineSecretsTests>("the word after a flag that takes no secret or is itself a flag is kept every way a command line is shown", t => t.The_word_after_a_flag_that_takes_no_secret_or_is_itself_a_flag_is_kept_every_way_a_command_line_is_shown());
         Flow.StepApart<CommandLineSecretsTests>("a variable naming a secrets file name or address shows it and a secrets own is masked", t => t.A_variable_naming_a_secrets_file_name_or_address_shows_it_and_a_secrets_own_is_masked());
         Flow.StepApart<CommandLineSecretsTests>("a word after a flag naming no secret or of one letter comes back as it was", t => t.A_word_after_a_flag_naming_no_secret_or_of_one_letter_comes_back_as_it_was());
-        Flow.StepApart<CommandLineSecretsTests>("a command passenger starts has the word after a secrets flag masked in its echo", t => t.A_command_passenger_starts_has_the_word_after_a_secrets_flag_masked_in_its_echo());
+        Flow.StepApart<CommandLineSecretsTests>("a command pitstop starts has the word after a secrets flag masked in its echo", t => t.A_command_passenger_starts_has_the_word_after_a_secrets_flag_masked_in_its_echo());
         Flow.StepApart<CommandLineSecretsTests>("a command a program echoes has the word after a secrets flag masked", t => t.A_command_a_program_echoes_has_the_word_after_a_secrets_flag_masked());
         Flow.StepApart<CommandLineSecretsTests>("an argument marked sensitive is masked whatever is before it", t => t.An_argument_marked_sensitive_is_masked_whatever_is_before_it());
         Flow.StepApart<CommandLineSecretsTests>("an argument marked sensitive is masked from then on wherever a command line holds it", t => t.An_argument_marked_sensitive_is_masked_from_then_on_wherever_a_command_line_holds_it());
@@ -127,7 +127,7 @@ public sealed class CommandLineSecretsTests
         string running = ContainerSecrets.CommandLines()(line);
         Assert.True(running == expected, $"A running program's {line} shows as {running}: {why}");
         string started = ContainerSecrets.CommandLine(ChildProcesses.Command("tool", words));
-        Assert.True(started == expected, $"A command Passenger starts, {line}, is echoed as {started}: {why}");
+        Assert.True(started == expected, $"A command Pitstop starts, {line}, is echoed as {started}: {why}");
         string said = ContainerSecrets.InSaid(line);
         Assert.True(said == expected, $"A program saying {line} is shown saying {said}: {why}");
         IReadOnlyList<string> listed = ContainerSecrets.Arguments(["tool", .. words]);

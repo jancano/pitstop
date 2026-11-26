@@ -62,7 +62,7 @@ public sealed class CommitSigningTests : IDisposable
         Assert.True(!commit.Sign && commit.SignOff, "Sign and Sign-off did not turn over on a click");
         Commit(window, root, "Unsigned, signed off");
         Assert.True(Show(root, "%G?") == "N", $"The commit made with Sign unchecked is signed ({Show(root, "%G?")})");
-        Assert.True(Show(root, "%B").Contains("Signed-off-by: Passenger Tests <tests@passenger.invalid>", StringComparison.Ordinal),
+        Assert.True(Show(root, "%B").Contains("Signed-off-by: Pitstop Tests <tests@passenger.invalid>", StringComparison.Ordinal),
             $"The commit made with Sign-off checked has no Signed-off-by line:\n{Show(root, "%B")}");
         Ui.Landed(() => commit.Sign && commit.SignOff, "Sign checked again for the next commit, as git's config has it, and Sign-off kept");
         window.Close();
@@ -177,7 +177,7 @@ public sealed class CommitSigningTests : IDisposable
             Task<bool> committing = commit.CommitAsync(push: false);
             Ui.PumpUntil(() => window.GitQuestion is { IsVisible: true }, $"the window to ask for GPG key {id}'s passphrase, where the status bar says \"{window.Status}\"");
             GitQuestionDialog asked = DialogButtonsTests.Check(window.GitQuestion!);
-            Assert.True((asked.Title ?? string.Empty).StartsWith("Passphrase for Passenger Tests <tests@passenger.invalid>", StringComparison.Ordinal), $"The window asks \"{asked.Title}\"");
+            Assert.True((asked.Title ?? string.Empty).StartsWith("Passphrase for Pitstop Tests <tests@passenger.invalid>", StringComparison.Ordinal), $"The window asks \"{asked.Title}\"");
             asked.KeyTextInput(Passphrase);
             Ui.Press(asked, "ENTER");
             Ui.Landed(() => committing.IsCompleted, "the commit given the GPG key's passphrase");
@@ -205,7 +205,7 @@ public sealed class CommitSigningTests : IDisposable
         File.WriteAllText(Path.Combine(root, "Shop.cs"), "class Shop\n{\n}\n");
         TestGit.Init(root);
         // A user of its own, by which the run's keyring, which may hold the other tests' key, lists this one.
-        string id = Ui.AwaitPumped(Waiting.Apart(() => TestGpgKeys.PutAsync(Passphrase, gpg, "Passenger Held <held@passenger.invalid>")), "the test's GPG key",
+        string id = Ui.AwaitPumped(Waiting.Apart(() => TestGpgKeys.PutAsync(Passphrase, gpg, "Pitstop Held <held@passenger.invalid>")), "the test's GPG key",
             TimeSpan.FromMinutes(2));
         TestGit.Run(root, "config", Passenger.Vcs.GitConfigKeys.UserSigningKey, id);
         TestGit.Run(root, "config", Passenger.Vcs.GitConfigKeys.CommitGpgSign, "true");
@@ -244,7 +244,7 @@ public sealed class CommitSigningTests : IDisposable
                     Assert.True(socket is not null, "The commit's git was given no socket to ask through");
                     signed = Directory.GetFiles(Path.GetDirectoryName(socket)!, Path.GetFileName(socket) + "-*");
                 }
-                Assert.True(signed.Length == 1, $"Passenger's gpg is to have one file of data to sign while its passphrase is asked, where there are {signed.Length}");
+                Assert.True(signed.Length == 1, $"Pitstop's gpg is to have one file of data to sign while its passphrase is asked, where there are {signed.Length}");
                 data = signed[0];
                 holding = new FileStream(data, FileMode.Open, FileAccess.Read, FileShare.Read);
                 GitQuestionDialog asked = DialogButtonsTests.Check(window.GitQuestion!);
@@ -282,7 +282,7 @@ public sealed class CommitSigningTests : IDisposable
         Assert.SkipWhen(TestGpgKeys.Bundled is null, TestGpgKeys.Gpg is not null ? "A gpg is on the PATH, which git takes before its own"
             : "Git for Windows on the PATH carries no gpg in its usr\\bin");
         Signs("signing-bundled-", "lantern-quay-5", () => TestGpgKeys.PutAsync("lantern-quay-5", TestGpgKeys.Bundled), [],
-            "Passphrase for Passenger Tests <tests@passenger.invalid>", "G", () => TestGpgKeys.EndAgentAsync(TestGpgKeys.Bundled));
+            "Passphrase for Pitstop Tests <tests@passenger.invalid>", "G", () => TestGpgKeys.EndAgentAsync(TestGpgKeys.Bundled));
     }
 
     /// <summary>An X.509 certificate's key, signed with through gpgsm: its passphrase asked in Passenger's dialog, as gpgsm

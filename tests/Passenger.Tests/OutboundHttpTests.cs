@@ -21,7 +21,7 @@ public sealed class OutboundHttpTests
         Flow.StepApart<SecretValuesTests>("a quoted password holding an escaped quote is masked whole", t => t.A_quoted_password_holding_an_escaped_quote_is_masked_whole());
         Flow.StepApart<SecretValuesTests>("a signed URL's signature is masked in a URL offered, a variable's value and what a program says", t => t.A_signed_urls_signature_is_masked_in_a_url_offered_a_variables_value_and_what_a_program_says());
         Flow.StepApart<SecretValuesTests>("a command's parameter meeting a secret's column anywhere in it is masked", t => t.A_commands_parameter_meeting_a_secrets_column_anywhere_in_it_is_masked());
-        await Flow.StepApartAsync("a Source Link request carries Passenger's User Agent and no cookie or trace header", () => new OutboundHttpTests(), t => t.A_Source_Link_request_carries_Passengers_User_Agent_and_no_cookie_or_trace_header());
+        await Flow.StepApartAsync("a Source Link request carries Pitstop's User Agent and no cookie or trace header", () => new OutboundHttpTests(), t => t.A_Source_Link_request_carries_Passengers_User_Agent_and_no_cookie_or_trace_header());
         await Flow.StepApartAsync("an answer read whole is held to the most its reader takes whether or not it says its length", () => new OutboundHttpTests(), t => t.An_answer_read_whole_is_held_to_the_most_its_reader_takes_whether_or_not_it_says_its_length());
     }
 
@@ -65,8 +65,8 @@ public sealed class OutboundHttpTests
         Assert.True(requests.Length == 2, $"Source Link asked the symbol server {requests.Length} times, not once for each file asked for; it said: {said}");
         foreach (StandInHttp.Exchange request in requests)
         {
-            Assert.True(request.Header("User-Agent") == $"Passenger/{Product.Version}",
-                $"Source Link's request named its maker as '{request.Header("User-Agent")}', not Passenger/{Product.Version}:\n{request.Head}");
+            Assert.True(request.Header("User-Agent") == $"Pitstop/{Product.Version}",
+                $"Source Link's request named its maker as '{request.Header("User-Agent")}', not Pitstop/{Product.Version}:\n{request.Head}");
             Assert.True(request.Header("traceparent") is null && request.Header("tracestate") is null,
                 $"Source Link's request carried the trace of the activity current as it was made, telling the host of the IDE's own work:\n{request.Head}");
         }
@@ -97,8 +97,8 @@ public sealed class OutboundHttpTests
         async Task<(byte[]? Bytes, string? Why)> Read(string path) =>
             await OutboundHttp.ReadAsync(client, new Uri($"{host.Root}{path}"), 1024 * 1024, path[1..], "it is not there", TestContext.Current.CancellationToken);
 
-        Assert.Equal((null, "told is 1.2 MB, more than the 1 MB Passenger reads"), await Read("/told"));
-        Assert.Equal((null, "untold is more than the 1 MB Passenger reads"), await Read("/untold"));
+        Assert.Equal((null, "told is 1.2 MB, more than the 1 MB Pitstop reads"), await Read("/told"));
+        Assert.Equal((null, "untold is more than the 1 MB Pitstop reads"), await Read("/untold"));
         Assert.Equal((null, "it is not there"), await Read("/gone"));
         Assert.Equal("{}", Encoding.UTF8.GetString((await Read("/small")).Bytes!));
     }

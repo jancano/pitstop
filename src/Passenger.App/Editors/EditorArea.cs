@@ -45,7 +45,7 @@ public sealed partial class EditorArea : UserControl
         emptyTitle = new TextBlock
         {
             Classes = { StyleClasses.HeroTitle },
-            Text = "Passenger",
+            Text = "Pitstop",
             HorizontalAlignment = HorizontalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Margin = new Thickness(Gaps.Group, 0),

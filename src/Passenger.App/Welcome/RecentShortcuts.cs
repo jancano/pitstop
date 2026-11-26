@@ -22,7 +22,7 @@ public static class RecentShortcuts
     private static Debounce? following;
 
     /// <summary>The task starting a window with nothing open, from the Passenger running or a new one.</summary>
-    public static RecentShortcut NewWindow { get; } = new(OpenProjectDialog.NewWindow, "A Passenger window with nothing open", [LaunchOptions.NewWindowFlag]);
+    public static RecentShortcut NewWindow { get; } = new(OpenProjectDialog.NewWindow, "A Pitstop window with nothing open", [LaunchOptions.NewWindowFlag]);
 
     /// <summary>The window whose recent list the system's lists follow next.</summary>
     private static MainWindow? from;

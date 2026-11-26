@@ -10,7 +10,7 @@ using Passenger.Text;
 
 namespace Passenger.Tests;
 
-/// <summary>passenger-ide, Passenger's command in a terminal, made where each system makes it and run as a person runs it:
+/// <summary>pitstop-ide, Passenger's command in a terminal, made where each system makes it and run as a person runs it:
 /// on macOS added and removed from the Tools menu over a home of the test's own and an app bundle standing in for the one
 /// installed; on Windows its folder put on and taken off the user's Path as the installer's hooks do, over a registry key
 /// of the test's own, and the program it carries run. Each run hands a folder, a file and a caret, named from the folder it
@@ -40,13 +40,13 @@ public sealed class PassengerCommandTests : IDisposable
         TestFolders.Delete(folder);
     }
 
-    /// <summary>On macOS the Tools menu adds the passenger-ide command, which a terminal runs to open a file at a line,
+    /// <summary>On macOS the Tools menu adds the pitstop-ide command, which a terminal runs to open a file at a line,
     /// and removes it, leaving another program's command of that name, as one flow of macOS's steps, each in an
     /// instance of its own.</summary>
     [AvaloniaFact]
     public void On_macOS_the_passenger_ide_command_is_added_run_and_removed_leaving_another_programs()
     {
-        Flow.StepApart<PassengerCommandTests>("on macOS another programs passenger ide stays and a link to another Passengers is replaced", t => t.On_macOS_another_programs_passenger_ide_stays_and_a_link_to_another_Passengers_is_replaced());
+        Flow.StepApart<PassengerCommandTests>("on macOS another programs pitstop ide stays and a link to another Passengers is replaced", t => t.On_macOS_another_programs_passenger_ide_stays_and_a_link_to_another_Passengers_is_replaced());
         Flow.StepApart<PassengerCommandTests>("on macOS the Tools menu adds the command a terminal runs it from a folder to open a file at a line and the menu removes it", t => t.On_macOS_the_Tools_menu_adds_the_command_a_terminal_runs_it_from_a_folder_to_open_a_file_at_a_line_and_the_menu_removes_it());
     }
 
@@ -57,7 +57,7 @@ public sealed class PassengerCommandTests : IDisposable
     public void On_Windows_the_passenger_ide_command_is_on_the_Path_and_hands_its_launch_to_the_running_Passenger()
     {
         Flow.StepApart<PassengerCommandTests>("on Windows the installers hooks put the commands folder on the users Path once keeping the rest and its kind and take it off", t => t.On_Windows_the_installers_hooks_put_the_commands_folder_on_the_users_Path_once_keeping_the_rest_and_its_kind_and_take_it_off());
-        Flow.StepApart<PassengerCommandTests>("on Windows the command alone in its folder hands a relative folder file and caret to the running Passenger and ends at once", t => t.On_Windows_the_command_alone_in_its_folder_hands_a_relative_folder_file_and_caret_to_the_running_Passenger_and_ends_at_once());
+        Flow.StepApart<PassengerCommandTests>("on Windows the command alone in its folder hands a relative folder file and caret to the running Pitstop and ends at once", t => t.On_Windows_the_command_alone_in_its_folder_hands_a_relative_folder_file_and_caret_to_the_running_Passenger_and_ends_at_once());
     }
 
     private void On_macOS_the_Tools_menu_adds_the_command_a_terminal_runs_it_from_a_folder_to_open_a_file_at_a_line_and_the_menu_removes_it()
@@ -73,7 +73,7 @@ public sealed class PassengerCommandTests : IDisposable
         MainWindow window = Ui.OpenFolder(project, languageServer: false);
         Ui.WaitFor(() => window.PassengerCommandRead is not null, "the window to read where the command stands");
         string startup = window.PassengerCommandRead!.OnPath?.File
-            ?? throw new Xunit.Sdk.XunitException($"Passenger found {Path.GetDirectoryName(Link)} on the PATH of the test's own home, which nothing puts there");
+            ?? throw new Xunit.Sdk.XunitException($"Pitstop found {Path.GetDirectoryName(Link)} on the PATH of the test's own home, which nothing puts there");
         if (startup.EndsWith(".fish", StringComparison.Ordinal))
         {
             Assert.Skip("The login shell is fish, whose lines /bin/sh cannot read");
@@ -97,7 +97,7 @@ public sealed class PassengerCommandTests : IDisposable
             $"With the command added Add the command was to say it is there; it says {window.Actions.WhyNot(AppActions.AddCommand, window.Actions.Context()) ?? "nothing"}, the window reading {window.PassengerCommandRead}");
 
         // As a shell started since runs it, after its startup file, in the folder above the project it names from there.
-        Ended(Started("/bin/sh", ["-c", ". \"$1\" && exec passenger-ide \"$2\" --file Player.cs --caret 3:2", "sh", startup, Project], folder));
+        Ended(Started("/bin/sh", ["-c", ". \"$1\" && exec pitstop-ide \"$2\" --file Player.cs --caret 3:2", "sh", startup, Project], folder));
         Ui.WaitFor(() => Caret(window) == (PathNames.Canonical(script), new TextPosition(2, 1)),
             () => $"the command's file in the window on its folder at 3:2; it shows {window.EditorArea.Active?.Path ?? "nothing"} at {Caret(window).At}");
 
@@ -121,19 +121,19 @@ public sealed class PassengerCommandTests : IDisposable
         }
         PassengerCommand.BundleStandIn = Bundle();
         Directory.CreateDirectory(Path.GetDirectoryName(Link)!);
-        File.WriteAllText(Link, "#!/bin/sh\necho 'Phusion Passenger(R) 6.0.27'\n");
+        File.WriteAllText(Link, "#!/bin/sh\necho 'Phusion Pitstop(R) 6.0.27'\n");
         MainWindow window = Ui.OpenFolder(Directory.CreateDirectory(Path.Combine(folder, "open")).FullName, languageServer: false);
         Ui.WaitFor(() => window.PassengerCommandRead is not null, "the window to read where the command stands");
 
         Assert.Equal(Refusals.CommandOthers(Link), window.Actions.WhyNot(AppActions.AddCommand, window.Actions.Context()));
         Assert.Equal(Refusals.CommandOthers(Link), window.Actions.WhyNot(AppActions.RemoveCommand, window.Actions.Context()));
         Assert.Throws<IOException>(() => PassengerCommand.Add());
-        Assert.Equal("#!/bin/sh\necho 'Phusion Passenger(R) 6.0.27'\n", File.ReadAllText(Link));
+        Assert.Equal("#!/bin/sh\necho 'Phusion Pitstop(R) 6.0.27'\n", File.ReadAllText(Link));
 
         File.Delete(Link);
-        File.CreateSymbolicLink(Link, Path.Combine(folder, "Moved", "Passenger.app", "Contents", "Resources", "bin", PassengerCommand.Name));
+        File.CreateSymbolicLink(Link, Path.Combine(folder, "Moved", "Pitstop.app", "Contents", "Resources", "bin", PassengerCommand.Name));
         MacCommand added = PassengerCommand.Add();
-        Assert.True(added.Held == CommandHeld.This, $"A link to a Passenger moved away was left as {new FileInfo(Link).LinkTarget}, not replaced by this one's ({added.Held})");
+        Assert.True(added.Held == CommandHeld.This, $"A link to a Pitstop moved away was left as {new FileInfo(Link).LinkTarget}, not replaced by this one's ({added.Held})");
     }
 
     /// <summary>The hooks' change of the user's Path, over a key of the test's own: the folder put at its end once however
@@ -222,12 +222,12 @@ public sealed class PassengerCommandTests : IDisposable
     /// Passenger's program and assembly in its Contents/MacOS, links to the test's own.</summary>
     private string Bundle()
     {
-        string bundle = Path.Combine(folder, "Passenger.app");
+        string bundle = Path.Combine(folder, "Pitstop.app");
         string bin = Directory.CreateDirectory(Path.Combine(bundle, "Contents", "Resources", "bin")).FullName;
         File.Copy(Path.Combine(AppContext.BaseDirectory, "bin", PassengerCommand.Name), Path.Combine(bin, PassengerCommand.Name));
         string programs = Directory.CreateDirectory(Path.Combine(bundle, "Contents", "MacOS")).FullName;
-        File.CreateSymbolicLink(Path.Combine(programs, "Passenger"), Product.Program);
-        File.CreateSymbolicLink(Path.Combine(programs, "Passenger.dll"), Path.Combine(AppContext.BaseDirectory, "Passenger.dll"));
+        File.CreateSymbolicLink(Path.Combine(programs, "Pitstop"), Product.Program);
+        File.CreateSymbolicLink(Path.Combine(programs, "Pitstop.dll"), Path.Combine(AppContext.BaseDirectory, "Pitstop.dll"));
         return bundle;
     }
 
@@ -259,7 +259,7 @@ public sealed class PassengerCommandTests : IDisposable
             {
                 bool ended = Ui.Pumped(() => !DotnetProcesses.Runs(launch), TimeSpan.FromSeconds(60));
                 Assert.True(ended && launch.ExitCode == 0, ended ? $"The command ended with exit code {launch.ExitCode}: {Ui.AwaitPumped(error, "the command's errors")}"
-                    : "The command was still running after 60 s: it started a Passenger of its own rather than handing the launch to the one running");
+                    : "The command was still running after 60 s: it started a Pitstop of its own rather than handing the launch to the one running");
             }
             finally
             {

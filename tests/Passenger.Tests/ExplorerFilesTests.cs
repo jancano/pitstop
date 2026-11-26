@@ -1138,7 +1138,7 @@ public sealed class ExplorerFilesTests : IDisposable
             CommandHistory.Command done = window.EditorArea.Commands.ToUndo(null)
                 ?? throw new Xunit.Sdk.XunitException($"{command} left no command for Undo to take back: {window.Status}");
             Assert.Equal(command, done.Name);
-            Trashed[] went = [.. done.Deleted.Select(d => d.Went ?? throw new Xunit.Sdk.XunitException($"The Trash kept {Path.GetFileName(d.Path)} nowhere Passenger finds"))];
+            Trashed[] went = [.. done.Deleted.Select(d => d.Went ?? throw new Xunit.Sdk.XunitException($"The Trash kept {Path.GetFileName(d.Path)} nowhere Pitstop finds"))];
             Assert.True(went.Length == names.Length && went.All(Trash.Holds), $"{command} put [{string.Join(", ", went.Select(w => w.At))}] in the Trash, not each of {string.Join(", ", names)}");
 
             asked.Clear();

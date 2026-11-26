@@ -99,11 +99,11 @@ public class DeviceTargetsTests
         Assert.StartsWith("run-as com.shop sh -c 'cd /data/user/0/com.shop/files/.__override__/arm64-v8a || exit 1; readlink environment || ", put, StringComparison.Ordinal);
         // A file a start left in the link's place: the build's environment is the one beside its assemblies' links.
         Assert.Contains("for f in *.dll; do d=$(readlink \"$f\") && { [ -e \"${d%/*}/environment\" ] && echo \"${d%/*}/environment\"; break; }; done; ", put, StringComparison.Ordinal);
-        Assert.Contains("cp /data/local/tmp/passenger-com.shop-relay libpassenger-debug.so && rm -f environment && cp /data/local/tmp/passenger-com.shop-environment environment'", put,
+        Assert.Contains("cp /data/local/tmp/pitstop-com.shop-relay libpitstop-debug.so && rm -f environment && cp /data/local/tmp/pitstop-com.shop-environment environment'", put,
             StringComparison.Ordinal);
-        Assert.EndsWith("; s=$?; rm -f /data/local/tmp/passenger-com.shop-relay /data/local/tmp/passenger-com.shop-environment; exit $s", put, StringComparison.Ordinal);
-        Assert.EndsWith("rm -f libpassenger-debug.so environment && ln -s /data/local/tmp/fastdeploy2/com.shop/0/arm64-v8a/environment environment'", taken, StringComparison.Ordinal);
-        Assert.EndsWith("rm -f libpassenger-debug.so environment'", app.TakeRelayOut("arm64-v8a", null)[^1], StringComparison.Ordinal);
+        Assert.EndsWith("; s=$?; rm -f /data/local/tmp/pitstop-com.shop-relay /data/local/tmp/pitstop-com.shop-environment; exit $s", put, StringComparison.Ordinal);
+        Assert.EndsWith("rm -f libpitstop-debug.so environment && ln -s /data/local/tmp/fastdeploy2/com.shop/0/arm64-v8a/environment environment'", taken, StringComparison.Ordinal);
+        Assert.EndsWith("rm -f libpitstop-debug.so environment'", app.TakeRelayOut("arm64-v8a", null)[^1], StringComparison.Ordinal);
         Assert.Equal("android-arm64", AndroidApp.RelayRuntime("arm64-v8a"));
         Assert.Equal("android-x64", AndroidApp.RelayRuntime("x86_64"));
         Assert.Null(AndroidApp.RelayRuntime("armeabi-v7a"));
@@ -116,10 +116,10 @@ public class DeviceTargetsTests
         IReadOnlyList<string> unleft = app.TakeOutLeft();
 
         Assert.Equal(["-s", "emulator-5554", "shell"], unleft.Take(3));
-        Assert.StartsWith("run-as com.shop sh -c 'rm -rf /data/user/0/com.shop/files/.passenger; cd /data/user/0/com.shop/files/.__override__ 2>/dev/null || exit 0; ", unleft[3],
+        Assert.StartsWith("run-as com.shop sh -c 'rm -rf /data/user/0/com.shop/files/.pitstop; cd /data/user/0/com.shop/files/.__override__ 2>/dev/null || exit 0; ", unleft[3],
             StringComparison.Ordinal);
         // In each ABI's folder: the relay, and an environment that is a file, never the build's own link.
-        Assert.Contains("for a in *; do [ -d \"$a\" ] || continue; ( cd \"$a\" || exit 1; rm -f libpassenger-debug.so; [ -L environment ] || [ ! -e environment ] || { rm -f environment; ",
+        Assert.Contains("for a in *; do [ -d \"$a\" ] || continue; ( cd \"$a\" || exit 1; rm -f libpitstop-debug.so; [ -L environment ] || [ ! -e environment ] || { rm -f environment; ",
             unleft[3], StringComparison.Ordinal);
         Assert.Contains("for f in *.dll; do d=$(readlink \"$f\") && { [ -e \"${d%/*}/environment\" ] && ln -s \"${d%/*}/environment\" environment; break; }; done; } ) || exit 1; done'",
             unleft[3], StringComparison.Ordinal);
@@ -132,12 +132,12 @@ public class DeviceTargetsTests
         Assert.Equal("0x0000001d\0" + "0x00000006\0", Encoding.ASCII.GetString(built, 0, 22));
 
         IReadOnlyList<KeyValuePair<string, string>> read = AndroidEnvironment.Read(AndroidEnvironment.Write(
-            AndroidEnvironment.With(AndroidEnvironment.Read(built), app.RelayVariables("arm64-v8a", "passenger-debug-1a2b", "C0FFEE"))));
+            AndroidEnvironment.With(AndroidEnvironment.Read(built), app.RelayVariables("arm64-v8a", "pitstop-debug-1a2b", "C0FFEE"))));
 
         Assert.Equal(["mono.enable_assembly_preload", RuntimeVariables.ModifiableAssemblies, RuntimeVariables.EnableProfiling, RuntimeVariables.Profiler,
             RuntimeVariables.ProfilerPath, AndroidApp.RelaySocketVariable, AndroidApp.RelayTokenVariable, AndroidApp.RelayWaitVariable], read.Select(v => v.Key));
         Assert.Equal("Debug", read.Single(v => v.Key == RuntimeVariables.ModifiableAssemblies).Value);
-        Assert.Equal("/data/user/0/com.shop/files/.__override__/arm64-v8a/libpassenger-debug.so", read.Single(v => v.Key == RuntimeVariables.ProfilerPath).Value);
+        Assert.Equal("/data/user/0/com.shop/files/.__override__/arm64-v8a/libpitstop-debug.so", read.Single(v => v.Key == RuntimeVariables.ProfilerPath).Value);
         Assert.Equal("C0FFEE", read.Single(v => v.Key == AndroidApp.RelayTokenVariable).Value);
         Assert.Equal(AndroidApp.RelayProfiler, read.Single(v => v.Key == RuntimeVariables.Profiler).Value);
     }

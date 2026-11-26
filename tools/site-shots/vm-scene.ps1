@@ -8,7 +8,7 @@
 #   stop     every Passenger of this sitting ended
 param(
     [Parameter(Mandatory)] [string] $Step,
-    [string] $Share = "C:\Mac\Home\Documents\passenger-vm\site-shots",
+    [string] $Share = "C:\Mac\Home\Documents\pitstop-vm\site-shots",
     [string] $Root = "$env:USERPROFILE\site-shots",
     [string] $Scene, [string] $Theme, [string] $Folder, [string] $Version, [string] $Node,
     [int] $Width = 2352, [int] $Height = 1470, [int] $Limit = 300)
@@ -22,7 +22,7 @@ function WriteJson([string] $path, $value) {
 }
 $state = Join-Path $Root "state-$Scene-$Theme"
 # This sitting's Passengers alone, by the folders they were started on: other runs may share the VM.
-function Mine { Get-CimInstance Win32_Process -Filter "Name='Passenger.exe'" | Where-Object { $_.CommandLine -like "*$Root*" } }
+function Mine { Get-CimInstance Win32_Process -Filter "Name='Pitstop.exe'" | Where-Object { $_.CommandLine -like "*$Root*" } }
 
 function Placed {
     Add-Type @"
@@ -65,7 +65,7 @@ try {
         }
         "state" {
             Remove-Item -Recurse -Force $state -ErrorAction SilentlyContinue
-            WriteJson (Join-Path $state "settings.json") @{ version = 3; theme = (Get-Culture).TextInfo.ToTitleCase($Theme); look = "Passenger"
+            WriteJson (Join-Path $state "settings.json") @{ version = 3; theme = (Get-Culture).TextInfo.ToTitleCase($Theme); look = "Pitstop"
                 nodeInterpreter = (Join-Path $Root "node\$Node\node.exe") }
             WriteJson (Join-Path $state "previews.json") @{ version = 1; markdown = $true; svg = $true; html = $true; xaml = $false }
             WriteJson (Join-Path $state "updates.json") @{ version = 1; notesShown = $Version }

@@ -52,7 +52,7 @@ public sealed class McpGDScriptMarksTests : McpRig
             {
                 JsonElement said = await Call(client, McpTools.Diagnostics, new() { ["path"] = "deep.gd" });
                 Assert.True(said.GetArrayLength() > 0, "An agent looking as the script opened found it clean, though it was read only in part");
-                note = said.EnumerateArray().FirstOrDefault(f => f.GetProperty("message").GetString()!.StartsWith("Passenger read no deeper", StringComparison.Ordinal));
+                note = said.EnumerateArray().FirstOrDefault(f => f.GetProperty("message").GetString()!.StartsWith("Pitstop read no deeper", StringComparison.Ordinal));
                 return note.ValueKind == JsonValueKind.Object;
             }, "the note that the script was read only in part");
             Assert.Equal(("info", 4), (note.GetProperty("severity").GetString(), note.GetProperty("line").GetInt32()));

@@ -397,7 +397,7 @@ public sealed record AppSettings : IStateDocument<AppSettings>
     /// <summary>"Check Dockerfiles with BuildKit": as a Dockerfile opens and is saved, the engine's BuildKit runs its
     /// build checks on it with its own Dockerfile frontend (never a <c># syntax=</c> line's), reading each base image's
     /// metadata from its registry. Off, none runs (a compose file's hints and errors stay). On unless
-    /// <c>PASSENGER_BUILDKIT_CHECKS</c> is off (<see cref="Containers.BuildKitChecks"/>).</summary>
+    /// <c>PITSTOP_BUILDKIT_CHECKS</c> is off (<see cref="Containers.BuildKitChecks"/>).</summary>
     public bool BuildKitChecks { get; init; } = Containers.BuildKitChecks.ByDefault;
 
     /// <summary>Enable MCP Server: agents reaching the window through its socket (<c>passenger --mcp-attach</c>) are
@@ -430,7 +430,7 @@ public sealed record AppSettings : IStateDocument<AppSettings>
     /// VSTest written to lsp.log, dap.log and vstest.log in the logs folder (<see cref="IdeLog.Traces"/>).</summary>
     public bool TraceProtocols { get; init; }
 
-    /// <summary>Every program the IDE runs logged in passenger.log with its exit code and time, not only those that
+    /// <summary>Every program the IDE runs logged in pitstop.log with its exit code and time, not only those that
     /// fail or take a while (<see cref="IdeLog.Programs"/>).</summary>
     public bool LogEveryProgram { get; init; }
 
@@ -651,7 +651,7 @@ public sealed record AppSettings : IStateDocument<AppSettings>
             Look = Named(Look),
             ColourScheme = Named(ColourScheme),
             ThemeSources = [.. (ThemeSources ?? []).Where(s => s is not null && ThemeSource.Of(s, out _) is { Kind: ThemeSourceKind.Folder or ThemeSourceKind.GitHub or ThemeSourceKind.Web } source
-                && source != ThemeSource.Repository).Distinct(StringComparer.Ordinal)],
+                && !ThemeSource.ConfiguredSources.Contains(source)).Distinct(StringComparer.Ordinal)],
         };
         foreach (Setting setting in Declared.All)
         {

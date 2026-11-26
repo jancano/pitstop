@@ -15,7 +15,7 @@ namespace Passenger.Profiler;
 /// (<see cref="Folder"/>) until its snapshot is done with it, and one a Passenger left there is swept.</summary>
 internal static class DumpTool
 {
-    private const string Prefix = "passenger-heap-";
+    private const string Prefix = "pitstop-heap-";
 
     /// <summary>The dumps this process has under way, which a sweep leaves.</summary>
     private static readonly ConcurrentDictionary<string, bool> UnderWay = new(StringComparer.Ordinal);
@@ -54,7 +54,7 @@ internal static class DumpTool
     internal static string FolderIn(string temp)
     {
         string hash = FileNames.Hash(Environment.UserName, 10);
-        string own = Path.Combine(temp, $"passenger-heaps-{hash}");
+        string own = Path.Combine(temp, $"pitstop-heaps-{hash}");
         try
         {
             if (OperatingSystem.IsWindows())

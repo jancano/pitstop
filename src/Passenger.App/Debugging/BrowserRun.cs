@@ -71,7 +71,7 @@ public sealed partial class BrowserRun : IAsyncDisposable
         Process? proxy = null;
         try
         {
-            say($"{debugging.Browser.Name} started{(PassengerApp.ShowsNoWindow ? " headless" : string.Empty)} for debugging, on a profile of Passenger's own");
+            say($"{debugging.Browser.Name} started{(PassengerApp.ShowsNoWindow ? " headless" : string.Empty)} for debugging, on a profile of Pitstop's own");
             (proxy, int proxyPort) = await StartProxyAsync(debugging.Proxy, port, cancel);
             string target = await PageTargetAsync(port, cancel);
             CdpConnection page = await CdpConnection.ConnectAsync(new Uri($"ws://127.0.0.1:{proxyPort}/devtools/page/{target}"),
@@ -93,7 +93,7 @@ public sealed partial class BrowserRun : IAsyncDisposable
     /// <summary>The proxy every browser Passenger starts sends what is not for this machine through (<c>host:port</c>), a
     /// test run's where nothing listens, so its browsers reach no host but this machine; none unless it names one.</summary>
     [IdentifierHome]
-    public const string ProxyVariable = "PASSENGER_BROWSER_PROXY";
+    public const string ProxyVariable = "PITSTOP_BROWSER_PROXY";
 
     /// <summary>The proxy <see cref="ProxyVariable"/> names, null for none; a value that is no host and port is fatal.</summary>
     public static string? Proxy => Environment.GetEnvironmentVariable(ProxyVariable) is { Length: > 0 } named

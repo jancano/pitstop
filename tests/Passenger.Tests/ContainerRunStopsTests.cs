@@ -162,7 +162,7 @@ public sealed class ContainerRunStopsTests(ContainerRunDebuggingTests.Tools tool
             return [];
         }
         ChildResult listed = Ui.AwaitPumped(Waiting.Apart(() => ChildProcesses.RunAsync(ChildProcesses.Command("ps", ["-axo", "command"], Environment.CurrentDirectory))), "the processes running here");
-        return [.. listed.Output.Split('\n').Where(l => l.Contains("passenger-tools", StringComparison.Ordinal) && l.Contains(" dap", StringComparison.Ordinal)
+        return [.. listed.Output.Split('\n').Where(l => l.Contains("pitstop-tools", StringComparison.Ordinal) && l.Contains(" dap", StringComparison.Ordinal)
             && containers.Any(c => l.Contains(c, StringComparison.Ordinal)))];
     }
 }

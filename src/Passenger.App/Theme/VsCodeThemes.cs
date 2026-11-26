@@ -81,7 +81,7 @@ public static partial class VsCodeThemes
         IReadOnlyList<JsonElement> contributed = JsonMembers.Items(JsonMembers.Value(root, "contributes"), "themes");
         if (contributed.Count > MostThemes)
         {
-            throw new FormatException($"contributes {Numbers.Said(contributed.Count)} colour themes, more than the {Numbers.Said(MostThemes)} Passenger reads of one extension");
+            throw new FormatException($"contributes {Numbers.Said(contributed.Count)} colour themes, more than the {Numbers.Said(MostThemes)} Pitstop reads of one extension");
         }
         foreach (JsonElement theme in contributed)
         {
@@ -91,7 +91,7 @@ public static partial class VsCodeThemes
             if (label is not { Length: > 0 and <= LongestLabel } || label.Any(char.IsControl) || path is null || Inside(path, ".") is null
                 || ui is not ("vs" or "vs-dark" or "hc-black" or "hc-light"))
             {
-                problems.Add($"{file}: a colour theme it contributes ({ThemeJson.Shown(theme)}) names no label, path inside the extension or kind Passenger reads, so it was passed over");
+                problems.Add($"{file}: a colour theme it contributes ({ThemeJson.Shown(theme)}) names no label, path inside the extension or kind Pitstop reads, so it was passed over");
                 continue;
             }
             themes.Add(new VsCodeContribution(label, ui, Inside(path, ".")!));
@@ -121,7 +121,7 @@ public static partial class VsCodeThemes
         {
             if (++read > MostIncludes)
             {
-                return $"{path} includes more than the {Numbers.Said(MostIncludes)} files Passenger reads of one theme";
+                return $"{path} includes more than the {Numbers.Said(MostIncludes)} files Pitstop reads of one theme";
             }
             (byte[]? bytes, string? why) = files(file);
             if (bytes is null)
@@ -160,19 +160,19 @@ public static partial class VsCodeThemes
                 }
                 else
                 {
-                    problems.Add($"{file}: colors' {colour.Name} is {ThemeJson.Shown(colour.Value)}, no colour Passenger reads, so it was passed over");
+                    problems.Add($"{file}: colors' {colour.Name} is {ThemeJson.Shown(colour.Value)}, no colour Pitstop reads, so it was passed over");
                 }
             }
             JsonElement? tokens = JsonMembers.Value(root, "tokenColors");
             if (tokens is { ValueKind: JsonValueKind.String })
             {
-                return $"{file} takes its token colours from {tokens.Value.GetString()}, a TextMate theme file, which Passenger does not read";
+                return $"{file} takes its token colours from {tokens.Value.GetString()}, a TextMate theme file, which Pitstop does not read";
             }
             foreach (JsonElement rule in tokens is { ValueKind: JsonValueKind.Array } list ? list.EnumerateArray() : [])
             {
                 if (rules.Count == MostRules)
                 {
-                    return $"{file} gives more than the {Numbers.Said(MostRules)} token colours Passenger reads of one theme";
+                    return $"{file} gives more than the {Numbers.Said(MostRules)} token colours Pitstop reads of one theme";
                 }
                 if (Rule(rule) is { } taken)
                 {
@@ -245,7 +245,7 @@ public static partial class VsCodeThemes
         why = null;
         if (bytes.Length > MostVsixBytes)
         {
-            why = $"the .vsix is {Sizes.Said(bytes.Length)}, more than the {Sizes.Said(MostVsixBytes)} Passenger reads";
+            why = $"the .vsix is {Sizes.Said(bytes.Length)}, more than the {Sizes.Said(MostVsixBytes)} Pitstop reads";
             return null;
         }
         Dictionary<string, ZipArchiveEntry> entries = new(StringComparer.Ordinal);
@@ -254,7 +254,7 @@ public static partial class VsCodeThemes
             ZipArchive zip = new(new MemoryStream(bytes, writable: false), ZipArchiveMode.Read);
             if (zip.Entries.Count > MostEntries)
             {
-                why = $"the .vsix holds {Numbers.Said(zip.Entries.Count)} files, more than the {Numbers.Said(MostEntries)} Passenger reads";
+                why = $"the .vsix holds {Numbers.Said(zip.Entries.Count)} files, more than the {Numbers.Said(MostEntries)} Pitstop reads";
                 return null;
             }
             foreach (ZipArchiveEntry entry in zip.Entries)
@@ -267,7 +267,7 @@ public static partial class VsCodeThemes
         }
         catch (InvalidDataException error)
         {
-            why = $"the .vsix is no zip Passenger reads: {error.Message}";
+            why = $"the .vsix is no zip Pitstop reads: {error.Message}";
             return null;
         }
         if (!entries.ContainsKey(Manifest))

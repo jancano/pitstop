@@ -732,6 +732,17 @@ public sealed class LspDocument : IDisposable
         }
     }
 
+    public bool HasPushed
+    {
+        get
+        {
+            lock (gate)
+            {
+                return pushed.Version is not null;
+            }
+        }
+    }
+
     /// <summary>When the latest colours the server gave the document (the whole file's or a range's) were asked for and
     /// when they came, as Stopwatch timestamps (zeros before any came), an answer to an earlier question never taking
     /// the place of a later one's.</summary>
@@ -788,6 +799,17 @@ public sealed class LspDocument : IDisposable
     public TextDocumentIdentifier Identifier => new(Uri, Context);
 
     private LanguageServer Server => session.Server;
+
+    public bool Supports(string capability) => Server.Provides(capability);
+
+    public IReadOnlyList<string> CompletionTriggers => Server.CompletionTriggers;
+
+    public bool SupportsSemanticRanges => session is RoslynSession
+        || JsonMembers.Bool(JsonMembers.Object(Server.Capabilities, "semanticTokensProvider"), "range") == true;
+
+    public async Task<IReadOnlyList<LspLocation>> DeclarationAsync(int offset, CancellationToken cancel = default) =>
+        Shapes.Locations(await Read(Server.RequestAsync<JsonElement>(LspMethods.Declaration,
+            new TextDocumentPositionParams(Identifier, PositionOf(offset)), cancel)));
 
     /// <summary>A Razor file (.razor, .cshtml), which the server hands to Razor, cohosted in it: its colours have Razor's
     /// legend (<see cref="LanguageServer.RazorLegend"/>) and its diagnostics are Razor's one source.</summary>
@@ -850,7 +872,9 @@ public sealed class LspDocument : IDisposable
 
     /// <summary>An item's details (<see cref="ResolveMethod"/>).</summary>
     public Task<CompletionItem?> ResolveAsync(CompletionItem item, CancellationToken cancel = default) =>
-        Server.RequestAsync<CompletionItem>(ResolveMethod, item, cancel);
+        LanguageId is LanguageIds.C or LanguageIds.Cpp && JsonMembers.Bool(JsonMembers.Object(Server.Capabilities, "completionProvider"), "resolveProvider") != true
+            ? Task.FromResult<CompletionItem?>(null)
+            : Server.RequestAsync<CompletionItem>(ResolveMethod, item, cancel);
 
     /// <summary>What the server says of a place (<see cref="HoverMethod"/>).</summary>
     public async Task<Hover?> HoverAsync(int offset, CancellationToken cancel = default) =>

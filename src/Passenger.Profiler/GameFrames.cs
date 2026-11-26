@@ -65,7 +65,7 @@ public sealed class GameProfile
     public static bool EntersFromEngine(string method) =>
         method.StartsWith("Godot.Bridge.", StringComparison.Ordinal) || method.StartsWith("Godot.DelegateUtils.", StringComparison.Ordinal);
 
-    private const string Magic = "passenger-game-frames";
+    private const string Magic = "pitstop-game-frames";
     private const int Version = 1;
 
     internal GameProfile(string engine, string folder, bool draws, string? gpu, IReadOnlyList<ScriptFunction> functions, IReadOnlyList<GameFrame> frames)
@@ -221,7 +221,7 @@ public sealed class GameProfile
         using BinaryReader reader = new(File.OpenRead(path));
         if (reader.ReadString() != Magic || reader.ReadInt32() != Version)
         {
-            throw new IOException($"{Path.GetFileName(path)} is not a game's frames Passenger wrote");
+            throw new IOException($"{Path.GetFileName(path)} is not a game's frames Pitstop wrote");
         }
         string engine = reader.ReadString();
         string folder = reader.ReadString();

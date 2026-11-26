@@ -677,7 +677,7 @@ public sealed class SolutionViewTests : IDisposable
         Heard(window, app, () => Assert.Null(Ui.Await(window.SetReferencesAsync(app, [core]), "the references set")));
         Quiet(window);
         string written = File.ReadAllText(app);
-        Assert.True(conflicts.Count == 0, $"Passenger's own Add Reference asked which to keep of {string.Join(", ", conflicts)}, as if another program had changed it");
+        Assert.True(conflicts.Count == 0, $"Pitstop's own Add Reference asked which to keep of {string.Join(", ", conflicts)}, as if another program had changed it");
         Assert.True(written.Contains("<OutputType>WinExe</OutputType>", StringComparison.Ordinal), $"The unsaved edit to the project file is not in it after Add Reference:\n{written}");
         Assert.True(written.Contains("<ProjectReference Include=\"..\\Shop.Core\\Shop.Core.csproj\" />", StringComparison.Ordinal), $"The reference added is not in the project file:\n{written}");
         Assert.Equal(written.TrimStart('﻿'), project.Text.Snapshot.ToString());
@@ -689,7 +689,7 @@ public sealed class SolutionViewTests : IDisposable
         Heard(window, solution, () => Assert.Null(Ui.Await(window.AddSolutionFolderAsync(null, "docs"), "the solution folder added")));
         Quiet(window);
         written = File.ReadAllText(solution);
-        Assert.True(conflicts.Count == 0, $"Passenger's own New Solution Folder asked which to keep of {string.Join(", ", conflicts)}");
+        Assert.True(conflicts.Count == 0, $"Pitstop's own New Solution Folder asked which to keep of {string.Join(", ", conflicts)}");
         Assert.True(written.Contains("<Solution><!-- shop -->", StringComparison.Ordinal), $"The unsaved edit to the solution is not in it after New Solution Folder:\n{written}");
         Assert.True(written.Contains("<Folder Name=\"/docs/\" />", StringComparison.Ordinal), $"The folder added is not in the solution:\n{written}");
         Assert.Equal(written, slnx.Text.Snapshot.ToString());

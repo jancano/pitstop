@@ -25,7 +25,7 @@ public partial class MainWindow
     private bool idleInDiscord;
     private DispatcherTimer? idleWatch;
 
-    /// <summary>Where this window looks for Discord: the system's places, or the one PASSENGER_DISCORD_IPC names,
+    /// <summary>Where this window looks for Discord: the system's places, or the one PITSTOP_DISCORD_IPC names,
     /// unless one is given.</summary>
     public DiscordIpc DiscordIpc { get; init; } = DiscordIpc.Default;
 
@@ -44,6 +44,10 @@ public partial class MainWindow
     /// window alone).</summary>
     public void ShowActivityInDiscord()
     {
+        if (DiscordIpc.ApplicationId is null)
+        {
+            return;
+        }
         sharesActivity = true;
         FollowInDiscord();
     }

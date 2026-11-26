@@ -34,7 +34,7 @@ public sealed partial class PassengerTools
     [McpServerTool(Name = McpTools.AppWindows, Title = "The app's windows", ReadOnly = true), Description(
         "The windows of the app (an Avalonia 12 app Run or Debug started, a WPF one on Windows, a MAUI one on Android, a Godot game; one starting is waited for): " +
         "each one's @N, type, title, size in units, pixels a unit, whether active and shown, and a popup's owner. Every app_ " +
-        "tool's app is run, debug, profile, a debugged program's or an AppHost service's name, or ide for Passenger's own windows, by default the one running; " +
+        "tool's app is run, debug, profile, a debugged program's or an AppHost service's name, or ide for Pitstop's own windows, by default the one running; " +
         "its window @N, type or \"title\", by default the first.")]
     public Task<AppWindows> AppWindowsList(string? app = null, CancellationToken cancel = default) => OnApp(cancel, async () =>
     {
@@ -253,7 +253,7 @@ public sealed partial class PassengerTools
     [McpServerTool(Name = McpTools.AppType, Title = "Type into the app", Destructive = true), Description(
         "Types text as a keyboard would, a key at a time (a newline Enter, a tab Tab): into control, given the focus first (a " +
         "text box at its end), else into what has the focus; with replace, Select All first. Says what it shows now. With app " +
-        "ide, Passenger's editor types at the caret open put it at, leaving the file unsaved. With property, sets that property " +
+        "ide, Pitstop's editor types at the caret open put it at, leaving the file unsaved. With property, sets that property " +
         "of a Godot game's node (control) to text, as the Live Visual Tree's are typed.")]
     public Task<string> AppType(
         string text,
@@ -548,13 +548,13 @@ public sealed partial class PassengerTools
         }
         return apps.FirstOrDefault() is { } ended
             ? Ended(ended.App)
-            : "No Avalonia, WPF or MAUI app or Godot game is running: run or debug_start one (Avalonia 12, WPF on Windows, MAUI on Android or an iOS simulator, a Godot 4 game in C# or GDScript), or name app ide for Passenger's own windows";
+            : "No Avalonia, WPF or MAUI app or Godot game is running: run or debug_start one (Avalonia 12, WPF on Windows, MAUI on Android or an iOS simulator, a Godot 4 game in C# or GDScript), or name app ide for Pitstop's own windows";
 
-        static string Ended(LiveApp app) => $"{app.Name} has ended: run or debug_start starts it again, or name app ide for Passenger's own windows";
+        static string Ended(LiveApp app) => $"{app.Name} has ended: run or debug_start starts it again, or name app ide for Pitstop's own windows";
     }
 
     /// <summary>What Passenger inspects, as a refusal says it.</summary>
-    private const string Inspectable = "an app Passenger inspects (an Avalonia 12 app, Avalonia.Controls.dll beside it, a WPF app on Windows, or a MAUI app on Android)";
+    private const string Inspectable = "an app Pitstop inspects (an Avalonia 12 app, Avalonia.Controls.dll beside it, a WPF app on Windows, or a MAUI app on Android)";
 
     /// <summary>The app's tree, flattened, and the window named (else the app's first, or for Passenger's own the window this
     /// agent works in).</summary>

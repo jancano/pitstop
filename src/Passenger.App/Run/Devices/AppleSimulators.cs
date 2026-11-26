@@ -182,7 +182,7 @@ public static class AppleSimulators
             return data.Succeeded && data.Output.Trim() is { Length: > 0 } container
                 ? (new SimulatorApp(udid, tools.Simctl, built.Package, built.Bundle, built.RuntimeIdentifier)
                 {
-                    Carried = Path.Combine(container, "tmp", "passenger"),
+                    Carried = Path.Combine(container, "tmp", "pitstop"),
                 }, null)
                 : (null, $"simctl did not say where its data container is: {data.Said}");
         }

@@ -22,7 +22,7 @@ public sealed class TerminalEmulationTests
 
     /// <summary>The seed a run makes its cases from, where given; else a new one, which the run says.</summary>
     [IdentifierHome]
-    public const string SeedVariable = "PASSENGER_TERMINAL_SEED";
+    public const string SeedVariable = "PITSTOP_TERMINAL_SEED";
 
     private static readonly TimeSpan NodeLimit = TimeSpan.FromMinutes(2);
 
@@ -50,8 +50,8 @@ public sealed class TerminalEmulationTests
             (Output smallest, string differs) = await ShrinkAsync(node, folder, first);
             shrunk.Add($"{smallest.Shown()}\n  {differs}");
         }
-        Assert.Fail($"Seed {seed}: Passenger's terminal left a screen xterm.js does not in {differing.Count} of {cases.Count} cases, so a program "
-            + $"drawn for every terminal draws otherwise in Passenger's. The smallest case of the first {shrunk.Count}:\n" + string.Join("\n", shrunk));
+        Assert.Fail($"Seed {seed}: Pitstop's terminal left a screen xterm.js does not in {differing.Count} of {cases.Count} cases, so a program "
+            + $"drawn for every terminal draws otherwise in Pitstop's. The smallest case of the first {shrunk.Count}:\n" + string.Join("\n", shrunk));
     }
 
     /// <summary>Output a program writes, piece by piece, to a screen of a size; each piece with what it uses that <see
@@ -80,20 +80,20 @@ public sealed class TerminalEmulationTests
         List<string> differences = [];
         if (!xterm.Lines.SequenceEqual(passenger.Lines))
         {
-            differences.Add($"the text: xterm's {JsonSerializer.Serialize(xterm.Lines)}, Passenger's {JsonSerializer.Serialize(passenger.Lines)}");
+            differences.Add($"the text: xterm's {JsonSerializer.Serialize(xterm.Lines)}, Pitstop's {JsonSerializer.Serialize(passenger.Lines)}");
         }
         if (xterm.Cursor != passenger.Cursor)
         {
-            differences.Add($"the cursor: xterm's at {xterm.Cursor}, Passenger's at {passenger.Cursor}");
+            differences.Add($"the cursor: xterm's at {xterm.Cursor}, Pitstop's at {passenger.Cursor}");
         }
         if (!xterm.Styles.SequenceEqual(passenger.Styles))
         {
             int row = Enumerable.Range(0, Math.Min(xterm.Styles.Count, passenger.Styles.Count)).FirstOrDefault(r => xterm.Styles[r] != passenger.Styles[r]);
-            differences.Add($"the colours and flags of row {row}: xterm's {xterm.Styles.ElementAtOrDefault(row)}, Passenger's {passenger.Styles.ElementAtOrDefault(row)}");
+            differences.Add($"the colours and flags of row {row}: xterm's {xterm.Styles.ElementAtOrDefault(row)}, Pitstop's {passenger.Styles.ElementAtOrDefault(row)}");
         }
         if (xterm.Alternate != passenger.Alternate)
         {
-            differences.Add($"the screen: xterm's {(xterm.Alternate ? "alternate" : "main")}, Passenger's {(passenger.Alternate ? "alternate" : "main")}");
+            differences.Add($"the screen: xterm's {(xterm.Alternate ? "alternate" : "main")}, Pitstop's {(passenger.Alternate ? "alternate" : "main")}");
         }
         return differences.Count == 0 || Kept.Any(kept => kept.Holds(output, xterm, passenger)) ? null : string.Join("; ", differences);
     }
@@ -101,12 +101,12 @@ public sealed class TerminalEmulationTests
     /// <summary>The differences kept, each with why: xterm.js's own ways, where Passenger does as xterm does.</summary>
     private static readonly (string Why, Func<Output, Screen, Screen, bool> Holds)[] Kept =
     [
-        ("xterm.js measures an emoji with Unicode 6's widths, one cell, where Passenger takes Unicode's present widths, two, as "
+        ("xterm.js measures an emoji with Unicode 6's widths, one cell, where Pitstop takes Unicode's present widths, two, as "
             + "other terminals do", (output, _, _) => output.Uses(Emoji)),
         ("xterm.js keeps a pending wrap's cursor past the last column, so a tab, erase or move there acts from beyond the line, where "
-            + "xterm and Passenger act on its last column", (_, _, passenger) => passenger.Seen.Contains(PendingWrap)),
-        ("xterm.js keeps tab stops for each screen, where xterm and Passenger keep one set", (output, _, _) => output.Uses(TabStops) && output.Uses(Alternate)),
-        ("xterm.js fills the lines a scroll or an insert of lines brings in with the default background, where xterm and Passenger erase "
+            + "xterm and Pitstop act on its last column", (_, _, passenger) => passenger.Seen.Contains(PendingWrap)),
+        ("xterm.js keeps tab stops for each screen, where xterm and Pitstop keep one set", (output, _, _) => output.Uses(TabStops) && output.Uses(Alternate)),
+        ("xterm.js fills the lines a scroll or an insert of lines brings in with the default background, where xterm and Pitstop erase "
             + "with the background set (BCE)", (output, _, _) => output.Uses(Scrolls) && output.Uses(Background)),
         ("xterm.js clears the alternate screen in the background set each time it comes up, where xterm clears it only as 1049 brings "
             + "it up and 1047 takes it down, so 47 and 1047 bring up what it held",
@@ -119,9 +119,9 @@ public sealed class TerminalEmulationTests
         ("xterm.js neither saves origin mode with the cursor nor restores it, where the VT510 and xterm save it with DECSC (and 1049) "
             + "and DECRC restores it, or turns it off with nothing saved", (output, _, _) => output.Uses(OriginMode) && (output.Uses(Restores) || output.Uses(Alternate))),
         ("xterm.js, with autowrap off, writes over a wide character's second half in the last column and leaves its first, so the "
-            + "character hides what was written, where xterm and Passenger blank the half not written over",
+            + "character hides what was written, where xterm and Pitstop blank the half not written over",
             (output, _, _) => output.Uses(Wide) && output.Uses(AutoWrap)),
-        ("xterm.js keeps line feed/new line mode (LNM) over a full reset (RIS), where xterm and Passenger reset it",
+        ("xterm.js keeps line feed/new line mode (LNM) over a full reset (RIS), where xterm and Pitstop reset it",
             (output, _, _) => output.Uses(NewLineMode) && output.Uses(FullReset)),
     ];
 

@@ -27,7 +27,7 @@ public sealed partial record SimulatorApp : IDeviceApp
         string? relay = relayed ? Relay() : null;
         if (relayed && relay is null)
         {
-            return (null, null, $"This Passenger carries no debug relay for {RuntimeIdentifier} ({CarriedFiles.Relay(RuntimeIdentifier, RelayFile)})");
+            return (null, null, $"This Pitstop carries no debug relay for {RuntimeIdentifier} ({CarriedFiles.Relay(RuntimeIdentifier, RelayFile)})");
         }
         int? port = relayed ? FreePort() : null;
         if (relayed && port is null)
@@ -40,7 +40,7 @@ public sealed partial record SimulatorApp : IDeviceApp
         if (files.Length > 0 && CarriedIn.Copy(Carried, files) is { } uncarried)
         {
             await EndAsync(put, stop: false);
-            return (null, null, $"What {Package} loads of Passenger's could not be put in its data container ({Carried}): {uncarried}");
+            return (null, null, $"What {Package} loads of Pitstop's could not be put in its data container ({Carried}): {uncarried}");
         }
         // The inspector listens on its loopback port in the app, which Passenger reaches as it is.
         inspector?.Reach(int.Parse(inspector.Socket, System.Globalization.CultureInfo.InvariantCulture));

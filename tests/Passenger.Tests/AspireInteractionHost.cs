@@ -39,7 +39,7 @@ internal sealed class AspireInteractionHost : IAsyncDisposable
         server.MapPost(Service + "GetApplicationInformation", Guard(async context =>
         {
             await ReadFrameAsync(context.Request.Body, context.RequestAborted);
-            await WriteFrameAsync(context, new ApplicationInformationResponse { ApplicationName = "Passenger wire fixture" });
+            await WriteFrameAsync(context, new ApplicationInformationResponse { ApplicationName = "Pitstop wire fixture" });
             context.Response.AppendTrailer("grpc-status", "0");
         }));
         server.MapPost(Service + "WatchInteractions", Guard(WatchAsync));

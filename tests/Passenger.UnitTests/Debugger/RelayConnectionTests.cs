@@ -75,7 +75,7 @@ public class RelayConnectionTests
         }),
         ("a relay listening at a socket path is reached there given its token and heard saying hello", async () =>
         {
-            string folder = PathNames.Canonical(Directory.CreateTempSubdirectory("passenger-relay-").FullName);
+            string folder = PathNames.Canonical(Directory.CreateTempSubdirectory("pitstop-relay-").FullName);
             try
             {
                 string path = Path.Combine(folder, "r");

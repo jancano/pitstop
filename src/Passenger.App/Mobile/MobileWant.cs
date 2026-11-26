@@ -268,7 +268,7 @@ public sealed record MobileWant
             }
             foreach ((string project, string framework) in OnMono)
             {
-                sentences.Add($"{project} targets {framework}, whose mobile apps run on Mono: Passenger builds, runs and debugs mobile apps from .NET {MobilePlatforms.FirstOnCoreClr}, on CoreCLR");
+                sentences.Add($"{project} targets {framework}, whose mobile apps run on Mono: Pitstop builds, runs and debugs mobile apps from .NET {MobilePlatforms.FirstOnCoreClr}, on CoreCLR");
             }
             if (AppleOffMac.Count > 0)
             {

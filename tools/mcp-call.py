@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""One tool of Passenger's MCP server called from the shell over a folder, for an agent whose checkout is not the one its
+"""One tool of Pitstop's MCP server called from the shell over a folder, for an agent whose checkout is not the one its
 own client's server runs over, a git worktree's (`just mcp-call FOLDER TOOL ['{"name": value}']`).
 
-The first call over a folder starts a keeper: a headless `Passenger --mcp FOLDER` through tools/mcp.sh (a clone of this
+The first call over a folder starts a keeper: a headless `Pitstop --mcp FOLDER` through tools/mcp.sh (a clone of this
 checkout's last build, else the main checkout's), held for later calls over a Unix socket, so the language server loads
 once; its state is its own, under artifacts/mcp-call. It ends after IDLE_MINUTES with no call, or at --stop; mcp.sh
 removes its clone once the server has ended. A call told its progress prints it to standard error. It opens no window.
@@ -25,8 +25,8 @@ import threading
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD = os.path.join("artifacts", "bin", "Passenger.App", "debug", "Passenger")
-IDLE_VARIABLE = "PASSENGER_MCP_CALL_IDLE"
+BUILD = os.path.join("artifacts", "bin", "Passenger.App", "debug", "Pitstop")
+IDLE_VARIABLE = "PITSTOP_MCP_CALL_IDLE"
 PROTOCOL = "2025-06-18"
 # How long the keeper's socket is waited for as it starts, and its server's answer to initialize.
 START_LIMIT = 60
@@ -65,7 +65,7 @@ def places(folder, serving):
     """The keeper's socket, lock and log for a folder served by a checkout's build. The socket's folder is short (a Unix
     socket's path holds about 104 bytes) and the user's alone."""
     key = hashlib.sha256(f"{serving}\0{folder}".encode()).hexdigest()[:16]
-    sockets = os.path.join(tempfile.gettempdir(), f"passenger-mcp-call-{os.getuid()}")
+    sockets = os.path.join(tempfile.gettempdir(), f"pitstop-mcp-call-{os.getuid()}")
     os.makedirs(sockets, mode=0o700, exist_ok=True)
     if os.stat(sockets).st_uid != os.getuid():
         sys.exit(f"mcp-call: {sockets} is not this user's")
@@ -222,7 +222,7 @@ def parameters(tool):
 
 
 class Keeper:
-    """A headless Passenger over one folder, its calls made for the clients that reach its socket, each answer to the
+    """A headless Pitstop over one folder, its calls made for the clients that reach its socket, each answer to the
     client that asked; it ends its server after IDLE_MINUTES with none, at a client's stop, at a signal, or as the
     server ends."""
 
@@ -276,13 +276,13 @@ class Keeper:
                 time.sleep(0.05)
 
     def start(self):
-        # A state of its own beside the logs, so a worktree's server never writes into the person's Passenger.
+        # A state of its own beside the logs, so a worktree's server never writes into the person's Pitstop.
         state = os.path.join(ROOT, "artifacts", "mcp-call", "state-" + os.path.basename(self.sock).removesuffix(".sock"))
         try:
             os.makedirs(state, exist_ok=True)
             self.server = subprocess.Popen([os.path.join(self.serving, "tools", "mcp.sh"), self.folder], stdin=subprocess.PIPE,
                                            stdout=subprocess.PIPE, process_group=0, bufsize=0,
-                                           env={**os.environ, "PASSENGER_SETTINGS": state})
+                                           env={**os.environ, "PITSTOP_SETTINGS": state})
             threading.Thread(target=self.read, daemon=True).start()
             _, answer = self.ask({"method": "initialize", "params": {"protocolVersion": PROTOCOL, "capabilities": {},
                                                                   "clientInfo": {"name": "mcp-call", "version": "1"}}})

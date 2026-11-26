@@ -49,7 +49,7 @@ internal sealed class Connection : IDisposable
         stream = new NetworkStream(socket, ownsSocket: true);
         reader = new StreamReader(stream, new UTF8Encoding(false));
         Configure();
-        writer = ApartThreads.Start("Passenger inspector writer", Write);
+        writer = ApartThreads.Start("Pitstop inspector writer", Write);
     }
 
     /// <summary>Has System.Text.Json make every type the wire carries ready now, before the app's Main, rather than on
@@ -91,7 +91,7 @@ internal sealed class Connection : IDisposable
             or NotSupportedException or InvalidOperationException)
         {
             socket?.Dispose();
-            NotIn($"it could not reach Passenger at {path}: {error.Message}");
+            NotIn($"it could not reach Pitstop at {path}: {error.Message}");
             return null;
         }
     }
@@ -139,7 +139,7 @@ internal sealed class Connection : IDisposable
                 }
                 client.Dispose();
             }
-            NotIn($"Passenger did not reach its socket {name} within {AcceptLimit.TotalSeconds:0} s");
+            NotIn($"Pitstop did not reach its socket {name} within {AcceptLimit.TotalSeconds:0} s");
             return null;
         }
         catch (Exception error) when (error is SocketException or IOException or ArgumentException or UnauthorizedAccessException or PlatformNotSupportedException)
@@ -177,7 +177,7 @@ internal sealed class Connection : IDisposable
     /// <summary>Why the inspector is not in the app, in the app's own error output (its run's console) and the trace.</summary>
     private static void NotIn(string why)
     {
-        string said = $"Passenger's inspector is not in this app, which runs on without it: {why}";
+        string said = $"Pitstop's inspector is not in this app, which runs on without it: {why}";
         InspectorTrace.Step(said);
         try
         {

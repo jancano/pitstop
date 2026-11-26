@@ -38,7 +38,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
     public async Task An_agents_Passenger_lists_its_tests_and_actions_takes_its_window_up_and_says_what_a_call_lacks()
     {
         await Flow.StepApartAsync("an agent that lists the tests as it starts gets those the test projects code declares", () => new McpTests(restored), t => t.An_agent_that_lists_the_tests_as_it_starts_gets_those_the_test_projects_code_declares());
-        await Flow.StepApartAsync("an agents own passenger opens its folder while its window is built which takes it up and does none of it again", () => new McpTests(restored), t => t.An_agents_own_passenger_opens_its_folder_while_its_window_is_built_which_takes_it_up_and_does_none_of_it_again());
+        await Flow.StepApartAsync("an agents own pitstop opens its folder while its window is built which takes it up and does none of it again", () => new McpTests(restored), t => t.An_agents_own_passenger_opens_its_folder_while_its_window_is_built_which_takes_it_up_and_does_none_of_it_again());
         await Flow.StepApartAsync("an agents call with a parameter its tool lacks or misses hears which and what the tool takes", () => new McpTests(restored), t => t.An_agents_call_with_a_parameter_its_tool_lacks_or_misses_hears_which_and_what_the_tool_takes());
         await Flow.StepApartAsync("an agent lists every action the ide declares and one it runs says why when it cannot", () => new McpTests(restored), t => t.An_agent_lists_every_action_the_ide_declares_and_one_it_runs_says_why_when_it_cannot());
     }
@@ -90,7 +90,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
     public async Task An_agent_hears_why_a_workspace_or_project_did_not_load_and_waits_for_one_it_changed()
     {
         await Flow.StepApartAsync("an agent where global json asks for an SDK not installed hears so from workspace and run", () => new McpTests(restored), t => t.An_agent_where_global_json_asks_for_an_SDK_not_installed_hears_so_from_workspace_and_run());
-        await Flow.StepApartAsync("an agents own Passenger trusts the folder it was started on and says so", () => new McpTests(restored), t => t.An_agents_own_Passenger_trusts_the_folder_it_was_started_on_and_says_so());
+        await Flow.StepApartAsync("an agents own Pitstop trusts the folder it was started on and says so", () => new McpTests(restored), t => t.An_agents_own_Passenger_trusts_the_folder_it_was_started_on_and_says_so());
         await Flow.StepApartAsync("an agent whose projects have no SDK or whose language server could not start hears why from each code tool at once rather than nothing found", () => new McpTests(restored), t => t.An_agent_whose_projects_have_no_SDK_or_whose_language_server_could_not_start_hears_why_from_each_code_tool_at_once_rather_than_nothing_found());
         await Flow.StepApartAsync("an agent asking of a project that did not load hears why and the loaded one answers", () => new McpTests(restored), t => t.An_agent_asking_of_a_project_that_did_not_load_hears_why_and_the_loaded_one_answers());
         await Flow.StepApartAsync("an agents question after its change of a project file waits for the project to load again", () => new McpTests(restored), t => t.An_agents_question_after_its_change_of_a_project_file_waits_for_the_project_to_load_again());
@@ -164,7 +164,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         await Flow.StepApartAsync("settings names each choice an agent may give and settings set takes one refusing what settings refuses", () => new McpTests(restored), t => t.Settings_names_each_choice_an_agent_may_give_and_settings_set_takes_one_refusing_what_settings_refuses());
         await Flow.StepApartAsync("an agents action that reads before it asks answers once it asks and one that works says what it came to", () => new McpTests(restored), t => t.An_agents_action_that_reads_before_it_asks_answers_once_it_asks_and_one_that_works_says_what_it_came_to());
         await Flow.StepApartAsync("an agents ide actions narrow by its query and ide action refuses one there is not and the persons own", () => new McpTests(restored), t => t.An_agents_ide_actions_narrow_by_its_query_and_ide_action_refuses_one_there_is_not_and_the_persons_own());
-        await Flow.StepApartAsync("an agents modifiers are the keymaps words and aliases and its primary the systems command key in a passenger drawn on no screen", () => new McpTests(restored), t => t.An_agents_modifiers_are_the_keymaps_words_and_aliases_and_its_primary_the_systems_command_key_in_a_passenger_drawn_on_no_screen());
+        await Flow.StepApartAsync("an agents modifiers are the keymaps words and aliases and its primary the systems command key in a pitstop drawn on no screen", () => new McpTests(restored), t => t.An_agents_modifiers_are_the_keymaps_words_and_aliases_and_its_primary_the_systems_command_key_in_a_passenger_drawn_on_no_screen());
         await Flow.StepApartAsync("an agents tools with nothing to act on say why and what would give them something", () => new McpTests(restored), t => t.An_agents_tools_with_nothing_to_act_on_say_why_and_what_would_give_them_something());
     }
 
@@ -207,7 +207,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         await Flow.StepApartAsync("an agents commit of a moved and rewritten file with moves first commits the move as a rename first", () => new McpTests(restored), t => t.An_agents_commit_of_a_moved_and_rewritten_file_with_moves_first_commits_the_move_as_a_rename_first());
         await Flow.StepApartAsync("an agents commit with an edit whose save was refused is refused naming the file", () => new McpTests(restored), t => t.An_agents_commit_with_an_edit_whose_save_was_refused_is_refused_naming_the_file());
         await Flow.StepApartAsync("an agents drop of a stash by its commit takes that stash though another program stashed since the list", () => new McpTests(restored), t => t.An_agents_drop_of_a_stash_by_its_commit_takes_that_stash_though_another_program_stashed_since_the_list());
-        await Flow.StepApartAsync("a login profile that leaves a job running holds up no git Passenger starts", () => new McpTests(restored), t => t.A_login_profile_that_leaves_a_job_running_holds_up_no_git_Passenger_starts());
+        await Flow.StepApartAsync("a login profile that leaves a job running holds up no git Pitstop starts", () => new McpTests(restored), t => t.A_login_profile_that_leaves_a_job_running_holds_up_no_git_Passenger_starts());
     }
 
     /// <summary>An agent's edits as one flow, each step one test's check in an instance of its own: an edit its file's
@@ -317,7 +317,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         JsonElement found = await Call(client, McpTools.Diagnostics, new() { ["path"] = "Program.cs" });
         Assert.True(!found.EnumerateArray().Any(d => d.GetProperty("severity").GetString() == "error"), $"The app referencing the pack's assembly has errors: {found}");
         string packs = Path.Combine(root, "packs");
-        string log = Path.Combine(OwnState, "logs", "passenger.log");
+        string log = Path.Combine(OwnState, "logs", "pitstop.log");
         await Until(() => File.Exists(log) && Ui.Shared(log).Contains($"the watcher of {packs} records", StringComparison.Ordinal),
             $"the language server's registration of {packs} to be watched whole for it and its first walk done");
 
@@ -346,7 +346,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         const string Missing = "The .NET SDK 1.0.100 that global.json asks for is not installed: install it, or have global.json name one that is";
         JsonElement workspace = await Call(client, McpTools.Workspace);
         Assert.True(workspace.TryGetProperty("sdkMissing", out JsonElement missing)
-            && missing.GetString() == $"{Missing}. This Passenger, an agent's own, installs nothing: the person installs it with Install .NET SDK in the banner over their Passenger's window",
+            && missing.GetString() == $"{Missing}. This Pitstop, an agent's own, installs nothing: the person installs it with Install .NET SDK in the banner over their Pitstop's window",
             $"workspace, where global.json asks for an SDK not installed, answered: {workspace}");
         CallToolResult run = await Result(client, McpTools.Run);
         Assert.True(run.IsError == true && Text(run).Contains(Missing, StringComparison.Ordinal), $"run without the SDK answered: {Text(run)}");
@@ -362,9 +362,9 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         File.WriteAllText(Path.Combine(folder, "Program.cs"), "System.Console.WriteLine(\"App\");\n");
         await using McpClient client = await Start(["--mcp", folder], languageServer: false);
         Assert.True(client.ServerInstructions?.Contains("trusts the folder it was started on", StringComparison.Ordinal) == true,
-            $"The server's instructions leave out that an agent's own Passenger trusts its folder: {client.ServerInstructions}");
+            $"The server's instructions leave out that an agent's own Pitstop trusts its folder: {client.ServerInstructions}");
         JsonElement workspace = await Call(client, McpTools.Workspace);
-        Assert.True(workspace.TryGetProperty("trust", out JsonElement trust) && trust.GetString() == "trusted", $"workspace on an agent's own Passenger's folder answered: {workspace}");
+        Assert.True(workspace.TryGetProperty("trust", out JsonElement trust) && trust.GetString() == "trusted", $"workspace on an agent's own Pitstop's folder answered: {workspace}");
     }
 
     /// <summary>The code tools asked of a folder whose projects have no SDK to load with, its language server ready with
@@ -441,7 +441,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         string folder = PathNames.Canonical(TestFolders.Create("mcp-reloaded-"));
         DeleteAtEnd(folder);
         TestFolders.Write(folder, "Lib/Lib.csproj", TestProjects.Library().With("  <ItemGroup>\n    <Compile Remove=\"Extra/**\" />\n  </ItemGroup>\n"));
-        TestFolders.Write(folder, "Lib/Fine.cs", "namespace Lib;\n\npublic class Fine\n{\n}\n\n#if PASSENGER_GATED\npublic class Gated\n{\n}\n#endif\n");
+        TestFolders.Write(folder, "Lib/Fine.cs", "namespace Lib;\n\npublic class Fine\n{\n}\n\n#if PITSTOP_GATED\npublic class Gated\n{\n}\n#endif\n");
         TestFolders.Write(folder, "Lib/Extra/Helper.cs", "namespace Lib;\n\npublic static class Helper\n{\n    public static string Help() => \"help\";\n}\n");
         await using McpClient client = await Start(["--mcp", folder]);
         Assert.Single((await Call(client, McpTools.FindSymbol, new() { ["query"] = "Fine", ["exact"] = true })).EnumerateArray());
@@ -450,7 +450,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         JsonElement helper = Assert.Single((await Call(client, McpTools.FindSymbol, new() { ["query"] = "Helper", ["exact"] = true })).EnumerateArray());
         Assert.Equal(Path.Combine("Lib", "Extra", "Helper.cs"), helper.GetProperty("path").GetString());
 
-        TestFolders.Write(folder, "Lib/Lib.csproj", TestProjects.Library("<DefineConstants>$(DefineConstants);PASSENGER_GATED</DefineConstants>"));
+        TestFolders.Write(folder, "Lib/Lib.csproj", TestProjects.Library("<DefineConstants>$(DefineConstants);PITSTOP_GATED</DefineConstants>"));
         JsonElement gated = Assert.Single((await Call(client, McpTools.FindSymbol, new() { ["query"] = "Gated", ["exact"] = true })).EnumerateArray());
         Assert.Equal(Path.Combine("Lib", "Fine.cs"), gated.GetProperty("path").GetString());
     }
@@ -494,7 +494,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
 
         Dictionary<string, object?> findAction = new() { ["app"] = "ide", ["filter"] = "ActionPopup" };
         string before = Text(await Call(client, McpTools.AppTree, findAction));
-        Assert.StartsWith("Nothing in Passenger matches ActionPopup", before, StringComparison.Ordinal);
+        Assert.StartsWith("Nothing in Pitstop matches ActionPopup", before, StringComparison.Ordinal);
         string opened = Text(await Call(client, McpTools.AppKey, new() { ["app"] = "ide", ["keys"] = "primary+shift+A" }));
         string found = before;
         Assert.True(await Waiting.UntilAsync(async () => !(found = Text(await Call(client, McpTools.AppTree, findAction))).StartsWith("Nothing in", StringComparison.Ordinal),
@@ -785,11 +785,11 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         string answered = (await Call(client, McpTools.SymbolInfo, new() { ["path"] = "Helper.cs", ["line"] = 3, ["column"] = 23 })).GetString()!;
         Assert.StartsWith("int Helper.Twice(int value)", answered, StringComparison.Ordinal);
 
-        string logged = Path.Combine(OwnState, "logs", "passenger.log");
+        string logged = Path.Combine(OwnState, "logs", "pitstop.log");
         string log = string.Empty;
         await Until(() => (log = Ui.Shared(logged)).Contains(") loaded ", StringComparison.Ordinal) && log.Contains("as MSBuild evaluates them", StringComparison.Ordinal),
             "the log to say the language server loaded the project and the Solution view showed it");
-        int begun = log.IndexOf($"Opening {folder} as Passenger starts, ahead of its window", StringComparison.Ordinal);
+        int begun = log.IndexOf($"Opening {folder} as Pitstop starts, ahead of its window", StringComparison.Ordinal);
         int built = log.IndexOf("for an agent, with no window shown: its window built", StringComparison.Ordinal);
         Assert.True(begun >= 0 && built > begun, $"The folder's opening was not begun before the window was built:\n{log}");
         string[] ahead = [.. Regex.Matches(log, $@"C# language server \(process (\d+)\) started ahead for {Regex.Escape(folder)} ")
@@ -797,7 +797,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         string[] loaded = [.. Regex.Matches(log, @"C# language server \(process (\d+)\) loaded ").Select(m => m.Groups[1].Value)];
         Assert.True(ahead.Length == 1 && loaded.SequenceEqual(ahead) && log.Contains($"C# language server (process {ahead[0]}) started ahead taken up for {folder}", StringComparison.Ordinal)
             && !log.Contains($"C# language server (process {ahead[0]}) started for", StringComparison.Ordinal),
-            $"The answer came from a language server the window started once built, not the one started as Passenger did:\n{log}");
+            $"The answer came from a language server the window started once built, not the one started as Pitstop did:\n{log}");
         Assert.False(Regex.IsMatch(log, @"evaluated \d+ of the \d+ projects of"), $"The window evaluated the folder's project again once built:\n{log}");
         Assert.False(log.Contains("at design time in", StringComparison.Ordinal), $"The window built the folder's project at design time again once built:\n{log}");
     }
@@ -822,7 +822,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         problems.Shown = ProblemsTab.Solution;
         Assert.Contains("Helper.cs", problems.Rows.Where(r => r.Problem is null).Select(r => r.Label));
 
-        string logged = Path.Combine(TestRun.Settings, "logs", "passenger.log");
+        string logged = Path.Combine(TestRun.Settings, "logs", "pitstop.log");
         string log = string.Empty;
         Regex second = new($@"C# language server \(process \d+\) started for {Regex.Escape(folder)} ");
         Ui.WaitFor(() => (log = Ui.Shared(logged)).Contains($"started ahead taken up for {folder}", StringComparison.Ordinal) || second.IsMatch(log),
@@ -913,7 +913,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         try
         {
             Assert.True(await Waiting.Within(passenger.WaitForExitAsync(Cancel), TimeSpan.FromMinutes(3), Cancel), $"The screenshot of a folder whose load runs long never ended.{Said()}");
-            string said = Ui.Shared(Path.Combine(OwnState, "logs", "passenger.log"));
+            string said = Ui.Shared(Path.Combine(OwnState, "logs", "pitstop.log"));
             Assert.True(said.Contains("had not loaded 1 project after 2 s, and goes on loading it", StringComparison.Ordinal), $"The load was never said to run long.{Said()}");
             Assert.True(passenger.ExitCode == 0 && File.Exists(picture),
                 $"The screenshot of a folder whose load was said to run long ended with exit code {passenger.ExitCode}, the load holding background work past its warning.{Said()}");
@@ -1046,8 +1046,8 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         string code = error.GetProperty("code").GetString()!;
 
         CallToolResult jobs = await Result(client, McpTools.Run, new() { ["configuration"] = "Sum: Jobs" });
-        Assert.True(jobs.IsError == true && Text(jobs).Contains("Passenger does not know the RetryFailed command", StringComparison.Ordinal),
-            $"The run of a profile Passenger does not run was answered: {Text(jobs)}");
+        Assert.True(jobs.IsError == true && Text(jobs).Contains("Pitstop does not know the RetryFailed command", StringComparison.Ordinal),
+            $"The run of a profile Pitstop does not run was answered: {Text(jobs)}");
         Assert.False(Text(jobs).Contains(code, StringComparison.Ordinal), $"A run refused before any build named the last build's errors: {Text(jobs)}");
 
         CallToolResult sum = await Result(client, McpTools.Run, new() { ["configuration"] = "Sum" });
@@ -1071,10 +1071,10 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         Assert.True(chosen is not null && chosen != "Sum: Jobs" && chosen != "Sum: Again", $"The folder opened on {chosen} chosen");
 
         CallToolResult ran = await Result(client, McpTools.Run, new() { ["configuration"] = "Sum: Jobs" });
-        Assert.True(ran.IsError == true, $"The run of a profile Passenger does not run was answered: {Text(ran)}");
+        Assert.True(ran.IsError == true, $"The run of a profile Pitstop does not run was answered: {Text(ran)}");
         Assert.Equal(chosen, await ChosenAsync());
         CallToolResult debugged = await Result(client, McpTools.DebugStart, new() { ["configuration"] = "Sum: Jobs" });
-        Assert.True(debugged.IsError == true, $"The debugged start of a profile Passenger does not run was answered: {Text(debugged)}");
+        Assert.True(debugged.IsError == true, $"The debugged start of a profile Pitstop does not run was answered: {Text(debugged)}");
         Assert.Equal(chosen, await ChosenAsync());
 
         JsonElement again = await Call(client, McpTools.Run, new() { ["configuration"] = "Sum: Again", ["waitSeconds"] = 60 });
@@ -1130,7 +1130,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         Dictionary<string, object?> versions = new() { ["path"] = "Directory.Packages.props" };
         Assert.DoesNotContain("Passenger.Sample", (await Call(client, McpTools.EditorText, project)).GetString(), StringComparison.Ordinal);
         Assert.DoesNotContain("Passenger.Sample", (await Call(client, McpTools.EditorText, versions)).GetString(), StringComparison.Ordinal);
-        JsonElement found = Assert.Single((await Call(client, McpTools.NugetSearch, new() { ["query"] = "Passenger" })).EnumerateArray());
+        JsonElement found = Assert.Single((await Call(client, McpTools.NugetSearch, new() { ["query"] = "Pitstop" })).EnumerateArray());
         Assert.Equal(("Passenger.Sample", "1.0.0"), (found.GetProperty("id").GetString(), found.GetProperty("version").GetString()));
 
         JsonElement install = await Call(client, McpTools.NugetInstall, new() { ["project"] = "Lib", ["id"] = "Passenger.Sample" });
@@ -1184,7 +1184,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             TestProjects.Library().With("  <ItemGroup>\n    <PackageReference Include=\"Passenger.Legacy\" Version=\"1.0.0\" />\n  </ItemGroup>\n"));
         await using McpClient client = await Start(["--mcp", folder], languageServer: false);
 
-        JsonElement[] found = [.. (await Call(client, McpTools.NugetSearch, new() { ["query"] = "Passenger" })).EnumerateArray()];
+        JsonElement[] found = [.. (await Call(client, McpTools.NugetSearch, new() { ["query"] = "Pitstop" })).EnumerateArray()];
         JsonElement legacy = Assert.Single(found, p => p.GetProperty("id").GetString() == "Passenger.Legacy");
         Assert.Equal([$"1.0.0 (Lib): high severity, {Advisory}"], Texts(legacy, "vulnerable"));
         Assert.Equal(["2.0.0: critical bugs; Broken past repair.", "1.0.0 (Lib): legacy, no longer maintained; use Passenger.Modern 2.0.0 or later instead; Kept no more."],
@@ -1490,7 +1490,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             $"The agent's second command, sent beside another, answered what was not its own:\n{second}");
 
         CallToolResult refused = await Result(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["terminalShell"] = "\"\"" } });
-        Assert.True(refused.IsError == true && Text(refused).Contains("terminalShell names a program Passenger runs, or code it loads: the person sets it in Settings", StringComparison.Ordinal),
+        Assert.True(refused.IsError == true && Text(refused).Contains("terminalShell names a program Pitstop runs, or code it loads: the person sets it in Settings", StringComparison.Ordinal),
             $"settings_set of the shell's path, the person's alone, answered: {Text(refused)}");
         JsonElement shell = (await Call(client, McpTools.Settings)).GetProperty("settings").EnumerateArray().Single(s => s.GetProperty("name").GetString() == "terminalShell");
         Assert.True(shell.GetProperty("value").ValueKind == JsonValueKind.Null, $"The refused shell path was kept all the same: {shell.GetRawText()}");
@@ -1581,13 +1581,13 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         string earlier = Path.Combine(history, "blobs", "ab", new string('c', 30));
         Directory.CreateDirectory(logs);
         Directory.CreateDirectory(Path.GetDirectoryName(earlier)!);
-        System.IO.File.WriteAllText(Path.Combine(logs, "passenger.1.log"), "an earlier start's log\n");
+        System.IO.File.WriteAllText(Path.Combine(logs, "pitstop.1.log"), "an earlier start's log\n");
         System.IO.File.WriteAllText(earlier, "an earlier version\n");
         foreach (string made in (string[])[state, logs, history, Path.GetDirectoryName(earlier)!])
         {
             System.IO.File.SetUnixFileMode(made, Folder | Others | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute);
         }
-        foreach (string written in (string[])[Path.Combine(logs, "passenger.1.log"), earlier])
+        foreach (string written in (string[])[Path.Combine(logs, "pitstop.1.log"), earlier])
         {
             System.IO.File.SetUnixFileMode(written, File | Others);
         }
@@ -1599,11 +1599,11 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         IEnumerable<string> Kept() => Directory.EnumerateFiles(blobs, "*", SearchOption.AllDirectories).Where(f => f != earlier && !f.EndsWith(AtomicFile.Temporary, StringComparison.Ordinal));
         Assert.True(await Waiting.UntilAsync(() => Kept().Any(), TimeSpan.FromSeconds(30), Cancel), "Local History kept no version of the .env the agent edited");
         string kept = Kept().First();
-        Assert.True(await Waiting.UntilAsync(() => System.IO.File.Exists(Path.Combine(logs, "passenger.log")), TimeSpan.FromSeconds(30), Cancel), "The Passenger wrote no log");
+        Assert.True(await Waiting.UntilAsync(() => System.IO.File.Exists(Path.Combine(logs, "pitstop.log")), TimeSpan.FromSeconds(30), Cancel), "The Pitstop wrote no log");
         List<string> open = [];
         foreach ((string path, UnixFileMode own) in (ReadOnlySpan<(string, UnixFileMode)>)[(state, Folder), (logs, Folder), (history, Folder), (blobs, Folder),
-            (Path.GetDirectoryName(earlier)!, Folder), (Path.GetDirectoryName(kept)!, Folder), (Path.Combine(logs, "passenger.1.log"), File),
-            (Path.Combine(logs, "passenger.log"), File), (earlier, File), (kept, File), (Path.Combine(history, "changes.log"), File)])
+            (Path.GetDirectoryName(earlier)!, Folder), (Path.GetDirectoryName(kept)!, Folder), (Path.Combine(logs, "pitstop.1.log"), File),
+            (Path.Combine(logs, "pitstop.log"), File), (earlier, File), (kept, File), (Path.Combine(history, "changes.log"), File)])
         {
             UnixFileMode mode = System.IO.File.GetUnixFileMode(path);
             if (mode != own)
@@ -1633,8 +1633,8 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         Assert.True(!listed.TryGetProperty("note", out JsonElement codeNote) || codeNote.ValueKind == JsonValueKind.Null
             || codeNote.GetString()!.Contains("installed famil", StringComparison.Ordinal) && codeNote.GetString()!.Contains("settings_set takes any by its name", StringComparison.Ordinal),
             $"settings said of the installed code fonts it left out: {listed.GetRawText()}");
-        CallToolResult refused = await Result(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["editorFontFamily"] = "Passenger Missing Font" } });
-        Assert.True(refused.IsError == true && Text(refused).Contains("Font family Passenger Missing Font (Settings | Editor) is not a font installed on this computer", StringComparison.Ordinal),
+        CallToolResult refused = await Result(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["editorFontFamily"] = "Pitstop Missing Font" } });
+        Assert.True(refused.IsError == true && Text(refused).Contains("Font family Pitstop Missing Font (Settings | Editor) is not a font installed on this computer", StringComparison.Ordinal),
             $"settings_set of a font family not installed answered: {Text(refused)}");
         string font = fonts[0];
         JsonElement changed = Assert.Single((await Call(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["editorFontFamily"] = font } })).EnumerateArray());
@@ -1646,8 +1646,8 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         Assert.True(!window.TryGetProperty("note", out JsonElement windowNote) || windowNote.ValueKind == JsonValueKind.Null
             || windowNote.GetString()!.Contains("installed famil", StringComparison.Ordinal),
             $"settings said of the installed families it left out: {window.GetRawText()}");
-        CallToolResult missing = await Result(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["windowFontFamily"] = "Passenger Missing Font" } });
-        Assert.True(missing.IsError == true && Text(missing).Contains("Font family Passenger Missing Font (Settings | Appearance) is not a font installed on this computer", StringComparison.Ordinal),
+        CallToolResult missing = await Result(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["windowFontFamily"] = "Pitstop Missing Font" } });
+        Assert.True(missing.IsError == true && Text(missing).Contains("Font family Pitstop Missing Font (Settings | Appearance) is not a font installed on this computer", StringComparison.Ordinal),
             $"settings_set of a window font not installed answered: {Text(missing)}");
         JsonElement system = Assert.Single((await Call(client, McpTools.SettingsSet, new() { ["changes"] = new Dictionary<string, object> { ["windowFontFamily"] = WindowFontNames.SystemUi } })).EnumerateArray());
         Assert.Equal(WindowFontNames.SystemUi, system.GetProperty("after").GetString());
@@ -2177,7 +2177,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             $"A build of a folder with no solution or project answered: {built}");
 
         CallToolResult unread = await Result(client, McpTools.Diagnostics, new() { ["path"] = "Notes.md" });
-        Assert.True(unread.IsError == true && Text(unread).Contains("No check of Passenger's reads Markdown files such as Notes.md: diagnostics answers C#", StringComparison.Ordinal),
+        Assert.True(unread.IsError == true && Text(unread).Contains("No check of Pitstop's reads Markdown files such as Notes.md: diagnostics answers C#", StringComparison.Ordinal),
             $"diagnostics of a file no check reads answered: {Text(unread)}");
         Assert.Empty((await Call(client, McpTools.Diagnostics, new() { ["path"] = ".editorconfig" })).EnumerateArray());
 
@@ -2207,7 +2207,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
     /// <summary>An agent's ide_actions with a query lists only the actions whose id, name or group holds it, where the whole
     /// list runs to hundreds of lines and tens of kilobytes; its ide_action of an action Passenger has not is refused naming
     /// ide_actions; and its own Passenger, which nobody is at, refuses its ide_action of an install, a change of the person's
-    /// shell PATH or passenger-ide command, or Restart to Update in the words a person's window refuses an agent's, never
+    /// shell PATH or pitstop-ide command, or Restart to Update in the words a person's window refuses an agent's, never
     /// taking them as the window's own.</summary>
     private async Task An_agents_ide_actions_narrow_by_its_query_and_ide_action_refuses_one_there_is_not_and_the_persons_own()
     {
@@ -2232,7 +2232,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         {
             CallToolResult refused = await Result(client, McpTools.IdeAction, new() { ["action"] = action });
             Assert.True(refused.IsError == true && Text(refused).Contains(why, StringComparison.Ordinal),
-                $"An agent's own Passenger's ide_action of {action} answered: {Text(refused)}");
+                $"An agent's own Pitstop's ide_action of {action} answered: {Text(refused)}");
         }
     }
 
@@ -2596,7 +2596,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             .Contains("Git refuses this folder's repository: detected dubious ownership", StringComparison.Ordinal), TimeSpan.FromSeconds(10), Cancel, TimeSpan.FromMilliseconds(200));
         Assert.True(bar.Contains("Git refuses this folder's repository: detected dubious ownership", StringComparison.Ordinal),
             $"The window's status bar, over a repository git refuses, does not say why: {bar}");
-        Assert.True(File.ReadAllText(global).Length == 0, $"Passenger wrote to the person's Git configuration: {File.ReadAllText(global)}");
+        Assert.True(File.ReadAllText(global).Length == 0, $"Pitstop wrote to the person's Git configuration: {File.ReadAllText(global)}");
 
         // As the person would, having read git's words.
         File.WriteAllText(global, "[safe]\n\tdirectory = *\n");
@@ -2651,11 +2651,11 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         await using McpClient persons = await Start(["--mcp", repository], languageServer: false,
             environment: new() { ["PATH"] = Environment.SystemDirectory, [UserEnvironment.PathNowVariable] = $"{Environment.SystemDirectory};{Path.GetDirectoryName(git)}" });
         CallToolResult found = await Result(persons, McpTools.VcsStatus);
-        Assert.True(found.IsError != true, $"vcs_status, with git on the person's own Path beyond the PATH Passenger was given, answered: {Text(found)}");
+        Assert.True(found.IsError != true, $"vcs_status, with git on the person's own Path beyond the PATH Pitstop was given, answered: {Text(found)}");
         Assert.Equal("main", (await Call(persons, McpTools.VcsStatus)).GetProperty("branch").GetString());
         string answer = (await Call(persons, McpTools.TerminalRun, new() { ["command"] = "git --version" })).GetString()!;
         Assert.True(answer.Contains("git version", StringComparison.Ordinal),
-            $"The terminal's shell, started by a Passenger that found git on the person's own Path, did not run git by name:\n{answer}");
+            $"The terminal's shell, started by a Pitstop that found git on the person's own Path, did not run git by name:\n{answer}");
     }
 
     /// <summary>An agent's ide_action runs Create Git Repository in a folder of no repository, answered once it is made: the
@@ -2753,7 +2753,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             await TestGit.RunAsync(repository, "init", "-q");
             await using McpClient client = await Start(["--mcp", repository], environment: Launchd(home));
             await Call(client, McpTools.VcsStatus);
-            Assert.True(File.Exists(used), "With a job its profile left running, Passenger never took the login shell's PATH, and ran a git other than the one it finds");
+            Assert.True(File.Exists(used), "With a job its profile left running, Pitstop never took the login shell's PATH, and ran a git other than the one it finds");
 
             // Each git start waits for the shell's environment while it is still being read.
             long began = Stopwatch.GetTimestamp();
@@ -2789,7 +2789,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         Executable(fails, "#!/bin/sh\necho 'open terminal failed: not a terminal' >&2\nexit 1\n");
         Dictionary<string, string?> environment = Launchd(home);
         environment["SHELL"] = fails;
-        string log = Path.Combine(OwnState, "logs", "passenger.log");
+        string log = Path.Combine(OwnState, "logs", "pitstop.log");
         await using (McpClient client = await Start(["--mcp", repository], languageServer: false, environment: environment))
         {
             await Call(client, McpTools.VcsStatus);
@@ -2798,7 +2798,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
                 .Contains("open terminal failed: not a terminal", StringComparison.Ordinal)), TimeSpan.FromSeconds(10), Cancel, TimeSpan.FromMilliseconds(200));
             string? line = said.Split('\n').FirstOrDefault(l => l.Contains("The login shell's environment was not read", StringComparison.Ordinal));
             Assert.True(line?.Contains($"{fails} -l -i: it ended with exit code 1: open terminal failed: not a terminal", StringComparison.Ordinal) == true,
-                $"Over a login shell that fails with no terminal, Passenger's log does not say so, naming it, in its words: {line ?? said[Math.Max(0, said.Length - 2000)..]}");
+                $"Over a login shell that fails with no terminal, Pitstop's log does not say so, naming it, in its words: {line ?? said[Math.Max(0, said.Length - 2000)..]}");
         }
 
         // As oh-my-zsh's tmux autostart, failing with no terminal unless read; past it, no system profile moves its tools down.
@@ -2814,10 +2814,10 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         {
             await Call(client, McpTools.VcsStatus);
         }
-        Assert.True(File.Exists(seen), "Over a login shell that skips what needs a terminal while its environment is read, Passenger never took its PATH");
+        Assert.True(File.Exists(seen), "Over a login shell that skips what needs a terminal while its environment is read, Pitstop never took its PATH");
         string[] gitHad = File.ReadAllLines(seen);
         Assert.True(!gitHad.Any(v => v.StartsWith("VSCODE_RESOLVING_ENVIRONMENT=", StringComparison.Ordinal) || v.StartsWith("INTELLIJ_ENVIRONMENT_READER=", StringComparison.Ordinal)),
-            $"The variables set while the login shell's environment was read reached the git Passenger started: {string.Join(", ", gitHad.Where(v => v.Contains("ENVIRONMENT", StringComparison.Ordinal)))}");
+            $"The variables set while the login shell's environment was read reached the git Pitstop started: {string.Join(", ", gitHad.Where(v => v.Contains("ENVIRONMENT", StringComparison.Ordinal)))}");
     }
 
     /// <summary>Started with no SHELL, as a service or a desktop entry may start it on Linux, Passenger reads its environment
@@ -2849,12 +2849,12 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         await using McpClient client = await Start(["--mcp", repository], languageServer: false, environment: environment);
         await Call(client, McpTools.VcsStatus);
         string? read = File.Exists(seen) ? File.ReadAllLines(seen).FirstOrDefault(v => v.StartsWith("LOGIN_PROFILE=", StringComparison.Ordinal))?["LOGIN_PROFILE=".Length..] : null;
-        Assert.True(read is not null, "With no SHELL, Passenger never took a login shell's PATH, and ran a git other than the one its profile puts first");
+        Assert.True(read is not null, "With no SHELL, Pitstop never took a login shell's PATH, and ran a git other than the one its profile puts first");
 
         string answer = (await Call(client, McpTools.TerminalRun, new() { ["command"] = "echo \"runs:$LOGIN_PROFILE\"" })).GetString()!;
         string? runs = Regex.Match(answer, @"runs:(\.\w+)") is { Success: true } said ? said.Groups[1].Value : null;
         Assert.True(runs == read,
-            $"With no SHELL, Passenger's environment was read through the login profile {read} and its terminal's shell read {runs ?? "none"}: "
+            $"With no SHELL, Pitstop's environment was read through the login profile {read} and its terminal's shell read {runs ?? "none"}: "
             + $"a PATH or variable set in one is not what the other finds. The terminal answered:\n{answer}");
     }
 
@@ -3005,7 +3005,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         TestFolders.Write(folder, "scripts/tool.cs", "#!/usr/bin/env dotnet\nSystem.Console.WriteLine(\"tool\");\n");
         string filter = Path.Combine(folder, "App.slnf");
         await using McpClient client = await Start(["--mcp", filter], languageServer: false);
-        Told(await Call(client, McpTools.Open, new() { ["path"] = "App.slnf" }), filter, "Passenger started on the filter");
+        Told(await Call(client, McpTools.Open, new() { ["path"] = "App.slnf" }), filter, "Pitstop started on the filter");
         Told(await Call(client, McpTools.Open, new() { ["path"] = "Shop.slnx" }), Path.Combine(folder, "Shop.slnx"), "the solution opened");
         Told(await Call(client, McpTools.Open, new() { ["path"] = "App.slnf" }), filter, "the filter opened over the solution");
 
@@ -3035,7 +3035,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
         await using McpClient client = await Start(["--mcp", spelled], spelled, new() { ["PWD"] = spelled }, languageServer: false);
         JsonElement workspace = await Call(client, McpTools.Workspace);
         Assert.True(workspace.GetProperty("folder").GetString() == folder && workspace.GetProperty("solution").GetString() == Path.Combine(folder, "Shop.slnx"),
-            $"Started on {spelled}, Passenger answered the workspace: {workspace}");
+            $"Started on {spelled}, Pitstop answered the workspace: {workspace}");
         JsonElement built = await Call(client, McpTools.Build);
         Assert.True(built.GetProperty("succeeded").GetBoolean(), $"The build ended: {built}");
         DiskSpelled.Check(spelled, folder, project);

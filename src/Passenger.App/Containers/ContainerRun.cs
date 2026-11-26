@@ -134,7 +134,7 @@ public sealed record ContainerPlan(string Name, string Folder, string ProjectNam
 public static class ContainerPlans
 {
     /// <summary>Where fast mode mounts Passenger's build of a service's project inside its container.</summary>
-    public const string AppFolder = "/passenger/app";
+    public const string AppFolder = "/pitstop/app";
 
     /// <summary>The argument a Dockerfile Visual Studio writes builds its project's configuration by.</summary>
     public const string BuildConfigurationArgument = "BUILD_CONFIGURATION";
@@ -186,8 +186,8 @@ public static class ContainerPlans
             // As deployed, the SDK makes the image itself (PublishContainer, into the engine), named for the run alone.
             if (configuration.Kind == RunKind.SdkContainer && mode == ContainerMode.Images)
             {
-                string repository = $"passenger-{Slug(configuration.Name)}-{ContainerLabels.FolderValue(workspace.Folder)[..8]}";
-                properties = new Dictionary<string, string>(properties, StringComparer.OrdinalIgnoreCase) { ["PassengerImage"] = $"{repository}:{SdkImageTag}" };
+                string repository = $"pitstop-{Slug(configuration.Name)}-{ContainerLabels.FolderValue(workspace.Folder)[..8]}";
+                properties = new Dictionary<string, string>(properties, StringComparer.OrdinalIgnoreCase) { ["PitstopImage"] = $"{repository}:{SdkImageTag}" };
                 IReadOnlyList<string> configured = workspace.PublishArgumentsFor(single.Path, properties.GetValueOrDefault(MSBuildNames.Configuration));
                 publish = ["publish", single.Path, $"-t:{MSBuildNames.PublishContainer}", .. configured, PropertySwitch.Of(CarriedProperties.ContainerRepository, repository),
                     PropertySwitch.Of(MSBuildNames.ContainerImageTag, SdkImageTag), "-nologo"];
@@ -249,7 +249,7 @@ public static class ContainerPlans
                 }
                 else if (stages is not null && (stage = stages.FastStage(its.GetValueOrDefault(CarriedProperties.DockerfileFastModeStage))?.Name) is null)
                 {
-                    unfit = $"{configuration.Name} cannot run {service.Name} in fast mode: its Dockerfile has no runtime stage to run Passenger's build in "
+                    unfit = $"{configuration.Name} cannot run {service.Name} in fast mode: its Dockerfile has no runtime stage to run Pitstop's build in "
                         + "(a stage named base, or one its final stage is FROM); choose Build images, as deployed in Run > Edit Configurations";
                 }
                 // One marked Don't start is refused only when a start of it is asked, later in the run.
@@ -309,7 +309,7 @@ public static class ContainerPlans
         ContainerTelemetry? telemetry = configuration.Telemetry ? ContainerTelemetry.New() : null;
         if (telemetry is not null && model[ContainerTelemetry.Service] is not null)
         {
-            throw new LaunchException($"{configuration.Name} cannot collect logs and traces: a service of its own is named {ContainerTelemetry.Service}, Passenger's dashboard's name");
+            throw new LaunchException($"{configuration.Name} cannot collect logs and traces: a service of its own is named {ContainerTelemetry.Service}, Pitstop's dashboard's name");
         }
         string overrideFile = Path.Combine(state, $"{file}.override.yaml");
         compose.InsertRange(compose.IndexOf("--project-directory"), ["-f", overrideFile]);
@@ -394,7 +394,7 @@ public static class ContainerPlans
     }
 
     /// <summary>The tag of an SDK container's image Passenger has the SDK make, as deployed.</summary>
-    public const string SdkImageTag = "passenger";
+    public const string SdkImageTag = "pitstop";
 
     /// <summary>The <c>compose [-p NAME] -f … --env-file … --profile … --project-directory …</c> words of files and a configuration.</summary>
     private static List<string> Words(IReadOnlyList<string> files, RunConfiguration configuration, string runsIn, string? project = null) =>
@@ -502,7 +502,7 @@ public static class ContainerPlans
         }
         else
         {
-            string image = properties.GetValueOrDefault("PassengerImage") is { Length: > 0 } published ? published
+            string image = properties.GetValueOrDefault("PitstopImage") is { Length: > 0 } published ? published
                 : properties.GetValueOrDefault(CarriedProperties.ContainerBaseImage) is { Length: > 0 } basis ? basis
                 : DotnetImages.Runtime(ContainerConfigurations.IsWeb(project, workspace.Projects), DotnetImages.Tag(framework ?? DotnetImages.Newest(project.TargetFrameworks)));
             service["image"] = image;
@@ -525,7 +525,7 @@ public static class ContainerPlans
         {
             service["environment"] = environment;
         }
-        JsonObject composed = new() { ["name"] = $"passenger-{Slug(configuration.Name)}-{ContainerLabels.FolderValue(workspace.Folder)[..8]}", ["services"] = new JsonObject { [name] = service } };
+        JsonObject composed = new() { ["name"] = $"pitstop-{Slug(configuration.Name)}-{ContainerLabels.FolderValue(workspace.Folder)[..8]}", ["services"] = new JsonObject { [name] = service } };
         if (secrets.Count > 0)
         {
             composed["secrets"] = secrets;
@@ -535,7 +535,7 @@ public static class ContainerPlans
 
     /// <summary>The override Passenger lays over the files: its labels on every service, image and network it makes (an image
     /// built as deployed tagged apart from the one its files name); for each .NET service it starts, in fast mode its image's
-    /// runtime stage running <c>dotnet /passenger/app/X.dll</c> as PID 1 over Passenger's build mounted read-only, in images
+    /// runtime stage running <c>dotnet /pitstop/app/X.dll</c> as PID 1 over Passenger's build mounted read-only, in images
     /// mode its project's configuration for a Dockerfile's BUILD_CONFIGURATION; the development certificate and user secrets where
     /// they serve, read <see cref="RunsAs"/>; a service held for the debugger started held, its code open to Hot Reload.</summary>
     public static async Task<JsonObject> OverrideAsync(ComposeModel model, string project, IReadOnlyList<DotnetService> dotnet, ContainerMode mode, IReadOnlyList<string> labels,
@@ -680,7 +680,7 @@ public static class ContainerPlans
 
     /// <summary>The image a service runs: one built from its folder under Passenger's own tag for the mode, else the one it names.</summary>
     private static string? ImageOf(ComposeService service, string project, ContainerMode mode) =>
-        service.Context is null ? service.Image : mode == ContainerMode.Images ? $"{project}-{service.Name}:passenger" : $"{project}-{service.Name}:passenger-fast";
+        service.Context is null ? service.Image : mode == ContainerMode.Images ? $"{project}-{service.Name}:pitstop" : $"{project}-{service.Name}:pitstop-fast";
 
     /// <summary>A variable of a service's runtime as its container starts it: Compose's environment's, else its image's own.</summary>
     private static Func<string, string?> Started(ComposeService service, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> images) =>
@@ -744,7 +744,7 @@ public static class ContainerPlans
     private static readonly TimeSpan ImageLimit = TimeSpan.FromMinutes(15);
 
     /// <summary>Where the container finds an ASP.NET Core app's static web assets in Development, which its build's manifest
-    /// names by the host's folders (wwwroot, obj's, packages'): each folder mounted under /passenger/assets, and the manifest
+    /// names by the host's folders (wwwroot, obj's, packages'): each folder mounted under /pitstop/assets, and the manifest
     /// written again with those places into the state, mounted and named by ASPNETCORE_STATICWEBASSETS. Null for an app
     /// with none.</summary>
     private static (IReadOnlyList<(string Source, string Target)> Mounts, string Manifest)? StaticWebAssets(DotnetService built, string state, string name)
@@ -763,7 +763,7 @@ public static class ContainerPlans
                 for (int i = 0; i < roots.Count; i++)
                 {
                     string root = roots[i]?.GetValue<string>() ?? string.Empty;
-                    string target = $"/passenger/assets/{i}/";
+                    string target = $"/pitstop/assets/{i}/";
                     // A root the build named but never made would stop the app as it starts, as it would on this machine.
                     string source = Directory.Exists(root) ? root : Directory.CreateDirectory(Path.Combine(state, "assets", name, i.ToString(CultureInfo.InvariantCulture))).FullName;
                     mounts.Add((Path.TrimEndingDirectorySeparator(source), target.TrimEnd('/')));
@@ -772,8 +772,8 @@ public static class ContainerPlans
             }
             string written = Path.Combine(state, $"{name}.staticwebassets.runtime.json");
             OwnFiles.Write(written, read.ToJsonString());
-            mounts.Add((written, "/passenger/assets/manifest.json"));
-            return (mounts, "/passenger/assets/manifest.json");
+            mounts.Add((written, "/pitstop/assets/manifest.json"));
+            return (mounts, "/pitstop/assets/manifest.json");
         }
         catch (Exception unreadable) when (unreadable is JsonException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -804,7 +804,7 @@ public static class ContainerPlans
     internal static bool HttpsPort(int port) => port is 443 or 8081;
 
     /// <summary>Where a .NET service in its container finds its user secrets: APPDATA, which Passenger sets there.</summary>
-    public const string AppData = "/passenger/appdata";
+    public const string AppData = "/pitstop/appdata";
 
     /// <summary>The folder user secrets are kept in on this machine in place of .NET's own (APPDATA's Microsoft/UserSecrets
     /// on Windows, ~/.microsoft/usersecrets elsewhere): read for that alone, so a test's run never mounts the person's own.</summary>
@@ -1407,7 +1407,7 @@ public sealed class ContainerRun(ContainerPlan plan, ContainerEngine engine, Con
                 }
                 catch (Exception unwritten) when (unwritten is IOException or UnauthorizedAccessException)
                 {
-                    console.Write($"Passenger's override could not be written again: {unwritten.Message}\n", ConsoleStream.Error);
+                    console.Write($"Pitstop's override could not be written again: {unwritten.Message}\n", ConsoleStream.Error);
                     return up;
                 }
             }

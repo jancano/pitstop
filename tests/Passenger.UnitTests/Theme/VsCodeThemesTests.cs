@@ -88,7 +88,7 @@ public class VsCodeThemesTests
         [
             ("""{"include": "../../outside.json", "colors": {"a": "#FFF"}}""", "not a file inside the extension"),
             ("""{"include": "theme.json", "colors": {"a": "#FFF"}}""", "includes more than the 8 files"),
-            ("""{"tokenColors": "./dark.tmTheme"}""", "a TextMate theme file, which Passenger does not read"),
+            ("""{"tokenColors": "./dark.tmTheme"}""", "a TextMate theme file, which Pitstop does not read"),
             ("""{"name": "Empty"}""", "gives no colors and no tokenColors"),
             ("""{"colors": {""", "is not JSON as VS Code reads it"),
         ], row => A_theme_that_cannot_be_read_is_refused_saying_why(row.Item1, row.Item2))),
@@ -151,11 +151,11 @@ public class VsCodeThemesTests
     private void A_vsix_that_is_no_zip_holds_no_manifest_or_is_past_a_limit_is_refused_saying_why()
     {
         Assert.Null(VsCodeThemes.Vsix(Encoding.UTF8.GetBytes("no zip"), out string? notZip));
-        Assert.Contains("no zip Passenger reads", notZip, StringComparison.Ordinal);
+        Assert.Contains("no zip Pitstop reads", notZip, StringComparison.Ordinal);
         Assert.Null(VsCodeThemes.Vsix(Vsix(("extension/readme.md", "hi")), out string? noManifest));
         Assert.Contains("holds no extension/package.json", noManifest, StringComparison.Ordinal);
         Assert.Null(VsCodeThemes.Vsix(Vsix([.. Enumerable.Range(0, VsCodeThemes.MostEntries + 1).Select(i => ($"extension/{i}.txt", string.Empty))]), out string? many));
-        Assert.Contains($"more than the {Passenger.Core.Numbers.Said(VsCodeThemes.MostEntries)} Passenger reads", many, StringComparison.Ordinal);
+        Assert.Contains($"more than the {Passenger.Core.Numbers.Said(VsCodeThemes.MostEntries)} Pitstop reads", many, StringComparison.Ordinal);
         VsCodeThemes.ExtensionFile files = VsCodeThemes.Vsix(Vsix(("extension/package.json", "{}"), ("extension/big.json", new string(' ', 1_300_000))), out _)!;
         Assert.Equal("the .vsix's big.json is 1.2 MB, more than the 1 MB a theme file may hold", files("big.json").Why);
         Assert.Contains("holds no gone.json", files("gone.json").Why, StringComparison.Ordinal);

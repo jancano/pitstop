@@ -18,7 +18,7 @@ internal sealed class GodotScriptTypes(GodotSceneIndex index, Func<string, strin
     : OpenFileChecks<GodotScriptTypes.Kept>(Settle)
 {
     /// <summary>Who checks a script, as an agent is told while a check is under way.</summary>
-    private const string Checker = "Passenger's reading of the script";
+    private const string Checker = "Pitstop's reading of the script";
 
     /// <summary>How long typing pauses before the file is parsed and typed again.</summary>
     private static readonly TimeSpan Settle = TimeSpan.FromMilliseconds(250);

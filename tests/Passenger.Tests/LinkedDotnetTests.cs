@@ -138,7 +138,7 @@ public sealed class LinkedDotnetTests(LinkedDotnetTests.Linked linked) : McpRig,
                 }
                 copied = await ChildProcesses.RunAsync(ChildProcesses.Command("/bin/cp", ["-R", from, to]), limit: limit);
             }
-            Assert.True(copied.Succeeded, $"The runtime at {from} could not be copied to {to}, for a Passenger to run on apart from any dotnet: {copied.Output}{copied.Error}");
+            Assert.True(copied.Succeeded, $"The runtime at {from} could not be copied to {to}, for a Pitstop to run on apart from any dotnet: {copied.Output}{copied.Error}");
         }
     }
 }

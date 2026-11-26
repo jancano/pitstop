@@ -26,7 +26,7 @@ public class HandedLaunchTests
         HandedLaunch? read = Read(launch.Message());
 
         Assert.True(read is not null && read.Folder == launch.Folder && read.Workspace is null && read.Files.SequenceEqual(launch.Files) && read.Caret == launch.Caret,
-            $"The running Passenger would open something other than what the launch named: {launch.Message()} read back as {read}");
+            $"The running Pitstop would open something other than what the launch named: {launch.Message()} read back as {read}");
     }
 
     private void The_caret_goes_on_the_wire_counted_from_one()
@@ -36,7 +36,7 @@ public class HandedLaunchTests
         using JsonDocument written = JsonDocument.Parse(message);
         JsonElement caret = written.RootElement.GetProperty("launch").GetProperty("caret");
         Assert.True(caret.GetProperty("line").GetInt32() == 1 && caret.GetProperty("column").GetInt32() == 1,
-            $"A running Passenger of another build would put the caret a line off: {message}");
+            $"A running Pitstop of another build would put the caret a line off: {message}");
     }
 
     private void A_launch_naming_nothing_or_only_a_workspace_reads_back_as_it_was_written()
@@ -97,10 +97,10 @@ public class HandedLaunchTests
     {
         using JsonDocument taken = JsonDocument.Parse(HandedLaunch.Answer(Root + "Space", null));
         using JsonDocument none = JsonDocument.Parse(HandedLaunch.Answer(null, null));
-        using JsonDocument refused = JsonDocument.Parse(HandedLaunch.Answer(null, "Passenger has no window ready to take it"));
+        using JsonDocument refused = JsonDocument.Parse(HandedLaunch.Answer(null, "Pitstop has no window ready to take it"));
 
         Assert.True(taken.RootElement.GetProperty("taken").GetString() == Root + "Space" && none.RootElement.GetProperty("taken").GetString() == string.Empty
-            && refused.RootElement.GetProperty("refused").GetString() == "Passenger has no window ready to take it" && !refused.RootElement.TryGetProperty("taken", out _),
+            && refused.RootElement.GetProperty("refused").GetString() == "Pitstop has no window ready to take it" && !refused.RootElement.TryGetProperty("taken", out _),
             $"The launch would misread its answer: {taken.RootElement}, {none.RootElement}, {refused.RootElement}");
     }
 

@@ -35,7 +35,7 @@ internal static class ContainerPrograms
                 "-c", "Release", "-r", rid, "--self-contained", "--artifacts-path", Path.Combine(tools, "build"), "-o", output, "-nologo", "-v:q"],
                 Debugging.Helpers.Debuggees.Root, persons: true);
         }), LazyThreadSafetyMode.ExecutionAndPublication)).Value;
-        Assert.True(published.Succeeded, $"Passenger's container tools for {rid} did not publish: {published.Output}{published.Error}");
+        Assert.True(published.Succeeded, $"Pitstop's container tools for {rid} did not publish: {published.Output}{published.Error}");
     }
 
     /// <summary>The checkout's lock on publishing the tools, held open by one process at a time (the system lets it go with
@@ -46,7 +46,7 @@ internal static class ContainerPrograms
         string path = Path.Combine(tools, ".publishing");
         FileStream? held = null;
         Assert.True(await Waiting.UntilAsync(() => (held = Open()) is not null, TimeSpan.FromMinutes(10), every: TimeSpan.FromMilliseconds(250)),
-            $"Another test run of this checkout held {path} for 10 minutes, publishing Passenger's container tools");
+            $"Another test run of this checkout held {path} for 10 minutes, publishing Pitstop's container tools");
         return held!;
 
         FileStream? Open()

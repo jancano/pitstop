@@ -229,7 +229,7 @@ public sealed class DockerScoutTests
                     #!/bin/sh
                     here="{{config}}"
                     if [ "$1" = "docker-cli-plugin-metadata" ]; then
-                      echo '{"SchemaVersion":"0.1.0","Vendor":"Passenger tests","Version":"1.0.0","ShortDescription":"A stand-in Docker Scout"}'
+                      echo '{"SchemaVersion":"0.1.0","Vendor":"Pitstop tests","Version":"1.0.0","ShortDescription":"A stand-in Docker Scout"}'
                       exit 0
                     fi
                     shift

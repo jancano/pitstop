@@ -15,11 +15,11 @@ namespace Passenger.Profiler;
 public static class SessionStarts
 {
     /// <summary>A provider no program registers, so a session of it starts without the program's code running.</summary>
-    internal const string NoProvider = "Passenger-No-Provider";
+    internal const string NoProvider = "Pitstop-No-Provider";
 
     /// <summary>The variable that gives <see cref="Limit"/> in milliseconds, before the machine's scale.</summary>
     [IdentifierHome]
-    public const string LimitVariable = "PASSENGER_SESSION_START_MS";
+    public const string LimitVariable = "PITSTOP_SESSION_START_MS";
 
     /// <summary>How long a program's runtime is given to take a session at its diagnostic port: 10 s, or what
     /// <see cref="LimitVariable"/> gives (or <see cref="HoldLimit"/> holds), as much longer as <see cref="Waits"/> says; a

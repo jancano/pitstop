@@ -121,7 +121,7 @@ public sealed class WelcomeTests : IClassFixture<WelcomeTests.Workspaces>, IDisp
         MainWindow window = Started(LaunchOptions.Parse([LaunchOptions.NewWindowFlag]));
 
         Assert.True(window.Folder is null && Shown(window),
-            $"The taskbar's New Window, starting Passenger, was to show a window with nothing open; it opened {window.Folder ?? "nothing"}, the Welcome screen {(Shown(window) ? "shown" : "not shown")}");
+            $"The taskbar's New Window, starting Pitstop, was to show a window with nothing open; it opened {window.Folder ?? "nothing"}, the Welcome screen {(Shown(window) ? "shown" : "not shown")}");
         Assert.Equal([Name(alpha)], window.Welcome.Rows.Select(r => r.Name));
         window.Close();
     }
@@ -632,7 +632,7 @@ public sealed class WelcomeTests : IClassFixture<WelcomeTests.Workspaces>, IDisp
             Ui.Settle();
 
             Assert.True(window.Folder is null && Shown(window), $"Close Solution left {window.Folder ?? "no folder"} open, the Welcome screen {(Shown(window) ? "shown" : "not shown")}");
-            Assert.Equal("Welcome to Passenger", window.Title);
+            Assert.Equal("Welcome to Pitstop", window.Title);
             Assert.Equal(solution, window.Welcome.Rows.FirstOrDefault()?.Path);
             Assert.Empty(window.EditorArea.Documents);
             Assert.Empty(window.ExplorerView.Tree.Rows);

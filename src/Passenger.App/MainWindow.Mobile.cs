@@ -452,7 +452,7 @@ public partial class MainWindow
                 return Came(false, Refusals.WorkloadsNeedAdministrator(folders.Root, asAdministrator), asAdministrator);
             }
             if (asks && !await ConfirmAsync($"Install the .NET {named}?",
-                $"Passenger runs {command}, which downloads them from NuGet and installs them {WorkloadInstalls.Into(folders)}. "
+                $"Pitstop runs {command}, which downloads them from NuGet and installs them {WorkloadInstalls.Into(folders)}. "
                 + $"{Plural.Listed([.. MobileWant.Projects])} then {Plural.Agreeing(MobileWant.Projects.Count, "loads", "load")} again.", "Install", null,
                 Refusals.AgentInstallsMobile))
             {
@@ -537,7 +537,7 @@ public partial class MainWindow
             string? jdk = want.Java is { } version
                 ? AndroidFolders.Jdk(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), version)
                 : null;
-            string text = $"Passenger runs the .NET android workload's installer (InstallAndroidDependencies) on {project.Name}, which downloads {what} "
+            string text = $"Pitstop runs the .NET android workload's installer (InstallAndroidDependencies) on {project.Name}, which downloads {what} "
                 + $"and installs the Android SDK's part into {PathNames.Shown(sdk, null)}{(jdk is null ? string.Empty : $" and the JDK into {PathNames.Shown(jdk, null)}")}, "
                 + "for you alone. Installing them means you accept "
                 + $"{Plural.Listed([.. licences.Select(l => l.Id)])}, Google's {Plural.Noun(licences.Count, "licence")} of the Android SDK, below.";

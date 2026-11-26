@@ -154,7 +154,7 @@ public partial class MainWindow
             string[] names = [.. chosen.Select(c => c.Name).Where(n => n != GodotExports.VersionFile)];
             work.Say("Asking to install the templates");
             if (!await ConfirmAsync("Install Export Templates?",
-                $"Passenger installs {Plural.Listed(names)} ({Sizes.Said(chosen.Sum(c => c.Size))}) from {Path.GetFileName(archive)} into {PathNames.Shown(templates, null)}, "
+                $"Pitstop installs {Plural.Listed(names)} ({Sizes.Said(chosen.Sum(c => c.Size))}) from {Path.GetFileName(archive)} into {PathNames.Shown(templates, null)}, "
                 + $"where Godot {version} finds its export templates{(needed is null ? string.Empty : ": those the project's presets take")}.",
                 "Install", null))
             {

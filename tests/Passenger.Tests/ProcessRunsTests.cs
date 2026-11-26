@@ -17,7 +17,7 @@ public sealed class ProcessRunsTests
         // The system's own, run as another user: Windows' System process, macOS's launchd and Linux's init.
         int system = OperatingSystem.IsWindows() ? 4 : 1;
         Assert.True(DotnetProcesses.Runs(system),
-            $"Process {system}, the system's own, which this user may not open, was taken for ended: an elevated Passenger's heap dump would be swept as it is written");
+            $"Process {system}, the system's own, which this user may not open, was taken for ended: an elevated Pitstop's heap dump would be swept as it is written");
         Assert.True(DotnetProcesses.Runs(Environment.ProcessId), "This test's own process was taken for ended");
         // Above every system's largest id, so no process has it.
         Assert.False(DotnetProcesses.Runs(int.MaxValue), "An id no process has was taken for a running process: its writer's heap dump would never be swept");
@@ -29,7 +29,7 @@ public sealed class ProcessRunsTests
     [Fact]
     public void A_process_ended_runs_only_until_its_exit_code_can_be_read()
     {
-        Flow.StepApart<ProcessRunsTests>("a process passenger started runs until its exit code can be read", t => t.A_process_passenger_started_runs_until_its_exit_code_can_be_read());
+        Flow.StepApart<ProcessRunsTests>("a process pitstop started runs until its exit code can be read", t => t.A_process_passenger_started_runs_until_its_exit_code_can_be_read());
         Flow.StepApart<ProcessRunsTests>("a process ended and waiting for its parent to take its exit does not run", t => t.A_process_ended_and_waiting_for_its_parent_to_take_its_exit_does_not_run());
     }
 

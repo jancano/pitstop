@@ -21,7 +21,7 @@ public static class GodotScriptTemplates
     public const string FileName = "Passenger.cs";
 
     /// <summary>The name Godot's dialog lists a template by, which says it is Passenger's.</summary>
-    public const string Name = "Passenger (this project's style)";
+    public const string Name = "Pitstop (this project's style)";
 
     /// <summary>The base classes a template is offered for, Node's applying to every node without one of its own.</summary>
     public static IReadOnlyList<string> Bases { get; } = ["Node", "Node2D", "Node3D", "Control", "Resource"];
@@ -58,7 +58,7 @@ public static class GodotScriptTemplates
         List<string> lines =
         [
             $"// meta-name: {Name}",
-            $"// meta-description: A {baseClass} script in the project's namespace and style, written by Passenger",
+            $"// meta-description: A {baseClass} script in the project's namespace and style, written by Pitstop",
             .. style.Tabs ? Array.Empty<string>() : ["// meta-space-indent: 0"],
             "using _BINDINGS_NAMESPACE_;",
             string.Empty,

@@ -12,7 +12,7 @@ internal static class GodotRenames
 
     private static readonly Lazy<(Dictionary<string, string> Identifiers, Dictionary<string, string> Calls)> Carried = new(() =>
     {
-        using Stream stream = typeof(GodotRenames).Assembly.GetManifestResourceStream(Resource) ?? throw new InvalidOperationException($"Passenger carries no {Resource}");
+        using Stream stream = typeof(GodotRenames).Assembly.GetManifestResourceStream(Resource) ?? throw new InvalidOperationException($"Pitstop carries no {Resource}");
         using JsonDocument table = JsonDocument.Parse(stream);
         return (Of(table.RootElement, "identifiers"), Of(table.RootElement, "calls"));
     });

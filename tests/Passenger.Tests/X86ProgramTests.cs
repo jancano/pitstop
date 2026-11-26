@@ -47,7 +47,7 @@ public sealed class X86ProgramTests
 
             string? refused = Ui.Await(window.DebugAsync(), "Debug's refusal of an x86 program", TimeSpan.FromMinutes(2));
             Assert.True(refused == Refusals.X86Undebugged("Hello") && !window.Debugger.IsDebugging,
-                $"Debug of an x86 program was not refused before it started, saying Passenger's debugger follows only 64-bit programs: {refused ?? "it started"}");
+                $"Debug of an x86 program was not refused before it started, saying Pitstop's debugger follows only 64-bit programs: {refused ?? "it started"}");
 
             Ui.Launched(window, window.ProfileAsync(), "the profiled start", TimeSpan.FromMinutes(2));
             Ui.WaitFor(() => window.ProfilerView.Snapshot is not null, () => $"the profiled program's end to show its snapshot; the Run window shows:\n{Output(window)}",

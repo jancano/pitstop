@@ -137,7 +137,7 @@ public class PortablePdbWriter2
 
         ConcurrentBag<PerFileResult> perFileResults = new ConcurrentBag<PerFileResult>();
 
-        ApartScheduler.ForEach("Passenger decompiler", sourceFiles, maxDegreeOfParallelism, cancellationToken,
+        ApartScheduler.ForEach("Pitstop decompiler", sourceFiles, maxDegreeOfParallelism, cancellationToken,
             sourceFile =>
             {
                 // Create a per-task decompiler that shares the same type system but is otherwise independent.

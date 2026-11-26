@@ -14,7 +14,7 @@ public class RecentlyUsedTests
 
     private static readonly XNamespace Mime = "http://www.freedesktop.org/standards/shared-mime-info";
 
-    private static readonly RecentlyUsed.Program Passenger = new("io.github.zaneris.passenger", "\"/opt/passenger/passenger\" %f");
+    private static readonly RecentlyUsed.Program Passenger = new("io.github.jancano.pitstop", "\"/opt/pitstop/passenger\" %f");
 
     private static readonly RecentlyUsed.Program Dolphin = new("org.kde.dolphin", "dolphin %u");
 
@@ -22,7 +22,7 @@ public class RecentlyUsedTests
 
     [Fact]
     public void A_use_is_kept_in_the_desktops_list_beside_what_other_programs_wrote_there() => Cases.All(
-        ("a folder opened in an empty list is a bookmark naming Passenger as the program that used it", A_folder_opened_in_an_empty_list_is_a_bookmark_naming_Passenger_as_the_program_that_used_it),
+        ("a folder opened in an empty list is a bookmark naming Pitstop as the program that used it", A_folder_opened_in_an_empty_list_is_a_bookmark_naming_Passenger_as_the_program_that_used_it),
         ("a solution opened again is counted on its one bookmark and another programs use of it stays", A_solution_opened_again_is_counted_on_its_one_bookmark_and_another_programs_use_of_it_stays),
         ("a use older than another programs leaves the bookmarks later stamps as they were", A_use_older_than_another_programs_leaves_the_bookmarks_later_stamps_as_they_were),
         ("a path is escaped as GLib escapes one", () => Cases.Each<(string, string)>(
@@ -47,12 +47,12 @@ public class RecentlyUsedTests
         XElement application = Assert.Single(Applications(bookmark));
         Assert.True((string?)bookmark.Attribute("href") == "file:///home/me/code/Shop"
             && (string?)bookmark.Element("info")?.Element("metadata")?.Element(Mime + "mime-type")?.Attribute("type") == "inode/directory"
-            && (string?)application.Attribute("name") == "io.github.zaneris.passenger"
-            && (string?)application.Attribute("exec") == "\"/opt/passenger/passenger\" %f"
+            && (string?)application.Attribute("name") == "io.github.jancano.pitstop"
+            && (string?)application.Attribute("exec") == "\"/opt/pitstop/passenger\" %f"
             && (string?)application.Attribute("count") == "1"
             && (string?)application.Attribute("modified") == "2026-11-09T08:30:00.000000Z"
             && new[] { "added", "modified", "visited" }.All(stamp => (string?)bookmark.Attribute(stamp) == "2026-11-09T08:30:00.000000Z"),
-            $"The list made was {list}, so KDE's task manager would not list the folder under Passenger's icon");
+            $"The list made was {list}, so KDE's task manager would not list the folder under Pitstop's icon");
     }
 
     private void A_solution_opened_again_is_counted_on_its_one_bookmark_and_another_programs_use_of_it_stays()
@@ -64,7 +64,7 @@ public class RecentlyUsedTests
 
         XElement bookmark = Assert.Single(list.Root!.Elements("bookmark"));
         string[] programs = [.. Applications(bookmark).Select(a => $"{a.Attribute("name")?.Value}×{a.Attribute("count")?.Value}")];
-        Assert.True(programs is ["com.visualstudio.code×1", "io.github.zaneris.passenger×2"]
+        Assert.True(programs is ["com.visualstudio.code×1", "io.github.jancano.pitstop×2"]
             && (string?)bookmark.Attribute("added") == "2026-11-09T08:30:00.000000Z" && (string?)bookmark.Attribute("visited") == "2026-11-09T10:30:00.000000Z",
             $"Opened twice after another program it is listed as [{string.Join(", ", programs)}], added {bookmark.Attribute("added")?.Value} and visited {bookmark.Attribute("visited")?.Value}, so another program's use, its first opening or its last was lost");
     }
@@ -77,7 +77,7 @@ public class RecentlyUsedTests
 
         XElement bookmark = Assert.Single(list.Root!.Elements("bookmark"));
         Assert.True((string?)bookmark.Attribute("modified") == "2026-11-09T11:30:00.000000Z" && (string?)bookmark.Attribute("visited") == "2026-11-09T11:30:00.000000Z",
-            $"Passenger's earlier opening moved the folder's last use back to {bookmark.Attribute("visited")?.Value}, so the desktop would list it as older than it is");
+            $"Pitstop's earlier opening moved the folder's last use back to {bookmark.Attribute("visited")?.Value}, so the desktop would list it as older than it is");
     }
 
     private void A_path_is_escaped_as_GLib_escapes_one(string path, string uri)
@@ -90,7 +90,7 @@ public class RecentlyUsedTests
     [Fact]
     public void Forgetting_or_trimming_the_list_takes_only_Passengers_own_and_writes_over_nothing_that_does_not_read() => Cases.All(
         ("forgetting a path another program used too takes only Passengers use away", Forgetting_a_path_another_program_used_too_takes_only_Passengers_use_away),
-        ("forgetting a path Passenger alone used takes its bookmark away", Forgetting_a_path_Passenger_alone_used_takes_its_bookmark_away),
+        ("forgetting a path Pitstop alone used takes its bookmark away", Forgetting_a_path_Passenger_alone_used_takes_its_bookmark_away),
         ("a list that is no xbel is given back as it was so nothing writes over it", A_list_that_is_no_xbel_is_given_back_as_it_was_so_nothing_writes_over_it),
         ("bookmarks unused for longer than the desktop keeps them go and the rest stay", Bookmarks_unused_for_longer_than_the_desktop_keeps_them_go_and_the_rest_stay),
         ("past the most the desktop holds the least lately used bookmarks go", Past_the_most_the_desktop_holds_the_least_lately_used_bookmarks_go));
@@ -103,7 +103,7 @@ public class RecentlyUsedTests
         XDocument list = RecentlyUsed.Forgotten(both, "/home/me/Shop", Passenger.Name);
 
         string[] programs = [.. list.Root!.Elements("bookmark").SelectMany(Applications).Select(a => a.Attribute("name")?.Value ?? "")];
-        Assert.True(programs is ["org.kde.dolphin"], $"After Passenger forgot the folder its programs were [{string.Join(", ", programs)}], where Dolphin's use should stay alone");
+        Assert.True(programs is ["org.kde.dolphin"], $"After Pitstop forgot the folder its programs were [{string.Join(", ", programs)}], where Dolphin's use should stay alone");
     }
 
     private void Forgetting_a_path_Passenger_alone_used_takes_its_bookmark_away()
@@ -112,7 +112,7 @@ public class RecentlyUsedTests
 
         XDocument list = RecentlyUsed.Forgotten(used, "/home/me/Shop.sln", Passenger.Name);
 
-        Assert.True(!list.Root!.Elements("bookmark").Any(), $"After Passenger forgot the only program's solution the list still held {list}, so file managers list it as recent");
+        Assert.True(!list.Root!.Elements("bookmark").Any(), $"After Pitstop forgot the only program's solution the list still held {list}, so file managers list it as recent");
     }
 
     private void A_list_that_is_no_xbel_is_given_back_as_it_was_so_nothing_writes_over_it()
@@ -216,8 +216,8 @@ public class RecentlyUsedTests
         string text = Encoding.UTF8.GetString(bytes);
         XDocument read = RecentlyUsed.Read(new MemoryStream(bytes));
         Assert.True(text.Contains("\n  <bookmark href=\"file:///home/me/Shop\"", StringComparison.Ordinal),
-            $"Passenger's bookmark was written into the list unindented, among the others' indented lines: {text}");
-        Assert.True(text.Contains("<bookmark:application name=\"io.github.zaneris.passenger\"", StringComparison.Ordinal)
+            $"Pitstop's bookmark was written into the list unindented, among the others' indented lines: {text}");
+        Assert.True(text.Contains("<bookmark:application name=\"io.github.jancano.pitstop\"", StringComparison.Ordinal)
             && text.Contains("<mime:mime-type type=\"inode/directory\"", StringComparison.Ordinal)
             && text.Contains("<bookmark:group>TextEditor</bookmark:group>", StringComparison.Ordinal) && text.Contains("<bookmark:private />", StringComparison.Ordinal)
             && text.Contains("exec=\"'gnome-text-editor %u'\"", StringComparison.Ordinal) && Paths(read) is ["/home/me/notes.txt", "/home/me/Shop"],
@@ -228,7 +228,7 @@ public class RecentlyUsedTests
     {
         string given = RecentlyUsed.MimeTypeOf(path, folder);
 
-        Assert.True(given == type, $"{path} was given {given}, not {type}, so the desktop would not offer Passenger to open it");
+        Assert.True(given == type, $"{path} was given {given}, not {type}, so the desktop would not offer Pitstop to open it");
     }
 
     private static XDocument Listed(params (string Path, DateTimeOffset Modified)[] used) =>

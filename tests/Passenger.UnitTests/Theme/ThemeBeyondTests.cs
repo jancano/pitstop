@@ -41,7 +41,7 @@ public class ThemeBeyondTests
         ("a background names its picture beside the theme and takes Passengers own way of drawing it where it says no other", A_background_names_its_picture_beside_the_theme_and_takes_Passengers_own_way_of_drawing_it_where_it_says_no_other),
         ("a background gives its opacity tint places fit and alignment and a variant what differs or none", A_background_gives_its_opacity_tint_places_fit_and_alignment_and_a_variant_what_differs_or_none),
         ("fonts give the codes family and size and the windows family", Fonts_give_the_codes_family_and_size_and_the_windows_family),
-        ("a language gives the codes tokens for both variants and for each and one this Passenger does not know is passed over", A_language_gives_the_codes_tokens_for_both_variants_and_for_each_and_one_this_Passenger_does_not_know_is_passed_over),
+        ("a language gives the codes tokens for both variants and for each and one this Pitstop does not know is passed over", A_language_gives_the_codes_tokens_for_both_variants_and_for_each_and_one_this_Passenger_does_not_know_is_passed_over),
         ("a code colour scheme gives languages but no background or fonts which it passes over", A_code_colour_scheme_gives_languages_but_no_background_or_fonts_which_it_passes_over),
         ("a picture is read beside its themes file in the source", () => Cases.Each<(string, string, string)>(
         [
@@ -136,7 +136,7 @@ public class ThemeBeyondTests
         Assert.Equal(new ColourValue(0xFFFF7AB8, 1), csharp.Dark["Syntax.Keyword"]);
         Assert.Empty(csharp.Light);
         Assert.False(read.Read.Languages.ContainsKey("cobol"));
-        Assert.Equal(["Mine.json: cobol in languages is no language this Passenger knows, so it was passed over"], read.Problems);
+        Assert.Equal(["Mine.json: cobol in languages is no language this Pitstop knows, so it was passed over"], read.Problems);
     }
 
     private void A_language_whose_tokens_are_not_the_codes_or_of_the_wrong_kind_refuses_the_theme(string members, string why) =>

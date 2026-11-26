@@ -305,7 +305,7 @@ public static class Themes
             {
                 continue;
             }
-            string own = code ? "the theme's own colours for the code" : "Passenger's own theme";
+            string own = code ? "the theme's own colours for the code" : "Pitstop's own theme";
             if (unfetched.TryGetValue((code, theme), out string? why))
             {
                 said = $"{why}. {own} shows in its place until it can be";

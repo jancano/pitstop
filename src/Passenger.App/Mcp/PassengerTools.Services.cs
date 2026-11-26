@@ -141,7 +141,7 @@ public sealed partial class PassengerTools
     {
         if (!target.Dotnet)
         {
-            throw new InvalidOperationException($"{target.Service} is no .NET service {target.Start?.Name ?? Builds.Containers?.Name} starts from Passenger's build, "
+            throw new InvalidOperationException($"{target.Service} is no .NET service {target.Start?.Name ?? Builds.Containers?.Name} starts from Pitstop's build, "
                 + $"which {(how == RunStart.Profile ? "profile" : "the debugger")} needs: run starts it");
         }
     }
@@ -270,7 +270,7 @@ public sealed partial class PassengerTools
             DotnetService? dotnet = run.Plan.Dotnet.FirstOrDefault(d => d.Service == name);
             Standing standing = states.FirstOrDefault(s => s.Service == name) is { } state ? Standing.Of(state)
                 : new Standing(name, dotnet is not null && !run.Plan.Starts(name) ? "Not started" : "Not created", null, null);
-            yield return standing with { Detail = dotnet is null ? standing.Detail : $"{standing.Detail}, from Passenger's build" };
+            yield return standing with { Detail = dotnet is null ? standing.Detail : $"{standing.Detail}, from Pitstop's build" };
         }
     }
 

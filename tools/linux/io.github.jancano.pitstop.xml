@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- The file types Passenger's desktop entry opens, which the shared MIME database does not name, so a double-click on
-     one offers Passenger. -->
+<!-- The file types Pitstop's desktop entry opens, which the shared MIME database does not name, so a double-click on
+     one offers Pitstop. -->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
     <mime-type type="application/x-ms-sln">
         <comment>Visual Studio solution</comment>

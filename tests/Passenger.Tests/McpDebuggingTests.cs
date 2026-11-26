@@ -191,7 +191,7 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
     [Fact]
     public async Task An_agents_debug_sessions_start_end_and_say_what_they_wait_for_on_Passengers_own_runtime()
     {
-        await Flow.StepApartAsync("passengers own helpers run on the runtime Passenger runs on", () => new McpDebuggingTests(restored), t => t.Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on());
+        await Flow.StepApartAsync("passengers own helpers run on the runtime Pitstop runs on", () => new McpDebuggingTests(restored), t => t.Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on());
         await Flow.StepApartAsync("an agents stop ends a debug session whose program is still starting", () => new McpDebuggingTests(restored), t => t.An_agents_stop_ends_a_debug_session_whose_program_is_still_starting());
         await Flow.StepApartAsync("an agents run and debug of a configuration that runs end it first and answer with the new start", () => new McpDebuggingTests(restored), t => t.An_agents_run_and_debug_of_a_configuration_that_runs_end_it_first_and_answer_with_the_new_start());
         await Flow.StepApartAsync("an agents output naming no console answers the program debugged naming it not the run that ended", () => new McpDebuggingTests(restored), t => t.An_agents_output_naming_no_console_answers_the_program_debugged_naming_it_not_the_run_that_ended());
@@ -213,7 +213,7 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
         Assert.Equal("paused", (await Call(client, McpTools.DebugStart)).GetProperty("state").GetString());
         Process passenger = LastPassenger();
         string? own = DotnetProcesses.RuntimeFolder(passenger.Id);
-        Assert.True(own is not null, $"Passenger's own runtime (process {passenger.Id}) could not be read.{Said()}");
+        Assert.True(own is not null, $"Pitstop's own runtime (process {passenger.Id}) could not be read.{Said()}");
         // As the system lists what it started: no debugger lists Roslyn's server on Linux, its runtime's pipes in its own TMPDIR.
         IReadOnlyList<DotnetProcess> under = [.. Processes.Descendants(passenger.Id).Select(DotnetProcesses.Describe).OfType<DotnetProcess>()];
         foreach ((string helper, string assembly) in new[]
@@ -222,10 +222,10 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
         })
         {
             DotnetProcess[] found = [.. under.Where(p => p.CommandLine.Contains(assembly, StringComparison.OrdinalIgnoreCase))];
-            Assert.True(found.Length == 1, $"{helper} is not among the .NET processes Passenger started: {string.Join(" | ", under.Select(p => p.CommandLine))}");
+            Assert.True(found.Length == 1, $"{helper} is not among the .NET processes Pitstop started: {string.Join(" | ", under.Select(p => p.CommandLine))}");
             string? runtime = DotnetProcesses.RuntimeFolder(found[0].Id);
             Assert.True(runtime is not null && PathNames.Same(runtime, own),
-                $"{helper} (process {found[0].Id}, {found[0].CommandLine}) runs on the runtime in {runtime}, not the one Passenger runs on in {own}");
+                $"{helper} (process {found[0].Id}, {found[0].CommandLine}) runs on the runtime in {runtime}, not the one Pitstop runs on in {own}");
         }
         await Call(client, McpTools.Stop);
     }
@@ -711,7 +711,7 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
         // Each word says how long the call has taken so far.
         Assert.Matches($@"\({SaidWhile.Pattern}\)$", told[^1].Message ?? string.Empty);
         await Call(client, McpTools.Stop);
-        Assert.True(Errors().Length == 0, $"The agent's Passenger wrote to its standard error, which an agent may never read:\n{string.Join('\n', Errors())}");
+        Assert.True(Errors().Length == 0, $"The agent's Pitstop wrote to its standard error, which an agent may never read:\n{string.Join('\n', Errors())}");
     }
 
     /// <summary>A launch whose program never reaches its breakpoint in the time waited is answered as running, naming the

@@ -98,13 +98,13 @@ public partial class MainWindow
 
     /// <summary>What a screenshot's agent finds this Passenger by: its executable, and its process's id to attach to.</summary>
     [IdentifierHome]
-    public const string AgentExecutableVariable = "PASSENGER";
+    public const string AgentExecutableVariable = "PITSTOP";
     [IdentifierHome]
-    public const string AgentPidVariable = "PASSENGER_PID";
+    public const string AgentPidVariable = "PITSTOP_PID";
 
     /// <summary>A screenshot's agent (<c>--agent</c>): the window's socket opened to it, and its command line run in a tab
-    /// of the Terminal window, which it joins the window from as any agent does, with <c>$PASSENGER --mcp-attach
-    /// $PASSENGER_PID</c>. Throws saying why agents cannot reach the window.</summary>
+    /// of the Terminal window, which it joins the window from as any agent does, with <c>$PITSTOP --mcp-attach
+    /// $PITSTOP_PID</c>. Throws saying why agents cannot reach the window.</summary>
     internal Task<Run.TerminalRun> RunAgent(IReadOnlyList<string> command)
     {
         AgentsUnattended = true;
@@ -216,7 +216,7 @@ public partial class MainWindow
     {
         UiThread.Check();
         string what = char.ToLowerInvariant(title[0]) + title[1..];
-        return AllowAgentAsync(agent, ownWindows ? $"{tool} in Passenger's windows" : tool,
+        return AllowAgentAsync(agent, ownWindows ? $"{tool} in Pitstop's windows" : tool,
             new AgentToolDialog(agent, tool, what, ownWindows, arguments.Count == 0 ? null : AgentBlock(Mcp.AskedArguments.Of(arguments))), cancel);
     }
 
@@ -324,7 +324,7 @@ public partial class MainWindow
             }
             if (at is Window asking && PassengerApp.Windows.Any(w => w.agentDialogs.Contains(asking)))
             {
-                return $"\"{asking.Title}\" is Passenger's question to the person on an agent's behalf: only they answer it, never an agent's input";
+                return $"\"{asking.Title}\" is Pitstop's question to the person on an agent's behalf: only they answer it, never an agent's input";
             }
         }
         return null;
@@ -373,7 +373,7 @@ public partial class MainWindow
             : $"{Numbers.Said(agents)} agents connected";
         ToolTip.SetTip(AgentButton, asking
             ? "An agent's call waits for your answer to the question this window asks: click to see it. Unanswered, the agent is told so once the time is up"
-            : "An agent is using this window through Passenger's MCP server");
+            : "An agent is using this window through Pitstop's MCP server");
     }
 
     /// <summary>The status bar's words on agents, clicked: the question one waits on comes forward.</summary>

@@ -87,7 +87,7 @@ internal static class Rules
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Whether a process runs is answered in one place, DotnetProcesses.Runs, for a process Passenger started (by .NET's "
+        description: "Whether a process runs is answered in one place, DotnetProcesses.Runs, for a process Pitstop started (by .NET's "
             + "hold on it, which hears of its end however soon its id is taken again) and for one it found: a zombie, which waits "
             + "for another's parent and which HasExited finds running, counts as ended, and a process Windows will not open for "
             + "HasExited (another user's, an elevated one) is asked by its id.");
@@ -112,7 +112,7 @@ internal static class Rules
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "Windows refuses a plain move over a file another program has open, however that program shares it (a "
-            + "scanner, an indexer, another Passenger reading it). AtomicFile.Move renames with POSIX semantics, which only a "
+            + "scanner, an indexer, another Pitstop reading it). AtomicFile.Move renames with POSIX semantics, which only a "
             + "program sharing no deletion refuses, and moves plainly where the file system has no such rename (FAT, a share).");
 
     public static readonly DiagnosticDescriptor BareParallelLoop = new(

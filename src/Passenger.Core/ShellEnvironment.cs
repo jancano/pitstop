@@ -13,7 +13,7 @@ public static class ShellEnvironment
 
     /// <summary>The variable naming the file the shell writes its environment to.</summary>
     [IdentifierHome]
-    private const string Written = "PASSENGER_SHELL_ENVIRONMENT";
+    private const string Written = "PITSTOP_SHELL_ENVIRONMENT";
 
     /// <summary>What profiles look for to know their environment is being read with no terminal, and skip what needs one
     /// (an rc's <c>exec tmux</c>, oh-my-zsh's tmux autostart, a prompt's set-up): VSCODE_RESOLVING_ENVIRONMENT and
@@ -144,7 +144,7 @@ public static class ShellEnvironment
         PassengerLog.WriteMasked(mask =>
         {
             string line = string.Join(' ', mask(said).Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
-            return $"The login shell's environment was not read, so programs are looked for on the PATH Passenger was given ({path}): "
+            return $"The login shell's environment was not read, so programs are looked for on the PATH Pitstop was given ({path}): "
                 + $"{shell} -l -i: {why}{(line.Length == 0 ? string.Empty : $": {line}")}";
         });
     }

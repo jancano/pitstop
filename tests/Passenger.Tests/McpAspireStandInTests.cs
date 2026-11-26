@@ -233,11 +233,11 @@ public sealed class McpAspireStandInTests(StandInAppHost project) : McpRig, ICla
         {
             Name = "resource-restart", DisplayName = "Restart", State = Passenger.App.Aspire.Protocol.ResourceCommandState.Enabled, ConfirmationMessage = "Restart api?",
         });
-        api.Commands.Add(new Passenger.App.Aspire.Protocol.ResourceCommand { Name = "passenger-ping", DisplayName = "Ping", State = Passenger.App.Aspire.Protocol.ResourceCommandState.Enabled });
+        api.Commands.Add(new Passenger.App.Aspire.Protocol.ResourceCommand { Name = "pitstop-ping", DisplayName = "Ping", State = Passenger.App.Aspire.Protocol.ResourceCommandState.Enabled });
         api.Commands.Add(new Passenger.App.Aspire.Protocol.ResourceCommand { Name = "resource-start", DisplayName = "Start", State = Passenger.App.Aspire.Protocol.ResourceCommandState.Disabled });
         api.Commands.Add(new Passenger.App.Aspire.Protocol.ResourceCommand
         {
-            Name = "passenger-seed", DisplayName = "Seed", State = Passenger.App.Aspire.Protocol.ResourceCommandState.Enabled,
+            Name = "pitstop-seed", DisplayName = "Seed", State = Passenger.App.Aspire.Protocol.ResourceCommandState.Enabled,
             ArgumentInputs = { new Passenger.App.Aspire.Protocol.InteractionInput { Name = "rows", Label = "Rows", InputType = Passenger.App.Aspire.Protocol.InputType.Number } },
         });
         resources.PushResource(api);
@@ -249,18 +249,18 @@ public sealed class McpAspireStandInTests(StandInAppHost project) : McpRig, ICla
         JsonElement app = Assert.Single((await Call(client, McpTools.Workspace)).GetProperty("aspireApps").EnumerateArray());
         Assert.Equal("run", app.GetProperty("how").GetString());
         JsonElement listed = Assert.Single(app.GetProperty("resources").EnumerateArray());
-        Assert.Equal(["resource-restart", "passenger-ping", "passenger-seed"], listed.GetProperty("commands").EnumerateArray().Select(c => c.GetString()));
+        Assert.Equal(["resource-restart", "pitstop-ping", "pitstop-seed"], listed.GetProperty("commands").EnumerateArray().Select(c => c.GetString()));
         string target = listed.GetProperty("target").GetString()!;
 
         Assert.Equal("api-owned-instance: resource-restart Succeeded", Text(await Call(client, McpTools.ContainerAction, new() { ["container"] = "api", ["action"] = "restart" })));
-        Assert.Equal("api-owned-instance: passenger-ping Succeeded", Text(await Call(client, McpTools.ContainerAction, new() { ["container"] = target, ["action"] = "passenger-ping" })));
-        Assert.Equal(["resource-restart", "passenger-ping"], resources.Commands.Select(command => command.CommandName));
+        Assert.Equal("api-owned-instance: pitstop-ping Succeeded", Text(await Call(client, McpTools.ContainerAction, new() { ["container"] = target, ["action"] = "pitstop-ping" })));
+        Assert.Equal(["resource-restart", "pitstop-ping"], resources.Commands.Select(command => command.CommandName));
         Assert.All(resources.Commands, command => Assert.Equal("api-owned-instance", command.ResourceName));
 
         foreach ((string action, string why) in ((string, string)[])[
-            ("explode", "its commands are resource-restart, passenger-ping, resource-start, passenger-seed"),
+            ("explode", "its commands are resource-restart, pitstop-ping, resource-start, pitstop-seed"),
             ("start", "resource-start is not enabled now"),
-            ("passenger-seed", "asks for input the person gives")])
+            ("pitstop-seed", "asks for input the person gives")])
         {
             CallToolResult refused = await Result(client, McpTools.ContainerAction, new() { ["container"] = target, ["action"] = action });
             Assert.True(refused.IsError == true && Text(refused).Contains(why, StringComparison.Ordinal), $"container_action {action} on the resource answered: {Text(refused)}");
@@ -556,7 +556,7 @@ public sealed class McpAspireStandInTests(StandInAppHost project) : McpRig, ICla
         {
             CallToolResult console = await Result(client, McpTools.Output, new() { ["resource"] = "web", ["lines"] = 40 });
             string stopped = asking.IsFaulted ? $" (the requests stopped: {asking.Exception!.InnerException!.Message})" : string.Empty;
-            string log = Path.Combine(OwnState, "logs", "passenger.log");
+            string log = Path.Combine(OwnState, "logs", "pitstop.log");
             string logged = string.Empty;
             if (File.Exists(log))
             {
@@ -567,7 +567,7 @@ public sealed class McpAspireStandInTests(StandInAppHost project) : McpRig, ICla
                 ? $"began at {webProcess.StartTime:HH:mm:ss.fff} and ended at {webProcess.ExitTime:HH:mm:ss.fff} with exit code {webProcess.ExitCode}" : $"began at {webProcess.StartTime:HH:mm:ss.fff} and runs";
             string port = held is null ? string.Empty : $"; at {DateTime.Now:HH:mm:ss.fff} the port in front of web's took {held.Account()}";
             return $"web was sent {Volatile.Read(ref sent)} requests{stopped}, answered {Volatile.Read(ref served)} of them and was slower than 5 s to {Volatile.Read(ref slow)}, "
-                + $"its program {program} {ran} (the agent's Passenger logged {(logged.Length == 0 ? "nothing of it" : $"of it:\n  {logged}\n")}){port}, "
+                + $"its program {program} {ran} (the agent's Pitstop logged {(logged.Length == 0 ? "nothing of it" : $"of it:\n  {logged}\n")}){port}, "
                 + $"and its console says:\n{Text(console)}";
         }
     }

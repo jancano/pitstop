@@ -6,8 +6,8 @@ using Passenger.Core;
 
 namespace Passenger.App.Updates;
 
-/// <summary>macOS's update, from the disk image a person downloads (Passenger-macos-arm64.dmg or -x64), opened on the
-/// startup disk (<see cref="ImageFolder"/>): its SHA-256 checked against the release's SHA256SUMS, its Passenger.app
+/// <summary>macOS's update, from the disk image a person downloads (Pitstop-macos-arm64.dmg or -x64), opened on the
+/// startup disk (<see cref="ImageFolder"/>): its SHA-256 checked against the release's SHA256SUMS, its Pitstop.app
 /// copied out into the state folder's <c>updates/</c> and checked again (bundle, version, signature, and the running
 /// app's team once there is one). As the process ends the two apps trade places in one step where the volume allows
 /// (renamex_np's swap), and Restart to Update starts the new one through LaunchServices: nothing of the update runs
@@ -16,7 +16,7 @@ namespace Passenger.App.Updates;
 public sealed partial class DiskImageUpdater : InPlaceUpdater
 {
     /// <summary>The app at the image's top, as tools/package-mac.sh makes it.</summary>
-    private const string AppName = "Passenger.app";
+    private const string AppName = "Pitstop.app";
 
     /// <summary>The app made ready, named so LaunchServices never takes it for an app to open until it is in place.</summary>
     private const string ReadyApp = "Passenger.update";
@@ -25,7 +25,7 @@ public sealed partial class DiskImageUpdater : InPlaceUpdater
 
     private static readonly TimeSpan ToolLimit = TimeSpan.FromMinutes(10);
 
-    /// <param name="bundle">The installed Passenger.app.</param>
+    /// <param name="bundle">The installed Pitstop.app.</param>
     /// <param name="staging">Where downloads are made ready: the state folder's <c>updates/</c>.</param>
     /// <param name="start">How the installed app is started again by Restart to Update: LaunchServices' open by
     /// default.</param>
@@ -37,7 +37,7 @@ public sealed partial class DiskImageUpdater : InPlaceUpdater
         ImageFolder = PathNames.Canonical(UserTemporary.Of(staging, "updates"));
     }
 
-    /// <summary>The installed Passenger.app this copy runs from.</summary>
+    /// <summary>The installed Pitstop.app this copy runs from.</summary>
     public string Bundle { get; }
 
     /// <summary>The folder downloads are made ready in.</summary>
@@ -117,7 +117,7 @@ public sealed partial class DiskImageUpdater : InPlaceUpdater
             try
             {
                 await CheckAsync(app, identifier, release.Version, team, cancel).ConfigureAwait(false);
-                return new UpdateOutcome.Ready($"Passenger {release.Version} was downloaded before, to {app}, and its app checked again{Signed(team)}");
+                return new UpdateOutcome.Ready($"Pitstop {release.Version} was downloaded before, to {app}, and its app checked again{Signed(team)}");
             }
             catch (UpdateRefusedException)
             {
@@ -134,7 +134,7 @@ public sealed partial class DiskImageUpdater : InPlaceUpdater
         RemoveEmpty(opened);
         RemoveEmpty(ImageFolder);
         await CheckAsync(app, identifier, release.Version, team, cancel).ConfigureAwait(false);
-        return new UpdateOutcome.Ready($"Passenger {release.Version} downloaded to {app}: {package.Download.Name}'s SHA-256 is {Sums}' {expected}, and the app's signature holds{Signed(team)}");
+        return new UpdateOutcome.Ready($"Pitstop {release.Version} downloaded to {app}: {package.Download.Name}'s SHA-256 is {Sums}' {expected}, and the app's signature holds{Signed(team)}");
     }
 
     protected override string Staged(string version) => Path.Combine(Staging, version, ReadyApp);
@@ -208,7 +208,7 @@ public sealed partial class DiskImageUpdater : InPlaceUpdater
         await CleanAsync(keep: null).ConfigureAwait(false);
     }
 
-    protected override IReadOnlyList<int> RunningHere() => RunningAs(Path.Combine(MacBundles.Programs(Bundle), "Passenger"));
+    protected override IReadOnlyList<int> RunningHere() => RunningAs(Path.Combine(MacBundles.Programs(Bundle), "Pitstop"));
 
     /// <summary>The app at the image's top, copied out of it mounted read-only, and the image let go of, a failure included.</summary>
     private async Task CopyOutAsync(string image, string folder, string app, CancellationToken cancel)

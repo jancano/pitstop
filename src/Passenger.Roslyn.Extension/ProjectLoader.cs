@@ -162,7 +162,7 @@ internal sealed class PassengerProjectLoader : LanguageServerProjectLoader, ILsp
         ProjectInfoResult answer = await client.SendRequestAsync<ProjectInfoParams, ProjectInfoResult>(ProjectMethods.Info, new ProjectInfoParams(projectPath), cancellationToken).ConfigureAwait(false);
         if (answer.Infos is null)
         {
-            return Result(projectPath, [], [new DiagnosticLogItem(DiagnosticLogItemKind.Error, answer.Problem ?? "Passenger's project host gave no design-time build", projectPath)]);
+            return Result(projectPath, [], [new DiagnosticLogItem(DiagnosticLogItemKind.Error, answer.Problem ?? "Pitstop's project host gave no design-time build", projectPath)]);
         }
         return Result(projectPath, Read(answer.Infos), Logged(answer.Diagnostics));
     }

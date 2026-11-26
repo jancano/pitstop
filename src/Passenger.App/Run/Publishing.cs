@@ -177,7 +177,7 @@ public static partial class PublishProfiles
         }
         if (project.WindowsOnly is [(_, string desktop), ..])
         {
-            return $"{name} is a {desktop} app, which Passenger publishes only on Windows";
+            return $"{name} is a {desktop} app, which Pitstop publishes only on Windows";
         }
         return null;
     }

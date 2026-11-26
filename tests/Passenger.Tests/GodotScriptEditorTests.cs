@@ -53,12 +53,12 @@ public sealed class GodotScriptEditorTests
         };
 
         Assert.Null(window.Actions.Run(AppActions.GodotScriptEditor));
-        Ui.WaitFor(() => window.Status?.Contains("now opens its scripts in Passenger", StringComparison.Ordinal) == true,
-            () => $"the status to say Godot's editor now opens its scripts in Passenger; it says {window.Status}");
+        Ui.WaitFor(() => window.Status?.Contains("now opens its scripts in Pitstop", StringComparison.Ordinal) == true,
+            () => $"the status to say Godot's editor now opens its scripts in Pitstop; it says {window.Status}");
 
         string written = Path.Combine(data, "editor_settings-4.7.tres");
         Assert.True(asked is [{ } question] && question.Contains(PathNames.Shown(written, null), StringComparison.Ordinal),
-            $"Passenger was to ask once, naming the file it writes, before writing it; it asked: {string.Join(" | ", asked)}");
+            $"Pitstop was to ask once, naming the file it writes, before writing it; it asked: {string.Join(" | ", asked)}");
         string text = File.ReadAllText(written);
         IReadOnlyDictionary<string, object> read = GodotEditorSettings.Read(text, Keys);
         string self = Product.Program;
@@ -66,12 +66,12 @@ public sealed class GodotScriptEditorTests
             && Equals(read[GodotEditorSettings.CustomExecPathArgs], GodotEditorSettings.ScriptArguments) && Equals(read[GodotEditorSettings.UseExternalEditor], true)
             && Equals(read[GodotEditorSettings.ExecPath], self) && Equals(read[GodotEditorSettings.ExecFlags], GodotEditorSettings.TextArguments)
             && text.Contains("interface/editor/localization/editor_language = \"fr\"", StringComparison.Ordinal),
-            $"Godot 4.7's settings were to make Passenger its script editor and keep the 4.6 file's other settings:\n{text}");
+            $"Godot 4.7's settings were to make Pitstop its script editor and keep the 4.6 file's other settings:\n{text}");
 
         Assert.Null(window.Actions.Run(AppActions.GodotScriptEditor));
-        Ui.WaitFor(() => window.Status?.Contains("already opens its scripts in this Passenger", StringComparison.Ordinal) == true,
-            () => $"the status to say Godot's editor already opens its scripts in Passenger; it says {window.Status}");
-        Assert.True(asked.Count == 1, $"Asked again with nothing to change, Passenger asked: {string.Join(" | ", asked)}");
+        Ui.WaitFor(() => window.Status?.Contains("already opens its scripts in this Pitstop", StringComparison.Ordinal) == true,
+            () => $"the status to say Godot's editor already opens its scripts in Pitstop; it says {window.Status}");
+        Assert.True(asked.Count == 1, $"Asked again with nothing to change, Pitstop asked: {string.Join(" | ", asked)}");
     }
 
     /// <summary>A Godot project's first opening in a window that keeps its folders' state offers Passenger as Godot's script
@@ -83,10 +83,10 @@ public sealed class GodotScriptEditorTests
         string state = TestFolders.Create("godot-offer-state-");
         string folder = NewGodotProject();
         MainWindow first = Kept(state, godot, folder);
-        Ui.WaitFor(() => first.GodotSaid?.Contains("editor can open this project's scripts in Passenger", StringComparison.Ordinal) == true,
-            () => $"the banner to offer Passenger as Godot's script editor (it says {first.GodotSaid ?? "nothing"}; {first.Status})");
-        Assert.True(first.GetVisualDescendants().OfType<Button>().Any(b => b.IsEffectivelyVisible && Equals(b.Content, "Make Passenger Godot's Script Editor…")),
-            "The banner does not offer Make Passenger Godot's Script Editor…");
+        Ui.WaitFor(() => first.GodotSaid?.Contains("editor can open this project's scripts in Pitstop", StringComparison.Ordinal) == true,
+            () => $"the banner to offer Pitstop as Godot's script editor (it says {first.GodotSaid ?? "nothing"}; {first.Status})");
+        Assert.True(first.GetVisualDescendants().OfType<Button>().Any(b => b.IsEffectivelyVisible && Equals(b.Content, "Make Pitstop Godot's Script Editor…")),
+            "The banner does not offer Make Pitstop Godot's Script Editor…");
         Ui.ClickButton(first, "Dismiss");
         Ui.WaitFor(() => first.GodotSaid is null, () => $"the banner to go once dismissed (it says {first.GodotSaid})");
         first.Close();

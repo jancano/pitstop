@@ -12,7 +12,7 @@ namespace Passenger.App.Godot;
 /// <summary>A request of Passenger's addon refused, in the words the addon is answered with.</summary>
 internal sealed class GodotEditorRefused(string words) : Exception(words);
 
-/// <summary>The window's door for Passenger's addon in Godot's editor (<c>Godot/Addon/passenger.gd</c>): a listener on
+/// <summary>The window's door for Passenger's addon in Godot's editor (<c>Godot/Addon/pitstop.gd</c>): a listener on
 /// loopback, named while it listens by a file in Passenger's state only the person reads (<see cref="Listings"/>), with
 /// the project's folder, the port and two secrets. A connection's first line must be the first secret, checked before
 /// anything else is read, as Aspire's bearer token is; Passenger then says the second, so the addon knows the Passenger
@@ -215,7 +215,7 @@ internal sealed class GodotEditorLink : IAsyncDisposable
         }
         IdeErrors.Observe(AnswerAsync(peer, asked, () => requests.TryGetValue(method, out Func<GodotEditorPeer, JsonElement, Task<JsonObject>>? handle)
             ? UiThread.InvokeAsync(() => handle(peer, parameters))
-            : throw new GodotEditorRefused($"Passenger takes no {method} from Godot's editor")));
+            : throw new GodotEditorRefused($"Pitstop takes no {method} from Godot's editor")));
     }
 
     /// <summary>A request answered with what its handler returns, or the words it was refused in.</summary>
@@ -240,7 +240,7 @@ internal sealed class GodotEditorLink : IAsyncDisposable
         string? folder = JsonMembers.Text(hello, "folder");
         if (folder is null || Projects.FirstOrDefault(p => PathNames.Same(PathNames.Canonical(folder), p)) is not { } project)
         {
-            throw new GodotEditorRefused($"this Passenger window is open on {(Projects.Count == 0 ? "no Godot project" : Plural.Listed([.. Projects.Select(p => PathNames.Shown(p, null))]))}");
+            throw new GodotEditorRefused($"this Pitstop window is open on {(Projects.Count == 0 ? "no Godot project" : Plural.Listed([.. Projects.Select(p => PathNames.Shown(p, null))]))}");
         }
         peer.Project = project;
         peer.Editor = JsonMembers.Number(hello, "editor") ?? 0;
@@ -250,8 +250,8 @@ internal sealed class GodotEditorLink : IAsyncDisposable
         EditorsChanged?.Invoke(this, EventArgs.Empty);
         return new JsonObject
         {
-            ["passenger"] = Product.Version,
-            ["said"] = "Play builds this project's C# in Passenger, and Passenger's debugger attaches to each game Play starts",
+            ["pitstop"] = Product.Version,
+            ["said"] = "Play builds this project's C# in Pitstop, and Pitstop's debugger attaches to each game Play starts",
         };
     }
 

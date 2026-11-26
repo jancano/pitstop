@@ -1106,8 +1106,8 @@ public sealed class McpRefactorTests : McpRig, IClassFixture<RestoredFolders>
 
             foreach ((Dictionary<string, object?> arguments, string said) in new (Dictionary<string, object?>, string)[]
             {
-                (new() { ["kind"] = "change_signature", ["path"] = "Sum.csproj", ["line"] = 1, ["column"] = 2 }, "MSBuild files have no Change Signature in Passenger"),
-                (new() { ["kind"] = "safe_delete", ["path"] = "Notes.txt", ["line"] = 1, ["column"] = 1 }, "Passenger has no code help for"),
+                (new() { ["kind"] = "change_signature", ["path"] = "Sum.csproj", ["line"] = 1, ["column"] = 2 }, "MSBuild files have no Change Signature in Pitstop"),
+                (new() { ["kind"] = "safe_delete", ["path"] = "Notes.txt", ["line"] = 1, ["column"] = 1 }, "Pitstop has no code help for"),
                 (new() { ["kind"] = "inline_everything", ["path"] = "Tidy.cs", ["line"] = 1, ["column"] = 1 }, "there are change_signature, safe_delete, move"),
             })
             {

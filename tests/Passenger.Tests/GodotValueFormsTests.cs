@@ -83,7 +83,7 @@ public sealed class GodotValueFormsTests : IClassFixture<GodotValueFormsTests.Ga
             Assert.True(smooth.IsChecked, "StyleBoxFlat's anti_aliasing is not shown on, as the game holds it");
             Ui.Click(smooth);
             Ui.WaitFor(() => Printed(window, "smooth false"), () => $"the game to print the resource's property cleared ({Tail(window)}; {window.Status})", TimeSpan.FromMinutes(1));
-            Assert.False(Run(window).Contains("passenger_agent.gd", StringComparison.Ordinal), $"Passenger's helper raised errors in the game:\n{Run(window)}");
+            Assert.False(Run(window).Contains("pitstop_agent.gd", StringComparison.Ordinal), $"Pitstop's helper raised errors in the game:\n{Run(window)}");
             Stop(window);
         }
         finally

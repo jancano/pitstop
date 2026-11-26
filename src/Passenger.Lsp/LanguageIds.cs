@@ -7,4 +7,7 @@ public static class LanguageIds
 {
     public const string CSharp = "csharp";
     public const string Razor = "aspnetcorerazor";
+    public const string C = "c";
+    public const string Cpp = "cpp";
+    public const string Lua = "lua";
 }

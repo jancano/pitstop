@@ -155,7 +155,7 @@ public class GodotUidsTests
         ], level.Externals);
         Assert.Equal([new GodotBinaryExternal("Texture2D", "res://levels/actors/icon.svg", icon)], look.Externals);
         Assert.True(copied[0].Binary.AsSpan().StartsWith("RSCC"u8) && copied[1].Binary.AsSpan().StartsWith("RSRC"u8), "A copy was not left compressed or plain as its original was");
-        Assert.True(copied.Take(4).All(c => c.Unread is null), "A copy Passenger rewrote said it kept its original's uid");
+        Assert.True(copied.Take(4).All(c => c.Unread is null), "A copy Pitstop rewrote said it kept its original's uid");
         // Godot 4.7 reads no format 7: the copy keeps its bytes and says why.
         Assert.Same(newer, copied[4].Binary);
         Assert.Contains("binary format 7", copied[4].Unread, StringComparison.Ordinal);

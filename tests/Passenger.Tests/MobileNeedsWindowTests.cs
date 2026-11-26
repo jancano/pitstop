@@ -334,7 +334,7 @@ public sealed class MobileNeedsWindowTests : IDisposable
         File.WriteAllText(Path.Combine(template, ".template.config", "template.json"), """
             {
               "$schema": "http://json.schemastore.org/template",
-              "author": "Passenger's tests",
+              "author": "Pitstop's tests",
               "classifications": [ "Library" ],
               "identity": "Passenger.Tests.Plain.CSharp",
               "name": "Plain Library",

@@ -28,7 +28,7 @@ public sealed class AndroidTargetChoiceTests : IDisposable
     /// <summary>The AVD the test makes, by its name and as the workload describes it.</summary>
     private const string Avd = "Passenger_Listing";
 
-    private const string AvdShown = "Passenger Listing";
+    private const string AvdShown = "Pitstop Listing";
 
     private readonly string folder = PathNames.Canonical(TestFolders.Create("android-targets-"));
     private readonly string? avdHome = Environment.GetEnvironmentVariable(AvdHome);
@@ -174,7 +174,7 @@ public sealed class AndroidTargetChoiceTests : IDisposable
             <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);{MauiApp.Android.Replace("-android", "-windows10.0.19041.0", StringComparison.Ordinal)}</TargetFrameworks>
             <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);{Desktop}</TargetFrameworks>
             <OutputType>Exe</OutputType>
-            <ApplicationId>net.passengeride.tests.relisted</ApplicationId>
+            <ApplicationId>net.pitstopide.tests.relisted</ApplicationId>
           </PropertyGroup>
           <ItemGroup Condition="'$(TargetFramework)' == '{Desktop}'">
             <PackageReference Include="Avalonia.Desktop" Version="{AvaloniaApp.Version}" />
@@ -194,7 +194,7 @@ public sealed class AndroidTargetChoiceTests : IDisposable
         <Project>
           <Target Name="ComputeAvailableDevices" Returns="@(Devices)">
             <ItemGroup>
-              <Devices Include="emulator-5554" Type="Emulator" Status="Online" AvdName="Passenger_Relisted" Description="Passenger Relisted" />
+              <Devices Include="emulator-5554" Type="Emulator" Status="Online" AvdName="Passenger_Relisted" Description="Pitstop Relisted" />
             </ItemGroup>
           </Target>
           <Target Name="Build" />
@@ -256,7 +256,7 @@ public sealed class AndroidTargetChoiceTests : IDisposable
             <TargetFrameworks>{MauiApp.Android}</TargetFrameworks>
             <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">$(TargetFrameworks);{MauiApp.Android.Replace("-android", "-maccatalyst", StringComparison.Ordinal)}</TargetFrameworks>
             <OutputType>Exe</OutputType>
-            <ApplicationId>net.passengeride.tests.droid</ApplicationId>
+            <ApplicationId>net.pitstopide.tests.droid</ApplicationId>
           </PropertyGroup>
         </Project>
         """;

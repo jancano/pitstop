@@ -42,14 +42,14 @@ public static class OwnTemplates
             + "restored from that Godot's own packages", null, frameworks, framework, []);
         TemplateVariant gdscript = new("Godot.Game.GDScript", GDScript, 0,
             "A Godot 4 game in GDScript: project.godot, a main scene and the script on its root", null, [], null, []);
-        return new ProjectTemplate("Godot 4 Game", ["godot"], "Passenger", ["Game", "Godot"], "Game", scripts ? [csharp, gdscript] : [csharp]) { GodotGame = true };
+        return new ProjectTemplate("Godot 4 Game", ["godot"], "Pitstop", ["Game", "Godot"], "Game", scripts ? [csharp, gdscript] : [csharp]) { GodotGame = true };
     }
 
     private static ProjectTemplate Type(string kind)
     {
         string lower = kind.ToLowerInvariant();
-        TemplateVariant variant = new($"Passenger.{kind}.CSharp", "C#", 0, $"A C# {lower} in a file of its own, in the namespace of its folder", null, [], null, []);
-        return new ProjectTemplate(kind, [lower], "Passenger", ["Common", "Code"], kind, [variant])
+        TemplateVariant variant = new($"Pitstop.{kind}.CSharp", "C#", 0, $"A C# {lower} in a file of its own, in the namespace of its folder", null, [], null, []);
+        return new ProjectTemplate(kind, [lower], "Pitstop", ["Common", "Code"], kind, [variant])
         {
             Own = new OwnTemplate(".cs", (name, space) => TypeText(kind, name, space)),
         };

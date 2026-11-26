@@ -699,7 +699,7 @@ public sealed class EslintPrettierTests : IClassFixture<EslintPrettierTests.Proj
                 Assert.True(System.Text.RegularExpressions.Regex.IsMatch(log, $@"{server} language server \(process \d+\) started for {System.Text.RegularExpressions.Regex.Escape(app)} on {name} "),
                     $"The IDE's log does not say the {server} server started on {name} for {app}");
             }
-            Assert.False(File.Exists(Path.Combine(app, "preloaded")), $"{name} ran what the folder's own bunfig.toml preloads as it ran Passenger's servers");
+            Assert.False(File.Exists(Path.Combine(app, "preloaded")), $"{name} ran what the folder's own bunfig.toml preloads as it ran Pitstop's servers");
         }
         finally
         {

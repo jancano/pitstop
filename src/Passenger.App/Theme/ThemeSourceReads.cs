@@ -88,7 +88,7 @@ public static class ThemeSourceReads
         }
         if (source.Place is not { } place)
         {
-            return (null, $"{source.Shown} is read where Passenger keeps it");
+            return (null, $"{source.Shown} is read where Pitstop keeps it");
         }
         Uri address = new(new Uri(place), path);
         string missing = $"{source.Shown} has no {path}{(source.Kind == ThemeSourceKind.GitHub ? " at its default branch, or is no public repository" : string.Empty)} ({address} answers 404)";

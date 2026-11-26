@@ -1,16 +1,16 @@
 #!/bin/sh
-# Passenger's own icons from src/Passenger.App/Assets/passenger.svg (`just app-icon`, on macOS, since sips draws them):
-# Passenger.icns at each size macOS asks of an app icon, passenger.png at 256 pixels for the IDE's mark and Linux's
-# desktop entry, and Passenger.ico at the sizes Windows draws Passenger.exe's and every window's icon, each a PNG inside.
+# Passenger's own icons from src/Passenger.App/Assets/pitstop.svg (`just app-icon`, on macOS, since sips draws them):
+# Pitstop.icns at each size macOS asks of an app icon, pitstop.png at 256 pixels for the IDE's mark and Linux's
+# desktop entry, and Pitstop.ico at the sizes Windows draws Pitstop.exe's and every window's icon, each a PNG inside.
 # Every picture the three files hold is read back, failing the script unless its corner is fully transparent.
 set -eu
 . "$(dirname "$0")/release-common.sh"
 root=$(checkout_root)
 assets="$root/src/Passenger.App/Assets"
-svg="$assets/passenger.svg"
+svg="$assets/pitstop.svg"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-set_dir="$work/Passenger.iconset"
+set_dir="$work/Pitstop.iconset"
 mkdir -p "$set_dir"
 # Each size drawn from the SVG itself, since one scaled down from a larger picture keeps a fringe round its edge. sips
 # says nothing in its exit status of a file it skipped, so the picture's absence says it.
@@ -23,14 +23,14 @@ for size in 16 32 128 256 512; do
     draw "$size" "$set_dir/icon_${size}x${size}.png"
     draw $((size * 2)) "$set_dir/icon_${size}x${size}@2x.png"
 done
-iconutil -c icns "$set_dir" -o "$assets/Passenger.icns"
-draw 256 "$assets/passenger.png"
+iconutil -c icns "$set_dir" -o "$assets/Pitstop.icns"
+draw 256 "$assets/pitstop.png"
 ico_sizes="16 20 24 32 40 48 64 128 256"
 for size in $ico_sizes; do
     draw "$size" "$work/ico-$size.png"
 done
 # An ICONDIR, an entry of 16 bytes per image (a width or height of 256 is written 0), then the PNGs themselves.
-python3 -I - "$assets/Passenger.ico" $(for size in $ico_sizes; do echo "$work/ico-$size.png"; done) <<'PY'
+python3 -I - "$assets/Pitstop.ico" $(for size in $ico_sizes; do echo "$work/ico-$size.png"; done) <<'PY'
 import struct, sys
 images = [open(path, "rb").read() for path in sys.argv[2:]]
 offset = 6 + 16 * len(images)
@@ -43,8 +43,8 @@ with open(sys.argv[1], "wb") as ico:
     ico.write(head + b"".join(images))
 PY
 
-iconutil -c iconset "$assets/Passenger.icns" -o "$work/shipped.iconset"
-python3 -I - "$assets/Passenger.icns" "$work/shipped.iconset" "$assets/Passenger.ico" "$assets/passenger.png" <<'PY'
+iconutil -c iconset "$assets/Pitstop.icns" -o "$work/shipped.iconset"
+python3 -I - "$assets/Pitstop.icns" "$work/shipped.iconset" "$assets/Pitstop.ico" "$assets/pitstop.png" <<'PY'
 import os, struct, sys, zlib
 
 

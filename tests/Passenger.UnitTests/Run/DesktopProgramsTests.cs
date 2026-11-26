@@ -38,7 +38,7 @@ public sealed class DesktopProgramsTests : IDisposable
         string program = Write("gtk/Viewer");
         Write("gtk/GtkSharp.dll");
         DesktopProgram? found = DesktopPrograms.Started(program, [], root, built: null, target: null, declared: null);
-        Assert.True(found is { Called: "a GTK app" } && found.File == program, $"A named GTK program read as {found}, so a Passenger nobody sees would start it on the person's screen");
+        Assert.True(found is { Called: "a GTK app" } && found.File == program, $"A named GTK program read as {found}, so a Pitstop nobody sees would start it on the person's screen");
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public sealed class DesktopProgramsTests : IDisposable
     {
         string program = WriteBytes("native/Viewer", MachOBytes.Universal(MachOBytes.Thin("/usr/lib/libSystem.B.dylib", library)));
         DesktopProgram? found = DesktopPrograms.Started(program, [], root, null, null, null);
-        Assert.True(found is { Called: "a native macOS app", PastHooks: null } && found.File == program, $"A native program linking {library} read as {found}, so a Passenger nobody sees would start it on the person's screen");
+        Assert.True(found is { Called: "a native macOS app", PastHooks: null } && found.File == program, $"A native program linking {library} read as {found}, so a Pitstop nobody sees would start it on the person's screen");
     }
 
     /// <summary>A bundle's program links what it likes, or is a script: an Electron app's links only the framework beside it.</summary>

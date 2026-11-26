@@ -20,7 +20,7 @@ public sealed class AspireApp : SharedProject
     public static string PackageTemplatesVersion => AvaloniaApp.Metadata("AspirePackageTemplatesVersion");
     public const string Name = "PassengerAspire";
     public const string CompanionName = "CompanionAspire";
-    public const string RequestLog = "Passenger request {RequestValue}";
+    public const string RequestLog = "Pitstop request {RequestValue}";
     /// <summary>Why a test that runs a real AppHost skips (<see cref="Unavailable"/>): Aspire's dashboard and orchestrator not
     /// downloaded, or Windows, where an AppHost keeps its record of running AppHosts in the person's profile whatever its
     /// environment says, so no home of the run's own (<see cref="AspireCli.Home"/>) keeps it from theirs.</summary>
@@ -120,7 +120,7 @@ public sealed class AspireApp : SharedProject
     public string WebProgram => PathNames.Canonical(PathOf($"First/{Name}.Web/Program.cs"));
 
     /// <summary>Where the API's command's form writes its answer (<see cref="AskedOfTheStarter"/>), under obj as what a run writes is.</summary>
-    public string InteractionAnswer => Path.Combine(Path.GetDirectoryName(Host)!, "obj", "passenger-interaction-answer.txt");
+    public string InteractionAnswer => Path.Combine(Path.GetDirectoryName(Host)!, "obj", "pitstop-interaction-answer.txt");
 
     /// <summary>What the file-based service writes if the IDE ever runs it, which it must refuse to.</summary>
     public string FileServiceRan => PathOf("file-service-started.txt");
@@ -212,7 +212,7 @@ public sealed class AspireApp : SharedProject
             .Replace("app.Run();", """
                 app.MapGet("/passenger-flood", () =>
                 {
-                    for (int line = 0; line < 4096; line++) Console.WriteLine($"Passenger flood {line} {new string('x', 1024)}");
+                    for (int line = 0; line < 4096; line++) Console.WriteLine($"Pitstop flood {line} {new string('x', 1024)}");
                     return "flood completed";
                 });
                 app.Run();
@@ -247,7 +247,7 @@ public sealed class AspireApp : SharedProject
         // Where the AppHost keeps its record of running AppHosts (aspire ps's), the run's own, never the person's ~/.aspire.
         http["environmentVariables"]!["HOME"] = AspireCli.Home;
         // Under obj, so a run leaves the project's own files as written.
-        string dashboardData = Path.Combine(hostFolder, "obj", "passenger-dashboard");
+        string dashboardData = Path.Combine(hostFolder, "obj", "pitstop-dashboard");
         if (OperatingSystem.IsWindows())
         {
             Directory.CreateDirectory(dashboardData);
@@ -271,7 +271,7 @@ public sealed class AspireApp : SharedProject
         string host = PathOf($"First/{Name}.AppHost/AppHost.cs");
         string answer = JsonSerializer.Serialize(InteractionAnswer);
         string command = $$"""
-            .WithCommand("passenger-interaction", "Passenger interaction", async context =>
+            .WithCommand("pitstop-interaction", "Pitstop interaction", async context =>
             {
                 var interactions = (Aspire.Hosting.IInteractionService)context.Services.GetService(typeof(Aspire.Hosting.IInteractionService))!;
                 var confirmation = await interactions.PromptConfirmationAsync("Restart API?", "Confirm restart", cancellationToken: context.CancellationToken);
@@ -307,7 +307,7 @@ public sealed class AspireApp : SharedProject
         Assert.Contains("app.Run();", apiText, StringComparison.Ordinal);
         File.WriteAllText(api, apiText.Replace("app.Run();", """
             app.MapGet("/passenger-edit", () => PassengerEdit.Value().ToString());
-            if (Environment.GetEnvironmentVariable("PASSENGER_CANCELED_DCP_PID") is { Length: > 0 } marker)
+            if (Environment.GetEnvironmentVariable("PITSTOP_CANCELED_DCP_PID") is { Length: > 0 } marker)
             {
                 File.WriteAllText(marker, Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
@@ -372,7 +372,7 @@ public static class AspireCli
     public static string? Program { get; } = typeof(AspireCli).Assembly.GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>()
         .FirstOrDefault(attribute => attribute.Key == "AspireCli")?.Value is { } path && File.Exists(path) ? path : null;
 
-    private const string Prefix = "/tmp/passenger-aspire-";
+    private const string Prefix = "/tmp/pitstop-aspire-";
 
     /// <summary>The run's home for the CLI and the AppHosts, short as macOS's 104-byte socket paths ask: the record of a running
     /// AppHost is a socket at $HOME/.aspire/cli/bch/ and 20 characters more, its process's id after them. Gone with the run.</summary>
@@ -386,7 +386,7 @@ public static class AspireCli
         {
             return;
         }
-        foreach (string left in Directory.EnumerateDirectories("/tmp", "passenger-aspire-*"))
+        foreach (string left in Directory.EnumerateDirectories("/tmp", "pitstop-aspire-*"))
         {
             if (int.TryParse(left[Prefix.Length..], NumberStyles.None, CultureInfo.InvariantCulture, out int id) && id != Environment.ProcessId
                 && !Processes.IsRunning(id))

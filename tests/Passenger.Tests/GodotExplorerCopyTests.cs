@@ -182,7 +182,7 @@ public sealed class GodotExplorerCopyTests : IDisposable
             GodotSceneTests.Choose(window, Path.Combine(folder, "levels"));
             Ui.Run(window, EditorActions.Paste);
             Ui.WaitFor(() => window.Status is { } said && said.StartsWith("Copied newer.res to levels; newer.res keeps its original's uid: Godot 4.", StringComparison.Ordinal)
-                && said.EndsWith("wrote it in the binary format 7, which Passenger doesn't rewrite", StringComparison.Ordinal),
+                && said.EndsWith("wrote it in the binary format 7, which Pitstop doesn't rewrite", StringComparison.Ordinal),
                 () => $"the paste of newer.res to say it keeps its original's uid: {window.Status}");
         }
         finally
@@ -226,7 +226,7 @@ public sealed class GodotExplorerCopyTests : IDisposable
             GodotSceneTests.Choose(window, Path.Combine(folder, "levels"));
             Ui.Run(window, EditorActions.Paste);
             Ui.WaitFor(() => window.Status is { } said && said.StartsWith("Moved icon.svg to levels; actors/newer.res is left as it was: Godot 4.", StringComparison.Ordinal)
-                && said.EndsWith("wrote it in the binary format 7, which Passenger doesn't rewrite", StringComparison.Ordinal),
+                && said.EndsWith("wrote it in the binary format 7, which Pitstop doesn't rewrite", StringComparison.Ordinal),
                 () => $"the paste of icon.svg to say it was moved, and newer.res left as it was: {window.Status}");
             AssertFollowed();
             Assert.Equal(newer, File.ReadAllBytes(Path.Combine(folder, "actors", "newer.res")));

@@ -18,7 +18,7 @@ internal sealed class TestsCache(string path)
     /// the entries are written otherwise.</summary>
     public const int Schema = 2;
 
-    private const string Magic = "passenger-tests";
+    private const string Magic = "pitstop-tests";
 
     /// <summary>The most readings kept of a file, each with other symbols or attributes.</summary>
     private const int MostReadings = 3;

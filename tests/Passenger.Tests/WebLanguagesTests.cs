@@ -150,7 +150,7 @@ public sealed class WebLanguagesTests : IClassFixture<BlazorShop>
         editor.Focus();
         Ui.WaitFor(() => window.LanguageShown?.StartsWith("JavaScript · TypeScript ", StringComparison.Ordinal) == true,
             "the status bar to name the TypeScript the script is read by");
-        Assert.EndsWith("(Passenger's)", window.LanguageShown, StringComparison.Ordinal);
+        Assert.EndsWith("(Pitstop's)", window.LanguageShown, StringComparison.Ordinal);
 
         Ui.PlaceAfter(editor, "console.log(message);");
         Ui.Press(window, "ENTER");
@@ -597,7 +597,7 @@ public sealed class WebLanguagesTests : IClassFixture<BlazorShop>
             // The language said once, its TypeScript's version beside it.
             Ui.WaitFor(() => window.LanguageShown is { } shown && System.Text.RegularExpressions.Regex.IsMatch(shown, @"^TypeScript \d"),
                 () => $"the status bar to name the TypeScript in use, saying the language once ({window.LanguageShown})");
-            Assert.DoesNotContain("Passenger's", window.LanguageShown, StringComparison.Ordinal);
+            Assert.DoesNotContain("Pitstop's", window.LanguageShown, StringComparison.Ordinal);
         }
         finally
         {

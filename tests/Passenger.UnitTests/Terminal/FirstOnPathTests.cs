@@ -42,7 +42,7 @@ public class FirstOnPathTests
             $"sh would run another installation's dotnet: PATH {environment.GetValueOrDefault("PATH")}");
         Assert.True(environment.GetValueOrDefault(RuntimeVariables.Root) == Installation,
             $"sh's DOTNET_ROOT is {environment.GetValueOrDefault(RuntimeVariables.Root)}, not the installation {Installation}, so an app it starts finds no runtime");
-        Assert.True(environment.Count == 2, $"A shell that reads nothing of Passenger's after its startup files was given more: {string.Join(", ", environment.Keys)}");
+        Assert.True(environment.Count == 2, $"A shell that reads nothing of Pitstop's after its startup files was given more: {string.Join(", ", environment.Keys)}");
     }
 
     private void A_path_set_for_the_start_is_the_one_the_folder_goes_first_on()
@@ -58,7 +58,7 @@ public class FirstOnPathTests
         Dictionary<string, string> environment = [];
         First.Give("/bin/zsh", environment, Inherited(("ZDOTDIR", "/home/me/.config/zsh")));
         Assert.True(environment.GetValueOrDefault("ZDOTDIR") == First.ZshStartup && environment.GetValueOrDefault(FirstOnPath.ZdotdirVariable) == "/home/me/.config/zsh",
-            $"zsh would read the person's startup files from {environment.GetValueOrDefault(FirstOnPath.ZdotdirVariable)}, Passenger's from {environment.GetValueOrDefault("ZDOTDIR")}");
+            $"zsh would read the person's startup files from {environment.GetValueOrDefault(FirstOnPath.ZdotdirVariable)}, Pitstop's from {environment.GetValueOrDefault("ZDOTDIR")}");
         Assert.True(environment.GetValueOrDefault(FirstOnPath.FolderVariable) == Folder && environment.GetValueOrDefault(FirstOnPath.ValueVariable) == Installation
             && environment.GetValueOrDefault(FirstOnPath.AgainVariable) is { Length: > 0 },
             "zsh's first prompt is given nothing to put the folder first and the installation as DOTNET_ROOT again with");

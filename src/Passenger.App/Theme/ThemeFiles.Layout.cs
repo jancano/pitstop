@@ -71,7 +71,7 @@ public static partial class ThemeFiles
                 int found = Array.FindIndex(AnchorWords, a => a.Word == place.Name);
                 if (found < 0)
                 {
-                    problems.Add($"{file}: {place.Name} in layout's places is no place this Passenger knows ({Listed([.. AnchorWords.Select(a => a.Word), "editor"])}), so it was passed over");
+                    problems.Add($"{file}: {place.Name} in layout's places is no place this Pitstop knows ({Listed([.. AnchorWords.Select(a => a.Word), "editor"])}), so it was passed over");
                     continue;
                 }
                 foreach (string id in Windows(file, place.Value, $"layout's places' {place.Name}", problems))
@@ -140,7 +140,7 @@ public static partial class ThemeFiles
             string id = item.GetString()!;
             if (!ToolWindowIds.All.Contains(id))
             {
-                problems.Add($"{file}: {ThemeJson.Shown(item)} in {where} is no tool window this Passenger has, so it was passed over");
+                problems.Add($"{file}: {ThemeJson.Shown(item)} in {where} is no tool window this Pitstop has, so it was passed over");
                 continue;
             }
             ids.Add(id);

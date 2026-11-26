@@ -6,7 +6,7 @@ namespace Passenger.Inspector;
 
 internal static class FrameWire
 {
-    public const string Provider = "Passenger-Avalonia";
+    public const string Provider = "Pitstop-Avalonia";
 
     /// <summary>A control described, once a recording: <see cref="Id"/>, <see cref="Type"/>, <see cref="FullType"/>,
     /// <see cref="Name"/>, <see cref="TemplatedBy"/>, <see cref="File"/>, <see cref="Line"/>.</summary>

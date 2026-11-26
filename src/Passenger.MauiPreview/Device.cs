@@ -10,7 +10,7 @@ internal sealed class PreviewDevice(DevicePlatform platform, DeviceIdiom idiom) 
 
     public string Model => "Preview";
 
-    public string Manufacturer => "Passenger";
+    public string Manufacturer => "Pitstop";
 
     public string Name => "Preview";
 

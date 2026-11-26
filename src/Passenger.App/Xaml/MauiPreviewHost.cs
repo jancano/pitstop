@@ -48,7 +48,7 @@ internal sealed class MauiPreviewHost : ChildPreviewHost
         }
         if (!File.Exists(Previewer))
         {
-            preview.Say("MAUI's previewer is missing from Passenger's folder (mauipreview/)");
+            preview.Say("MAUI's previewer is missing from Pitstop's folder (mauipreview/)");
             return null;
         }
         if (await CopyAsync(preview, built) is not { } copied)

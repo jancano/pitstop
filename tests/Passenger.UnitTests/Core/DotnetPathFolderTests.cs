@@ -10,7 +10,7 @@ public sealed class DotnetPathFolderTests : IDisposable
 {
     private readonly string installation = PathNames.Canonical(Directory.CreateTempSubdirectory("passenger-unit-").FullName);
 
-    private readonly string state = Path.Combine(Path.DirectorySeparatorChar + "no-such-folder", $"Passenger-{Guid.NewGuid():N}");
+    private readonly string state = Path.Combine(Path.DirectorySeparatorChar + "no-such-folder", $"Pitstop-{Guid.NewGuid():N}");
 
     private readonly List<string> made = [];
 

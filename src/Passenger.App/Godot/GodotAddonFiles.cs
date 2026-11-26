@@ -9,7 +9,7 @@ public static class GodotAddonFiles
     private static readonly Lazy<IReadOnlyList<(string Name, string Text)>> Read = new(() => [.. ((string[])["plugin.cfg", Passenger.Workspace.GodotAddon.Script, "scenes.gd"]).Select(name =>
     {
         using Stream stream = typeof(GodotAddonFiles).Assembly.GetManifestResourceStream($"Godot/Addon/{name}")
-            ?? throw new InvalidOperationException($"Passenger carries no Godot/Addon/{name}");
+            ?? throw new InvalidOperationException($"Pitstop carries no Godot/Addon/{name}");
         using StreamReader reader = new(stream);
         return (name, reader.ReadToEnd());
     })]);
@@ -17,7 +17,7 @@ public static class GodotAddonFiles
     /// <summary>The variable that has the addon print each act an agent asks of the edited scene, with what it answered and
     /// the scene it acted in, to its editor's output: a test's.</summary>
     [IdentifierHome]
-    public const string TraceVariable = "PASSENGER_ADDON_TRACE";
+    public const string TraceVariable = "PITSTOP_ADDON_TRACE";
 
     /// <summary>The files, as written into a project.</summary>
     public static IReadOnlyList<(string Name, string Text)> Carried => Read.Value;

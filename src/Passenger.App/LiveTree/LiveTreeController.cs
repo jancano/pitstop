@@ -731,7 +731,7 @@ public sealed partial class LiveTreeController
     private string? WhyNotLoop() => app switch
     {
         Godot.GodotGame { EditorHolds: { } held } => held,
-        Godot.GodotGame { State: LiveAppState.Waiting } game => $"{game.Name} has not connected to Passenger yet",
+        Godot.GodotGame { State: LiveAppState.Waiting } game => $"{game.Name} has not connected to Pitstop yet",
         Godot.GodotGame { State: LiveAppState.Ended } game => $"{game.Name} has ended",
         Godot.GodotGame game when Paused => $"{game.Name} is paused in the debugger, which holds its loop already",
         Godot.GodotGame => null,

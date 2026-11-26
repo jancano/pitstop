@@ -148,7 +148,7 @@ public sealed class NoDotnetTests : IAsyncDisposable
             t.An_SDK_that_does_not_start_is_taken_out_again_saying_so_and_what_the_folder_held_is_kept();
             return Task.CompletedTask;
         });
-        await Flow.StepApartAsync<NoDotnetTests>("an agents install on a persons window is their question and an agents own passenger refuses it", t =>
+        await Flow.StepApartAsync<NoDotnetTests>("an agents install on a persons window is their question and an agents own pitstop refuses it", t =>
         {
             t.An_agents_install_on_a_persons_window_is_their_question_and_an_agents_own_passenger_refuses_it();
             return Task.CompletedTask;
@@ -165,7 +165,7 @@ public sealed class NoDotnetTests : IAsyncDisposable
     [AvaloniaFact]
     public async Task The_dotnet_used_is_the_one_named_and_goes_first_on_the_PATH()
     {
-        await Flow.StepApartAsync<NoDotnetTests>("the installation Passenger was told to use comes before the dotnet running it", t =>
+        await Flow.StepApartAsync<NoDotnetTests>("the installation Pitstop was told to use comes before the dotnet running it", t =>
         {
             t.The_installation_Passenger_was_told_to_use_comes_before_the_dotnet_running_it();
             return Task.CompletedTask;
@@ -330,13 +330,13 @@ public sealed class NoDotnetTests : IAsyncDisposable
         Assert.True(window.Status?.StartsWith($"The .NET SDK {sdk.Version} is installed in ", StringComparison.Ordinal) == true, $"The install did not end installed: {Told(stages, window)}");
         Assert.True(File.Exists(Path.Combine(Installs, DotnetName)) && File.Exists(Path.Combine(Installs, "sdk", sdk.Version, "dotnet.dll")),
             $"Nothing of the SDK is in {Installs}: {string.Join(", ", Directory.EnumerateFileSystemEntries(Installs).Select(Path.GetFileName))}");
-        Assert.DoesNotContain(Directory.EnumerateDirectories(Installs), d => Path.GetFileName(d).StartsWith(".passenger-install-", StringComparison.Ordinal));
+        Assert.DoesNotContain(Directory.EnumerateDirectories(Installs), d => Path.GetFileName(d).StartsWith(".pitstop-install-", StringComparison.Ordinal));
 
         Ui.WaitFor(() => window.Session.Models.MissingSdk is null && window.ExplorerView.Tree.Rows.Any(r => r.Kind == NodeKind.Project && r.Detail == TestProjects.Framework),
             () => $"App to be evaluated with the SDK installed: App's row says {window.ExplorerView.Tree.Rows.FirstOrDefault(r => r.Name == "App")?.Detail} ({window.Status})", TimeSpan.FromMinutes(2));
         Assert.True(PathNames.Same(Environment.GetEnvironmentVariable(RuntimeVariables.Root) ?? string.Empty, Installs)
             && PathNames.Same((Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator)[0], Installs),
-            "What Passenger starts is not given the SDK installed first on its PATH and as its DOTNET_ROOT");
+            "What Pitstop starts is not given the SDK installed first on its PATH and as its DOTNET_ROOT");
         Assert.Null(window.DotnetSaid);
         if (OperatingSystem.IsWindows())
         {
@@ -450,7 +450,7 @@ public sealed class NoDotnetTests : IAsyncDisposable
         Dotnet.Use(Installs);
 
         Assert.Equal(new DotnetFound(host, DotnetPlace.Installed), Dotnet.Find());
-        Assert.True(PathNames.Same(Dotnet.Root(), Installs), $"With {Installs} chosen, Passenger starts the dotnet in {Dotnet.Root()}");
+        Assert.True(PathNames.Same(Dotnet.Root(), Installs), $"With {Installs} chosen, Pitstop starts the dotnet in {Dotnet.Root()}");
     }
 
     /// <summary>A POSIX shell reads an empty entry of the PATH as the folder it works in.</summary>
@@ -462,7 +462,7 @@ public sealed class NoDotnetTests : IAsyncDisposable
         Dotnet.Use(Installs);
 
         Assert.True(Environment.GetEnvironmentVariable("PATH") == string.Join(Path.PathSeparator, Installs, bin, string.Empty, "/usr/bin"),
-            $"With {Installs} used the PATH every program Passenger starts takes is {Environment.GetEnvironmentVariable("PATH")}, so a program the person runs from its own folder by name is no longer found");
+            $"With {Installs} used the PATH every program Pitstop starts takes is {Environment.GetEnvironmentVariable("PATH")}, so a program the person runs from its own folder by name is no longer found");
     }
 
     private void An_SDK_in_the_home_dotnet_folder_no_PATH_names_is_found_named_and_used_and_Add_to_PATH_puts_it_there()
@@ -475,7 +475,7 @@ public sealed class NoDotnetTests : IAsyncDisposable
         Ui.WaitFor(() => window.ExplorerView.Tree.Rows.Any(r => r.Kind == NodeKind.Project && r.Detail == TestProjects.Framework),
             () => $"App to be evaluated with the SDK in {own}: App's row says {window.ExplorerView.Tree.Rows.FirstOrDefault(r => r.Name == "App")?.Detail} ({window.Status})", TimeSpan.FromMinutes(2));
         Assert.Equal(DotnetLack.OffPath, window.DotnetWant.Lack);
-        Assert.True(window.DotnetSaid == $"Passenger uses the .NET SDK {Archive.Value.Version} in {PathNames.Shown(own, null)}, which your shell's PATH does not name, so a terminal outside Passenger finds no dotnet",
+        Assert.True(window.DotnetSaid == $"Pitstop uses the .NET SDK {Archive.Value.Version} in {PathNames.Shown(own, null)}, which your shell's PATH does not name, so a terminal outside Pitstop finds no dotnet",
             $"The banner over an SDK no PATH names said: {window.DotnetSaid}");
 
         Ui.ClickButton(window, "Add .NET to the Shell's PATH…");

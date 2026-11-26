@@ -101,7 +101,7 @@ public sealed class RunDashboard : ITelemetryRun, IDisposable
         {
             return plan with
             {
-                Notes = [.. plan.Notes, $"{plan.Name} sends its logs and traces where its own {Plural.Listed(elsewhere)} {Plural.Agreeing(elsewhere.Count, "says", "say")}, so Passenger's dashboard is not started for it"],
+                Notes = [.. plan.Notes, $"{plan.Name} sends its logs and traces where its own {Plural.Listed(elsewhere)} {Plural.Agreeing(elsewhere.Count, "says", "say")}, so Pitstop's dashboard is not started for it"],
             };
         }
         (RunDashboard? dashboard, string? why) = await StartAsync(plan.Name, engine, containers, folder, stateFolder, cancel);
@@ -155,7 +155,7 @@ public sealed class RunDashboard : ITelemetryRun, IDisposable
         ContainerTelemetry keys = ContainerTelemetry.New();
         string runsIn = folder is null ? Path.Combine(stateFolder, "containers") : ContainerPlans.StateOf(stateFolder, folder);
         // A name of its own each run: the take-down of the run before it, by its project's labels, never reaches this one.
-        string project = $"passenger-dashboard-{ContainerPlans.Slug(name)}-{RandomNumberGenerator.GetHexString(8, lowercase: true)}";
+        string project = $"pitstop-dashboard-{ContainerPlans.Slug(name)}-{RandomNumberGenerator.GetHexString(8, lowercase: true)}";
         string file = Path.Combine(runsIn, $"{ContainerPlans.Slug(name)}.dashboard.yaml");
         IReadOnlyList<string> labels = containers.Labels;
         // Its network carries the labels too, which its take-down finds it by.

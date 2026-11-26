@@ -16,7 +16,7 @@ public static class NoDisplay
     private const string WaylandConnection = "WAYLAND_SOCKET";
 
     /// <summary>What <see cref="Wayland"/> names instead: no compositor's socket.</summary>
-    public const string Nowhere = "passenger-no-display";
+    public const string Nowhere = "pitstop-no-display";
 
     private static volatile bool taken;
 

@@ -30,7 +30,7 @@ for target in ${@:-android apple}; do
         [ -n "$libs" ] || fail "no CoreCLR runtime pack for android-$rid in $packs: dotnet workload install android"
         mkdir -p "$out/android-$rid"
         clang -target $triple-linux-android24 -ffreestanding -fPIC -O2 -Wall -Werror -fvisibility=hidden -c "$src" -o "$out/android-$rid/relay.o"
-        "$bin/ld" -shared -o "$out/android-$rid/libpassenger-debug.so" -soname libpassenger-debug.so "$libs/crtbegin_so.o" \
+        "$bin/ld" -shared -o "$out/android-$rid/libpitstop-debug.so" -soname libpitstop-debug.so "$libs/crtbegin_so.o" \
           "$out/android-$rid/relay.o" -L"$libs" -lc -ldl -llog "$libs/libclang_rt.builtins-$triple-android.a" "$libs/crtend_so.o" \
           -z noexecstack -z max-page-size=16384 --hash-style=gnu --build-id --no-undefined
         rm "$out/android-$rid/relay.o"
@@ -41,9 +41,9 @@ for target in ${@:-android apple}; do
         rid=$(echo $t | cut -d: -f1); triple=$(echo $t | cut -d: -f2); sdk=$(echo $t | cut -d: -f3)
         mkdir -p "$out/$rid"
         xcrun --sdk $sdk clang -target $triple -isysroot "$(xcrun --sdk $sdk --show-sdk-path)" -O2 -Wall -Werror -fvisibility=hidden \
-          -dynamiclib -install_name @rpath/libpassenger-debug.dylib "$src" -o "$out/$rid/libpassenger-debug.dylib"
+          -dynamiclib -install_name @rpath/libpitstop-debug.dylib "$src" -o "$out/$rid/libpitstop-debug.dylib"
       done ;;
     *) echo "No relay target $target: android or apple" >&2; exit 2 ;;
   esac
 done
-ls -la "$out"/*/libpassenger-debug.*
+ls -la "$out"/*/libpitstop-debug.*

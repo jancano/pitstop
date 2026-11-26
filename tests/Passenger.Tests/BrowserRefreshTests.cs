@@ -93,9 +93,9 @@ public sealed class BrowserRefreshTests : IDisposable
             Ui.Launched(window, window.DebugAsync(), "Bwa to start under the debugger", TimeSpan.FromMinutes(3));
             Func<string> console = () => window.BottomPanel.Debug.Console.Document.Snapshot.ToString();
             Assert.Contains("<h1>Counter</h1>", BellApp.Page(window, console), StringComparison.Ordinal);
-            Assert.False(console().Contains("the browser is not kept up", StringComparison.Ordinal), $"Passenger keeps no page up:\n{console()}");
+            Assert.False(console().Contains("the browser is not kept up", StringComparison.Ordinal), $"Pitstop keeps no page up:\n{console()}");
             int port = HeardPorts.Of(console, "the app");
-            client = Ui.AwaitPumped(Waiting.Apart(() => RefreshClient.ConnectAsync(port)), "the page's refresh client to connect to Passenger through the app");
+            client = Ui.AwaitPumped(Waiting.Apart(() => RefreshClient.ConnectAsync(port)), "the page's refresh client to connect to Pitstop through the app");
 
             window.OpenFile(Path.Combine(app, "wwwroot", "app.css"));
             Ui.Settle();
@@ -125,9 +125,9 @@ public sealed class BrowserRefreshTests : IDisposable
             Ui.Launched(window, window.DebugAsync(), "Bell to start under the debugger", TimeSpan.FromMinutes(3));
             Func<string> console = () => window.BottomPanel.Debug.Console.Document.Snapshot.ToString();
             Assert.Contains("<h1>Counter</h1>", BellApp.Page(window, console), StringComparison.Ordinal);
-            Assert.False(console().Contains("the browser is not kept up", StringComparison.Ordinal), $"Passenger keeps no page up:\n{console()}");
+            Assert.False(console().Contains("the browser is not kept up", StringComparison.Ordinal), $"Pitstop keeps no page up:\n{console()}");
             int port = HeardPorts.Of(console, "the app");
-            client = Ui.AwaitPumped(Waiting.Apart(() => RefreshClient.ConnectAsync(port)), "the page's refresh client to connect to Passenger through the app");
+            client = Ui.AwaitPumped(Waiting.Apart(() => RefreshClient.ConnectAsync(port)), "the page's refresh client to connect to Pitstop through the app");
 
             window.OpenFile(Path.Combine(folder, "wwwroot", "app.css"));
             Ui.Settle();

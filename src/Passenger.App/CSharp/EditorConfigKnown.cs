@@ -54,7 +54,7 @@ internal sealed class EditorConfigKnown
             foreach (string key in row.Over!.Keys.Concat(row.Over.Aliases))
             {
                 string kind = setting.EditorConfigValues.Count > 0 ? EditorConfigValueKinds.Choice : setting is NumberSetting ? EditorConfigValueKinds.Number : EditorConfigValueKinds.Text;
-                Add(new KnownKey(key, "Passenger", kind, setting.EditorConfigValues, null, false, [said]) { Checked = false });
+                Add(new KnownKey(key, "Pitstop", kind, setting.EditorConfigValues, null, false, [said]) { Checked = false });
             }
         }
         if (server is null)
@@ -271,8 +271,8 @@ internal sealed class EditorConfigKnown
     /// compiler reads a <c>dotnet_diagnostic</c> key set to it.</summary>
     private static IReadOnlyList<string> CompilerSeverities(IReadOnlyList<string> severities)
     {
-        string file = Path.Combine(Path.GetTempPath(), "passenger-severities", EditorConfig.FileName);
-        string source = Path.Combine(Path.GetTempPath(), "passenger-severities", "A.cs");
+        string file = Path.Combine(Path.GetTempPath(), "pitstop-severities", EditorConfig.FileName);
+        string source = Path.Combine(Path.GetTempPath(), "pitstop-severities", "A.cs");
         return [.. ((string[])["default", .. severities]).Where(word =>
             AnalyzerConfigSet.Create<AnalyzerConfig[]>([AnalyzerConfig.Parse($"[*.cs]\n{Diagnostic}X{SeveritySuffix} = {word}\n", file)]).GetOptionsForSourcePath(source).TreeOptions.ContainsKey("X"))];
     }

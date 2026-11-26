@@ -15,12 +15,12 @@ public sealed class DotnetProcessTests
     private void A_processs_arguments_and_environment_are_read_from_the_systems_record_of_its_start()
     {
         byte[] record = [.. BitConverter.GetBytes(2), .. Text("/Apps/Shop.app/Contents/MacOS/Shop"), 0, 0, 0, .. Text("Shop"), .. Text("-v"),
-            .. Text("HOME=/Users/a"), .. Text("PASSENGER_APP_START=A1B2"), 0, .. Text("executable_path=/Apps/Shop.app/Contents/MacOS/Shop")];
+            .. Text("HOME=/Users/a"), .. Text("PITSTOP_APP_START=A1B2"), 0, .. Text("executable_path=/Apps/Shop.app/Contents/MacOS/Shop")];
 
         (IReadOnlyList<string> arguments, IReadOnlyList<string> environment) = DotnetProcesses.Started(record);
 
         Assert.Equal(["Shop", "-v"], arguments);
-        Assert.Equal(["HOME=/Users/a", "PASSENGER_APP_START=A1B2"], environment);
+        Assert.Equal(["HOME=/Users/a", "PITSTOP_APP_START=A1B2"], environment);
         (IReadOnlyList<string> cut, IReadOnlyList<string> none) = DotnetProcesses.Started([.. BitConverter.GetBytes(3), .. Text("/bin/x"), .. Text("Shop")]);
         Assert.Equal(["Shop"], cut);
         Assert.Empty(none);
@@ -34,10 +34,10 @@ public sealed class DotnetProcessTests
         ("dotnet", "/usr/share/dotnet/dotnet /app/Shop.Api.dll --urls http://+:80", "/app/Shop.Api.dll", "Shop.Api"),
         ("dotnet.exe", "\"C:\\Program Files\\dotnet\\dotnet.exe\" \"C:\\My App\\Shop.Api.dll\"", "C:\\My App\\Shop.Api.dll", "Shop.Api"),
         ("dotnet", "/usr/share/dotnet/dotnet run --no-build -e DOTNET_WATCH=1 -e DOTNET_STARTUP_HOOKS=/usr/share/dotnet/sdk/10.0.404/DotnetTools/dotnet-watch/10.0.404/tools/net10.0/any/hotreload/net10.0/Microsoft.Extensions.DotNetDeltaApplier.dll", null, "dotnet"),
-        ("dotnet", "/usr/share/dotnet/dotnet exec --fx-version 10.0.15 /opt/passenger/passenger-helper.dll /opt/passenger/debugger/Passenger.DebugAdapter.dll", "/opt/passenger/debugger/Passenger.DebugAdapter.dll", "Passenger.DebugAdapter"),
+        ("dotnet", "/usr/share/dotnet/dotnet exec --fx-version 10.0.15 /opt/pitstop/pitstop-helper.dll /opt/pitstop/debugger/Passenger.DebugAdapter.dll", "/opt/pitstop/debugger/Passenger.DebugAdapter.dll", "Passenger.DebugAdapter"),
         ("Passenger.Tests.exe", "C:\\work\\Passenger.Tests.exe", "C:\\work\\Passenger.Tests.dll", "Passenger.Tests"),
-        ("passenger-helper", "/opt/passenger/passenger-helper /opt/passenger/host/Passenger.Host.dll --folder /src", "/opt/passenger/host/Passenger.Host.dll", "Passenger.Host"),
-        ("passenger-helper.exe", "\"C:\\Passenger\\passenger-helper.exe\" C:\\Passenger\\debugger\\Passenger.DebugAdapter.dll", "C:\\Passenger\\debugger\\Passenger.DebugAdapter.dll", "Passenger.DebugAdapter"),
+        ("pitstop-helper", "/opt/pitstop/pitstop-helper /opt/pitstop/host/Passenger.Host.dll --folder /src", "/opt/pitstop/host/Passenger.Host.dll", "Passenger.Host"),
+        ("pitstop-helper.exe", "\"C:\\Passenger\\pitstop-helper.exe\" C:\\Passenger\\debugger\\Passenger.DebugAdapter.dll", "C:\\Passenger\\debugger\\Passenger.DebugAdapter.dll", "Passenger.DebugAdapter"),
     ], row =>
     {
         (string name, string commandLine, string? assembly, string program) = row;

@@ -43,10 +43,10 @@ public sealed class ThemeDefaultLayoutTests : IDisposable
             Assert.True(Placed(dock, ToolWindowIds.Explorer) == (ToolAnchor.RightTop, 0, true) && Placed(dock, ToolWindowIds.Problems) == (ToolAnchor.BottomRight, 0, true)
                 && Placed(dock, ToolWindowIds.Build) == (ToolAnchor.BottomRight, 1, false),
                 $"On a fresh state the theme docks the Explorer open at the right and Problems open with Build below, where the window shows {Shown(dock)}");
-            Assert.True(Placed(dock, ToolWindowIds.Structure) == (ToolAnchor.LeftBottom, 0, false), $"Structure, which the theme leaves, is not where Passenger puts it: {Shown(dock)}");
+            Assert.True(Placed(dock, ToolWindowIds.Structure) == (ToolAnchor.LeftBottom, 0, false), $"Structure, which the theme leaves, is not where Pitstop puts it: {Shown(dock)}");
             DockLayout sizes = dock.Capture();
             Assert.True((sizes.LeftWidth, sizes.RightWidth, sizes.BottomHeight) == (300, 260, 200),
-                $"The areas are {sizes.LeftWidth}, {sizes.RightWidth} and {sizes.BottomHeight} wide and high, where the theme gives the right 260 and the bottom 200, the left Passenger's 300");
+                $"The areas are {sizes.LeftWidth}, {sizes.RightWidth} and {sizes.BottomHeight} wide and high, where the theme gives the right 260 and the bottom 200, the left Pitstop's 300");
             Point explorer = window.ExplorerView.TranslatePoint(default, window) ?? default;
             Point editor = window.EditorArea.TranslatePoint(new Point(window.EditorArea.Bounds.Width, 0), window) ?? default;
             Assert.True(explorer.X >= editor.X, $"The Explorer is drawn at {explorer.X}, left of the editor's right edge at {editor.X}");
@@ -76,7 +76,7 @@ public sealed class ThemeDefaultLayoutTests : IDisposable
             Ui.Settle();
             Assert.True(Placed(dock, ToolWindowIds.Explorer) == (ToolAnchor.LeftTop, 0, true) && Placed(dock, ToolWindowIds.Problems).Anchor == ToolAnchor.BottomLeft
                 && !dock.IsShown(ToolWindowIds.Problems) && dock.Capture().RightWidth == 300,
-                $"Tool windows standing where the theme put them did not follow Passenger's own theme, chosen after it: {Shown(dock)}");
+                $"Tool windows standing where the theme put them did not follow Pitstop's own theme, chosen after it: {Shown(dock)}");
         }
         finally
         {

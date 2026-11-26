@@ -140,7 +140,7 @@ public sealed class GodotLiveCardTests
                 case GodotWords.RequestSceneTree:
                     // The root, its scene and the helper, each as six values: children, name, type, id, scene file and view flags.
                     game.Take(GodotMessage.Frame(GodotWords.SceneTree, 2L, "root", "Window", 1L, "", 0L, 0L, "Drifter", "Node", 2L, "res://drifter.tscn", 0L,
-                        0L, GodotAgent.NodeName, "user://passenger_agent.gd", 3L, "", 0L)[4..]);
+                        0L, GodotAgent.NodeName, "user://pitstop_agent.gd", 3L, "", 0L)[4..]);
                     Said = "its scene tree";
                     break;
                 case GodotWords.LiveNodeCall when message.Data is [_, string asked, string call, long ask, List<object?> arguments] && asked == GodotAgent.Asked:
