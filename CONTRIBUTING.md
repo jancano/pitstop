@@ -33,7 +33,7 @@ You need the .NET 11 SDK (11.0.100 or a later 11.0 SDK, as `global.json` asks),
 most projects they write run on (on Linux also the X11 and fontconfig libraries). Node.js runs the web languages' tests and a container
 engine running Linux containers runs the container tests; each kind skips without its own, saying why. Python 3 runs
 `just test` and the recipes that write or check generated files (`just icons`, `just themes`, `just notices` and others). The README's
-[Building](README.md#building) has the whole list.
+[Build and run](README.md#build-and-run) has the whole list.
 
 ```sh
 just build                 # Debug build; warnings are errors

@@ -4,7 +4,7 @@ Repository and architecture guidance for Pitstop. See [AGENTS.md](AGENTS.md) for
 
 ## What this is
 
-**Pitstop** is an open-source, modules-first C++ IDE for Windows, macOS and Linux. The roadmap prioritizes C++ modules, Xmake projects and Xrepo dependencies. The current application is built on Passenger's C# and .NET 11 foundation with Avalonia 12. Its editor, workspace, language servers, debugger and .NET support are part of the working baseline. The Explorer can evaluate a trusted Xmake folder using [the Xmake workspace provider](docs/architecture/xmake-workspaces.md). The [C++ language service](docs/architecture/cpp-language-intelligence.md) follows that workspace through clangd. Xrepo package management is future work.
+**Pitstop** is an open-source, modules-first C++ IDE. The alpha's native reference profile is Windows x64. The current application retains Passenger's editor, managed debugging and .NET support on its C# and .NET 11 foundation with Avalonia 12. A trusted [Xmake workspace](docs/architecture/xmake-workspaces.md) supplies [clangd](docs/architecture/cpp-language-intelligence.md), [native build and run](docs/architecture/native-build-run.md), and the [module workspace](docs/architecture/module-intelligence.md). Native debugging and the Xrepo package installation UI are future work.
 
 Keep Passenger solution, project and namespace names during this stage. The app executable, shell command, settings, caches, logs, temporary paths and IPC identify Pitstop. The project is MIT licensed with Passenger's original copyright and third-party attribution.
 

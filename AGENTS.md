@@ -1,6 +1,6 @@
 # Pitstop repository guide
 
-Pitstop is an open-source, modules-first C++ IDE. Its roadmap gives C++ modules first-class workspace and editor support through Xmake and Xrepo. The foundation uses C# on .NET and Avalonia and retains Passenger's editor, workspace, language servers and debugging. Trusted Xmake workspaces supply targets to the Explorer and compilation contexts to clangd. Xrepo package management is future work.
+Pitstop is an open-source, modules-first C++ IDE. Trusted Xmake workspaces supply evaluated targets to the Explorer, build and run commands, compilation contexts to clangd, and inputs to the P1689 module index. The foundation uses C# on .NET and Avalonia and retains Passenger's editor, workspace, language servers and managed debugging. Windows x64 is the native reference profile. Native debugging and the Xrepo package installation UI are future work.
 
 ## Working in this repository
 
