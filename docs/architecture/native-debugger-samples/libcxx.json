@@ -1,0 +1,138 @@
+[
+  {
+    "name": "null_pointer",
+    "type": "int *",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "text",
+    "type": "std::string",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": true,
+    "unicodeSummary": false
+  },
+  {
+    "name": "long_text",
+    "type": "std::string",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "unicode",
+    "type": "std::u8string",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "view",
+    "type": "std::string_view",
+    "indexedChildren": false,
+    "sampledChildren": 2,
+    "stringSummary": true,
+    "unicodeSummary": false
+  },
+  {
+    "name": "items",
+    "type": "std::vector<int>",
+    "indexedChildren": true,
+    "sampledChildren": 3,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "empty",
+    "type": "std::vector<int>",
+    "indexedChildren": false,
+    "sampledChildren": 0,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "nested",
+    "type": "std::vector<std::vector<int> >",
+    "indexedChildren": true,
+    "sampledChildren": 2,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "large",
+    "type": "std::vector<int>",
+    "indexedChildren": true,
+    "sampledChildren": 4,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "array",
+    "type": "std::array<int, 2>",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "ordered",
+    "type": "std::map<int, int>",
+    "indexedChildren": true,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "hashed",
+    "type": "std::unordered_map<int, int>",
+    "indexedChildren": true,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "maybe",
+    "type": "std::optional<int>",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "either",
+    "type": "std::variant<int, Value>",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "tuple",
+    "type": "std::tuple<int, bool>",
+    "indexedChildren": true,
+    "sampledChildren": 2,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "unique",
+    "type": "std::unique_ptr<Value>",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  },
+  {
+    "name": "shared",
+    "type": "std::shared_ptr<Value>",
+    "indexedChildren": false,
+    "sampledChildren": 1,
+    "stringSummary": false,
+    "unicodeSummary": false
+  }
+]

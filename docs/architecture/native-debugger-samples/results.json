@@ -1,0 +1,90 @@
+[
+  {
+    "name": "libcxx-formatters",
+    "status": "passed"
+  },
+  {
+    "name": "registers",
+    "status": "passed"
+  },
+  {
+    "name": "loaded-images",
+    "status": "passed"
+  },
+  {
+    "name": "read-memory-and-disassemble",
+    "status": "passed"
+  },
+  {
+    "name": "basic",
+    "status": "passed"
+  },
+  {
+    "name": "runtime-xmake",
+    "status": "passed"
+  },
+  {
+    "name": "runtime-custom-hook",
+    "status": "passed"
+  },
+  {
+    "name": "runtime-overrides",
+    "status": "passed"
+  },
+  {
+    "name": "stdio-files",
+    "status": "passed"
+  },
+  {
+    "name": "terminal-reverse-request",
+    "status": "passed"
+  },
+  {
+    "name": "attach-detach",
+    "status": "passed"
+  },
+  {
+    "name": "pause-and-cleanup",
+    "status": "passed"
+  },
+  {
+    "name": "adapter-crash-cleanup",
+    "status": "passed"
+  },
+  {
+    "name": "function-breakpoint",
+    "status": "passed"
+  },
+  {
+    "name": "conditional-hit-log-breakpoints",
+    "status": "passed"
+  },
+  {
+    "name": "cpp-exception",
+    "status": "passed"
+  },
+  {
+    "name": "dynamic-breakpoint",
+    "status": "passed"
+  },
+  {
+    "name": "modules23",
+    "status": "passed"
+  },
+  {
+    "name": "modules23-partition-stepping",
+    "status": "passed"
+  },
+  {
+    "name": "modules26",
+    "status": "passed"
+  },
+  {
+    "name": "modules26-partition-stepping",
+    "status": "passed"
+  },
+  {
+    "name": "release",
+    "status": "passed"
+  }
+]

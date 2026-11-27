@@ -1,0 +1,6 @@
+{
+  "host": "X64",
+  "adapter": "23.1.6",
+  "lldb": "23.1.6",
+  "bundledLibrary": true
+}

@@ -1,0 +1,22 @@
+{
+  "tool": "LLDB 23.1.6 CLI",
+  "xmakeMode": "releasedbg",
+  "compilerOptions": ["-g", "-O3", "-DNDEBUG"],
+  "debugLink": "debug-fixture.pdb",
+  "sidecarFormat": "COFF-x86-64",
+  "sidecarSections": [".debug_info", ".debug_line"],
+  "functionBreakpoint": {
+    "function": "inspect",
+    "resolvedSource": "allocate.h",
+    "inlined": true
+  },
+  "sourceBreakpoint": {
+    "source": "main.cpp",
+    "line": 67,
+    "reportedFunction": "inspect",
+    "seed": 11,
+    "pointer": "<no location, value may have been optimized out>",
+    "result": "<variable not available>",
+    "exitCode": 31
+  }
+}
