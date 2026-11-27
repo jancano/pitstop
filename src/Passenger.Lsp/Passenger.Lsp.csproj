@@ -7,10 +7,11 @@
   <!-- Microsoft's server (MIT, built in the Roslyn repo), one package per platform, copied beside the app under roslyn/;
        RoslynServer.targets finds it. Its own assembly is carried as tools/Passenger.RoslynPatch writes it, built first
        and run, never linked. -->
-  <Import Project="RoslynServer.targets" />
+  <Import Project="RoslynServer.targets" Condition="'$(PitstopManagedPayload)' != 'false'" />
   <ItemGroup>
     <ProjectReference Include="../../tools/Passenger.RoslynPatch/Passenger.RoslynPatch.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
   </ItemGroup>
   <PropertyGroup>
     <RoslynServerPatched>$([MSBuild]::EnsureTrailingSlash('$(ArtifactsPath)'))roslyn-server/$(RoslynServerRid)/$(RoslynServerVersion)/Microsoft.CodeAnalysis.LanguageServer.dll</RoslynServerPatched>
@@ -31,7 +32,8 @@
     <!-- Built first and carried under roslyn-extension/, never linked: the server loads it (RoslynExtension.cs). It is
          built once for every platform, as the server's own assemblies it is compiled against are the same on each. -->
     <ProjectReference Include="../Passenger.Roslyn.Extension/Passenger.Roslyn.Extension.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <!-- The extension's messages, one definition for both ends. -->
     <Compile Include="../Passenger.Roslyn.Extension/Messages.cs" Link="RefactoringMessages.cs" />
     <Compile Include="../Passenger.Roslyn.Extension/ProjectMessages.cs" Link="ProjectMessages.cs" />

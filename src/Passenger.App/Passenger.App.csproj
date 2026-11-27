@@ -117,7 +117,8 @@
     <!-- Built first and carried, never linked: the adapter runs in its own process, on the runtime Passenger runs on (the
          helper host's), so a publish builds it for its system but carries no runtime of its own. -->
     <ProjectReference Include="../Passenger.DebugAdapter/Passenger.DebugAdapter.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <!-- Built first, for a publish's system on its runtime pack, and carried beside the app, never linked: Passenger's helpers
          run in it (ChildProcesses.HelperCommand). -->
     <ProjectReference Include="../Passenger.Helper/Passenger.Helper.csproj" ReferenceOutputAssembly="false" Private="false"
@@ -129,7 +130,8 @@
     <!-- Built first and carried under inspector/, never linked: an Avalonia app Passenger debugs loads it (LiveTree/LiveApp.cs).
          It is built once for every platform, as Avalonia's assemblies it is compiled against are the same on each. -->
     <ProjectReference Include="../Passenger.Inspector/Passenger.Inspector.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <!-- What Passenger and the inspector say to each other, one definition for both ends. -->
     <Compile Include="../Passenger.Inspector/Protocol.cs" Link="LiveTree/InspectorProtocol.cs" />
     <!-- The system's hotkeys on the headless platform, which Passenger's own windows drawn on no screen take as an unseen
@@ -139,27 +141,32 @@
          (LiveTree/LiveApp.cs). It is built once for every platform, as MAUI's cross-platform assemblies it is compiled
          against are the same on each. -->
     <ProjectReference Include="../Passenger.Inspector.Maui/Passenger.Inspector.Maui.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <!-- Built first on every system and carried under inspector/wpf/ by a Windows build alone, never linked: a WPF app Passenger
          runs or debugs loads it (LiveTree/LiveApp.cs). It targets net8.0-windows, which this project's own framework is not, so
          it is built for its own framework rather than this one's. -->
     <ProjectReference Include="../Passenger.Inspector.Wpf/Passenger.Inspector.Wpf.csproj" ReferenceOutputAssembly="false" Private="false"
-                      SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun;TargetFramework" />
+                      SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun;TargetFramework"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <!-- Built first and carried under testframes/, never linked: a test run of an Avalonia headless project loads it
          (Testing/TestFrames.cs). It is built once for every platform. -->
     <ProjectReference Include="../Passenger.TestFrames/Passenger.TestFrames.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <Compile Include="../Passenger.TestFrames/Variables.cs" Link="Testing/TestFramesVariables.cs" />
     <!-- Built first and carried under updatehandlers/, never linked: a program debugged with Hot Reload loads it
          (Debugging/UpdateHandlerHook.cs). It is built once for every platform. -->
     <ProjectReference Include="../Passenger.UpdateHandlers/Passenger.UpdateHandlers.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <Compile Include="../Passenger.UpdateHandlers/Wire.cs" Link="Debugging/UpdateHandlersWire.cs" />
     <!-- Built first and carried under host/, never linked: MSBuild's evaluation runs in its own process on the runtime
          Passenger runs on (Passenger.Workspace's ProjectHost.cs), so it is built for none of the systems the app is
          published for. -->
     <ProjectReference Include="../Passenger.Host/Passenger.Host.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
+                      Condition="'$(PitstopManagedPayload)' != 'false'" />
   </ItemGroup>
 
   <!-- TraceEvent's props give a build its Windows natives under x86/, amd64/ and arm64/: msdia140 (the DIA SDK, for
