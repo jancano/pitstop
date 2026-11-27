@@ -35,13 +35,30 @@ public sealed class DebugView : DockPanel, IOwnKeys
     private readonly Banner offer = new();
     private readonly Button offerLink;
     private readonly DockPanel consolePane;
+    private readonly TextBox consoleExpression;
     private bool showingFrames;
+    private string? watchBeingEdited;
 
     public DebugView(DebugModel model)
     {
         this.model = model;
-        // What is typed into the console is the program's input.
-        consolePane = new DockPanel { IsVisible = false, Children = { model.Console } };
+        consoleExpression = new TextBox
+        {
+            [DockProperty] = Dock.Bottom,
+            [Avalonia.Automation.AutomationProperties.NameProperty] = "Native debugger console expression",
+            PlaceholderText = "Evaluate a C++ expression in the selected frame",
+            Margin = new Thickness(Gaps.Small),
+        };
+        consoleExpression.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter && consoleExpression.Text?.Trim() is { Length: > 0 } expression)
+            {
+                model.EvaluateInNativeConsole?.Invoke(expression);
+                consoleExpression.Text = string.Empty;
+                e.Handled = true;
+            }
+        };
+        consolePane = new DockPanel { IsVisible = false, Children = { consoleExpression, model.Console } };
         // The sessions' tabs are in the window's header, after its title.
         ItemsControl sessions = new()
         {
@@ -109,6 +126,7 @@ public sealed class DebugView : DockPanel, IOwnKeys
         string enter = KeyWords.Of(Key.Enter);
         ActionTips.SetWords(evaluate, AppActions.AddToWatches, keys => keys is null ? $"Evaluate expression ({enter})" : $"Evaluate expression ({enter}) or add a watch ({keys})");
         evaluate.AddHandler(KeyDownEvent, OnEvaluateKey, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        evaluate.LostFocus += (_, _) => FinishWatchEdit();
         // The debugger the model has now asked, whichever folder's it is: each folder's sets it as it is made.
         variables = new VariablesList(model.Tree) { DataWatch = node => model.DataWatch!(node) };
         variables.EvaluateRequested += (_, request) => model.Evaluate(request.Expression, request.Watch);
@@ -272,12 +290,23 @@ public sealed class DebugView : DockPanel, IOwnKeys
     {
         DebugState state = model.State;
         bool paused = state == DebugState.Paused;
+        variables.EditWatch = paused && model.Native ? EditNativeWatch : null;
+        if (!paused || !model.Native)
+        {
+            FinishWatchEdit();
+        }
         foreach (string action in new[] { AppActions.StepOver, AppActions.StepInto, AppActions.SmartStepInto, AppActions.StepOut, AppActions.RunToCursor, AppActions.Evaluate, AppActions.Resume })
         {
             tools[action].IsEnabled = paused;
         }
         tools[AppActions.SmartStepInto].IsVisible = !model.Native;
         tools[AppActions.Evaluate].IsEnabled = paused && (model.CanInspectFrame?.Invoke() ?? true);
+        consoleExpression.IsVisible = paused && model.Native;
+        consoleExpression.IsEnabled = tools[AppActions.Evaluate].IsEnabled;
+        if (!consoleExpression.IsVisible)
+        {
+            consoleExpression.Text = string.Empty;
+        }
         tools[AppActions.Pause].IsEnabled = state == DebugState.Running;
         tools[AppActions.Stop].IsEnabled = state is DebugState.Running or DebugState.Paused or DebugState.Starting;
         tools[AppActions.Detach].IsEnabled = model.Detachable;
@@ -291,10 +320,9 @@ public sealed class DebugView : DockPanel, IOwnKeys
     /// <summary>The Debugger or the Console tab, as the model shows it, the chosen session's console in the latter.</summary>
     private void ShowTab()
     {
-        if (consolePane.Children[0] != model.Console)
+        if (consolePane.Children[1] != model.Console)
         {
-            consolePane.Children.Clear();
-            consolePane.Children.Add(model.Console);
+            consolePane.Children[1] = model.Console;
         }
         // The Telemetry tab is there while the chosen program's run has records; without them its place is the console's.
         telemetry.Source = model.ChosenDashboard?.Telemetry;
@@ -323,6 +351,7 @@ public sealed class DebugView : DockPanel, IOwnKeys
 
     private void FocusEvaluate()
     {
+        FinishWatchEdit();
         evaluate.Text = model.EvaluateText;
         evaluate.SelectAll();
         evaluate.Focus();
@@ -330,10 +359,29 @@ public sealed class DebugView : DockPanel, IOwnKeys
 
     /// <summary>Add to Watches from the Evaluate field, by the keys the keymap in force gives it there
     /// (<see cref="AppActions.KeysIn"/>), ahead of what they run elsewhere.</summary>
-    public bool TakesKey(KeyEventArgs e) => evaluate.IsKeyboardFocusWithin && AppActions.Presses(AppActions.AddToWatches, e);
+    public bool TakesKey(KeyEventArgs e) => evaluate.IsKeyboardFocusWithin &&
+        (AppActions.Presses(AppActions.AddToWatches, e) || watchBeingEdited is not null && e.Key == Key.Escape);
 
     private void OnEvaluateKey(object? sender, KeyEventArgs e)
     {
+        if (watchBeingEdited is { } original)
+        {
+            if (e.Key == Key.Escape)
+            {
+                FinishWatchEdit();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter)
+            {
+                if (evaluate.Text?.Trim() is { Length: > 0 } replacement)
+                {
+                    model.ReplaceNativeWatch?.Invoke(original, replacement);
+                    FinishWatchEdit();
+                }
+                e.Handled = true;
+            }
+            return;
+        }
         bool watch = AppActions.Presses(AppActions.AddToWatches, e);
         if ((!watch && e.Key != Key.Enter) || string.IsNullOrWhiteSpace(evaluate.Text))
         {
@@ -345,6 +393,26 @@ public sealed class DebugView : DockPanel, IOwnKeys
             evaluate.Text = string.Empty;
         }
         e.Handled = true;
+    }
+
+    private void EditNativeWatch(string expression)
+    {
+        watchBeingEdited = expression;
+        evaluate.PlaceholderText = "Edit watch and press Enter";
+        evaluate.Text = expression;
+        evaluate.SelectAll();
+        evaluate.Focus();
+    }
+
+    private void FinishWatchEdit()
+    {
+        if (watchBeingEdited is null)
+        {
+            return;
+        }
+        watchBeingEdited = null;
+        evaluate.Text = string.Empty;
+        evaluate.PlaceholderText = null;
     }
 
     /// <summary>The Frames menu: Copy Stack, every frame a line, and Go to Source for the one chosen.</summary>

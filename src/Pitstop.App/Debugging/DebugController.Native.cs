@@ -176,6 +176,33 @@ public sealed partial class DebugController
 
     private const string NoNativeMutation = "Native variable mutation has not been verified.";
 
+    private async Task EvaluateNativeConsoleAsync(string expression)
+    {
+        if (Session is not { Engine: DebugEngine.Native, State: DebugState.Paused } session || frame is not { } current)
+        {
+            return;
+        }
+        int generation = shown;
+        VariableNode result = await Evaluated(session, current, expression, VariableRole.Result);
+        if (generation == shown && Session == session && session.State == DebugState.Paused)
+        {
+            view.Console.Append($"Expression result: {VariableNode.Cut(result.Value)}\n", error: result.Role == VariableRole.Error);
+        }
+    }
+
+    private void ReplaceNativeWatch(string original, string replacement)
+    {
+        List<string> watches = Breakpoints.NativeWatchExpressions;
+        int index = watches.IndexOf(original);
+        if (Session is not { Engine: DebugEngine.Native, State: DebugState.Paused } || index < 0 || watches.Contains(replacement))
+        {
+            return;
+        }
+        watches[index] = replacement;
+        Breakpoints.NativeWatchesEdited();
+        IdeErrors.Observe(ShowVariables());
+    }
+
     private async Task<IReadOnlyList<DapVariable>> NativeMembersAsync(DebugSession session, int reference, int start)
     {
         if (Session != session || session.State != DebugState.Paused)

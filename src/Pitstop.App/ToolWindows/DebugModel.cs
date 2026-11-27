@@ -226,6 +226,8 @@ public sealed class DebugModel
     internal Func<DapStackFrame, string?>? ModuleOf { get; set; }
     internal Func<DapThread, string?>? ThreadStateOf { get; set; }
     internal bool Native { get; set; }
+    internal Action<string, string>? ReplaceNativeWatch { get; set; }
+    internal Action<string>? EvaluateInNativeConsole { get; set; }
     internal Func<bool>? CanInspectFrame { get; set; }
     internal event EventHandler<DapStackFrame>? ModuleRequested;
 

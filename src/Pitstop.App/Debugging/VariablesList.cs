@@ -112,6 +112,8 @@ public sealed class VariablesList : TreeList
     /// <summary>A watch to stop watching.</summary>
     public event EventHandler<string>? WatchRemoved;
 
+    internal Action<string>? EditWatch { get; set; }
+
     /// <summary>Set Value: a row's new value typed in its place (a C# expression), Enter pressed.</summary>
     public event EventHandler<(VariableNode Node, string Value)>? SetValueRequested;
 
@@ -192,6 +194,10 @@ public sealed class VariablesList : TreeList
         if (node.Role == VariableRole.Watch)
         {
             items.Add(new Separator());
+            if (EditWatch is { } edit)
+            {
+                items.Add(ListMenus.Edit("Edit Watch…", () => edit(node.Name)));
+            }
             items.Add(ListMenus.Remove("Remove Watch", () => WatchRemoved?.Invoke(this, node.Name)));
         }
         if (DataWatch is { } offer)

@@ -162,6 +162,8 @@ public sealed partial class DebugController : IDisposable
         view.DataWatch = DataWatchAsync;
         view.PlaceOf = PlaceOf;
         view.ModuleOf = frame => NativeModuleName(frame.Source?.Path);
+        view.ReplaceNativeWatch = ReplaceNativeWatch;
+        view.EvaluateInNativeConsole = expression => IdeErrors.Observe(EvaluateNativeConsoleAsync(expression));
         view.CanInspectFrame = () => Session?.Engine != DebugEngine.Native || frame is not null;
         view.ThreadStateOf = thread => Session is { Engine: DebugEngine.Native, State: DebugState.Paused } nativeSession
             && (nativeSession.AllThreadsStopped == true || nativeSession.StoppedThread == thread.Id) ? "stopped" : null;
@@ -189,6 +191,8 @@ public sealed partial class DebugController : IDisposable
             view.ReadAgainRequested -= readAgain;
             view.TextOpened -= textOpened;
             view.WatchRemoved -= unwatched;
+            view.ReplaceNativeWatch = null;
+            view.EvaluateInNativeConsole = null;
         };
         view.ShowMuted(Breakpoints.Muted);
     }
