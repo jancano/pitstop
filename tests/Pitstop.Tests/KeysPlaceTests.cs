@@ -64,6 +64,13 @@ public sealed class KeysPlaceTests : IDisposable
         List<string> outside = [];
         foreach (Pitstop.App.Docking.ToolWindow tool in window.DockHost.Windows.Where(w => w.Action is not null).ToList())
         {
+            if (tool.Id == ToolWindowIds.ModuleGraph)
+            {
+                Assert.Equal(Refusals.NoXmakeProject, window.Actions.WhyNot(AppActions.ModuleGraph, window.Actions.Context()));
+                Assert.False(window.Perform(AppActions.ModuleGraph));
+                Assert.False(tool.IsShown);
+                continue;
+            }
             window.EditorArea.CodeEditor.Focus();
             Ui.Settle();
             if (AppActions.Keymap().ShortcutsFor(tool.Action!).Count > 0)
