@@ -1282,6 +1282,10 @@ public sealed class VcsController : IDisposable
         {
             signing = signing with { Config = [$"{GitConfigKeys.GpgX509Program}={asker.Helper}"], Environment = new Dictionary<string, string> { [GpgLoopback.X509Variable] = gpgsm } };
         }
+        else if (asker is not null && (signing.Sign ?? setup.Signs) && setup is { Format: SigningFormat.Ssh, KeyIsFile: true })
+        {
+            asker = asker with { SshSigningKey = setup.Key };
+        }
         return (new Signer(signing, asker), setup);
     }
 

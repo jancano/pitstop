@@ -50,7 +50,8 @@ public static class GpgLoopback
 
     private static async Task<int> SignAsync(string gpg, string[] args, string file, string socket)
     {
-        ProcessStartInfo start = ChildProcesses.Command(gpg, ["--pinentry-mode", "loopback", "--command-fd", "0", "--output", "-", .. args, "--", file]);
+        // Some Git versions omit --status-fd, but loopback needs it to receive GET_HIDDEN.
+        ProcessStartInfo start = ChildProcesses.Command(gpg, ["--pinentry-mode", "loopback", "--command-fd", "0", "--output", "-", .. args, "--status-fd=2", "--", file]);
         MsysGpg.Fit(start, gpg);
         start.RedirectStandardInput = true;
         start.RedirectStandardOutput = true;

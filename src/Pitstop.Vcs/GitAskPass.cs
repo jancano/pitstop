@@ -152,6 +152,9 @@ public sealed record GitAnswer(string? Text, string? Password = null, string? Re
 /// <see cref="SocketFolder"/> (one only the user reaches), asking <see cref="Ask"/> in turn.</summary>
 public sealed record GitAsker(string Helper, string SocketFolder, Func<GitQuestion, CancellationToken, Task<GitAnswer>> Ask)
 {
+    /// <summary>The configured SSH signing key, for ssh-keygen versions that omit the key from their prompt.</summary>
+    public string? SshSigningKey { get; init; }
+
     /// <summary>The window's gits that may ask, which end together (<see cref="GitQuestions.EndAsync"/>); none where they
     /// end with nothing else.</summary>
     public GitQuestions? Questions { get; init; }
@@ -494,7 +497,10 @@ internal sealed class Prompting : IAsyncDisposable
             await turn.WaitAsync(ending.Token);
             try
             {
-                answer = await AnswerAsync(GitQuestion.Of(prompt));
+                GitQuestion question = asker.SshSigningKey is { } key && prompt.Trim() == "Enter passphrase:"
+                    ? new GitQuestion(GitQuestionKind.Passphrase, prompt, key.EndsWith(".pub", StringComparison.OrdinalIgnoreCase) ? key[..^4] : key, Signs: true)
+                    : GitQuestion.Of(prompt);
+                answer = await AnswerAsync(question);
             }
             finally
             {
