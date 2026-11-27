@@ -87,7 +87,7 @@ public sealed class RegexLimitsTests
             {
                 continue;
             }
-            foreach (AssemblyName name in assembly.GetReferencedAssemblies().Where(name => name.Name!.StartsWith("Passenger.", StringComparison.Ordinal)))
+            foreach (AssemblyName name in assembly.GetReferencedAssemblies().Where(name => name.Name!.StartsWith("Pitstop.", StringComparison.Ordinal)))
             {
                 next.Enqueue(Assembly.Load(name));
             }

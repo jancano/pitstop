@@ -4525,7 +4525,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
         // A control of Passenger's is styled as the nearest of its own kinds that says, else as itself.
         string StyledAs(Type type)
         {
-            for (Type? kind = type; kind is not null && kind.Assembly.GetName().Name is { } name && (name == "Pitstop" || name.StartsWith("Passenger", StringComparison.Ordinal)); kind = kind.BaseType)
+            for (Type? kind = type; kind is not null && kind.Assembly.GetName().Name is { } name && (name == "Pitstop" || name.StartsWith("Pitstop.", StringComparison.Ordinal)); kind = kind.BaseType)
             {
                 if (styledAs.TryGetValue(kind.Name, out string? key))
                 {
@@ -4654,7 +4654,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
             }
         }
         return AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => a.GetName().Name is { } name && (name == "Pitstop" || name.StartsWith("Avalonia", StringComparison.Ordinal) || name.StartsWith("Passenger", StringComparison.Ordinal)))
+            .Where(a => a.GetName().Name is { } name && (name == "Pitstop" || name.StartsWith("Avalonia", StringComparison.Ordinal) || name.StartsWith("Pitstop.", StringComparison.Ordinal)))
             .SelectMany(Of).Where(t => typeof(StyledElement).IsAssignableFrom(t))
             .GroupBy(t => t.Name.Split('`')[0], StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.Ordinal);
     }

@@ -27,7 +27,7 @@ public sealed class IdentifierLiterals : DiagnosticAnalyzer
             homes.Add(Homes.Of(start.Compilation.Assembly), start.Compilation);
             foreach (IAssemblySymbol assembly in start.Compilation.SourceModule.ReferencedAssemblySymbols)
             {
-                if (assembly.Name == "Pitstop" || assembly.Name.StartsWith("Passenger", StringComparison.Ordinal))
+                if (assembly.Name == "Pitstop" || assembly.Name.StartsWith("Pitstop.", StringComparison.Ordinal))
                 {
                     homes.Add(Homes.Of(assembly), start.Compilation);
                 }
