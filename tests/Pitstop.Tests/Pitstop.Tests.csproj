@@ -24,6 +24,8 @@
     <ProjectReference Include="../../src/Pitstop.App/Pitstop.App.csproj" />
     <ProjectReference Include="../../src/Pitstop.Templates/Pitstop.Templates.csproj" />
     <ProjectReference Include="../../src/Pitstop.Lsp/Pitstop.Lsp.csproj" />
+    <ProjectReference Include="../../src/Pitstop.NativeDebug/Pitstop.NativeDebug.csproj" />
+    <ProjectReference Include="../../tools/Pitstop.NativeDebugProbe/Pitstop.NativeDebugProbe.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
@@ -275,6 +277,7 @@
     <ProjectReference Include="../Debuggees/LoopingConsoleApp/LoopingConsoleApp.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../Debuggees/LoopingConsoleAppOptimized/LoopingConsoleAppOptimized.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../Debuggees/MinimalApiApp/MinimalApiApp.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../Debuggees/NativeDapTestAdapter/NativeDapTestAdapter.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../Debuggees/PassengerCases/PassengerCases.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../Debuggees/ReadsInputConsoleApp/ReadsInputConsoleApp.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../Debuggees/ReadsInputConsoleAppNoCet/ReadsInputConsoleAppNoCet.csproj" ReferenceOutputAssembly="false" />

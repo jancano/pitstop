@@ -1,0 +1,22 @@
+set_project("pitstop-native-debug-modules")
+add_rules("mode.debug", "mode.release")
+option("cpp26")
+    set_default(false)
+option_end()
+set_languages(has_config("cpp26") and "cxx26" or "cxx23")
+set_policy("build.c++.modules", true)
+
+target("debug-values")
+    set_kind("static")
+    add_files("values.cppm", "partition.cppm", {public = true})
+    add_files("detail.cppm", "implementation.cpp")
+
+target("debug-facade")
+    set_kind("static")
+    add_deps("debug-values", {public = true})
+    add_files("facade.cppm", {public = true})
+
+target("debug-modules")
+    set_kind("binary")
+    add_deps("debug-facade")
+    add_files("main.cpp")

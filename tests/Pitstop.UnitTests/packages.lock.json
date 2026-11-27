@@ -561,6 +561,15 @@
           "Pitstop.ProjectSystem": "[0.1.0, )"
         }
       },
+      "pitstop.nativedebug": {
+        "type": "Project",
+        "dependencies": {
+          "Pitstop.Core": "[0.1.0, )",
+          "Pitstop.Dap": "[0.1.0, )",
+          "Pitstop.Modules": "[0.1.0, )",
+          "Pitstop.ProjectSystem": "[0.1.0, )"
+        }
+      },
       "pitstop.nodepackages": {
         "type": "Project"
       },

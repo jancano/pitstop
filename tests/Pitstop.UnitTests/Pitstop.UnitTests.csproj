@@ -36,6 +36,7 @@
     <ProjectReference Include="../../src/Pitstop.Xaml/Pitstop.Xaml.csproj" />
     <ProjectReference Include="../../src/Pitstop.Xmake/Pitstop.Xmake.csproj" />
     <ProjectReference Include="../../src/Pitstop.Modules/Pitstop.Modules.csproj" />
+    <ProjectReference Include="../../src/Pitstop.NativeDebug/Pitstop.NativeDebug.csproj" />
     <ProjectReference Include="../../src/Pitstop.Templates/Pitstop.Templates.csproj" />
     <!-- Under an alias, since the tool compiles in Core's JsonMembers, which the tests take from Core. -->
     <ProjectReference Include="../../tools/Pitstop.NodePackages/Pitstop.NodePackages.csproj" Aliases="NodePackages" />

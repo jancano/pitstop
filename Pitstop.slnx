@@ -28,6 +28,7 @@
     <Project Path="src/Pitstop.Xmake/Pitstop.Xmake.csproj" />
     <Project Path="src/Pitstop.Cpp/Pitstop.Cpp.csproj" />
     <Project Path="src/Pitstop.Modules/Pitstop.Modules.csproj" />
+    <Project Path="src/Pitstop.NativeDebug/Pitstop.NativeDebug.csproj" />
     <Project Path="src/Pitstop.ProjectSystem/Pitstop.ProjectSystem.csproj" />
     <Project Path="src/Pitstop.Templates/Pitstop.Templates.csproj" />
   </Folder>
@@ -39,6 +40,7 @@
     <Project Path="tools/Pitstop.NodePackages/Pitstop.NodePackages.csproj" />
     <Project Path="tools/Pitstop.GodotSweep/Pitstop.GodotSweep.csproj" />
     <Project Path="tools/Pitstop.Notices/Pitstop.Notices.csproj" />
+    <Project Path="tools/Pitstop.NativeDebugProbe/Pitstop.NativeDebugProbe.csproj" />
     <Project Path="tools/Pitstop.RoslynPatch/Pitstop.RoslynPatch.csproj" />
   </Folder>
   <Folder Name="/tests/AspireGraphs/">
@@ -85,6 +87,7 @@
     <Project Path="tests/Debuggees/LoopingConsoleApp/LoopingConsoleApp.csproj" />
     <Project Path="tests/Debuggees/LoopingConsoleAppOptimized/LoopingConsoleAppOptimized.csproj" />
     <Project Path="tests/Debuggees/MinimalApiApp/MinimalApiApp.csproj" />
+    <Project Path="tests/Debuggees/NativeDapTestAdapter/NativeDapTestAdapter.csproj" />
     <Project Path="tests/Debuggees/PassengerCases/PassengerCases.csproj" />
     <Project Path="tests/Debuggees/PassengerCasesProxies/PassengerCasesProxies.csproj" />
     <Project Path="tests/Debuggees/ReadsInputConsoleApp/ReadsInputConsoleApp.csproj" />
