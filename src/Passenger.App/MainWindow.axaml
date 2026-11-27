@@ -102,7 +102,7 @@
                     <app:MainMenuPlace Name="MainMenuPlace">
                         <Button Name="MenuButton" Click="OnMenuClicked" />
                     </app:MainMenuPlace>
-                    <Button Name="ProjectButton" Classes="widget" MinWidth="80" ToolTip.Tip="Open a solution, project or folder" Click="OnProjectClicked">
+                    <Button Name="ProjectButton" Classes="widget" MinWidth="80" ToolTip.Tip="Open a project or folder" Click="OnProjectClicked">
                         <DockPanel>
                             <Border Name="ProjectBadge" Classes="initials small" DockPanel.Dock="Left" IsVisible="False">
                                 <TextBlock Name="ProjectBadgeText" Classes="badgeText" />

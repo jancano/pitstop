@@ -30,7 +30,6 @@ public static class Screenshot
         bool managed = NativeProduct.ManagedPayloadAvailable;
         Program.SetUpHeadless(launch, trustAll: managed);
         using Workspace.WatchedFile? trust = managed ? null : State.StateStore.WatchKeptTrust();
-        // Every folder a screenshot opens is trusted, but one it asks to see as a person's window first opens it.
         using IDisposable? asked = options.Untrusted && launch.Folder is { } held ? WorkspaceTrust.Ask(held) : null;
 
         // A capture lets in only its own agent: no socket at all without one.

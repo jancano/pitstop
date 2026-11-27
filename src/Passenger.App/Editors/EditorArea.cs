@@ -51,7 +51,7 @@ public sealed partial class EditorArea : UserControl
             Margin = new Thickness(Gaps.Group, 0),
         };
         emptyTitle.Bind(TextBlock.ForegroundProperty, emptyTitle.GetResourceObservable(TokenKeys.Text));
-        emptyHint = new EmptyState("Open a solution, project or folder to start.");
+        emptyHint = new EmptyState("Open a project or folder to start.");
         folderHint = new StackPanel { Spacing = Gaps.Normal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Children = { emptyTitle, emptyHint } };
         emptyState.Content = folderHint;
         main = NewFrame(new EditorFrame.Leaf(activeGroup), activeGroup, emptyState);
