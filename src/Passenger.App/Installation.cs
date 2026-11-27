@@ -16,9 +16,18 @@ internal static partial class Installation
     // The same ID is written into the Windows shortcut by tools/package-win.sh.
     private const string AppUserModelId = "velopack.PitstopIDE";
 
-    /// <summary>The types a double-click opens in Passenger, each under a ProgID of its own: a solution as the
-    /// workspace, a project as its folder (<see cref="LaunchOptions"/>).</summary>
+    /// <summary>C, C++ and Lua files offered through the Windows Open With menu.</summary>
     private static readonly (string Extension, string ProgId, string Name)[] FileTypes =
+    [
+        (".c", "Pitstop.c", "C Source File"), (".h", "Pitstop.h", "C or C++ Header"),
+        (".cpp", "Pitstop.cpp", "C++ Source File"), (".cc", "Pitstop.cc", "C++ Source File"), (".cxx", "Pitstop.cxx", "C++ Source File"),
+        (".hpp", "Pitstop.hpp", "C++ Header"), (".hh", "Pitstop.hh", "C++ Header"), (".hxx", "Pitstop.hxx", "C++ Header"),
+        (".cppm", "Pitstop.cppm", "C++ Module Source File"), (".ixx", "Pitstop.ixx", "C++ Module Source File"),
+        (".mpp", "Pitstop.mpp", "C++ Module Source File"), (".cxxm", "Pitstop.cxxm", "C++ Module Source File"), (".ccm", "Pitstop.ccm", "C++ Module Source File"),
+        (".lua", "Pitstop.lua", "Lua Source File"),
+    ];
+
+    private static readonly (string Extension, string ProgId, string Name)[] LegacyFileTypes =
     [
         (".sln", "Pitstop.sln", "Solution File"),
         (".slnx", "Pitstop.slnx", "Solution File"),
@@ -69,6 +78,7 @@ internal static partial class Installation
     {
         try
         {
+            UnregisterFileTypes(LegacyFileTypes);
             RegisterFileTypes();
         }
         finally
@@ -90,9 +100,7 @@ internal static partial class Installation
         }
     }
 
-    /// <summary>Each type under HKEY_CURRENT_USER, so no administrator is asked: its ProgID, Passenger among the
-    /// programs that open it, and Passenger as its default only where no other program has claimed it. Windows keeps a
-    /// choice the person made above either.</summary>
+    /// <summary>Registers Pitstop for Open With under HKEY_CURRENT_USER, leaving existing defaults to Windows.</summary>
     [SupportedOSPlatform("windows")]
     private static void RegisterFileTypes()
     {
@@ -108,15 +116,10 @@ internal static partial class Installation
                 using RegistryKey command = type.CreateSubKey(@"shell\open\command");
                 command.SetValue(string.Empty, $"\"{exe}\" \"%1\"");
             }
-            bool claimed = Owner(extension) is { } owner && owner != progId;
             using RegistryKey ext = classes.CreateSubKey(extension);
             using (RegistryKey openWith = ext.CreateSubKey("OpenWithProgids"))
             {
                 openWith.SetValue(progId, Array.Empty<byte>(), RegistryValueKind.None);
-            }
-            if (!claimed)
-            {
-                ext.SetValue(string.Empty, progId);
             }
         }
         AssociationsChanged();
@@ -124,10 +127,13 @@ internal static partial class Installation
 
     /// <summary>What <see cref="RegisterFileTypes"/> wrote, and a type's key when nothing else is left in it.</summary>
     [SupportedOSPlatform("windows")]
-    private static void UnregisterFileTypes()
+    private static void UnregisterFileTypes() => UnregisterFileTypes(FileTypes.Concat(LegacyFileTypes));
+
+    [SupportedOSPlatform("windows")]
+    private static void UnregisterFileTypes(IEnumerable<(string Extension, string ProgId, string Name)> types)
     {
         using RegistryKey classes = Registry.CurrentUser.CreateSubKey(Classes);
-        foreach ((string extension, string progId, string _) in FileTypes)
+        foreach ((string extension, string progId, string _) in types)
         {
             classes.DeleteSubKeyTree(progId, throwOnMissingSubKey: false);
             using (RegistryKey? ext = classes.OpenSubKey(extension, writable: true))
@@ -149,21 +155,6 @@ internal static partial class Installation
             DeleteIfEmpty(classes, extension);
         }
         AssociationsChanged();
-    }
-
-    /// <summary>The ProgID that opens a type: the person's own, else the machine's (Visual Studio's .sln).</summary>
-    [SupportedOSPlatform("windows")]
-    private static string? Owner(string extension)
-    {
-        foreach (RegistryKey hive in (RegistryKey[])[Registry.CurrentUser, Registry.LocalMachine])
-        {
-            using RegistryKey? type = hive.OpenSubKey($@"{Classes}\{extension}");
-            if (type?.GetValue(string.Empty) is string { Length: > 0 } owner)
-            {
-                return owner;
-            }
-        }
-        return null;
     }
 
     [SupportedOSPlatform("windows")]

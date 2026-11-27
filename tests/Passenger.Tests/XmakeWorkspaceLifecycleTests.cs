@@ -38,6 +38,13 @@ public sealed class XmakeWorkspaceLifecycleTests
             Assert.NotNull(window.Actions[AppActions.OpenNativeProject]);
             Assert.NotNull(window.Actions[AppActions.NewNativeProject]);
             Assert.Equal("Close Project", window.Actions[AppActions.CloseSolution]?.Title);
+            Assert.DoesNotContain(window.Actions.All, action => action.Id is AppActions.AttachToProcess or AppActions.RunTests or AppActions.ManageNuGet);
+            Assert.False(window.Perform(AppActions.AttachToProcess));
+            Assert.False(window.DockHost.IsShown(ToolWindowIds.Debug));
+            Passenger.App.Settings.SettingsDialog settings = window.ShowSettings();
+            Assert.Contains(Passenger.App.Settings.SettingsDialog.NativeToolchainsPage, settings.Pages);
+            Assert.DoesNotContain(Passenger.App.Settings.SettingsDialog.HotReloadPage, settings.Pages);
+            settings.Close();
             Assert.Null(window.Open(source));
             Assert.Equal(source, window.EditorArea.Active?.Path);
         }

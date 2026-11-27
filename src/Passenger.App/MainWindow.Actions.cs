@@ -158,7 +158,7 @@ public partial class MainWindow
     /// <summary>The window's own actions; each feature's partial or controller adds its own beside them.</summary>
     private void AddActions()
     {
-        actions = new ActionRegistry(Context, () => keys.Keymap, work);
+        actions = new ActionRegistry(Context, () => keys.Keymap, work) { ManagedDevelopment = ManagedDevelopment };
         Editors.Commands.Work = work;
         Dock.Actions = actions;
         Dock.Request = Request;
@@ -490,12 +490,12 @@ public partial class MainWindow
         }, Refusals.NeedsFile, ("Run", 2, 2));
         Add(A.ViewBreakpoints, "View Breakpoints and Exceptions…", "Debug", _ => ShowBreakpoints(null), menu: ("Run", 2, 3));
 
-        string? Unbuildable() => Folder is null ? Refusals.NoFolderTo("build") : Untrusted() is { } untrusted ? untrusted : IsBuilding ? Refusals.Building
+        string? Unbuildable() => !ManagedDevelopment ? Refusals.NoXmakeProject : Folder is null ? Refusals.NoFolderTo("build") : Untrusted() is { } untrusted ? untrusted : IsBuilding ? Refusals.Building
             : session.Workspace is { Solution: null, Projects.Count: 0, GodotGames.Count: > 0 } ? Refusals.NothingToBuildOfScripts : WithoutSdk();
 
         void BuildAction(string id, BuildKind kind, int order, bool selected)
         {
-            string title = $"{kind} {(selected ? "Selected Projects" : "Solution")}";
+            string title = $"{kind} {(ManagedDevelopment ? selected ? "Selected Projects" : "Solution" : selected ? "Selected Targets" : "Workspace")}";
             actions!.Add(new IdeAction(id, title, id == A.Build ? "Run" : "Build", context =>
             {
                 if (UsesXmake(context))

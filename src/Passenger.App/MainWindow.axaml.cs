@@ -73,9 +73,10 @@ public partial class MainWindow : IdeWindow
 
     public MainWindow(bool managedDevelopment)
     {
-        ManagedDevelopment = managedDevelopment;
+        ManagedDevelopment = managedDevelopment && NativeProduct.ManagedPayloadAvailable;
         UiThread.Own();
         InitializeComponent();
+        DebugButton.IsVisible = ProfileButton.IsVisible = ManagedDevelopment;
         GiveToolbarButtons();
         session = ProjectSession.None(Setup());
         announcer = new Announcer(this, Root);
@@ -424,7 +425,7 @@ public partial class MainWindow : IdeWindow
         }
         foreach (string file in options.Files)
         {
-            if (file.EndsWith(".nettrace", StringComparison.OrdinalIgnoreCase))
+            if (ManagedDevelopment && file.EndsWith(".nettrace", StringComparison.OrdinalIgnoreCase))
             {
                 IdeErrors.Observe(OpenSnapshotAsync(Path.GetFullPath(file)));
                 continue;
@@ -844,7 +845,9 @@ public partial class MainWindow : IdeWindow
     private void AddToolWindows()
     {
         // Each shows only while the open folder holds what it serves, every one added later too.
-        Dock.WhyUnserved = window => window.Serves.WhyNot(session.Folder is null ? null : session.Holds);
+        Dock.WhyUnserved = window => !ManagedDevelopment && NativeProduct.ManagedToolWindow(window.Id)
+            ? "This tool window is available only in the managed development profile."
+            : window.Serves.WhyNot(session.Folder is null ? null : session.Holds);
         Dock.Add(new Docking.ToolWindow(ToolWindowIds.Explorer, "Project Explorer", IconKeys.Explorer, Explorer, Docking.ToolAnchor.LeftTop)
         {
             Serves = ToolWindowServes.EveryFolder,
@@ -929,7 +932,7 @@ public partial class MainWindow : IdeWindow
         Editors.ShowsMarkdownPreview = store.Previews.Value.Markdown;
         Editors.ShowsSvgPreview = store.Previews.Value.Svg;
         Editors.ShowsHtmlPreview = store.Previews.Value.Html;
-        ShowPreviews(store.Previews.Value.Xaml);
+        ShowPreviews(ManagedDevelopment && store.Previews.Value.Xaml);
         liveTree!.KeepSplits(store.LiveTree.Value, kept => state?.LiveTree.Set(kept));
         assist.RenameSettings = store.Refactorings.Value;
         assist.RenameSettingsChanged += (_, _) => state?.Refactorings.Set(assist.RenameSettings);

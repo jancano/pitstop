@@ -34,6 +34,10 @@ publish_project() {
     publish_rid=$3
     publish_version=$4
     shift 4
+    if [ "${PITSTOP_SERIAL_BUILD:-}" = 1 ]; then
+        set -- -m:1 -p:BuildInParallel=false -p:UseSharedCompilation=false --disable-build-servers "$@"
+        export DOTNET_PROCESSOR_COUNT=1
+    fi
     AVALONIA_TELEMETRY_OPTOUT=1 dotnet publish "$publish_root/src/$publish_path" -c Release -r "$publish_rid" --self-contained \
         -p:Version="$publish_version" -p:RestoreLockedMode=true -nodeReuse:false "$@"
 }

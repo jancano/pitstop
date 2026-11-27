@@ -12,6 +12,7 @@ public sealed class ActionRegistry(Func<ActionContext> context, Func<Keymap> key
 {
     private readonly Dictionary<string, IdeAction> byId = new(StringComparer.Ordinal);
     private IReadOnlyList<IdeAction>? sorted;
+    internal bool ManagedDevelopment { get; init; } = true;
 
     /// <summary>Adds an action; an id added twice is a mistake in the code, never a choice between two.</summary>
     public void Add(IdeAction action)
@@ -35,7 +36,9 @@ public sealed class ActionRegistry(Func<ActionContext> context, Func<Keymap> key
 
     /// <summary>Every action, in the order Find Action lists them before anything is typed: by group, then title.</summary>
     public IReadOnlyList<IdeAction> All => sorted ??=
-        InMenuOrder([.. byId.Values.OrderBy(a => a.Group, StringComparer.Ordinal).ThenBy(a => a.Title, StringComparer.Ordinal)]);
+        InMenuOrder([.. byId.Values.Where(Offers).OrderBy(a => a.Group, StringComparer.Ordinal).ThenBy(a => a.Title, StringComparer.Ordinal)]);
+
+    private bool Offers(IdeAction action) => ManagedDevelopment || NativeProduct.Offers(action);
 
     /// <summary>Actions as listed, but those that keep their menu's order (<see cref="IdeAction.KeepsMenuOrder"/>) put in
     /// it, each run of a menu's in the places its actions took.</summary>
@@ -133,6 +136,7 @@ public sealed class ActionRegistry(Func<ActionContext> context, Func<Keymap> key
     /// already, or what it needs is not there.</summary>
     public string? WhyNot(string id, ActionContext context) =>
         !byId.TryGetValue(AppActions.Now(id), out IdeAction? action) ? $"No action is called {id}"
+        : !Offers(action) ? "This action is available only in the managed development profile."
         : work.Of(action.WorkId) is { } under ? ActionWork.Busy(under)
         : action.WhyNot(context);
 

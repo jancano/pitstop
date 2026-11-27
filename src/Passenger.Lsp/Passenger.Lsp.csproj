@@ -51,7 +51,7 @@
 
   <!-- The server's files become this project's output items, so every project that references this one gets them
        beside its own binaries, with the package's third-party notices. -->
-  <Target Name="IncludeRoslynServer" BeforeTargets="AssignTargetPaths" DependsOnTargets="FindRoslynServer;PatchRoslynServer">
+  <Target Name="IncludeRoslynServer" BeforeTargets="AssignTargetPaths" DependsOnTargets="FindRoslynServer;PatchRoslynServer" Condition="'$(PitstopManagedPayload)' != 'false'">
     <ItemGroup>
       <RoslynServerNotices Include="$(RoslynServerPackage)ThirdPartyNotices.*" />
     </ItemGroup>
@@ -100,7 +100,7 @@
   <!-- Passenger's own extension to the server becomes this project's output under roslyn-extension/: a folder of its own,
        since the server loads an extension's folder into a context of its own and Roslyn's assemblies must come from the
        server's. -->
-  <Target Name="IncludeRoslynExtension" BeforeTargets="AssignTargetPaths">
+  <Target Name="IncludeRoslynExtension" BeforeTargets="AssignTargetPaths" Condition="'$(PitstopManagedPayload)' != 'false'">
     <MSBuild Projects="../Passenger.Roslyn.Extension/Passenger.Roslyn.Extension.csproj" Targets="GetTargetPath"
              RemoveProperties="RuntimeIdentifier;SelfContained;PublishReadyToRun" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="RoslynExtensionAssembly" />

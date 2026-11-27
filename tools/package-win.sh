@@ -22,7 +22,11 @@ root=$(checkout_root)
 if command -v cygpath >/dev/null 2>&1; then
     root=$(cygpath -m "$root")
 fi
-out="$root/artifacts/package"
+output_name=${PITSTOP_PACKAGE_DIRECTORY:-package}
+case "$output_name" in
+    "" | *[!a-zA-Z0-9_-]*) fail "PITSTOP_PACKAGE_DIRECTORY must be a directory name under artifacts" ;;
+esac
+out="$root/artifacts/$output_name"
 work="$out/$rid"
 publish="$work/publish"
 release="$work/velopack"
@@ -53,7 +57,11 @@ fi
 version=$(release_version "$root")
 
 rm -rf "$work" "$installer" "$portable"
-publish_app "$root" "$rid" "$version" -o "$publish" -nologo -v quiet
+publish_app "$root" "$rid" "$version" -p:PitstopManagedPayload=false -o "$publish" -nologo -v quiet
+
+for payload in roslyn roslyn-extension debugger host inspector testframes updatehandlers wpfpreview mauipreview; do
+    [ ! -e "$publish/$payload" ] || fail "the native publish contains managed tooling under $payload"
+done
 
 # The pitstop-ide command alone in bin\, so the folder on the person's Path offers no other program.
 [ "$(ls "$publish/bin")" = pitstop-ide.exe ] || fail "the publish's bin folder holds $(ls "$publish/bin" | tr '\n' ' '), not the pitstop-ide command alone"

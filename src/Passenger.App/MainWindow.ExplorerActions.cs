@@ -443,8 +443,12 @@ public partial class MainWindow
                 {
                     add.Add(separator);
                 }
-                add.AddRange([Item(A.NewFile), Item(A.NewFolder), Item(A.NewType), Item(A.NewItem), separator, Item(A.NewEditorConfig), Item(A.NewGitIgnore),
-                    Item(A.NewGitAttributes)]);
+                add.AddRange([Item(A.NewFile), Item(A.NewFolder)]);
+                if (ManagedDevelopment)
+                {
+                    add.AddRange([Item(A.NewType), Item(A.NewItem)]);
+                }
+                add.AddRange([separator, Item(A.NewEditorConfig), Item(A.NewGitIgnore), Item(A.NewGitAttributes)]);
             }
             if (node.Kind == NodeKind.Project && !node.IsShared)
             {

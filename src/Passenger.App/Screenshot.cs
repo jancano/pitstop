@@ -27,14 +27,16 @@ public static class Screenshot
 
     public static int Run(LaunchOptions launch, ScreenshotOptions options)
     {
-        Program.SetUpHeadless(launch);
+        bool managed = NativeProduct.ManagedPayloadAvailable;
+        Program.SetUpHeadless(launch, trustAll: managed);
+        using Workspace.WatchedFile? trust = managed ? null : State.StateStore.WatchKeptTrust();
         // Every folder a screenshot opens is trusted, but one it asks to see as a person's window first opens it.
         using IDisposable? asked = options.Untrusted && launch.Folder is { } held ? WorkspaceTrust.Ask(held) : null;
 
         // A capture lets in only its own agent: no socket at all without one.
         Written written = new();
         FileText.Writing += written.Add;
-        MainWindow window = new() { Width = options.Size.Width, Height = options.Size.Height, Autosaves = false, AgentsAllowed = options.Steps.OfType<ScriptStep.Agent>().Any(), TakesLaunches = false,
+        MainWindow window = new(managed) { Width = options.Size.Width, Height = options.Size.Height, Autosaves = false, AgentsAllowed = options.Steps.OfType<ScriptStep.Agent>().Any(), TakesLaunches = false,
             SaysLastCrash = true };
         window.OpenOnNamedSettings(launch, Settings.SettingsStore.KeptWhereNamed());
         window.SetRenderScaling(options.Scale);

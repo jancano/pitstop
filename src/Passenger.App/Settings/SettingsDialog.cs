@@ -134,6 +134,12 @@ public sealed partial class SettingsDialog : IdeWindow
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         AddOptions(agents ?? Mcp.AgentSetup.Here(null, current.TerminalShell));
+        if (!actions.ManagedDevelopment)
+        {
+            options.RemoveAll(option => option.Page is HotReloadPage or GodotPage or GDScriptCodeStylePage or XamlCodeStylePage or PostfixPage or LiveTemplatesPage
+                || option.Label == Declared.CSharpFormatter.Row?.Label || option.Label == Declared.XamlWorkspace.Row?.Label
+                || option.Label == Declared.SolutionWideAnalysis.Row?.Label);
+        }
         search = SearchBox.Of("Search settings");
         search.Margin = new Thickness(PagesInset.Left, PagesInset.Top, PagesInset.Right, Gaps.Small);
         search.TextChanged += (_, _) => Filter();

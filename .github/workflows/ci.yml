@@ -125,12 +125,9 @@ jobs:
       - name: Make and check the disk image
         run: tools/package-mac.sh ${{ matrix.rid }}
 
-  # The Windows installer installed silently (per user, no administrator), an agent debugging a project through the
-  # Pitstop it installed (so its Roslyn server and debugger run from the install), then uninstalled, with what each
-  # step must leave checked. Unsigned: a check need not spend signatures.
+  # Check a per-user Windows installation and the native MCP surface before uninstalling it.
   installer:
     name: Windows installer (x64)
-    needs: debug-relay
     runs-on: windows-latest
     timeout-minutes: 60
     defaults:
@@ -156,13 +153,6 @@ jobs:
           key: nuget-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('global.json', '**/Directory.Packages.props', '**/Directory.Build.props', '**/*.csproj', '**/packages.lock.json') }}
           restore-keys: nuget-${{ runner.os }}-${{ runner.arch }}-
 
-      # The app carries the relays from artifacts/debug-relay under debugger/relay/<rid>/, as the release's does.
-      - name: The debug relays
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: debug-relay
-          path: artifacts/debug-relay
-
       - name: Build the installer
         run: tools/package-win.sh win-x64
 
@@ -179,13 +169,15 @@ jobs:
           $root = Join-Path $env:LOCALAPPDATA 'PitstopIDE'
           $exe = Join-Path $root 'current\Pitstop.exe'
           $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'Pitstop.lnk'
-          foreach ($path in $exe, (Join-Path $root 'Update.exe'), (Join-Path $root 'current\roslyn'), (Join-Path $root 'current\roslyn-extension'), (Join-Path $root 'current\debugger'), $shortcut) {
+          foreach ($path in $exe, (Join-Path $root 'Update.exe'), (Join-Path $root 'current\native-templates\xmake\cpp-console\template.json'), $shortcut) {
             if (-not (Test-Path $path)) { throw "The install has no $path" }
+          }
+          foreach ($payload in 'roslyn', 'roslyn-extension', 'debugger', 'host', 'inspector', 'testframes', 'updatehandlers', 'wpfpreview', 'mauipreview') {
+            if (Test-Path (Join-Path $root "current\$payload")) { throw "The native install contains $payload" }
           }
           $entry = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\PitstopIDE'
           if ($entry.DisplayName -ne 'Pitstop') { throw "Settings > Apps lists the install as '$($entry.DisplayName)'" }
-          # The runner's Visual Studio keeps these types' default, so Pitstop is among the programs that open them.
-          foreach ($extension in '.sln', '.slnx', '.csproj') {
+          foreach ($extension in '.c', '.h', '.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.cppm', '.ixx', '.mpp', '.cxxm', '.ccm', '.lua') {
             $command = (Get-Item "HKCU:\Software\Classes\Pitstop$extension\shell\open\command").GetValue('')
             if ($command -ne "`"$exe`" `"%1`"") { throw "Pitstop$extension opens with '$command', not Pitstop.exe" }
             if ((Get-Item "HKCU:\Software\Classes\$extension\OpenWithProgids").GetValueNames() -notcontains "Pitstop$extension") {
@@ -197,8 +189,8 @@ jobs:
       - name: Build the tests
         run: dotnet build tests/Passenger.Tests
 
-      - name: An agent debugs through the installed Pitstop, whose helpers run on its own runtime
-        run: dotnet test tests/Passenger.Tests --no-build --filter "FullyQualifiedName~McpDebuggingTests.An_agent_with_a_windowless_Passenger_finds_code_reads_its_warnings_and_debugs_it|FullyQualifiedName~McpDebuggingTests.Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on" $(python -I tools/test-shards.py hang)
+      - name: Check native MCP and workspace trust on the installed application
+        run: dotnet test tests/Passenger.Tests --no-build --filter "FullyQualifiedName~McpNativeProductTests" $(python -I tools/test-shards.py hang)
 
       # Update.exe removes the folder a few seconds after it exits; the person's state and Velopack's own logs
       # (%LocalAppData%\velopack) stay.
@@ -218,7 +210,7 @@ jobs:
           if (Test-Path $root) { $left += "$root, with $(@(Get-ChildItem -Recurse -Force $root).Count) files" }
           if (Test-Path $key) { $left += 'its entry in Settings > Apps' }
           if (Test-Path (Join-Path ([Environment]::GetFolderPath('Programs')) 'Pitstop.lnk')) { $left += 'its Start menu entry' }
-          foreach ($extension in '.sln', '.slnx', '.csproj') {
+          foreach ($extension in '.c', '.h', '.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.cppm', '.ixx', '.mpp', '.cxxm', '.ccm', '.lua', '.sln', '.slnx', '.slnf', '.csproj') {
             if (Test-Path "HKCU:\Software\Classes\Pitstop$extension") { $left += "the Pitstop$extension file type" }
             $openWith = Get-Item "HKCU:\Software\Classes\$extension\OpenWithProgids" -ErrorAction SilentlyContinue
             if ($openWith -and $openWith.GetValueNames() -contains "Pitstop$extension") { $left += "Pitstop among the programs that open $extension" }

@@ -31,7 +31,7 @@ public static partial class McpHost
     [IdentifierHome]
     public const string ManagedVerificationVariable = "PITSTOP_MANAGED_MCP_TESTS";
 
-    internal static bool ManagedVerification => Environment.GetEnvironmentVariable(ManagedVerificationVariable) == "1";
+    internal static bool ManagedVerification => NativeProduct.ManagedPayloadAvailable && Environment.GetEnvironmentVariable(ManagedVerificationVariable) == "1";
 
     /// <summary>Whether <c>--mcp</c>'s IDE starts the C# language server: always, unless <see cref="LanguageServerVariable"/>
     /// says <c>off</c>; a value other than <c>off</c> or <c>on</c> is fatal as Passenger starts, as a malformed flag is.</summary>
