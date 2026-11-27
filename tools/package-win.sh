@@ -62,6 +62,8 @@ publish_app "$root" "$rid" "$version" -p:PitstopManagedPayload=false -o "$publis
 for payload in roslyn roslyn-extension debugger host inspector testframes updatehandlers wpfpreview mauipreview; do
     [ ! -e "$publish/$payload" ] || fail "the native publish contains managed tooling under $payload"
 done
+old_assemblies=$(find "$publish" -type f -iname 'Passenger.*.dll' -print)
+[ -z "$old_assemblies" ] || fail "the native publish contains assemblies under the former product name: $old_assemblies"
 
 # The pitstop-ide command alone in bin\, so the folder on the person's Path offers no other program.
 [ "$(ls "$publish/bin")" = pitstop-ide.exe ] || fail "the publish's bin folder holds $(ls "$publish/bin" | tr '\n' ' '), not the pitstop-ide command alone"
