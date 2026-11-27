@@ -1,6 +1,6 @@
 # Pitstop repository guide
 
-Pitstop is an open-source, modules-first C++ IDE. Trusted Xmake workspaces supply evaluated targets to the Explorer, build and run commands, compilation contexts to clangd, and inputs to the P1689 module index. The foundation uses C# on .NET and Avalonia and retains Passenger's editor, workspace and language-server infrastructure. Windows x64 is the native reference profile. Native debugging and the Xrepo package installation UI are future work.
+Pitstop is an open-source, modules-first C++ IDE. Trusted Xmake workspaces supply evaluated targets to Explorer and Build, Run and Debug, compilation contexts to clangd, and inputs to the P1689 module index. The foundation uses C# on .NET and Avalonia and retains Passenger's editor, workspace, debugger presentation and language-server infrastructure. Windows x64 is the native reference profile. The Xrepo package installation UI is future work.
 
 ## Working in this repository
 
@@ -11,6 +11,7 @@ Pitstop is an open-source, modules-first C++ IDE. Trusted Xmake workspaces suppl
 - Reuse existing editor, workspace, background work, process and settings mechanisms. Preserve the .NET build infrastructure and keep the legacy managed verification profile usable while isolating it from the desktop and native MCP defaults.
 - Keep the Windows distribution on the native payload profile. Preserve the shared runtime, bundled native templates and third-party notices, and verify the installed and portable inventories when changing packaging.
 - Keep provider-specific compilation ownership in the provider. Project templates use versioned manifests and produce an inspectable generation plan before writing. [Native project system](docs/architecture/native-project-system.md) · [Template authoring](docs/templates/authoring.md)
+- Use the provider's evaluated launch plan and build gate for LLDB. Keep native debugger UI and MCP on the same current session, preserve attach ownership, and require explicit execution for expressions that may run debuggee code. [Native debugging](docs/architecture/native-debugging.md)
 - Run `just build` and the relevant `just test <FILTER>` suites. Keep warnings as errors. For direct `dotnet` or IDE builds set `AVALONIA_TELEMETRY_OPTOUT=1`.
 
 [CLAUDE.md](CLAUDE.md) describes subsystem conventions and test infrastructure. [Codebase consolidation](docs/architecture/codebase-consolidation.md) records the Windows package boundary, retained verification backends and upstream integration policy.

@@ -8,11 +8,13 @@ Pitstop is an open-source, modules-first C and C++ IDE. It uses evaluated Xmake 
 
 [Native welcome screen](docs/screenshots/native-welcome-dark.png) · [New Project preview](docs/screenshots/native-wizard-dark.png) · [Hello Modules in Project Explorer](docs/screenshots/native-explorer-dark.png)
 
+[LLDB paused in a module partition](docs/screenshots/native-debug-partition-dark.png) · [Light theme](docs/screenshots/native-debug-partition-light.png)
+
 ## Windows setup
 
 The reference profile uses Windows x64, Xmake and Xrepo 3.1.2, LLVM-MinGW 23.1.6 with libc++, and clangd and clang-scan-deps 23.1.6. Install the tools separately and put the Xmake and LLVM `bin` directories on `PATH`. You can set `PITSTOP_XMAKE`, `PITSTOP_CLANGD`, and `PITSTOP_CLANG_SCAN_DEPS` to full executable paths instead. Set these variables before starting Pitstop. [Toolchain validation and setup](docs/architecture/cpp-toolchain.md)
 
-Open **Settings → Native Toolchains** to check tool versions and enter explicit paths. Xmake selects the build compiler and SDK for each project.
+Open **Settings → Native Toolchains** to check tool versions and enter explicit paths. Xmake selects the build compiler and SDK for each project. Native debugging uses the `lldb-dap.exe` included in the reference LLVM-MinGW distribution. Set its full path in Native Toolchains or use `PITSTOP_LLDB_DAP`. [Native debugger setup](docs/architecture/native-debugging.md)
 
 The Windows installer is `Pitstop-windows-x64.exe`. The portable package is `Pitstop-windows-x64-portable.zip`. Extract the entire ZIP and run `Pitstop.exe` from its `Pitstop` folder. Create a `pitstop-data` folder beside `Pitstop.exe` to keep state with the portable copy. The [Releases page](https://github.com/jancano/pitstop/releases) is the location for published builds. Until a release is published, build the candidate locally using the packaging command in the build section below.
 
@@ -23,6 +25,7 @@ Choose **New Project** from the welcome screen or **File → New Project**. Pick
 1. Configure the [Hello Modules example](examples/hello-modules) with the reference tools. Open the folder containing its `xmake.lua` in Pitstop and grant trust after reviewing the script.
 2. Select **Xmake: hello-modules** in the toolbar and choose **Build** or **Run**. The executable prints `Hello, modules!`.
 3. Open **View → Show Modules in Explorer** and **View → Module Dependencies**. Open `greetings.cppm` and invoke completion after `export import :` to see its interface partition.
+4. With Xmake in Debug mode, set a breakpoint in `greetings-implementation.cpp` and press **F5** on the Visual Studio keymap. Inspect the stopped frame in **Debug**. [Hello Modules debugging tutorial](docs/architecture/native-debugging.md#debug-hello-modules)
 
 ## What Pitstop supports
 
@@ -30,15 +33,17 @@ Choose **New Project** from the welcome screen or **File → New Project**. Pick
 - clangd completion, diagnostics, hover, navigation, reference search, and formatting. Saved interface changes trigger semantic recovery with open buffers preserved.
 - A Module Explorer and dependency graph built from compiler evidence. Follow providers, navigate partitions, inspect direct consumers and potential transitive impact, and create module source files with an editable Xmake membership suggestion when needed.
 - Native build, rebuild, clean, cancellation, and run with compiler diagnostics, executable arguments, environment, working directory, console input and output, stop, and rerun.
+- Native LLDB debugging on the Windows x64 reference profile with persistent breakpoints, stepping across modules, stack frames, lazy STL inspection, interactive terminal input and local attach and detach. [Debugger capabilities](docs/architecture/native-debugging.md)
 - An HTTP client for workspace request files. Use **Tools → Endpoints** to send requests from `.http` or `.rest` files and inspect responses. **Generate Requests from OpenAPI** adds requests from an open OpenAPI JSON document so you can review and send them from the editor.
 - Optional Discord Rich Presence. Set `PITSTOP_DISCORD_APPLICATION_ID` to a Discord application's numeric ID and choose in **Settings → Discord** whether to include workspace or file names. [Application and asset setup](docs/architecture/codebase-consolidation.md#discord-rich-presence).
 - Read-only module intelligence for MCP clients. Enable MCP in Pitstop and configure a client to run `Pitstop.exe --mcp-attach`. The `module_workspace` tool queries the current trusted snapshot and accepts optional module name, target and result limit filters.
+- MCP debugger inspection and authorized execution operations that use the same native debug session as the IDE. [Native debugger MCP tools](docs/architecture/native-debugging.md#mcp)
 
 The editor, Git, terminal and shared debugger infrastructure come from Passenger. See the [Passenger repository](https://github.com/Zaneris/passenger) and the architecture guides for [Xmake](docs/architecture/xmake-workspaces.md), [clangd](docs/architecture/cpp-language-intelligence.md), [Build and Run](docs/architecture/native-build-run.md), and [module intelligence](docs/architecture/module-intelligence.md).
 
 ## Known limitations and roadmap
 
-Native debugging and the Xrepo package installation UI are future work. The alpha validates the reference Windows x64 profile. Other Windows toolchains and Linux and macOS native workflows remain unverified. Unsaved edits remain in the editor, but propagation of unsaved changes between C++ modules is unverified. The module index reports missing and ambiguous dependencies, and P1689 leaves some implementation-unit relationships and re-exports unknown. The graph's potential impact shows dependency reachability. Xmake controls which units actually rebuild.
+The Xrepo package installation UI and advanced debugger views are future work. The alpha validates the reference Windows x64 profile. Other Windows toolchains and Linux and macOS native workflows remain unverified. Native debugging supports evaluated default Xmake run behavior. Targets with custom run hooks require a different strategy. Unsaved edits remain in the editor, but propagation of unsaved changes between C++ modules is unverified. The module index reports missing and ambiguous dependencies, and P1689 leaves some implementation-unit relationships and re-exports unknown. The graph's potential impact shows dependency reachability. Xmake controls which units actually rebuild. [Debugger roadmap](docs/architecture/native-debugging.md#phase-95-follow-up)
 
 Report problems with the Pitstop version, toolchain versions, and a small reproducer in [GitHub Issues](https://github.com/jancano/pitstop/issues).
 

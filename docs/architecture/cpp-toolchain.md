@@ -4,7 +4,7 @@ Phase 1 validates native tools in standalone fixtures on Windows x64. The probe 
 
 ## First alpha
 
-Pin **Xmake and Xrepo 3.1.2** with **LLVM-MinGW 20261117 UCRT x86_64**. The bundle includes Clang, clangd, and clang-scan-deps 23.1.6, LLD, libc++, and MinGW-w64 headers and import libraries. Use Xmake with `-p mingw --toolchain=llvm --mingw=<bundle> --sdk=<bundle>`. This is the tested open-source build profile for Windows x64, with the platform UCRT runtime. Linux, macOS, Windows ARM64, Xrepo package installation, and native debugging remain outside the tested support matrix. [Xmake release](https://github.com/xmake-io/xmake/releases/tag/v3.1.2), [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
+Pin **Xmake and Xrepo 3.1.2** with **LLVM-MinGW 20261117 UCRT x86_64**. The bundle includes Clang, clangd, clang-scan-deps, and LLDB 23.1.6, LLD, libc++, and MinGW-w64 headers and import libraries. Use Xmake with `-p mingw --toolchain=llvm --mingw=<bundle> --sdk=<bundle>`. This is the tested open-source build profile for Windows x64, with the platform UCRT runtime. Phase 9 integrates the bundle's `lldb-dap` using the same profile. Linux, macOS, Windows ARM64 and Xrepo package installation remain outside the tested support matrix. [Xmake release](https://github.com/xmake-io/xmake/releases/tag/v3.1.2), [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117), [Native Debugging](native-debugging.md)
 
 ## Reproduce
 
