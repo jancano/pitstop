@@ -230,8 +230,8 @@ namespace Pitstop.App.Aspire.Protocol {
             "VGVybWluYWxzEiAuYXNwaXJlLnYxLldhdGNoVGVybWluYWxzUmVxdWVzdBof",
             "LmFzcGlyZS52MS5XYXRjaFRlcm1pbmFsc1VwZGF0ZTABElIKDUNsb3NlVGVy",
             "bWluYWwSHy5hc3BpcmUudjEuQ2xvc2VUZXJtaW5hbFJlcXVlc3QaIC5hc3Bp",
-            "cmUudjEuQ2xvc2VUZXJtaW5hbFJlc3BvbnNlQiCqAh1QYXNzZW5nZXIuQXBw",
-            "LkFzcGlyZS5Qcm90b2NvbGIGcHJvdG8z"));
+            "cmUudjEuQ2xvc2VUZXJtaW5hbFJlc3BvbnNlQh6qAhtQaXRzdG9wLkFwcC5B",
+            "c3BpcmUuUHJvdG9jb2xiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.StructReflection.Descriptor, global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Pitstop.App.Aspire.Protocol.IconVariant), typeof(global::Pitstop.App.Aspire.Protocol.ResourceCommandState), typeof(global::Pitstop.App.Aspire.Protocol.ResourceCommandResponseKind), typeof(global::Pitstop.App.Aspire.Protocol.CommandResultFormat), typeof(global::Pitstop.App.Aspire.Protocol.HealthStatus), typeof(global::Pitstop.App.Aspire.Protocol.MessageIntent), typeof(global::Pitstop.App.Aspire.Protocol.InputType), typeof(global::Pitstop.App.Aspire.Protocol.TerminalChangeType), }, null, new pbr::GeneratedClrTypeInfo[] {
