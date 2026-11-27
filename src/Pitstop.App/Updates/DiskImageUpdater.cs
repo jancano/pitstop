@@ -19,7 +19,7 @@ public sealed partial class DiskImageUpdater : InPlaceUpdater
     private const string AppName = "Pitstop.app";
 
     /// <summary>The app made ready, named so LaunchServices never takes it for an app to open until it is in place.</summary>
-    private const string ReadyApp = "Passenger.update";
+    private const string ReadyApp = "Pitstop.update";
 
     private const string Sums = ReleaseSums.Name;
 

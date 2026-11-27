@@ -79,13 +79,13 @@ public partial class MainWindow
         }
         if (!Notes.Exists)
         {
-            IdeErrors.Write($"What's New: Pitstop {Notes.Version} carries no release notes to show after {kept.NotesShown ?? "an older Passenger"}");
+            IdeErrors.Write($"What's New: Pitstop {Notes.Version} carries no release notes to show after {kept.NotesShown ?? "an older Pitstop"}");
             return;
         }
         if (ShowWhatsNew() is null)
         {
             state.Updates.Set(kept with { NotesShown = Notes.Version });
-            IdeErrors.Write($"What's New: Pitstop {Notes.Version}'s notes shown, after {kept.NotesShown ?? "an older Passenger"}");
+            IdeErrors.Write($"What's New: Pitstop {Notes.Version}'s notes shown, after {kept.NotesShown ?? "an older Pitstop"}");
         }
     }
 }

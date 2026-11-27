@@ -155,7 +155,7 @@ public sealed partial record LaunchPlan
     public string? NotDebugged => InBrowser.Count == 0 || Project is null || Browser is not null ? null
         : $"{Plural.Listed([.. InBrowser.Select(NameOf)])}'s components run in the browser on .NET's WebAssembly runtime, and their breakpoints are not hit: "
             + (PathNames.Same(InBrowser[0], Project) ? "only the development server that serves them runs under the debugger" : $"{NameOf(Project)}'s are")
-            + $". {BrowserWhyNot ?? "Passenger debugs them in a Chromium browser when Debug starts the app itself"}";
+            + $". {BrowserWhyNot ?? "Pitstop debugs them in a Chromium browser when Debug starts the app itself"}";
 
     /// <summary>Why a breakpoint in a WebAssembly app's own code never stops it where no browser debugs it, its development
     /// server being what runs under the debugger.</summary>

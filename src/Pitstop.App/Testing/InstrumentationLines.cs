@@ -116,7 +116,7 @@ public sealed class InstrumentationLines
             "passed" => (test, TestState.Passed, null, null),
             "skipped" => (test, TestState.Skipped, message, null),
             "failed" => (test, TestState.Failed, message, stack),
-            _ => (test, TestState.Failed, $"The instrumentation told an outcome Passenger does not know: {outcome}", null),
+            _ => (test, TestState.Failed, $"The instrumentation told an outcome Pitstop does not know: {outcome}", null),
         };
     }
 

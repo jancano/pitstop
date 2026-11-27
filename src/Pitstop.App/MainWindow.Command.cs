@@ -152,7 +152,7 @@ public partial class MainWindow
                 return;
             }
             string link = PathNames.Shown(read.Link, null);
-            string text = $"Pitstop removes {link}, which leads to {(read.Held == CommandHeld.This ? "this Passenger" : "another Passenger")}. "
+            string text = $"Pitstop removes {link}, which leads to {(read.Held == CommandHeld.This ? "this copy of Pitstop" : "another copy of Pitstop")}. "
                 + $"{PathNames.Shown(PitstopCommand.Folder, null)} stays on your shell's PATH, where other programs' commands may be.";
             if (!await ConfirmAsync($"Remove the {PitstopCommand.Name} command?", text, "Remove Command", null, Refusals.CommandIsThePersons))
             {

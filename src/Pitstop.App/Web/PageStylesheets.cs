@@ -67,7 +67,7 @@ public sealed class PageStylesheets
     public event EventHandler? Changed;
 
     /// <summary>The source of the diagnostics that say a class is defined by no stylesheet.</summary>
-    public const string DiagnosticSource = "Passenger.Stylesheets";
+    public const string DiagnosticSource = "Pitstop.Stylesheets";
 
     /// <summary>Files the folder's watcher heard written, come or gone: what was read of them is read again when next asked.</summary>
     public void FilesChanged(IReadOnlyCollection<string> paths, bool every)
