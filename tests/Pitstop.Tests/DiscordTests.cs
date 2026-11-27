@@ -274,10 +274,11 @@ public sealed class DiscordResponsivenessTests : DiscordFolders
     private void After_the_idle_time_only_Passenger_shows_until_the_person_is_back()
     {
         discord.Start();
-        // The person chose the solution and the file before, so no dialog's time counts towards the short idle time.
+        // Start the idle check after the connection is ready, independently of the window's startup time.
         File.WriteAllText(Path.Combine(settings, "settings.json"),
-            $"{{\n  \"version\": {AppSettings.Upgrades.Count},\n  \"discordShows\": \"SolutionAndFile\"\n}}\n");
-        MainWindow window = Started(idle: TimeSpan.FromSeconds(2));
+            $"{{\n  \"version\": {AppSettings.Upgrades.Count},\n  \"showInDiscord\": true,\n  \"discordShows\": \"SolutionAndFile\"\n}}\n");
+        MainWindow window = Started(idle: TimeSpan.FromSeconds(5));
+        WaitForActivity(a => a is not null, "the first activity after Discord connects");
         window.OpenFile(Path.Combine(solution, "One.cs"));
         // At work in the editor, however long the window took to start.
         Ui.Press(window, "right");
@@ -375,7 +376,7 @@ public abstract class DiscordFolders : IDisposable
             Frame? last = discord.Frames.LastOrDefault(f => f.Connection >= connection && f.Op == 1 && (string?)f.Json["cmd"] == "SET_ACTIVITY");
             newest = last?.Json["args"]?["activity"] as JsonObject;
             return last is not null && wanted(newest);
-        }, $"{what}; Discord was last sent {Activities().LastOrDefault()?.ToJsonString() ?? "nothing"}", TimeSpan.FromSeconds(15));
+        }, () => $"{what}; Discord was last sent {Activities().LastOrDefault()?.ToJsonString() ?? "nothing"}", TimeSpan.FromSeconds(15));
         return newest!;
     }
 
