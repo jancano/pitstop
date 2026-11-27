@@ -2857,6 +2857,7 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             + $"a PATH or variable set in one is not what the other finds. The terminal answered:\n{answer}");
     }
 
+    [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
     private static void Executable(string path, string script)
     {
         File.WriteAllText(path, script);

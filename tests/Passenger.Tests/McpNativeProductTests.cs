@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
 using Passenger.App;
 using Passenger.App.Mcp;
 using Passenger.Core;
@@ -25,7 +26,7 @@ public sealed class McpNativeProductTests : McpRig
         Assert.Contains(tools, tool => tool.Name == McpTools.ModuleWorkspace);
         Assert.Contains(tools, tool => tool.Name == McpTools.Build);
         Assert.DoesNotContain(tools, tool => tool.Name is McpTools.DebugStart or McpTools.NugetInstall or McpTools.TestsRun);
-        var managedAction = await Result(client, McpTools.IdeAction, new()
+        CallToolResult managedAction = await Result(client, McpTools.IdeAction, new()
         {
             ["action"] = AppActions.SaveAsLaunchProfile,
         });
