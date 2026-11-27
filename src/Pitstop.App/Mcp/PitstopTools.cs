@@ -1633,7 +1633,7 @@ public sealed partial class PitstopTools(MainWindow window, AgentConnection? con
     });
 
     [McpServerTool(Name = McpTools.Run, Title = "Run a configuration", Destructive = true), Description(
-        "Runs a configuration as Run does, built first when it says so, and waits for it to end, an Avalonia or WPF app's " +
+        "Runs a configuration as Run does, built first when it says so, and waits for it to end, an Avalonia app's " +
         "UI or an AppHost's resources to be up, its host's start (where it listens), or its app's start on a device. Returns its output so far and its exit code once it has one; a run refused (one " +
         "running, a failed build with its errors) is an error. A terminal configuration runs in a Terminal tab (terminal_run " +
         "types into it); a container configuration answers once its services are up, with each one's state. With resource, " +
@@ -2394,7 +2394,7 @@ public sealed partial class PitstopTools(MainWindow window, AgentConnection? con
 
     [McpServerTool(Name = McpTools.DebugStart, Title = "Debug a configuration", Destructive = true), Description(
         "Builds and launches a configuration under the debugger, as Debug does, and waits for a stop, its end, an Avalonia " +
-        "or WPF app's UI, its host's start (where it listens) or its app's start on a device. Returns where it is. With " +
+        "app's UI, its host's start (where it listens) or its app's start on a device. Returns where it is. With " +
         "resource, that one alone, restarted.")]
     public Task<DebugSnapshot> DebugStart(
         string? configuration = null,

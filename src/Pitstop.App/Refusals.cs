@@ -430,7 +430,7 @@ public static class Refusals
     public const string NoStepDefinitions = "The open folder holds no Reqnroll or SpecFlow project";
 
     /// <summary>Live Visual Tree, in a folder holding no app Passenger's inspector looks into, with none inspected now.</summary>
-    public const string NoInspectedApp = "The open folder holds no Avalonia, WPF, .NET MAUI or Godot app, and no app is inspected";
+    public const string NoInspectedApp = "The open folder holds no Avalonia app or Godot game, and no app is inspected";
 
     /// <summary>Set Next Statement asked of a program whose debugger cannot move where a paused thread goes on (a Godot game's
     /// GDScript).</summary>

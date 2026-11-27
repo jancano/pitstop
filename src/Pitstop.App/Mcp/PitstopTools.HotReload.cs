@@ -13,7 +13,7 @@ public sealed partial class PitstopTools
     [McpServerTool(Name = McpTools.HotReload, Title = "Apply Hot Reload changes", Destructive = true), Description(
         "Applies the editors' edits (saved or not) since the launch or the last apply to the running program, as Apply Hot " +
         "Reload Changes does: a debug_start launch, paused or running (Edit and Continue), or a run with Hot Reload (saved for " +
-        "dotnet watch); an Avalonia or WPF app's XAML edits too, run or debugged, after the C#. Returns the result " +
+        "dotnet watch); an Avalonia app's XAML edits too, run or debugged, after the C#. Returns the result " +
         "(applied, nothingToApply, restartNeeded, errors, failed), what it said and updated, " +
         "each edit it could not apply (file, line, ENC id), and whether the program restarted, with its new session. " +
         "debug_continue and debug_step apply edits made while paused too.")]
