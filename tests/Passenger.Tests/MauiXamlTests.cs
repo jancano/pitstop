@@ -15,7 +15,7 @@ namespace Passenger.Tests;
 /// <summary>.NET MAUI's XAML through the window, on the files of the .NET 11 MAUI template's app (which declare no
 /// namespace, MAUI's implicit ones standing in) with a page of its own binding a view model through <c>x:DataType</c>,
 /// a data template, OnPlatform, OnIdiom and AppThemeBinding: what completion offers, what is marked as typed and after a
-/// build (MAUI's source generator's warnings), where names lead, and its pages' preview (<see cref="MauiPreviewTests"/>).
+/// build (MAUI's source generator's warnings), where names lead.
 /// The app is a plain net11.0 project on MAUI's controls, which restores and builds without MAUI's workload, from the
 /// package cache tests/MauiGraphs fills.</summary>
 public sealed class MauiXamlTests : IClassFixture<MauiXamlTests.Gallery>
@@ -70,32 +70,13 @@ public sealed class MauiXamlTests : IClassFixture<MauiXamlTests.Gallery>
             t => t.Rename_in_an_expression_asked_as_a_type_rename_moved_the_file_it_calls_into_waits_for_the_server_to_take_the_file_in());
     }
 
-    /// <summary>A MAUI page's preview, drawn from the project's last build: the caret's element outlined and a click
-    /// choosing one, a misspelt property said over the frame, OnPlatform and AppThemeBinding as chosen, what an element
-    /// sets itself in the XAML workspace, and a dictionary's unsaved colour drawn.</summary>
-    [AvaloniaFact]
-    public void A_maui_page_previews_from_its_build_and_follows_the_caret_the_platform_theme_and_unsaved_resources()
-    {
-        Flow.StepApart("the template's page previews from its build, outlines the caret's element, chooses one clicked and says a misspelt property over its frame", () => new MauiPreviewTests(app),
-            t => t.The_template_page_previews_from_its_build_outlines_the_carets_element_chooses_one_clicked_and_says_a_misspelt_property_over_its_frame());
-        Flow.StepApart("OnPlatform and AppThemeBinding draw the platform and theme chosen, which the next page previews with", () => new MauiPreviewTests(app),
-            t => t.OnPlatform_and_AppThemeBinding_draw_the_platform_and_theme_chosen_which_the_next_page_previews_with());
-        Flow.StepApart("in the XAML workspace a MAUI page shows what the caret's element sets itself under its preview", () => new MauiPreviewTests(app),
-            t => t.In_the_xaml_workspace_a_maui_page_shows_what_the_carets_element_sets_itself_under_its_preview());
-        Flow.StepApart("an open dictionary's unsaved colour is drawn in the page that takes it through App.xaml", () => new MauiPreviewTests(app),
-            t => t.An_open_dictionarys_unsaved_colour_is_drawn_in_the_page_that_takes_it_through_app_xaml());
-    }
-
-    /// <summary>A MAUI project built for Android alone: its views complete and check, iOS's namespace passed over, and its
-    /// page previews from a build for no platform. Each step skips, saying why, where such a project does not restore
+    /// <summary>A MAUI project built for Android alone: its views complete and check, iOS's namespace passed over, and the test skips, saying why, where such a project does not restore
     /// from the package cache alone.</summary>
     [AvaloniaFact]
     public void A_maui_project_built_for_android_alone_completes_and_checks_its_views_and_previews_from_a_build_for_no_platform()
     {
         Flow.StepApart("in a project built for Android its views complete and check, and a namespace for iOS is passed over", () => new MauiXamlTests(app),
             t => t.In_a_project_built_for_a_platform_its_views_complete_and_check_and_a_namespace_for_another_is_passed_over("android", "TextView", "EditText", "ios", "UILabel"));
-        Flow.StepApart("Build for XAML Preview builds a MAUI project of a platform alone for none, and its page previews from that", () => new MauiPreviewTests(app),
-            t => t.Build_for_xaml_preview_builds_a_maui_project_of_a_platform_alone_for_none_and_its_page_previews_from_that());
     }
 
     private void The_templates_files_are_marked_with_nothing_and_a_misspelt_property_value_resource_handler_and_binding_path_are_marked_as_typed()

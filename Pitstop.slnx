@@ -17,7 +17,6 @@
     <Project Path="src/Passenger.Languages/Passenger.Languages.csproj" />
     <Project Path="src/Passenger.Launcher/Passenger.Launcher.csproj" />
     <Project Path="src/Passenger.Lsp/Passenger.Lsp.csproj" />
-    <Project Path="src/Passenger.MauiPreview/Passenger.MauiPreview.csproj" />
     <Project Path="src/Passenger.Packages/Passenger.Packages.csproj" />
     <Project Path="src/Passenger.Profiler/Passenger.Profiler.csproj" />
     <Project Path="src/Passenger.Roslyn.Extension/Passenger.Roslyn.Extension.csproj" />
@@ -27,7 +26,6 @@
     <Project Path="src/Passenger.Text/Passenger.Text.csproj" />
     <Project Path="src/Passenger.Vcs/Passenger.Vcs.csproj" />
     <Project Path="src/Passenger.Workspace/Passenger.Workspace.csproj" />
-    <Project Path="src/Passenger.WpfPreview/Passenger.WpfPreview.csproj" />
     <Project Path="src/Passenger.Xaml/Passenger.Xaml.csproj" />
     <Project Path="src/Pitstop.Xmake/Pitstop.Xmake.csproj" />
     <Project Path="src/Pitstop.Cpp/Pitstop.Cpp.csproj" />

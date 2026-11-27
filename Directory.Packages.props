@@ -52,8 +52,7 @@
          for the tests' local feed so the WPF app they make restores off Windows; another SDK's fails WpfXamlTests naming
          the version to pin. -->
     <WindowsDesktopRefVersion>11.0.0</WindowsDesktopRefVersion>
-    <!-- .NET MAUI's controls at the release of global.json's SDK: what the MAUI previewer (src/Passenger.MauiPreview) draws
-         a project's XAML with, and the MAUI XAML tests' app (tests/MauiGraphs), whose package graph builds a plain net11.0
+    <!-- .NET MAUI's controls at the release of global.json's SDK: the MAUI XAML tests' app (tests/MauiGraphs), whose package graph builds a plain net11.0
          project without MAUI's workload, which CI has not. -->
     <MauiVersion>11.0.0</MauiVersion>
     <!-- EF Core and the dotnet-ef tool for the Migrations window's tests, downloaded for the tests' local feed: at its
@@ -145,16 +144,13 @@
     <PackageVersion Include="Avalonia.Headless" Version="12.2.0" />
     <PackageVersion Include="Avalonia.Skia" Version="12.2.0" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.2.0" />
-    <!-- Skia and HarfBuzz under Avalonia's renderer, Svg.Skia and the MAUI previewer, at their newest stable line rather
-         than the older ones Avalonia.Skia and Avalonia.Controls.Maui name as their least, each with the Linux native
+    <!-- Skia and HarfBuzz under Avalonia's renderer and Svg.Skia, at their newest stable line rather
+         than the older ones Avalonia.Skia names as its least, each with the Linux native
          library of its own version (macOS's and Windows' come with the managed package). -->
     <PackageVersion Include="SkiaSharp" Version="4.157.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="4.157.0" />
     <PackageVersion Include="HarfBuzzSharp" Version="14.4.0.200" />
     <PackageVersion Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.4.0.200" />
-    <!-- The MAUI previewer's (src/Passenger.MauiPreview): Avalonia's backend for .NET MAUI, which draws MAUI's controls with
-         Avalonia's on every system. Its newest release candidate, as it has no stable release yet. -->
-    <PackageVersion Include="Avalonia.Controls.Maui" Version="11.0.0-rc.3.26301.1434" />
     <PackageVersion Include="Microsoft.Maui.Controls.Core" Version="$(MauiVersion)" />
     <PackageVersion Include="Microsoft.Maui.Controls.Xaml" Version="$(MauiVersion)" />
     <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
