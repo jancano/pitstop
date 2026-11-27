@@ -1,22 +1,24 @@
 # Pitstop
 
-Pitstop is an open-source, modules-first C++ IDE. It uses evaluated Xmake projects, clangd, and compiler dependency scans to show how named modules, partitions and targets fit together. The 0.2.0 alpha candidate is being validated on Windows x64 with C++23 and C++26.
+Pitstop is an open-source, modules-first C and C++ IDE. It uses evaluated Xmake projects, clangd, and compiler dependency scans to show how named modules, partitions and targets fit together. Windows x64 is the reference platform, with native validation for C and for C++23 and C++26.
 
 ![Pitstop showing a module interface, its partition and their consumers in the dark theme](docs/screenshots/module-graph-dark.png)
 
 [View the same workspace in the light theme](docs/screenshots/module-graph-light.png).
 
+[Native welcome screen](docs/screenshots/native-welcome-dark.png) · [New Project preview](docs/screenshots/native-wizard-dark.png) · [Hello Modules in Project Explorer](docs/screenshots/native-explorer-dark.png)
+
 ## Windows setup
 
 The reference profile uses Windows x64, Xmake and Xrepo 3.1.2, LLVM-MinGW 23.1.6 with libc++, and clangd and clang-scan-deps 23.1.6. Install the tools separately and put the Xmake and LLVM `bin` directories on `PATH`. You can set `PITSTOP_XMAKE`, `PITSTOP_CLANGD`, and `PITSTOP_CLANG_SCAN_DEPS` to full executable paths instead. Set these variables before starting Pitstop. [Toolchain validation and setup](docs/architecture/cpp-toolchain.md)
 
-In a current source build, open **Settings → Native Toolchains** to check tool versions and enter explicit paths. Xmake selects the build compiler and SDK for each project.
+Open **Settings → Native Toolchains** to check tool versions and enter explicit paths. Xmake selects the build compiler and SDK for each project.
 
 The Windows installer is `Pitstop-windows-x64.exe`. The portable package is `Pitstop-windows-x64-portable.zip`. Extract the entire ZIP and run `Pitstop.exe` from its `Pitstop` folder. Create a `pitstop-data` folder beside `Pitstop.exe` to keep state with the portable copy. The [Releases page](https://github.com/jancano/pitstop/releases) is the location for published builds. Until a release is published, build the candidate locally using the packaging command in the build section below.
 
 ## Quick start
 
-In a current source build, choose **New Project** from the welcome screen or **File → New Project**. Pick an Xmake template and a compiler-verified language standard. Review the generated files, then create the project in a new directory. Pitstop opens the generated folder through normal workspace trust. For the Windows reference toolchain, configure the new project with the documented Xmake options if Xmake cannot select the toolchain on its own. [Native project setup](docs/architecture/xmake-workspaces.md) · [Local templates](docs/templates/authoring.md)
+Choose **New Project** from the welcome screen or **File → New Project**. Pick an Xmake template and a compiler-verified language standard. Review the generated files, then create the project in a new directory. Pitstop opens the generated folder through normal workspace trust. For the Windows reference toolchain, configure the new project with the documented Xmake options if Xmake cannot select the toolchain on its own. [Native project setup](docs/architecture/xmake-workspaces.md) · [Local templates](docs/templates/authoring.md)
 
 1. Configure the [Hello Modules example](examples/hello-modules) with the reference tools. Open the folder containing its `xmake.lua` in Pitstop and grant trust after reviewing the script.
 2. Select **Xmake: hello-modules** in the toolbar and choose **Build** or **Run**. The executable prints `Hello, modules!`.
@@ -51,7 +53,7 @@ just screenshot pitstop.png # Render the window off-screen
 
 The app is built under `artifacts/bin/Passenger.App/debug/`. Run `Pitstop.exe` on Windows or `Pitstop` on macOS and Linux. Use `AVALONIA_TELEMETRY_OPTOUT=1` for builds outside `just`, including IDE builds.
 
-To build the Windows candidate packages without a tag, run `just package-win win-x64` with `PITSTOP_RELEASE_VERSION=0.2.0-alpha.1` in the environment. The two packages are written to `artifacts/package/`. See the [alpha release notes](docs/release-notes/0.2.0-alpha.1.md) for verification and checksums.
+To build the Windows candidate packages without a tag, run `just package-win win-x64` with `PITSTOP_RELEASE_VERSION=0.3.0-alpha.1` in the environment. The two packages are written to `artifacts/package/`. Set `PITSTOP_PACKAGE_DIRECTORY` to use a different directory under `artifacts/`. See the [alpha release notes](docs/release-notes/0.3.0-alpha.1.md) for verification and checksums.
 
 ## Application data
 
@@ -63,7 +65,7 @@ To build the Windows candidate packages without a tag, run `just package-win win
 
 `PITSTOP_SETTINGS` selects a different state directory. A `pitstop-data` directory beside a portable copy provides portable state. Settings, workspace state, cache and logs live under that root. The main log is `logs/pitstop.log`. Pitstop uses its own temporary directories and IPC names, and starts with its own workspace trust decisions.
 
-CI builds and checks packages. Automatic application updates, release publishing, package registry publishing, and website deployment are disabled. Container debugging can use bundled tools or a local build from `just container-tools <RID>`.
+CI builds and checks packages. Automatic application updates, release publishing, package registry publishing, and website deployment are disabled.
 
 ## Contribute
 

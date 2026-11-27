@@ -39,10 +39,12 @@ engine running Linux containers runs the container tests; each kind skips withou
 
 ```sh
 just build                 # Debug build; warnings are errors
-just run [PATH]            # the IDE on a folder or solution
+just run [PATH]            # the IDE on a project or folder
 just test [FILTER]         # the tests, or those whose name matches; results in artifacts/test-results
 just screenshot shell.png  # the main window drawn off-screen to a PNG
 ```
+
+The desktop and Windows packages use native project loading. The inherited managed profile remains available to repository tests that cover shared editor, debugger and process infrastructure.
 
 Working on Pitstop needs only open-source tools: the .NET SDK, just, and the packages the projects
 restore, among them Avalonia's MIT framework. Pitstop uses none of Avalonia's commercial tooling (Avalonia Accelerate's

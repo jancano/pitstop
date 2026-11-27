@@ -10,6 +10,8 @@ Keep Passenger solution, project and namespace names during this stage. The app 
 
 `Pitstop.ProjectSystem` defines the evaluated compilation workspace used by clangd and the module index. `Pitstop.Templates` discovers declarative manifests and plans output bytes independently of the IDE. The native project wizard consumes this plan and opens the resulting folder through workspace trust. [Migration plan](docs/architecture/native-first-ide.md) · [Template engine](docs/architecture/template-engine.md)
 
+Windows packaging publishes with `PitstopManagedPayload=false` and checks that the dedicated managed tool payloads are absent. Source builds keep the managed regression profile. Its discovery tasks must already be complete in a native session when their work was never scheduled.
+
 **Consistency is key.** Each thing is done one way, IDE-wide: what several places share is one mechanism, declared
 once and applied the same everywhere (a shared helper, base style, token or declaration, held by a rule test), never
 written again per place.

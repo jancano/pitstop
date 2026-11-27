@@ -72,7 +72,7 @@ class Client:
             raise
 
 
-def exercise(client, missing_tool, version):
+def exercise(client, missing_tool, version, native_product):
     initialized = client.send('initialize', {'protocolVersion': '2025-11-25', 'capabilities': {},
                                              'clientInfo': {'name': 'pitstop-alpha-smoke', 'version': '1'}})
     actual = initialized['serverInfo']['version']
@@ -80,6 +80,14 @@ def exercise(client, missing_tool, version):
         raise RuntimeError(f'Expected Pitstop {version}, got {actual}')
     print(f'Pitstop {actual}', flush=True)
     client.send('notifications/initialized', {}, request=False)
+    if native_product:
+        available_action = 'app.native.newProject'
+        if available_action not in str(client.call('ide_actions', query=available_action)):
+            raise RuntimeError('The native New Project action is missing')
+        for action in ('app.restartCSharpServer', 'app.debug.applyHotReloadChanges', 'app.tests.run'):
+            if action in str(client.call('ide_actions', query=action)):
+                raise RuntimeError(f'The native product exposes the managed action {action}')
+        print('Native action isolation verified', flush=True)
     until = time.monotonic() + 150
     while time.monotonic() < until:
         workspace = client.call('module_workspace', target='greetings')
@@ -181,6 +189,7 @@ def main():
     parser.add_argument('sample', type=Path, help='disposable, configured Hello Modules copy outside Git worktrees')
     parser.add_argument('state', type=Path, help='new state folder')
     parser.add_argument('--version', help='expected version from MCP initialization')
+    parser.add_argument('--native-product', action='store_true', help='verify the native package action inventory')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--missing-tool', action='store_true', help='expect an unavailable Xmake executable')
     mode.add_argument('--scale-index', type=int, help='measure clangd indexing of a generated scale workspace with this many modules and no partitions')
@@ -199,7 +208,7 @@ def main():
             if args.scale_index is not None:
                 print(json.dumps(measure_index(client, state, args.scale_index, args.version), indent=2), flush=True)
             else:
-                exercise(client, args.missing_tool, args.version)
+                exercise(client, args.missing_tool, args.version, args.native_product)
         finally:
             client.close()
 
