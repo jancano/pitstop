@@ -42,6 +42,14 @@ public sealed record DapCapabilities
     public bool? SupportsStepInTargetsRequest { get; init; }
     public bool? SupportsGotoTargetsRequest { get; init; }
     public bool? SupportsDataBreakpoints { get; init; }
+    public bool? SupportsReadMemoryRequest { get; init; }
+    public bool? SupportsWriteMemoryRequest { get; init; }
+    public bool? SupportsDisassembleRequest { get; init; }
+    public bool? SupportsModulesRequest { get; init; }
+    public bool? SupportsRestartRequest { get; init; }
+    public bool? SupportsInstructionBreakpoints { get; init; }
+    public bool? SupportsSteppingGranularity { get; init; }
+    public bool? SupportTerminateDebuggee { get; init; }
 
     /// <summary>Passenger's own: why the debugger can set no data breakpoint where it runs, when it cannot.</summary>
     public string? DataBreakpointsUnavailable { get; init; }
@@ -324,6 +332,7 @@ public sealed record StackTraceResponse(IReadOnlyList<DapStackFrame> StackFrames
 public sealed record DapStackFrame
 {
     public int Id { get; init; }
+    public string? InstructionPointerReference { get; init; }
     public string Name { get; init; } = string.Empty;
     public DapSource? Source { get; init; }
     public int Line { get; init; }
@@ -357,7 +366,7 @@ public sealed record ScopesResponse(IReadOnlyList<DapScope> Scopes);
 
 public sealed record DapScope(string Name, int VariablesReference, bool Expensive);
 
-public sealed record VariablesArguments(int VariablesReference);
+public sealed record VariablesArguments(int VariablesReference, int? Start = null, int? Count = null);
 
 public sealed record VariablesResponse(IReadOnlyList<DapVariable> Variables);
 

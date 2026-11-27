@@ -35,6 +35,13 @@ public static class DapCommands
     public const string Disconnect = "disconnect";
     public const string Terminate = "terminate";
     public const string ExceptionInfo = "exceptionInfo";
+    public const string Modules = "modules";
+    public const string Restart = "restart";
+    public const string ReadMemory = "readMemory";
+    public const string WriteMemory = "writeMemory";
+    public const string Disassemble = "disassemble";
+    public const string SetVariable = "setVariable";
+    public const string SetInstructionBreakpoints = "setInstructionBreakpoints";
 
     /// <summary>The adapter's request of the client: start the program in its terminal.</summary>
     public const string RunInTerminal = "runInTerminal";

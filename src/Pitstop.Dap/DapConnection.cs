@@ -66,11 +66,18 @@ public sealed class DapConnection : IAsyncDisposable
     /// threads.</summary>
     public static Action<string, string>? Trace { get; set; }
 
+    /// <summary>An optional per-conversation trace. Private conversations can opt out of the global trace.</summary>
+    public Action<string>? MessageTrace { get; init; }
+    public bool UseGlobalTrace { get; init; } = true;
+
     /// <summary>What a trace calls this connection (the adapter's process).</summary>
     public string Name { get; set; } = "dap";
 
     /// <summary>Completes when the other end closes its stream, or this end is disposed.</summary>
     public Task Completion => reading ?? Task.CompletedTask;
+
+    /// <summary>Completes after the reader has closed and the last received event has been dispatched.</summary>
+    public Task EventsCompletion => dispatching ?? Task.CompletedTask;
 
     /// <summary>An event with no handler of its own: its name and body; raised on any thread.</summary>
     public event Action<string, JsonElement>? EventReceived;
@@ -120,6 +127,10 @@ public sealed class DapConnection : IAsyncDisposable
 
     private Task<object?> Ask(Asked asked, object? arguments, CancellationToken cancellation)
     {
+        if (cancellation.IsCancellationRequested)
+        {
+            return Task.FromCanceled<object?>(cancellation);
+        }
         string command = asked.Command;
         int seq;
         Task<object?> answer;
@@ -255,7 +266,7 @@ public sealed class DapConnection : IAsyncDisposable
             Span<byte> header = stackalloc byte[ContentLengthHeader.Longest];
             header = header[..ContentLengthHeader.Write(written.Length, header)];
             // Under the gate, so the trace has the messages in the order they went.
-            Trace?.Invoke(Name, $"--> {Encoding.UTF8.GetString(written)}");
+            TraceMessage("-->", written);
             output.Write(header);
             output.Write(written);
             output.Flush();
@@ -324,10 +335,22 @@ public sealed class DapConnection : IAsyncDisposable
                 return consumed;
             }
             ReadOnlySpan<byte> message = rest.Slice(start, (int)length);
-            Trace?.Invoke(Name, $"<-- {Encoding.UTF8.GetString(message)}");
+            TraceMessage("<--", message);
             Receive(message);
             consumed += start + (int)length;
         }
+    }
+
+    private void TraceMessage(string direction, ReadOnlySpan<byte> message)
+    {
+        Action<string, string>? global = UseGlobalTrace ? Trace : null;
+        if (global is null && MessageTrace is null)
+        {
+            return;
+        }
+        string line = $"{direction} {Encoding.UTF8.GetString(message)}";
+        global?.Invoke(Name, line);
+        MessageTrace?.Invoke(line);
     }
 
     /// <summary>What ends a conversation whose header gives no length, quoting the header's start.</summary>
