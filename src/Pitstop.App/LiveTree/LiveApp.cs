@@ -262,7 +262,7 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
         {
             return null;
         }
-        string socket = $"pitstop-inspector-{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(4)).ToLowerInvariant()}";
+        string socket = Run.Devices.DeviceSockets.Named("inspector");
         string token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
         return new LiveApp(plan.Name, $"{Wire.Listens}{socket}", null, plan, overlays,
             device: new Run.Devices.DeviceInspector(socket, token, Carried(InspectorPath), OverlayVariables(overlays)));
