@@ -1,4 +1,5 @@
 set_project("hello-modules")
+add_rules("mode.debug", "mode.release")
 set_languages("cxx23")
 set_policy("build.c++.modules", true)
 

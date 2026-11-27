@@ -134,6 +134,7 @@ def debug_modules(client):
     session = started.get('sessionId')
     if not session:
         raise RuntimeError(f'The packaged debugger did not start: {started}')
+    stopped_at = None
     try:
         stopped = client.call(inspect, operation='wait', sessionId=session, waitSeconds=30)
         if stopped.get('state') != 'Paused':
@@ -148,9 +149,11 @@ def debug_modules(client):
             raise RuntimeError('The packaged debugger did not report scopes')
         stopped_at = time.perf_counter()
     finally:
-        ended = client.call(control, operation='stop', sessionId=session)
-        if ended.get('state') != 'Ended':
-            raise RuntimeError(f'The packaged debugger did not release its session: {ended}')
+        current = client.call(inspect, operation='state', sessionId=session)
+        if current.get('state') != 'Ended':
+            ended = client.call(control, operation='stop', sessionId=session)
+            if stopped_at is not None and ended.get('state') != 'Ended':
+                raise RuntimeError(f'The packaged debugger did not release its session: {ended}')
     print(json.dumps({'nativeDebug': 'passed', 'adapter': available['adapter'], 'firstStopMs': first_stop_ms,
                       'shutdownMs': round((time.perf_counter() - stopped_at) * 1000)}), flush=True)
 
