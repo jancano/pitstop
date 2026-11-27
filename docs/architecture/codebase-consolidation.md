@@ -107,6 +107,8 @@ The targeted rerun from `02edbfe31` reported 56 passed, three skipped, zero fail
 
 The keyboard action regression passed after checking that Module Dependencies refuses a plain folder. The theme regression passed after restoring the expected theme token prefix. All three final MCP action, attach and standalone WPF XAML editing cases passed at `59d7551db`. The retained Aspire telemetry and graph test also passed against the regenerated protocol descriptor. The application and all tests compiled with zero errors or warnings at `59d7551db`.
 
+Both Discord IPC tests passed after the idle check was changed to wait for the fake peer's handshake before measuring inactivity. The About and notice verification also passed in a fixed checkout. The earlier failure compared the running binary's embedded commit with the development checkout after it had moved to a newer commit. A retained Blazor verification case repeatedly recorded non-loopback connections from the installed Chromium browser. The case failed in the pre-rename report lane, the consolidated run and an individual rerun. It remains open in the managed verification profile.
+
 Light and dark captures were taken from both the headless tests and the Windows package. The captures cover the welcome screen, project creation, toolchain settings, project and module views, graph, editor completion and diagnostics, Build and Run, HTTP Client, Containers, and Discord settings. This machine has no Docker command and no production Discord application registration. Containers' missing-tool presentation and the configuration path for Discord were visible. The Discord IPC tests use a local peer.
 
 ## Windows x64 package
