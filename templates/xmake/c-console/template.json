@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "id": "pitstop.xmake.c-console",
+  "version": "1.0.0",
+  "name": "C Console Application",
+  "description": "C Console Application using Xmake.",
+  "author": "Pitstop",
+  "license": "MIT",
+  "category": "Application",
+  "language": "c",
+  "buildSystem": "xmake",
+  "parameters": [
+    {
+      "id": "projectName",
+      "label": "Project name",
+      "type": "string",
+      "required": true,
+      "validation": "fileName"
+    },
+    {
+      "id": "targetName",
+      "label": "Target name",
+      "type": "string",
+      "required": true,
+      "default": "app",
+      "validation": "targetName"
+    },
+    {
+      "id": "standard",
+      "label": "Language standard",
+      "type": "languageStandard",
+      "required": true,
+      "default": "c17"
+    },
+    {
+      "id": "readme",
+      "label": "Add README",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "gitignore",
+      "label": "Add Git ignore file",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "lockPackages",
+      "label": "Lock package versions",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+  "files": [
+    {
+      "source": "content/xmake.lua",
+      "destination": "xmake.lua"
+    },
+    {
+      "source": "content/src/main.c",
+      "destination": "src/main.c"
+    },
+    {
+      "source": "content/README.md",
+      "destination": "README.md",
+      "when": {
+        "parameter": "readme",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/gitignore",
+      "destination": ".gitignore",
+      "when": {
+        "parameter": "gitignore",
+        "equalsValue": "true"
+      }
+    }
+  ]
+}

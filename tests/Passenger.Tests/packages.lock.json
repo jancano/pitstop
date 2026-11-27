@@ -669,6 +669,9 @@
       "pitstop.projectsystem": {
         "type": "Project"
       },
+      "pitstop.templates": {
+        "type": "Project"
+      },
       "pitstop.xmake": {
         "type": "Project",
         "dependencies": {

@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "id": "pitstop.xmake.cpp-console",
+  "version": "1.0.0",
+  "name": "C++ Console Application",
+  "description": "C++ Console Application using Xmake.",
+  "author": "Pitstop",
+  "license": "MIT",
+  "category": "Application",
+  "language": "cpp",
+  "buildSystem": "xmake",
+  "parameters": [
+    {
+      "id": "projectName",
+      "label": "Project name",
+      "type": "string",
+      "required": true,
+      "validation": "fileName"
+    },
+    {
+      "id": "targetName",
+      "label": "Target name",
+      "type": "string",
+      "required": true,
+      "default": "app",
+      "validation": "targetName"
+    },
+    {
+      "id": "standard",
+      "label": "Language standard",
+      "type": "languageStandard",
+      "required": true,
+      "default": "c++23"
+    },
+    {
+      "id": "modules",
+      "label": "Use named modules",
+      "type": "boolean",
+      "default": true,
+      "requiresCapability": "cpp.modules",
+      "requiresStandardCapability": "cpp.modules"
+    },
+    {
+      "id": "stdModule",
+      "label": "Import the standard library module",
+      "type": "boolean",
+      "default": false,
+      "requiresCapability": "cpp.std-module",
+      "requiresStandardCapability": "cpp.std-module",
+      "when": {
+        "parameter": "modules",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "id": "readme",
+      "label": "Add README",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "gitignore",
+      "label": "Add Git ignore file",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "lockPackages",
+      "label": "Lock package versions",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+  "files": [
+    {
+      "source": "content/xmake.lua",
+      "destination": "xmake.lua"
+    },
+    {
+      "source": "content/src/main-headers.cpp",
+      "destination": "src/main.cpp",
+      "when": {
+        "parameter": "modules",
+        "equalsValue": "false"
+      }
+    },
+    {
+      "source": "content/src/main-module.cpp",
+      "destination": "src/main.cpp",
+      "when": {
+        "parameter": "modules",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/src/answer.cppm",
+      "destination": "src/answer.cppm",
+      "when": {
+        "parameter": "modules",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/README.md",
+      "destination": "README.md",
+      "when": {
+        "parameter": "readme",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/gitignore",
+      "destination": ".gitignore",
+      "when": {
+        "parameter": "gitignore",
+        "equalsValue": "true"
+      }
+    }
+  ]
+}

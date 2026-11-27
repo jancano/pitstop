@@ -11,7 +11,8 @@ public sealed record TemplateCondition(string Parameter, string EqualsValue);
 
 public sealed record TemplateParameter(string Id, string Label, TemplateParameterKind Type, JsonElement Default,
     bool Required = false, string? Help = null, ImmutableArray<string> Choices = default,
-    TemplateValidation Validation = TemplateValidation.None, string? RequiresCapability = null, TemplateCondition? When = null);
+    TemplateValidation Validation = TemplateValidation.None, string? RequiresCapability = null, TemplateCondition? When = null,
+    string? RequiresStandardCapability = null);
 
 public sealed record TemplateFile(string Source, string Destination, bool Binary = false, TemplateCondition? When = null);
 
@@ -86,15 +87,16 @@ public sealed record TemplateCatalog(ImmutableArray<ProjectTemplate> Templates, 
         HashSet<string> parameters = new(StringComparer.Ordinal);
         foreach (TemplateParameter parameter in manifest.Parameters)
         {
-            if (parameter is null || !TemplatePaths.Identifier(parameter.Id) || string.IsNullOrWhiteSpace(parameter.Label) || !parameters.Add(parameter.Id))
+            if (parameter is null || !TemplatePaths.Identifier(parameter.Id) || string.IsNullOrWhiteSpace(parameter.Label)
+                || parameter.When is { } rule && !parameters.Contains(rule.Parameter) || !parameters.Add(parameter.Id))
             {
-                throw new JsonException("Parameter IDs must be unique identifiers with a display label.");
+                throw new JsonException("Parameter IDs must be unique identifiers with a label. A condition must refer to an earlier parameter.");
             }
         }
         string directory = Path.GetDirectoryName(Path.GetFullPath(path))!;
         foreach (TemplateFile file in manifest.Files)
         {
-            if (file is null || string.IsNullOrWhiteSpace(file.Destination))
+            if (file is null || string.IsNullOrWhiteSpace(file.Destination) || file.When is { } rule && !parameters.Contains(rule.Parameter))
             {
                 throw new JsonException("A template file needs a source and destination.");
             }

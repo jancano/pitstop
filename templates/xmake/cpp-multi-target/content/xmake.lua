@@ -1,0 +1,16 @@
+set_project({{lua:projectName}})
+add_rules("mode.debug", "mode.release")
+{{#lockPackages}}set_policy("package.requires_lock", true)
+{{/lockPackages}}local standard = {{lua:standard}}
+set_languages((standard:gsub("^c%+%+", "cxx")))
+set_policy("build.c++.modules", true)
+target("{{id:targetName}}_library")
+    set_kind("static")
+    add_files("src/interface.cppm", "src/partition.cppm", {public = true})
+    add_files("src/implementation.cpp")
+{{#internalPartition}}    add_files("src/detail.cppm")
+{{/internalPartition}}
+target({{lua:targetName}})
+    set_kind("binary")
+    add_deps("{{id:targetName}}_library")
+    add_files("src/main.cpp")

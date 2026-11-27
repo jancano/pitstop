@@ -22,10 +22,10 @@ internal static class TemplateRenderer
                 throw new IOException("A template token is missing its closing braces.");
             }
             string token = template[(start + 2)..end];
-            if (!filename && token.StartsWith('#') && TemplatePaths.Identifier(token[1..]))
+            if (!filename && token.Length > 1 && token[0] is '#' or '^' && TemplatePaths.Identifier(token[1..]))
             {
                 scopes.Push((token[1..], visible));
-                visible &= values.GetValueOrDefault(token[1..]) == "true";
+                visible &= (values.GetValueOrDefault(token[1..]) == "true") == (token[0] == '#');
             }
             else if (!filename && token.StartsWith('/') && scopes.TryPop(out (string Name, bool Visible) scope) && scope.Name == token[1..])
             {

@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "id": "pitstop.xmake.cpp-multi-target",
+  "version": "1.0.0",
+  "name": "Multi-target C++ Application",
+  "description": "Multi-target C++ Application using Xmake.",
+  "author": "Pitstop",
+  "license": "MIT",
+  "category": "Application",
+  "language": "cpp",
+  "buildSystem": "xmake",
+  "requiresCapabilities": [
+    "cpp.modules"
+  ],
+  "minimumStandardOrder": 2020,
+  "parameters": [
+    {
+      "id": "projectName",
+      "label": "Project name",
+      "type": "string",
+      "required": true,
+      "validation": "fileName"
+    },
+    {
+      "id": "targetName",
+      "label": "Target name",
+      "type": "string",
+      "required": true,
+      "default": "app",
+      "validation": "targetName"
+    },
+    {
+      "id": "standard",
+      "label": "Language standard",
+      "type": "languageStandard",
+      "required": true,
+      "default": "c++23"
+    },
+    {
+      "id": "internalPartition",
+      "label": "Use an internal module partition",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "stdModule",
+      "label": "Import the standard library module",
+      "type": "boolean",
+      "default": false,
+      "requiresCapability": "cpp.std-module",
+      "requiresStandardCapability": "cpp.std-module"
+    },
+    {
+      "id": "readme",
+      "label": "Add README",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "gitignore",
+      "label": "Add Git ignore file",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "lockPackages",
+      "label": "Lock package versions",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+  "files": [
+    {
+      "source": "content/xmake.lua",
+      "destination": "xmake.lua"
+    },
+    {
+      "source": "content/src/interface.cppm",
+      "destination": "src/interface.cppm"
+    },
+    {
+      "source": "content/src/partition.cppm",
+      "destination": "src/partition.cppm"
+    },
+    {
+      "source": "content/src/detail.cppm",
+      "destination": "src/detail.cppm",
+      "when": {
+        "parameter": "internalPartition",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/src/implementation.cpp",
+      "destination": "src/implementation.cpp"
+    },
+    {
+      "source": "content/src/main.cpp",
+      "destination": "src/main.cpp"
+    },
+    {
+      "source": "content/README.md",
+      "destination": "README.md",
+      "when": {
+        "parameter": "readme",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/gitignore",
+      "destination": ".gitignore",
+      "when": {
+        "parameter": "gitignore",
+        "equalsValue": "true"
+      }
+    }
+  ]
+}

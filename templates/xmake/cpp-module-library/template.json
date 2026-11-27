@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "id": "pitstop.xmake.cpp-module-library",
+  "version": "1.0.0",
+  "name": "C++ Module-only Library",
+  "description": "C++ Module-only Library using Xmake.",
+  "author": "Pitstop",
+  "license": "MIT",
+  "category": "Library",
+  "language": "cpp",
+  "buildSystem": "xmake",
+  "requiresCapabilities": [
+    "cpp.modules"
+  ],
+  "minimumStandardOrder": 2020,
+  "parameters": [
+    {
+      "id": "projectName",
+      "label": "Project name",
+      "type": "string",
+      "required": true,
+      "validation": "fileName"
+    },
+    {
+      "id": "targetName",
+      "label": "Target name",
+      "type": "string",
+      "required": true,
+      "default": "app",
+      "validation": "targetName"
+    },
+    {
+      "id": "standard",
+      "label": "Language standard",
+      "type": "languageStandard",
+      "required": true,
+      "default": "c++23"
+    },
+    {
+      "id": "consumer",
+      "label": "Include a runnable consumer example",
+      "type": "boolean",
+      "default": false
+    },
+    {
+      "id": "readme",
+      "label": "Add README",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "gitignore",
+      "label": "Add Git ignore file",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "lockPackages",
+      "label": "Lock package versions",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+  "files": [
+    {
+      "source": "content/xmake.lua",
+      "destination": "xmake.lua"
+    },
+    {
+      "source": "content/src/answer.cppm",
+      "destination": "src/answer.cppm"
+    },
+    {
+      "source": "content/example/main.cpp",
+      "destination": "example/main.cpp",
+      "when": {
+        "parameter": "consumer",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/README.md",
+      "destination": "README.md",
+      "when": {
+        "parameter": "readme",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/gitignore",
+      "destination": ".gitignore",
+      "when": {
+        "parameter": "gitignore",
+        "equalsValue": "true"
+      }
+    }
+  ]
+}

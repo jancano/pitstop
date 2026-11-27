@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "pitstop.xmake.empty",
+  "version": "1.0.0",
+  "name": "Empty Xmake Workspace",
+  "description": "Empty Xmake Workspace using Xmake.",
+  "author": "Pitstop",
+  "license": "MIT",
+  "category": "Workspace",
+  "language": "none",
+  "buildSystem": "xmake",
+  "parameters": [
+    {
+      "id": "projectName",
+      "label": "Project name",
+      "type": "string",
+      "required": true,
+      "validation": "fileName"
+    },
+    {
+      "id": "readme",
+      "label": "Add README",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "gitignore",
+      "label": "Add Git ignore file",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "lockPackages",
+      "label": "Lock package versions",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+  "files": [
+    {
+      "source": "content/xmake.lua",
+      "destination": "xmake.lua"
+    },
+    {
+      "source": "content/README.md",
+      "destination": "README.md",
+      "when": {
+        "parameter": "readme",
+        "equalsValue": "true"
+      }
+    },
+    {
+      "source": "content/gitignore",
+      "destination": ".gitignore",
+      "when": {
+        "parameter": "gitignore",
+        "equalsValue": "true"
+      }
+    }
+  ]
+}

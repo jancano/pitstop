@@ -11,4 +11,8 @@ The native wizard needs typed parameters, capability filtering, file and directo
 
 The first schema uses the bounded declarative renderer. The renderer receives validated scalar values and offers explicit escaping modes. Parameter validation and path resolution run outside interpolation. A plan holds the bytes to preview and write. Capability discovery and optional repository initialization belong to the host.
 
-The focused unit run passed catalog discovery, rendering, preview consistency, capability filtering, an added catalog standard, path traversal, collisions, cancellation and existing-destination protection. The symlink check was skipped because the Windows test account could not create a symlink. The IDE wizard and official project catalog are subsequent integrations. See the [authoring reference](../templates/authoring.md) for the implemented syntax.
+The focused unit run passed catalog discovery, rendering, preview consistency, capability filtering, an added catalog standard, path traversal, collisions, cancellation and existing-destination protection. The symlink check was skipped because the Windows test account could not create a symlink. See the [authoring reference](../templates/authoring.md) for the implemented syntax.
+
+## Xmake catalog verification
+
+The Windows reference profile generated all seven templates and passed 12 native cases. C99 and C23 executables ran. The C++ console ran in C++17 with an incompatible module request discarded, C++20 with a named module, and C++23 and C++26 with `import std`. Both static library variants, the shared library and the module-only library were consumed by executable targets. The multi-target application built its partitions and ran with `import std`. The empty workspace configured and listed its targets. Locked restore and the complete solution build passed. The tested generation path was the template library and Xmake, ahead of the IDE wizard integration.

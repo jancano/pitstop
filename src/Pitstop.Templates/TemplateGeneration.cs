@@ -20,6 +20,7 @@ public sealed record GenerationPlan(string Destination, ImmutableArray<PlannedFi
         // Put the stage under the destination's parent so the final directory move stays on one volume.
         string stage = Path.Combine(parent, $".pitstop-template-{Guid.NewGuid():N}");
         Directory.CreateDirectory(stage);
+        bool installed = false;
         try
         {
             foreach (PlannedFile file in Files)
@@ -34,10 +35,11 @@ public sealed record GenerationPlan(string Destination, ImmutableArray<PlannedFi
             cancel.ThrowIfCancellationRequested();
             TemplateGeneration.CheckDestination(destination);
             Directory.Move(stage, destination);
+            installed = true;
         }
         finally
         {
-            if (Directory.Exists(stage))
+            if (!installed && Directory.Exists(stage))
             {
                 Directory.Delete(stage, recursive: true);
             }
@@ -124,10 +126,17 @@ public static class TemplateGeneration
             throw new IOException("The template does not declare one or more supplied parameters.");
         }
         Dictionary<string, string> values = new(StringComparer.Ordinal);
+        LanguageStandard? standard = null;
         foreach (TemplateParameter parameter in manifest.Parameters)
         {
-            if (!Matches(parameter.When, values) || parameter.RequiresCapability is { } capability && !environment.Capabilities.Contains(capability))
+            if (!Matches(parameter.When, values) || parameter.RequiresCapability is { } capability && !environment.Capabilities.Contains(capability)
+                || parameter.RequiresStandardCapability is { } feature
+                    && (standard is null || standard.Capabilities.IsDefaultOrEmpty || !standard.Capabilities.Contains(feature, StringComparer.Ordinal)))
             {
+                if (parameter.Type == TemplateParameterKind.Boolean)
+                {
+                    values.Add(parameter.Id, "false");
+                }
                 continue;
             }
             string? given = supplied.GetValueOrDefault(parameter.Id);
@@ -176,6 +185,10 @@ public static class TemplateGeneration
                 throw new IOException($"'{value}' is invalid or unavailable for {parameter.Label}.");
             }
             values.Add(parameter.Id, value);
+            if (parameter.Type == TemplateParameterKind.LanguageStandard)
+            {
+                standard = environment.Standards.Entries.First(item => item.Id == value);
+            }
         }
         return values;
     }

@@ -22,6 +22,7 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="xunit.v3" />
     <ProjectReference Include="../../src/Passenger.App/Passenger.App.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Templates/Pitstop.Templates.csproj" />
     <ProjectReference Include="../../src/Passenger.Lsp/Passenger.Lsp.csproj" />
   </ItemGroup>
 

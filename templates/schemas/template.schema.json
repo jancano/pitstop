@@ -48,6 +48,7 @@
         "choices": { "$ref": "#/$defs/labels" },
         "validation": { "enum": ["none", "fileName", "targetName", "identifier", "moduleName"] },
         "requiresCapability": { "$ref": "#/$defs/label" },
+        "requiresStandardCapability": { "$ref": "#/$defs/label" },
         "when": { "$ref": "#/$defs/condition" }
       }
     },
