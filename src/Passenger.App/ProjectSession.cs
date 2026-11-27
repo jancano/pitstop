@@ -68,6 +68,7 @@ public sealed record SessionSetup(
 
     internal Func<string, string, CancellationToken, Task<XmakeWorkspace>>? EvaluateXmake { get; init; }
     internal Func<string, string, string, CancellationToken, Task<Passenger.Lsp.LanguageSession>>? StartClangd { get; init; }
+    internal bool ManagedDevelopment { get; init; } = true;
 }
 
 /// <summary>Projects whose evaluation landed, as the workspace now has them, and whether which projects hold tests (or the
@@ -251,7 +252,7 @@ public sealed class ProjectSession : IAsyncDisposable
         ProjectState? kept = null)
     {
         bool trusted = WorkspaceTrust.Trusts(folder);
-        HeadStart? ahead = trusted && setup.HeadStart is { } head && PathNames.Same(head.Folder, folder)
+        HeadStart? ahead = setup.ManagedDevelopment && trusted && setup.HeadStart is { } head && PathNames.Same(head.Folder, folder)
             && (head.Named is null ? named is null : named is not null && PathNames.Same(head.Named, named)) ? head : null;
         ProjectSession session = new(setup, folder)
         {
@@ -299,21 +300,28 @@ public sealed class ProjectSession : IAsyncDisposable
         }
         // A folder without a solution has no projects until the walk for them lands: none to load, run or build meanwhile.
         session.reads++;
-        session.Models.Open(folder, kept?.ProjectModels, ahead?.Evaluations);
-        // Its projects' design-time builds as kept, or as begun ahead, which its language server loads them from.
-        session.DesignTimeBuilds.Open(folder, kept?.ProjectBuilds, ahead?.Builds);
+        if (setup.ManagedDevelopment)
+        {
+            session.Models.Open(folder, kept?.ProjectModels, ahead?.Evaluations);
+            // Its projects' design-time builds as kept, or as begun ahead, which its language server loads them from.
+            session.DesignTimeBuilds.Open(folder, kept?.ProjectBuilds, ahead?.Builds);
+        }
         session.openedAt = System.Diagnostics.Stopwatch.GetTimestamp();
         // The folder as read ahead, its projects walked for already, when that read has landed.
         WorkspaceModel opening = ahead?.Read is { IsCompletedSuccessfully: true } walked ? walked.Result
             : withSolution ?? new WorkspaceModel(folder, null, []) { Unread = unread };
         OpenedByPerson(opening);
-        session.Workspace = session.Models.Apply(opening);
+        session.Workspace = setup.ManagedDevelopment ? session.Models.Apply(opening) : opening;
         session.TakeFilter(session.Workspace);
         session.TimeSolutionView();
         session.Configurations.Configure(session.Projects);
         // The single-file AppHosts are found among the files the index's walk lists, never by a walk of their own.
-        session.Index.Walked += (_, _) => session.AspireFiles.Walked(folder, session.Index.Files);
-        session.Index.Changed += (_, change) => session.AspireFiles.CameAndWent(folder, change.Came, change.Gone);
+        if (setup.ManagedDevelopment)
+        {
+            session.Index.Walked += (_, _) => session.AspireFiles.Walked(folder, session.Index.Files);
+            session.Index.Changed += (_, change) => session.AspireFiles.CameAndWent(folder, change.Came, change.Gone);
+            session.Index.Changed += (_, change) => session.ProjectsCameOrWent(change.Came, change.Gone);
+        }
         // The Node packages too, their scripts run configurations.
         session.Index.Walked += (_, _) => session.NodeFiles.Walked(folder, session.Index.Files);
         session.Index.Changed += (_, change) => session.NodeFiles.CameAndWent(folder, change.Came, change.Gone);
@@ -323,8 +331,6 @@ public sealed class ProjectSession : IAsyncDisposable
         // And the .http and .rest files the Endpoints window sends.
         session.Index.Walked += (_, _) => IdeErrors.Observe(session.LookForRequestsAsync(session.Index.Files));
         session.Index.Changed += (_, change) => session.RequestsCameOrWent(change.Came, change.Gone);
-        // And the projects, programs and Godot projects come or gone, alone or with their folders, which the folder is read again for.
-        session.Index.Changed += (_, change) => session.ProjectsCameOrWent(change.Came, change.Gone);
         session.Index.Build(folder);
         session.Watcher = new FolderWatcher(folder, setup.Watching);
         session.Web = new Web.WebLanguages(folder, setup.Settings, setup.Engine)
@@ -471,8 +477,11 @@ public sealed class ProjectSession : IAsyncDisposable
         IdeErrors.Write($"Trust taken back from {folder}: none of its code runs from now on");
         // Untrusted, it ends the server and starts none.
         StartCSharp();
-        IdeErrors.Observe(EndAhead());
-        IdeErrors.Observe(BackgroundWork.Run(() => ProjectHosts.EndServingAsync(folder, $"the trust of {folder} was taken back")));
+        if (setup.ManagedDevelopment)
+        {
+            IdeErrors.Observe(EndAhead());
+            IdeErrors.Observe(BackgroundWork.Run(() => ProjectHosts.EndServingAsync(folder, $"the trust of {folder} was taken back")));
+        }
         IdeErrors.Observe(Vcs.RefreshAsync());
         Web?.Untrust();
         Xmake?.Refresh();
@@ -788,7 +797,7 @@ public sealed class ProjectSession : IAsyncDisposable
     /// <summary>What the folder offers to build as, read again: its solution's configurations, else its projects'.</summary>
     public void ReadBuildChoices()
     {
-        if (!IsEnded && Trusted && Folder is { } folder && Workspace is { } now)
+        if (setup.ManagedDevelopment && !IsEnded && Trusted && Folder is { } folder && Workspace is { } now)
         {
             IdeErrors.Observe(BuildChoices.ReadAsync(folder, now));
         }
@@ -1594,7 +1603,7 @@ public sealed class ProjectSession : IAsyncDisposable
     /// <summary>Has each project of the workspace evaluated that needs it, the file shown's first; none of a folder not trusted.</summary>
     public void Evaluate()
     {
-        if (!IsEnded && Trusted && Workspace is { } following)
+        if (setup.ManagedDevelopment && !IsEnded && Trusted && Workspace is { } following)
         {
             Models.Follow(following, setup.Editors.Active?.Path);
         }
@@ -1607,7 +1616,7 @@ public sealed class ProjectSession : IAsyncDisposable
     public async Task ProjectsAsWrittenAsync(Action<string?>? waiting, CancellationToken cancel)
     {
         UiThread.Check();
-        if (IsEnded || Workspace is not { } before)
+        if (!setup.ManagedDevelopment || IsEnded || Workspace is not { } before)
         {
             return;
         }
@@ -1935,6 +1944,11 @@ public sealed class ProjectSession : IAsyncDisposable
     /// configuration chosen when it is still there.</summary>
     public void ReadAgain()
     {
+        if (!setup.ManagedDevelopment)
+        {
+            Xmake?.Refresh();
+            return;
+        }
         if (Folder is not null)
         {
             Read(WorkspaceModel.ReadSolution(Folder, NamedSolution, out UnreadSolution? unread, out string? none), unread, none);
@@ -1981,6 +1995,10 @@ public sealed class ProjectSession : IAsyncDisposable
     {
         Xmake?.Refresh();
         IdeErrors.Observe(Vcs.OpenAsync(Folder!));
+        if (!setup.ManagedDevelopment)
+        {
+            return;
+        }
         StartCSharp();
         // The walk begun ahead is the first, and what the session has not taken of the opening once it lands is ended.
         WalkForProjects(ahead?.Read);
@@ -2090,7 +2108,7 @@ public sealed class ProjectSession : IAsyncDisposable
         IdeErrors.Observe(CSharp?.DisposeAsync().AsTask() ?? Task.CompletedTask);
         CSharp = null;
         Tests.Finder.ServerLoading = false;
-        if (!IsEnded && Trusted && setup.StartsLanguageServer && Workspace is { } opening && (opening.Solution is not null || opening.Projects.Count > 0))
+        if (setup.ManagedDevelopment && !IsEnded && Trusted && setup.StartsLanguageServer && Workspace is { } opening && (opening.Solution is not null || opening.Projects.Count > 0))
         {
             Settings.AppSettings shown = setup.Settings();
             CSharp = new CSharpService(setup.WarmServer, ahead)

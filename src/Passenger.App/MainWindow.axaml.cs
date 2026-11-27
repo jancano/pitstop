@@ -69,8 +69,11 @@ public partial class MainWindow : IdeWindow
     /// <summary>The session's builds and runs as this window shows them, made for each session it binds.</summary>
     private BuildRunController buildRun;
 
-    public MainWindow()
+    public MainWindow() : this(managedDevelopment: true) { }
+
+    public MainWindow(bool managedDevelopment)
     {
+        ManagedDevelopment = managedDevelopment;
         UiThread.Own();
         InitializeComponent();
         GiveToolbarButtons();
@@ -112,7 +115,10 @@ public partial class MainWindow : IdeWindow
         AddGodotEditor();
         AddGodotProject();
         AddGodotExport();
-        AddDotnet();
+        if (ManagedDevelopment)
+        {
+            AddDotnet();
+        }
         AddPassengerCommand();
         AddTrust();
         AddRoutes();

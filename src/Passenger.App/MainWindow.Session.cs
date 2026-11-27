@@ -14,6 +14,7 @@ namespace Passenger.App;
 /// and waited for, within <see cref="EndLimit"/>), and Close Solution leaves it for the Welcome screen.</summary>
 public partial class MainWindow
 {
+    internal bool ManagedDevelopment { get; }
     /// <summary>The end of the session left last, which the next one waits for before it opens.</summary>
     private Task ending = Task.CompletedTask;
 
@@ -63,6 +64,7 @@ public partial class MainWindow
         HeadStart = headStart,
         EvaluateXmake = EvaluateXmake,
         StartClangd = StartClangd,
+        ManagedDevelopment = ManagedDevelopment,
     };
 
     /// <summary>An Xmake evaluator supplied by a headless host. Regular windows use the installed Xmake.</summary>
@@ -138,7 +140,18 @@ public partial class MainWindow
     {
         UiThread.Check();
         string named = PathNames.Canonical(path);
-        bool fileNamed = File.Exists(named) && WorkspaceModel.Opens(named);
+        bool file = File.Exists(named);
+        bool fileNamed = file && ManagedDevelopment && WorkspaceModel.Opens(named);
+        if (file && !fileNamed && !ManagedDevelopment)
+        {
+            if (!Path.GetFileName(named).Equals(XmakeService.ProjectFile, StringComparison.OrdinalIgnoreCase))
+            {
+                OpenFile(named);
+                opened?.Invoke();
+                return Task.CompletedTask;
+            }
+            named = Path.GetDirectoryName(named)!;
+        }
         string opening = fileNamed ? Path.GetDirectoryName(named)! : named;
         if (opening == session.Folder)
         {
@@ -187,6 +200,11 @@ public partial class MainWindow
     /// named), read with that one, its files and what it runs kept.</summary>
     private void ReadAgain(string folder, string? named)
     {
+        if (!ManagedDevelopment)
+        {
+            session.Xmake?.Refresh();
+            return;
+        }
         WorkspaceModel? withSolution = WorkspaceModel.ReadSolution(folder, named ?? session.NamedSolution, out UnreadSolution? unread, out string? none);
         if ((withSolution?.OpenedAs ?? folder) == session.Workspace?.OpenedAs)
         {
@@ -221,7 +239,8 @@ public partial class MainWindow
     {
         // Begun, the folder is the session's: kept as opening, a Close Solution after would leave the window holding it.
         opening = null;
-        WorkspaceModel? withSolution = WorkspaceModel.ReadSolution(folder, named, out UnreadSolution? unread);
+        UnreadSolution? unread = null;
+        WorkspaceModel? withSolution = ManagedDevelopment ? WorkspaceModel.ReadSolution(folder, named, out unread) : null;
         State.ProjectState? kept = keepsWorkspace ? Hold(folder) : null;
         // The projects as MSBuild last evaluated them, from the folder's cache, before any is evaluated again.
         ProjectSession opened = ProjectSession.Open(Setup(), folder, named, withSolution, unread, kept);
@@ -496,33 +515,36 @@ public partial class MainWindow
                 }
             };
         }
-        FollowGodotEditors(next);
-        next.Models.SdkChanged += (_, _) =>
+        if (ManagedDevelopment)
         {
-            if (session == next)
+            FollowGodotEditors(next);
+            next.Models.SdkChanged += (_, _) =>
             {
-                ShowDotnet();
-                ShowSdk();
-            }
-        };
-        next.Models.Changed += (_, _) =>
-        {
-            if (session == next)
+                if (session == next)
+                {
+                    ShowDotnet();
+                    ShowSdk();
+                }
+            };
+            next.Models.Changed += (_, _) =>
             {
-                ShowDotnet();
-                OfferGodotEditor();
-                IdeErrors.Observe(OfferGodotTemplatesAsync());
-                IdeErrors.Observe(LeaveGodotTemplatesOutAsync());
-                ListenForGodotEditors();
-            }
-        };
+                if (session == next)
+                {
+                    ShowDotnet();
+                    OfferGodotEditor();
+                    IdeErrors.Observe(OfferGodotTemplatesAsync());
+                    IdeErrors.Observe(LeaveGodotTemplatesOutAsync());
+                    ListenForGodotEditors();
+                }
+            };
+            // The installation the new folder's projects take may be another (Dotnet.Find(folder)).
+            IdeErrors.Observe(ReadDotnetAsync());
+        }
         // Another folder's offer is not this one's.
         GodotBanner.Say(null);
         godotEditorOffered = false;
         ShowDotnet();
         ShowSdk();
-        // The installation the new folder's projects take may be another (Dotnet.Find(folder)).
-        IdeErrors.Observe(ReadDotnetAsync());
         unreadSaid = null;
         next.WorkspaceChanged += (_, _) =>
         {

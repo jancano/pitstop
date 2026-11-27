@@ -143,6 +143,10 @@ public partial class MainWindow
     /// projects are known, which for a folder without a solution is once the walk for them has landed.</summary>
     private void FindTests()
     {
+        if (!ManagedDevelopment)
+        {
+            return;
+        }
         Task read = WorkspaceRead;
         session.Tests.Open(Folder, projectsRead: read.IsCompleted);
         // A walk's landing asks too, before it ends, and one look once it has ended answers both.

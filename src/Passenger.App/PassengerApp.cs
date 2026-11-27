@@ -139,7 +139,7 @@ public static class PassengerApp
     public static MainWindow NewWindow(MainWindow like)
     {
         UiThread.Check();
-        MainWindow window = new()
+        MainWindow window = new(like.ManagedDevelopment)
         {
             StateFolder = like.StateFolder,
             AgentsAllowed = like.AgentsAllowed,

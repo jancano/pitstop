@@ -333,7 +333,7 @@ public partial class MainWindow
                     listed.Items.Add(new NativeMenuItem("Nothing yet") { IsEnabled = false });
                 }
             };
-            return new NativeMenuItem(NativeWords(entry.Title!)) { Menu = listed };
+            return new NativeMenuItem(NativeWords(ProjectMenuName(entry.Title!))) { Menu = listed };
         }
         if (entry.Items is { } items)
         {
@@ -400,6 +400,8 @@ public partial class MainWindow
 
     /// <summary>What a listed submenu holds as it opens: every tool window the dock has, one serving nothing in the open folder
     /// greyed with its action's why; the recent solutions; or the solution windows open.</summary>
+    private string ProjectMenuName(string title) => !ManagedDevelopment && title == MainMenu.RecentSolutions ? "Recent Projects" : title;
+
     private IReadOnlyList<ListedItem> Listed(string submenu) => submenu switch
     {
         MainMenu.ToolWindows => [.. Dock.Windows.OrderBy(w => w.Title, StringComparer.Ordinal).Select(w => new ListedItem(w.Title, () => ShowToolWindow(w.Id))
@@ -476,7 +478,7 @@ public partial class MainWindow
         }
         if (entry.IsListed)
         {
-            MenuItem listed = new() { Header = entry.Title };
+            MenuItem listed = new() { Header = ProjectMenuName(entry.Title!) };
             foreach (ListedItem item in Listed(entry.Title!))
             {
                 listed.Items.Add(FlyoutListed(item));

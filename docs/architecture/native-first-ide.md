@@ -20,7 +20,7 @@ The welcome screen uses the existing window and project-opening flow for a gener
 
 The wizard offers the registered Xmake templates and loads their parameters from the manifest. On the Windows reference profile, it checks Xmake and LLVM versions, probes the compiler's supported standard flags and checks for libc++'s standard module source. Templates without an available compiler capability explain their requirements. The empty workspace template remains available without a detected compiler. Xmake evaluates the project's active build toolchain after the workspace opens. The detected template profile does not change a user's Xmake configuration.
 
-The legacy managed project commands remain available during the migration.
+The native desktop uses **New Project** and **Open Project**. The inherited managed project commands remain available in the legacy verification window.
 
 ## Xmake project editing
 
@@ -43,3 +43,5 @@ For supported edits, Pitstop previews the Lua to append to the provider's existi
 | Aspire and Entity Framework | Evaluation from managed projects and dedicated package and run actions | Generic HTTP requests and Docker tooling |
 
 The application project currently stages Roslyn and managed project, debug, test, inspector and preview payloads. Some of its notice-generation inputs are collected from those same targets. The packaging migration must update the payload and its notices together. Keep CI's repository build projects and native validation fixtures when isolating distributable executables.
+
+Desktop windows use native project loading. A folder with both `xmake.lua` and a solution opens its evaluated Xmake targets. The desktop leaves C# and solution files available as documents, and skips SDK discovery, managed workspace discovery, the MSBuild project host and Roslyn startup. Child desktop windows inherit this mode. The legacy window constructor remains for regression coverage. The inherited standalone headless and MCP launch paths, the remaining managed command surfaces, and their bundled tooling are still part of the migration.

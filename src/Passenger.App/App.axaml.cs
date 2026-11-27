@@ -82,7 +82,7 @@ public partial class App : Application
         // The screenshot mode has no lifetime and makes its own window.
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            MainWindow window = new()
+            MainWindow window = new(managedDevelopment: false)
             {
                 AgentsAllowed = Program.Options.ListenForAgents, SaysLastCrash = true,
             };

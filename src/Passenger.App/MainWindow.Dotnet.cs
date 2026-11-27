@@ -166,6 +166,10 @@ public partial class MainWindow
     private void ShowDotnet()
     {
         UiThread.Check();
+        if (!ManagedDevelopment)
+        {
+            return;
+        }
         DotnetWant = DotnetWant.Of(machine, session.Models.MissingSdk, session.Models.SdkVersion,
             Projects.Where(p => p.IsEvaluated).Select(p => (p.Name, p.TargetFrameworks)), session.Models.SdkAsked);
         string? said = DotnetWant.Lack == DotnetLack.OffPath && (OffPathHidden || shellPath is null) ? null : Refusals.Dotnet(DotnetWant, Folder);

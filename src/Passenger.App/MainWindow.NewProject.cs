@@ -20,11 +20,15 @@ public partial class MainWindow
 {
     private void AddNewProjectActions()
     {
-        actions!.Add(new IdeAction(AppActions.NewNativeProject, "New C/C++ Project…", "IDE", _ => ShowNativeProject())
+        actions!.Add(new IdeAction(AppActions.NewNativeProject, ManagedDevelopment ? "New C/C++ Project…" : "New Project…", "IDE", _ => ShowNativeProject())
         {
             WhyNot = context => context.ByAgent ? Refusals.AsksThePerson : null,
-            Menus = [new MenuPlace("File", 0, 3)],
+            Menus = [new MenuPlace("File", 0, ManagedDevelopment ? 3 : -2)],
         });
+        if (!ManagedDevelopment)
+        {
+            return;
+        }
         actions!.Add(new IdeAction(AppActions.NewSolution, "New Solution…", "IDE", _ => ShowNewSolution())
         {
             WhyNot = _ => WithoutAnySdk(),
@@ -62,7 +66,7 @@ public partial class MainWindow
     /// them only when their dialog opens.</summary>
     private void PreloadTemplates()
     {
-        if (KeepsSettings && Folder is not null && session.Xmake?.IsXmake != true)
+        if (ManagedDevelopment && KeepsSettings && Folder is not null && session.Xmake?.IsXmake != true)
         {
             ProjectTemplates.Preload(BesideLast());
         }

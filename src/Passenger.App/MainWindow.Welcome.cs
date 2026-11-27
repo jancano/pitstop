@@ -45,15 +45,18 @@ public partial class MainWindow
         actions!.Add(new IdeAction(AppActions.OpenNativeProject, "Open Project…", "IDE", _ => IdeErrors.Observe(PickNativeProjectAsync()))
         {
             WhyNot = persons,
-            Menus = [new MenuPlace("File", 0, 4)],
+            Menus = [new MenuPlace("File", 0, ManagedDevelopment ? 4 : -1)],
         });
-        actions!.Add(new IdeAction(AppActions.OpenSolution, "Open Solution…", "IDE", _ => IdeErrors.Observe(PickSolutionAsync()))
+        if (ManagedDevelopment)
         {
-            WhyNot = persons,
-            Menus = [new MenuPlace("File", 0, -1)],
-            KeepsMenuOrder = true,
-            Words = ["Open Project"],
-        });
+            actions.Add(new IdeAction(AppActions.OpenSolution, "Open Solution…", "IDE", _ => IdeErrors.Observe(PickSolutionAsync()))
+            {
+                WhyNot = persons,
+                Menus = [new MenuPlace("File", 0, -1)],
+                KeepsMenuOrder = true,
+                Words = ["Open Project"],
+            });
+        }
         actions.Add(new IdeAction(AppActions.OpenFolder, "Open Folder…", "IDE", _ => IdeErrors.Observe(OpenPickedFolderAsync()))
         {
             WhyNot = persons,
@@ -103,7 +106,7 @@ public partial class MainWindow
     public string? Open(string path, Action<MainWindow>? then = null)
     {
         string full = PathNames.Canonical(path);
-        if (File.Exists(full) && Folder is null && WorkspaceModel.OpensAsProgram(full))
+        if (ManagedDevelopment && File.Exists(full) && Folder is null && WorkspaceModel.OpensAsProgram(full))
         {
             // Its folder makes it a project of its own, which runs and which the language server loads.
             SayOnWelcome(null);
@@ -114,7 +117,8 @@ public partial class MainWindow
             });
             return null;
         }
-        if (File.Exists(full) && !WorkspaceModel.Opens(full))
+        bool nativeProject = !ManagedDevelopment && Path.GetFileName(full).Equals(Pitstop.Xmake.XmakeService.ProjectFile, StringComparison.OrdinalIgnoreCase);
+        if (File.Exists(full) && !nativeProject && (!ManagedDevelopment || !WorkspaceModel.Opens(full)))
         {
             string? problem = OpenFile(full);
             SayOnWelcome(problem);
@@ -127,7 +131,7 @@ public partial class MainWindow
             status.Text = why;
             return why;
         }
-        OpenChosen(full, then);
+        OpenChosen(nativeProject && File.Exists(full) ? Path.GetDirectoryName(full)! : full, then);
         return null;
     }
 
@@ -199,14 +203,17 @@ public partial class MainWindow
     public ContextMenu ShowProjectMenu()
     {
         ActionContext context = actions!.Context();
-        List<Control> items = [.. ((string[])[AppActions.NewSolution, AppActions.OpenSolution, AppActions.OpenFolder, AppActions.OpenFile, AppActions.CloneRepository,
-            AppActions.NewNativeProject, AppActions.OpenNativeProject])
+        string[] entries = ManagedDevelopment
+            ? [AppActions.NewSolution, AppActions.OpenSolution, AppActions.OpenFolder, AppActions.OpenFile, AppActions.CloneRepository,
+                AppActions.NewNativeProject, AppActions.OpenNativeProject]
+            : [AppActions.NewNativeProject, AppActions.OpenNativeProject, AppActions.OpenFolder, AppActions.OpenFile, AppActions.CloneRepository];
+        List<Control> items = [.. entries
             .Select(id => FlyoutEntry(new MenuEntry(id), context))];
         IReadOnlyList<ListedItem> windows = SolutionWindows();
         if (windows.Count > 1)
         {
             items.Add(new Separator());
-            items.Add(ToolWindows.ListMenus.Heading("Open Solutions"));
+            items.Add(ToolWindows.ListMenus.Heading(ManagedDevelopment ? "Open Solutions" : "Open Projects"));
             items.AddRange(windows.Select(FlyoutListed));
         }
         IReadOnlyList<(string Title, Action Open)> recent = RecentMenu();
@@ -215,7 +222,7 @@ public partial class MainWindow
             items.Add(new Separator());
             if (windows.Count > 1)
             {
-                items.Add(ToolWindows.ListMenus.Heading(MainMenu.RecentSolutions));
+                items.Add(ToolWindows.ListMenus.Heading(ProjectMenuName(MainMenu.RecentSolutions)));
             }
             items.AddRange(recent.Select(r => ToolWindows.ListMenus.Item(r.Title, r.Open)));
         }

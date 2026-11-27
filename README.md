@@ -10,11 +10,13 @@ Pitstop is an open-source, modules-first C++ IDE. It uses evaluated Xmake projec
 
 The reference profile uses Windows x64, Xmake and Xrepo 3.1.2, LLVM-MinGW 23.1.6 with libc++, and clangd and clang-scan-deps 23.1.6. Install the tools separately and put the Xmake and LLVM `bin` directories on `PATH`. You can set `PITSTOP_XMAKE`, `PITSTOP_CLANGD`, and `PITSTOP_CLANG_SCAN_DEPS` to full executable paths instead. Set these variables before starting Pitstop. [Toolchain validation and setup](docs/architecture/cpp-toolchain.md)
 
+In a current source build, open **Settings → Native Toolchains** to check tool versions and enter explicit paths. Xmake selects the build compiler and SDK for each project.
+
 The Windows installer is `Pitstop-windows-x64.exe`. The portable package is `Pitstop-windows-x64-portable.zip`. Extract the entire ZIP and run `Pitstop.exe` from its `Pitstop` folder. Create a `pitstop-data` folder beside `Pitstop.exe` to keep state with the portable copy. The [Releases page](https://github.com/jancano/pitstop/releases) is the location for published builds. Until a release is published, build the candidate locally using the packaging command in the build section below.
 
 ## Quick start
 
-In a current source build, choose **New Project** from the welcome screen or **File → New C/C++ Project**. Pick an Xmake template and a compiler-verified language standard. Review the generated files, then create the project in a new directory. Pitstop opens the generated folder through normal workspace trust. For the Windows reference toolchain, configure the new project with the documented Xmake options if Xmake cannot select the toolchain on its own. [Native project setup](docs/architecture/xmake-workspaces.md) · [Local templates](docs/templates/authoring.md)
+In a current source build, choose **New Project** from the welcome screen or **File → New Project**. Pick an Xmake template and a compiler-verified language standard. Review the generated files, then create the project in a new directory. Pitstop opens the generated folder through normal workspace trust. For the Windows reference toolchain, configure the new project with the documented Xmake options if Xmake cannot select the toolchain on its own. [Native project setup](docs/architecture/xmake-workspaces.md) · [Local templates](docs/templates/authoring.md)
 
 1. Configure the [Hello Modules example](examples/hello-modules) with the reference tools. Open the folder containing its `xmake.lua` in Pitstop and grant trust after reviewing the script.
 2. Select **Xmake: hello-modules** in the toolbar and choose **Build** or **Run**. The executable prints `Hello, modules!`.
@@ -28,7 +30,7 @@ In a current source build, choose **New Project** from the welcome screen or **F
 - Native build, rebuild, clean, cancellation, and run with compiler diagnostics, executable arguments, environment, working directory, console input and output, stop, and rerun.
 - Read-only module intelligence for MCP clients. Enable MCP in Pitstop and configure a client to run `Pitstop.exe --mcp-attach`. The `module_workspace` tool queries the current trusted snapshot and accepts optional module name, target and result limit filters.
 
-The editor, Git, terminal, .NET workspace and managed debugging come from [Passenger](https://github.com/Zaneris/passenger). See the architecture guides for [Xmake](docs/architecture/xmake-workspaces.md), [clangd](docs/architecture/cpp-language-intelligence.md), [Build and Run](docs/architecture/native-build-run.md), and [module intelligence](docs/architecture/module-intelligence.md).
+The editor, Git, terminal and shared debugger infrastructure come from Passenger. See the [Passenger repository](https://github.com/Zaneris/passenger) and the architecture guides for [Xmake](docs/architecture/xmake-workspaces.md), [clangd](docs/architecture/cpp-language-intelligence.md), [Build and Run](docs/architecture/native-build-run.md), and [module intelligence](docs/architecture/module-intelligence.md).
 
 ## Known limitations and roadmap
 

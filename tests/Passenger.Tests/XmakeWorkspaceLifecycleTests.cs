@@ -12,6 +12,41 @@ namespace Passenger.Tests;
 public sealed class XmakeWorkspaceLifecycleTests
 {
     [AvaloniaFact]
+    public void Native_desktop_ignores_managed_projects_without_losing_generic_editing()
+    {
+        string folder = NewWorkspace();
+        string source = TestFolders.Write(folder, "Program.cs", "class Example {}");
+        TestFolders.Write(folder, "App.csproj", TestProjects.Console());
+        TestFolders.Write(folder, "App.slnx", "<Solution><Project Path=\"App.csproj\" /></Solution>");
+        MainWindow window = new(managedDevelopment: false)
+        {
+            EvaluateXmake = (root, _, _) => Task.FromResult(Snapshot(root, "native")),
+            Autosaves = false,
+        };
+        window.Show();
+        try
+        {
+            Ui.Await(window.OpenFolder(Path.Combine(folder, "xmake.lua")), "the native desktop project");
+            Ui.WaitFor(() => window.Session.Xmake?.Snapshot is not null, "the mixed folder's native target");
+            Assert.Null(window.Solution);
+            Assert.Empty(window.Projects);
+            Assert.Null(window.Session.CSharp);
+            Assert.Null(window.Actions[AppActions.OpenSolution]);
+            Assert.Null(window.Actions[AppActions.NewSolution]);
+            Assert.Null(window.Actions[AppActions.InstallDotnetSdk]);
+            Assert.Equal(ExplorerViewKind.Xmake, window.ExplorerView.ViewShown);
+            Assert.NotNull(window.Actions[AppActions.OpenNativeProject]);
+            Assert.NotNull(window.Actions[AppActions.NewNativeProject]);
+            Assert.Null(window.Open(source));
+            Assert.Equal(source, window.EditorArea.Active?.Path);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void Native_project_edits_preview_and_refresh_evaluated_membership()
     {
         string folder = NewWorkspace();
