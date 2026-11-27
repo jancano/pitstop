@@ -1,9 +1,6 @@
 <Project>
-  <!-- The package graph of the EF Core projects the Migrations window's tests write (SQLite's provider and the Design
-       package dotnet ef loads, at EfCoreVersion; Npgsql's provider for a compose run's Postgres, at NpgsqlEfVersion) at the
-       tests' own target, TestProjects.Framework, restored with the solution so the package cache holds them: a test folder
-       restores from the run's local feed alone, which finds the rest there (MigrationsTests), never on nuget.org. Built as
-       an empty library, never run, under none of the repo's rules, which are for Passenger's code. -->
+  <!-- Restore the packages used by managed launch, HTTP and SQL fixtures. These empty libraries keep the fixtures'
+       package graphs in the local cache so the tests can restore without contacting NuGet. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>

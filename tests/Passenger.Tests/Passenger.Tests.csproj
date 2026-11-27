@@ -108,9 +108,7 @@
   <!-- Restores the package graph used by the managed launch, SQL and HTTP regression fixtures. -->
   <ItemGroup>
     <ProjectReference Include="../EfGraphs/Sqlite/EfGraphs.Sqlite.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="../EfGraphs/SqliteOlder/EfGraphs.SqliteOlder.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="../EfGraphs/Npgsql/EfGraphs.Npgsql.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="../EfGraphs/Sqlite11/EfGraphs.Sqlite11.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../EfGraphs/CoreOlder/EfGraphs.CoreOlder.csproj" ReferenceOutputAssembly="false" />
     <AssemblyMetadata Include="EfCoreVersion" Value="$(EfCoreVersion)" />
     <AssemblyMetadata Include="EfCoreOlderVersion" Value="$(EfCoreOlderVersion)" />
   </ItemGroup>

@@ -55,16 +55,9 @@
     <!-- .NET MAUI's controls at the release of global.json's SDK: the MAUI XAML tests' app (tests/MauiGraphs), whose package graph builds a plain net11.0
          project without MAUI's workload, which CI has not. -->
     <MauiVersion>11.0.0</MauiVersion>
-    <!-- EF Core and the dotnet-ef tool for the Migrations window's tests, downloaded for the tests' local feed: at its
-         version, and at the one before for a tool that does not match and a stand-in provider that trails it. -->
+    <!-- EF Core for the managed HTTP and SQL fixtures, and both versions for the launch freshness regression. -->
     <EfCoreVersion>10.0.15</EfCoreVersion>
     <EfCoreOlderVersion>10.0.14</EfCoreOlderVersion>
-    <!-- EF Core 11 and its dotnet-ef, whose options' defaults .config/dotnet-ef.json gives, for the Migrations window's
-         test of them, downloaded for the tests' local feed. -->
-    <EfCore11Version>11.0.0</EfCore11Version>
-    <!-- Npgsql's provider of EF Core, at a version whose range holds EfCoreVersion, for the test of a compose run's
-         Postgres. -->
-    <NpgsqlEfVersion>10.0.4</NpgsqlEfVersion>
     <!-- GoDotTest at its release for Godot 4.7.2, and what it depends on but Godot's own GodotSharp, downloaded for the
          Godot tests' GoDotTest tests (tests/GodotGraphs): restored as a graph, nuget.org's GodotSharp would go into the
          package cache under the version a Godot's own packages give a game, and fail the next locked restore of either. -->
@@ -244,9 +237,8 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.15" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCoreVersion)" />
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(NpgsqlEfVersion)" />
     <PackageVersion Include="ReactiveUI" Version="$(ReactiveUiVersion)" />
     <PackageVersion Include="ReactiveUI.SourceGenerators" Version="$(ReactiveUiGeneratorsVersion)" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.2.0" />

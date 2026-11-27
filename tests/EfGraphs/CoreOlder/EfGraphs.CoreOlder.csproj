@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The initial package version used to verify a launch rebuilds after its dependency version changes. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" VersionOverride="$(EfCoreOlderVersion)" />
+  </ItemGroup>
+</Project>
