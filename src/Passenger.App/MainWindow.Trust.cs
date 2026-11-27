@@ -148,7 +148,7 @@ public partial class MainWindow
         WorkspaceTrustDialog dialog;
         try
         {
-            dialog = new WorkspaceTrustDialog(folder);
+            dialog = new WorkspaceTrustDialog(folder, ManagedDevelopment);
         }
         catch (AgentRefusedException)
         {

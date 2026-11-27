@@ -14,7 +14,11 @@ public sealed class WorkspaceTrustDialog : IdeWindow
     public const string TrustParent = "Trust Parent Folder";
     public const string Untrusted = "Open Without Trusting";
 
-    public WorkspaceTrustDialog(string folder)
+    public WorkspaceTrustDialog(string folder) : this(folder, managedDevelopment: true)
+    {
+    }
+
+    internal WorkspaceTrustDialog(string folder, bool managedDevelopment)
     {
         Folder = folder;
         Trusting = Passenger.Core.WorkspaceTrust.FolderToTrust(folder);
@@ -29,9 +33,11 @@ public sealed class WorkspaceTrustDialog : IdeWindow
         List<Control> said = [DialogFooter.Paragraph(Welcome.RecentRow.Home(Trusting))];
         if (Passenger.Core.PathNames.IsUnder(folder, Trusting))
         {
-            said.Add(DialogFooter.Paragraph(InRepository(folder, Trusting)));
+            said.Add(DialogFooter.Paragraph(managedDevelopment ? InRepository(folder, Trusting)
+                : $"You opened {NameOf(Trusting)}/{Passenger.Core.PathNames.Relative(folder, Trusting)}. Trust applies to the entire Git repository."));
         }
-        said.Add(DialogFooter.Paragraph(Refusals.TrustLets));
+        said.Add(DialogFooter.Paragraph(managedDevelopment ? Refusals.TrustLets
+            : "Trusting this workspace lets Pitstop evaluate its Xmake scripts, run builds and executables, and use its compiler, language tools and configured Git programs."));
         said.Add(DialogFooter.Paragraph(Above is not null
             ? $"Untrusted, you read and edit its files, and none of its code runs until you trust it. {TrustParent} trusts every folder in {Path.GetFileName(Above)} too."
             : "Untrusted, you read and edit its files, and none of its code runs until you trust it."));
