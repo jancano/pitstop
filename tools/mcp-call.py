@@ -25,7 +25,7 @@ import threading
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD = os.path.join("artifacts", "bin", "Passenger.App", "debug", "Pitstop")
+BUILD = os.path.join("artifacts", "bin", "Pitstop.App", "debug", "Pitstop")
 IDLE_VARIABLE = "PITSTOP_MCP_CALL_IDLE"
 PROTOCOL = "2025-06-18"
 # How long the keeper's socket is waited for as it starts, and its server's answer to initialize.

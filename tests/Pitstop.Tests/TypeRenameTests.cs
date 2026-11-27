@@ -1,0 +1,840 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.VisualTree;
+using Pitstop.App;
+using Pitstop.App.Explorer;
+using Pitstop.App.Vcs;
+using Pitstop.App.Workspace;
+using Pitstop.Core;
+using Pitstop.Editor;
+using Pitstop.Text;
+using Pitstop.Vcs;
+
+namespace Pitstop.Tests;
+
+/// <summary>Rename of a type with its file, both ways, on a real project in a Git working tree: Rename on a class named
+/// like its file renames the file too (Also rename files to reflect this change, on until turned off), its tab following,
+/// its uses changing and Git seeing a rename; Rename on the file in the Solution view offers to rename the class with it;
+/// a file named otherwise keeps its name; and Undo takes the whole rename back at once, asked first.</summary>
+public sealed class TypeRenameTests : IClassFixture<RestoredFolders>, IDisposable
+{
+    private const string Order = "namespace Shop;\n\npublic class Order\n{\n    public int Total;\n}\n";
+
+    private const string Till = "namespace Shop;\n\npublic static class Till\n{\n    public static Order Open() => new Order();\n\n    public static int Sum(Order order) => order.Total;\n}\n";
+
+    private const string Shapes = "namespace Shop;\n\npublic class Circle\n{\n}\n\npublic class Square\n{\n    public Circle Inside() => new Circle();\n}\n";
+
+    private const string Shelf = "namespace Shop;\n\npublic class shelf\n{\n    public int Width;\n}\n";
+
+    private const string Stock = "namespace Shop;\n\npublic static class Stock\n{\n    public static shelf Open() => new shelf();\n}\n";
+
+    private const string Crate = "namespace Shop;\n\npublic class Crate\n{\n}\n";
+
+    private const string Ticket = "namespace Shop;\n\npublic class Ticket\n{\n    public Ticket() { }\n}\n";
+
+    private const string Desk = "namespace Shop;\n\npublic static class Desk\n{\n    public static Ticket Issue() => new Ticket();\n}\n";
+
+    private readonly RestoredFolders folders;
+
+    private readonly string folder;
+
+    public TypeRenameTests(RestoredFolders folders) => (this.folders, folder) = (folders, PathNames.Canonical(folders.Take("type-rename-", made =>
+    {
+        string project = PathNames.Canonical(made);
+        TestFolders.Write(project, "Shop.csproj", TestProjects.Library());
+        TestFolders.Write(project, ".gitignore", "bin/\nobj/\n");
+        TestFolders.Write(project, "Order.cs", Order);
+        TestFolders.Write(project, "Till.cs", Till);
+        TestFolders.Write(project, "Shapes.cs", Shapes);
+        // The files a test renames are the project's from the start: a rename waits for its server to read one written a moment before.
+        TestFolders.Write(project, "Form1.cs", "namespace Shop;\n\npublic partial class Form1\n{\n    public int Width;\n}\n");
+        TestFolders.Write(project, "Form1.Designer.cs", "namespace Shop;\n\npublic partial class Form1\n{\n    public int Height;\n}\n");
+        TestFolders.Write(project, "Form1.resx", "<root />\n");
+        TestFolders.Write(project, "Basket.cs", "namespace Shop;\n\npublic partial class Basket\n{\n    public int Count;\n}\n");
+        TestFolders.Write(project, "Basket.Lines.cs", "namespace Shop;\n\npublic partial class Basket\n{\n    public int Lines;\n}\n");
+        TestFolders.Write(project, "BasketExtras.cs", "namespace Shop;\n\npublic partial class Basket\n{\n    public int Extras;\n}\n");
+        TestFolders.Write(project, "shelf.cs", Shelf);
+        TestFolders.Write(project, "Stock.cs", Stock);
+        TestFolders.Write(project, "crate.cs", Crate);
+        TestFolders.Write(project, "Ticket.cs", Ticket);
+        TestFolders.Write(project, "Desk.cs", Desk);
+        TestGit.Init(project);
+        return project;
+    })));
+
+    public void Dispose() => TestFolders.Delete(folder);
+
+    private string OrderPath => Path.Combine(folder, "Order.cs");
+
+    private string PurchasePath => Path.Combine(folder, "Purchase.cs");
+
+    /// <summary>The gate's renames of a class with its file, as one flow.</summary>
+    [Gate]
+    [AvaloniaFact]
+    public void A_class_and_its_partial_parts_are_renamed_with_their_files_as_one_command_of_undo()
+    {
+        Flow.StepApart("renaming a class named like its file renames the file, Git sees a rename, and Undo and Redo take it back whole", () => new TypeRenameTests(folders), t => t.Renaming_a_class_named_like_its_file_renames_the_file_Git_sees_a_rename_and_undo_and_redo_take_it_back_whole());
+        Flow.StepApart("each partial part named after its class is renamed with it, and with the file option turned off only the code is, and it stays off", () => new TypeRenameTests(folders), t => t.Each_partial_part_named_after_its_class_is_renamed_with_it_and_with_the_file_option_turned_off_only_the_code_is_and_it_stays_off());
+    }
+
+    /// <summary>A class renamed with its file, as the person, an agent, the solution view or a fix asks it: the file
+    /// and its nested files renamed with it, Git seeing renames, a file whose name differs only in letter case renamed
+    /// too, and Undo and Redo taking it back whole.</summary>
+    [AvaloniaFact]
+    public void A_class_renamed_with_its_file_is_one_command_of_undo_and_git_sees_renames_however_the_rename_was_asked()
+    {
+        Flow.StepApart("a class renamed with its file and one an agent renames commit as renames, the moves first where Git would lose one", () => new TypeRenameTests(folders), t => t.A_class_renamed_with_its_file_and_one_an_agent_renames_commit_as_renames_the_moves_first_where_git_would_lose_one());
+        Flow.StepApart("renaming a file in the solution view offers to rename its class, takes a form's nested files, and renames a file of other types alone", () => new TypeRenameTests(folders), t => t.Renaming_a_file_in_the_solution_view_offers_to_rename_its_class_takes_a_forms_nested_files_and_renames_a_file_of_other_types_alone());
+        Flow.StepApart("a copy of a class's file renamed with its class in the solution view renames the copy alone", () => new TypeRenameTests(folders), t => t.A_copy_of_a_classs_file_renamed_with_its_class_in_the_solution_view_renames_the_copy_alone());
+        Flow.StepApart("Fix Name Violation on a class named like its file renames the file in letter case, and Undo takes both back", () => new TypeRenameTests(folders), t => t.Fix_name_violation_on_a_class_named_like_its_file_renames_the_file_in_letter_case_and_undo_takes_both_back());
+        Flow.StepApart("the rename of a class whose file cannot be renamed is refused before anything changes, and made once the file is let go", () => new TypeRenameTests(folders), t => t.Rename_of_a_class_whose_file_cannot_be_renamed_is_refused_before_anything_changes_and_made_once_the_file_is_let_go());
+    }
+
+    /// <summary>A rename meeting what else goes on loses nothing: a line typed while it is out, Undo pressed while it
+    /// writes its closed files, a rename asked while an Undo's writes are held, a closed file gone partway; and one
+    /// across large closed files costs the window's thread what one across small ones does.</summary>
+    [AvaloniaFact]
+    public void A_rename_meeting_typing_an_undo_or_a_file_gone_loses_nothing_and_costs_the_window_what_a_small_one_does()
+    {
+        Flow.StepApart("a line typed in a class's file while its rename is out still renames the class and its file", () => new TypeRenameTests(folders), t => t.A_line_typed_in_a_classs_file_while_its_rename_is_out_still_renames_the_class_and_its_file());
+        Flow.StepApart("a line typed in a file the solution view renames with its class still takes the class's other part along", () => new TypeRenameTests(folders), t => t.A_line_typed_in_a_file_the_solution_view_renames_with_its_class_still_takes_the_classs_other_part_along());
+        Flow.StepApart("Undo pressed while a rename writes its closed files waits for it and takes the whole rename back", () => new TypeRenameTests(folders), t => t.Undo_pressed_while_a_rename_writes_its_closed_files_waits_for_it_and_takes_the_whole_rename_back());
+        Flow.StepApart("a rename asked for while an Undo's writes are held waits for them and renames every use as Undo left it", () => new TypeRenameTests(folders), t => t.A_rename_asked_for_while_an_undos_writes_are_held_waits_for_them_and_renames_every_use_as_undo_left_it());
+        Flow.StepApart("a rename refused partway by a closed file gone takes back every change and leaves nothing unsaved", () => new TypeRenameTests(folders), t => t.A_rename_refused_partway_by_a_closed_file_gone_takes_back_every_change_and_leaves_nothing_unsaved());
+        Flow.StepApart("a rename across large closed files costs the window's thread what one across small ones does, and Undo takes it back whole", () => new TypeRenameTests(folders), t => t.A_rename_across_large_closed_files_costs_the_window_thread_what_one_across_small_ones_does_and_undo_takes_it_back_whole());
+    }
+
+    /// <summary>Rename on a class named like its file renames the file with it, its tab, breakpoint and bookmark following,
+    /// its uses changing and Git seeing a rename; then Undo in the editor takes back what was typed after it on its own,
+    /// and the next Undo the class, its file and the other file together, asked first, and Redo makes it all again.</summary>
+    private void Renaming_a_class_named_like_its_file_renames_the_file_Git_sees_a_rename_and_undo_and_redo_take_it_back_whole()
+    {
+        string till = Path.Combine(folder, "Till.cs");
+        MainWindow window = Open("Order.cs");
+        List<(string Title, string Text)> asked = Answer(window);
+        OpenDocument document = window.EditorArea.Active!;
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Ui.PlaceAfter(editor, "Total;");
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Ui.Run(window, AppActions.ToggleBookmark);
+
+        RenameAt(window, "class Ord", "Purchase");
+
+        Assert.False(File.Exists(OrderPath), $"Order.cs is still there after its class was renamed: {window.Status}");
+        Assert.True(File.Exists(PurchasePath), $"Order.cs was not renamed with its class: {window.Status}");
+        Assert.True(ReferenceEquals(document, Assert.Single(window.EditorArea.Documents)), "The renamed file's tab was closed and opened again");
+        Assert.Equal(PurchasePath, document.Path);
+        Assert.Equal("Purchase.cs", window.EditorArea.Active?.Name);
+        Assert.Equal(4, Assert.Single(window.Debugger.Breakpoints.In(PurchasePath)).Line);
+        Assert.Empty(window.Debugger.Breakpoints.In(OrderPath));
+        Assert.Equal(PurchasePath, Assert.Single(window.Bookmarks.All).Path);
+        Assert.Equal(Order.Replace("Order", "Purchase", StringComparison.Ordinal), File.ReadAllText(PurchasePath));
+        Assert.Equal(Till.Replace("Order", "Purchase", StringComparison.Ordinal), File.ReadAllText(till));
+
+        Ui.WaitFor(() => window.Vcs.Changes.Any(c => c.Kind == ChangeKind.Renamed && c.Path == PurchasePath && c.From == OrderPath), "Git to list Order.cs renamed to Purchase.cs");
+        string status = Git("status", "--porcelain");
+        Assert.True(status.Split('\n').Any(l => l.StartsWith('R') && l.EndsWith("Order.cs -> Purchase.cs", StringComparison.Ordinal)), $"git status shows no rename:\n{status}");
+
+        editor.Focus();
+        Ui.PlaceAfter(editor, "Total;");
+        window.KeyTextInput(" // kept");
+        Ui.Run(window, EditorActions.Undo);
+        Assert.Empty(asked);
+        Assert.Equal(Order.Replace("Order", "Purchase", StringComparison.Ordinal), document.Text.Snapshot.ToString());
+
+        Ui.Run(window, EditorActions.Undo);
+        Assert.Equal([("Undo", "Undo Rename Order to Purchase? It changes Purchase.cs and Till.cs, and renames Purchase.cs back to Order.cs.")], asked);
+        Assert.True(File.Exists(OrderPath), $"Undo did not rename Purchase.cs back: {window.Status}");
+        Assert.False(File.Exists(PurchasePath), "Undo left Purchase.cs");
+        Assert.Equal(OrderPath, document.Path);
+        Assert.Equal("Order.cs", window.EditorArea.Active?.Name);
+        Assert.Equal(Order, document.Text.Snapshot.ToString());
+        Assert.Equal(Till, File.ReadAllText(till));
+        window.EditorArea.SaveAll();
+        _ = window.Vcs.RefreshAsync();
+        Ui.WaitFor(() => window.Vcs.Changes.Count == 0, "Git to list nothing changed once the rename was undone");
+        Assert.Equal(string.Empty, Git("status", "--porcelain"));
+
+        Ui.Run(window, EditorActions.Redo);
+        Assert.Equal(("Redo", "Redo Rename Order to Purchase? It changes Order.cs and Till.cs, and renames Order.cs to Purchase.cs."), asked[^1]);
+        Assert.True(File.Exists(PurchasePath), $"Redo did not rename Order.cs again: {window.Status}");
+        Assert.Equal(PurchasePath, document.Path);
+        Assert.Equal(Order.Replace("Order", "Purchase", StringComparison.Ordinal), document.Text.Snapshot.ToString());
+        Assert.Equal(Till.Replace("Order", "Purchase", StringComparison.Ordinal), File.ReadAllText(till));
+        window.Close();
+    }
+
+    /// <summary>A class renamed with its file in the editor, and another an agent renames, each list as renamed, and the
+    /// Commit window commits both as renames: Till.cs, whose class and uses of the first both changed, changed past what
+    /// git finds alike, so the window offers the moves first, and they are a commit of their own before the edits.</summary>
+    private void A_class_renamed_with_its_file_and_one_an_agent_renames_commit_as_renames_the_moves_first_where_git_would_lose_one()
+    {
+        string till = Path.Combine(folder, "Till.cs");
+        string register = Path.Combine(folder, "Register.cs");
+        MainWindow window = Open("Order.cs");
+        Answer(window);
+
+        RenameAt(window, "class Ord", "Purchase");
+        Ui.WaitFor(() => window.Vcs.Changes.Any(c => c.Kind == ChangeKind.Renamed && c.Path == PurchasePath && c.From == OrderPath), "Git to list Order.cs renamed to Purchase.cs");
+        string said = Ui.Await(new Pitstop.App.Mcp.PitstopTools(window).Rename("Register", symbol: "Till"), "the agent's rename");
+        Assert.True(File.Exists(register), $"The agent's rename left Till.cs: {said}");
+        Ui.WaitFor(() => window.Vcs.Changes.Any(c => c.Kind == ChangeKind.Renamed && c.Path == register && c.From == till), "Git to list Till.cs renamed to Register.cs");
+
+        Pitstop.App.ToolWindows.CommitView commit = window.CommitView;
+        window.Perform(AppActions.Commit);
+        Ui.WaitFor(() => commit.OffersMovesFirst, () => $"the offer to commit the moves first, where Git lists {string.Join(", ", window.Vcs.Changes.Select(c => $"{c.Name} ({c.Kind})"))}");
+        Assert.Equal("Committed with its edits, Register.cs would no longer be seen by Git as renamed from Till.cs: too much of it changed. "
+            + "Committing the moves first, on their own, keeps its history.", commit.MovesSaid);
+        Assert.Equal("Rename 2 files", commit.MovesMessage);
+        commit.Message = "Rename the order and the till";
+        Ui.ClickButton(commit, "Commit");
+        Ui.WaitFor(() => window.Vcs.Changes.Count == 0 && !window.Vcs.IsBusy, () => $"the commits, where the status bar says '{window.Status}'");
+
+        Assert.Equal("Rename the order and the till\nRename 2 files", Git("log", "-2", "--format=%s").Trim());
+        Assert.Equal(["R100\tOrder.cs\tPurchase.cs", "R100\tTill.cs\tRegister.cs"], Shown("HEAD~1"));
+        Assert.Equal(["M\tPurchase.cs", "M\tRegister.cs"], Shown("HEAD"));
+        window.Close();
+    }
+
+    /// <summary>Every part of a partial class in a file named after it is renamed with it, a part named otherwise is not;
+    /// then, with Also rename files to reflect this change turned off, only the code is renamed, and the option stays off
+    /// for the next rename.</summary>
+    private void Each_partial_part_named_after_its_class_is_renamed_with_it_and_with_the_file_option_turned_off_only_the_code_is_and_it_stays_off()
+    {
+        MainWindow window = Open("Basket.Lines.cs");
+
+        IReadOnlyList<string> offered = RenameAt(window, "class Bask", "Cart");
+
+        Assert.Equal(["Basket.Lines.cs", "Basket.cs"], offered.Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.True(File.Exists(Path.Combine(folder, "Cart.cs")), $"Basket.cs was not renamed with its class: {window.Status}");
+        Assert.True(File.Exists(Path.Combine(folder, "Cart.Lines.cs")), $"Basket.Lines.cs was not renamed with its class: {window.Status}");
+        Assert.Equal("Cart.Lines.cs", window.EditorArea.Active?.Name);
+        Assert.Contains("public partial class Cart", File.ReadAllText(Path.Combine(folder, "BasketExtras.cs")), StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(folder, "Basket.cs")), "Basket.cs is still there");
+
+        window.OpenFile(OrderPath);
+        Ui.Settle();
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "class Ord");
+        Ui.Run(window, AppActions.Rename);
+        Ui.WaitFor(() => window.Assist.RenameOffersFiles.Count > 0, "the rename to offer Order.cs");
+        CheckBox option = Option(window, "Also rename files to reflect this change");
+        Assert.True(option.IsChecked, "Renaming a class named like its file does not rename the file unless asked, as Rider's does");
+        Ui.Click(option);
+        Assert.False(option.IsChecked, "A click did not clear Also rename files to reflect this change");
+        window.KeyTextInput("Purchase");
+        Ui.Press(window, "ENTER");
+        Ui.Settle();
+
+        Assert.False(File.Exists(PurchasePath), "The file was renamed with the option turned off");
+        Assert.Equal("Order.cs", window.EditorArea.Active?.Name);
+        Assert.Equal(Order.Replace("class Order", "class Purchase", StringComparison.Ordinal), window.EditorArea.Active?.Text.Snapshot.ToString());
+        Assert.Equal(Till.Replace("Order", "Purchase", StringComparison.Ordinal), File.ReadAllText(Path.Combine(folder, "Till.cs")));
+
+        window.OpenFile(Path.Combine(folder, "Till.cs"));
+        Ui.Settle();
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "class Ti");
+        Ui.Run(window, AppActions.Rename);
+        Ui.WaitFor(() => window.Assist.RenameOffersFiles.Count > 0, "the rename to offer Till.cs");
+        Assert.False(Option(window, "Also rename files to reflect this change").IsChecked, "The file option turned off came back on");
+        Ui.Press(window, "ESCAPE");
+        Assert.Null(window.Assist.Renaming);
+        window.Close();
+    }
+
+    /// <summary>A copy of a class's file in another folder declares the class again (CS0101); renamed in the solution view
+    /// with its class, or its class renamed in its editor, the copy alone takes the new name: the original keeps its file
+    /// and its class, and what uses the class is left as it was (#2284).</summary>
+    private void A_copy_of_a_classs_file_renamed_with_its_class_in_the_solution_view_renames_the_copy_alone()
+    {
+        string original = Path.Combine(folder, "Ticket.cs");
+        string copies = Path.Combine(folder, "Copies");
+        string copy = TestFolders.Write(folder, "Copies/Ticket.cs", Ticket);
+        string voucher = Path.Combine(copies, "Voucher.cs");
+        MainWindow window = Open("Desk.cs");
+        try
+        {
+            Choose(window, copy);
+            Ui.Run(window, AppActions.Rename);
+            NamePopup popup = Assert.IsType<NamePopup>(window.Popup);
+            Assert.True(popup.Option?.IsChecked == true, "Renaming the copy of Ticket.cs did not offer to rename its class with it");
+            window.KeyTextInput("Voucher");
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => !window.IsPopupOpen, $"the rename to finish: {popup.Problem}");
+            Assert.True(File.Exists(original) && File.ReadAllText(original) == Ticket,
+                $"Renaming the copy renamed its original too: {(File.Exists(original) ? File.ReadAllText(original) : "Ticket.cs is gone")}");
+            Assert.False(File.Exists(copy), "The copy kept its name");
+            Assert.Equal(Ticket.Replace("Ticket", "Voucher", StringComparison.Ordinal), File.ReadAllText(voucher));
+            Assert.Equal(Desk, window.EditorArea.CodeEditor.Document.Snapshot.ToString());
+
+            // Renamed in the editor of another copy, the class is that copy's alone, and its file the one offered.
+            string again = TestFolders.Write(folder, "Copies/Ticket.cs", Ticket);
+            window.OpenFile(again);
+            Ui.Settle();
+            Assert.Equal([again], RenameAt(window, "class Tick", "Pass"));
+            string pass = Path.Combine(copies, "Pass.cs");
+            Ui.WaitFor(() => File.Exists(pass), $"the copy renamed with its class: {window.Status}");
+            Assert.Equal(Ticket.Replace("Ticket", "Pass", StringComparison.Ordinal), window.EditorArea.Active?.Text.Snapshot.ToString());
+            Assert.True(File.ReadAllText(original) == Ticket, $"Renaming the copy's class renamed its original's too: {File.ReadAllText(original)}");
+            Assert.Equal(Desk, File.ReadAllText(Path.Combine(folder, "Desk.cs")));
+        }
+        finally
+        {
+            window.Close();
+            Directory.Delete(copies, recursive: true);
+        }
+    }
+
+    /// <summary>Rename on a file in the Solution view offers to rename the class it is named after, which renames it and its
+    /// uses, every row but the file's own staying the row it was, and Undo there takes both back, asked first in words that
+    /// name the file's name going back too; a form's files nested under it go along; and a file holding types of other
+    /// names keeps its name when one of them is renamed, is renamed alone in the Solution view, and named back by Undo
+    /// there.</summary>
+    private void Renaming_a_file_in_the_solution_view_offers_to_rename_its_class_takes_a_forms_nested_files_and_renames_a_file_of_other_types_alone()
+    {
+        MainWindow window = Open("Till.cs");
+        List<(string Title, string Text)> asked = Answer(window);
+        Choose(window, OrderPath);
+        Ui.Run(window, AppActions.Rename);
+        NamePopup popup = Assert.IsType<NamePopup>(window.Popup);
+        Assert.Equal("Order.cs", popup.Text);
+        CheckBox option = popup.Option ?? throw new Xunit.Sdk.XunitException("Renaming Order.cs did not offer to rename the class Order");
+        Assert.Equal("Rename type 'Order' to match the new file name", option.Content);
+        Assert.True(option.IsChecked, "Rider renames the type with its file unless asked not to");
+        window.KeyTextInput("Purchase");
+        FilesFollowed.Check(window, "Renaming Order.cs with its class", [OrderPath, PurchasePath], () =>
+        {
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => !window.IsPopupOpen, $"the rename to finish: {popup.Problem}");
+        });
+
+        Assert.False(File.Exists(OrderPath), "Order.cs is still there");
+        Assert.Equal(Order.Replace("Order", "Purchase", StringComparison.Ordinal), File.ReadAllText(PurchasePath));
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Assert.Equal(Till.Replace("Order", "Purchase", StringComparison.Ordinal), editor.Document.Snapshot.ToString());
+        Assert.Contains(window.ExplorerView.Tree.Rows, r => r.Path == PurchasePath);
+        Ui.WaitFor(() => window.Vcs.Changes.Any(c => c.Kind == ChangeKind.Renamed && c.Path == PurchasePath), "Git to list Order.cs renamed");
+
+        Choose(window, PurchasePath);
+        Ui.Run(window, EditorActions.Undo);
+        Assert.Equal([("Undo", "Undo Rename Order to Purchase? It changes Till.cs and Purchase.cs, and renames Purchase.cs back to Order.cs.")], asked);
+        Assert.True(File.Exists(OrderPath), $"Undo did not rename Purchase.cs back: {window.Status}");
+        Assert.False(File.Exists(PurchasePath), "Undo left Purchase.cs");
+        Assert.Equal(Order, File.ReadAllText(OrderPath));
+        Assert.Equal(Till, editor.Document.Snapshot.ToString());
+
+        Choose(window, Path.Combine(folder, "Form1.cs"));
+        Ui.Run(window, AppActions.Rename);
+        popup = Assert.IsType<NamePopup>(window.Popup);
+        Assert.True(popup.Option?.IsChecked == true, "Renaming Form1.cs did not offer to rename the class Form1 with it");
+        window.KeyTextInput("Window1");
+        Ui.Press(window, "ENTER");
+        Ui.WaitFor(() => !window.IsPopupOpen, $"the rename to finish: {popup.Problem}");
+        Assert.Equal(["Window1.Designer.cs", "Window1.cs", "Window1.resx"], Directory.GetFiles(folder, "Window1*").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Empty(Directory.GetFiles(folder, "Form1*"));
+        Assert.Contains("public partial class Window1", File.ReadAllText(Path.Combine(folder, "Window1.Designer.cs")), StringComparison.Ordinal);
+
+        string shapes = Path.Combine(folder, "Shapes.cs");
+        string figures = Path.Combine(folder, "Figures.cs");
+        window.OpenFile(shapes);
+        Ui.Settle();
+        RenameAt(window, "class Circ", "Ring", offered: false);
+        Assert.True(File.Exists(shapes), "Shapes.cs was renamed with a class it is not named after");
+        Assert.Contains("public class Ring", window.EditorArea.Active?.Text.Snapshot.ToString(), StringComparison.Ordinal);
+
+        window.EditorArea.SaveAll();
+        Choose(window, shapes);
+        Ui.Run(window, AppActions.Rename);
+        popup = Assert.IsType<NamePopup>(window.Popup);
+        Assert.Null(popup.Option);
+        window.KeyTextInput("Figures");
+        Ui.Press(window, "ENTER");
+        Ui.WaitFor(() => !window.IsPopupOpen, $"the rename to finish: {popup.Problem}");
+        Assert.False(File.Exists(shapes), "Shapes.cs is still there");
+        Assert.Equal(Shapes.Replace("Circle", "Ring", StringComparison.Ordinal), File.ReadAllText(figures));
+        Assert.Equal("Figures.cs", window.EditorArea.Active?.Name);
+
+        asked.Clear();
+        Choose(window, figures);
+        Ui.Run(window, EditorActions.Undo);
+        Assert.Equal([("Undo", "Undo Rename Shapes.cs to Figures.cs? It renames Figures.cs back to Shapes.cs.")], asked);
+        Assert.True(File.Exists(shapes), $"Undo did not name Figures.cs back: {window.Status}");
+        Assert.Equal("Shapes.cs", window.EditorArea.Active?.Name);
+        window.Close();
+    }
+
+    /// <summary>A line typed at the top of a class's file while the class's rename is out goes in above it, and the rename
+    /// still lands on the class: its declaration and uses renamed and its file renamed with it, where the place the rename
+    /// was asked at, and the places the server named the class's files by, no longer named the class.</summary>
+    private void A_line_typed_in_a_classs_file_while_its_rename_is_out_still_renames_the_class_and_its_file()
+    {
+        MainWindow window = Open("Order.cs");
+        OpenDocument document = window.EditorArea.Active!;
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Ui.PlaceAfter(editor, "class Ord");
+        editor.Focus();
+        Ui.Run(window, AppActions.Rename);
+        Ui.WaitFor(() => window.Assist.RenameOffersFiles.Count > 0, "the rename to offer Order.cs");
+        window.KeyTextInput("Purchase");
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.None, null);
+        editor.ApplyEdits([new TextEdit(0, 0, "// typed meanwhile\n")]);
+        Ui.Settle();
+
+        Assert.True(File.Exists(PurchasePath), $"Order.cs was not renamed with its class, a line typed meanwhile: {window.Status}");
+        Assert.False(File.Exists(OrderPath), "Order.cs is still there");
+        Assert.Equal(PurchasePath, document.Path);
+        Assert.Equal("// typed meanwhile\n" + Order.Replace("Order", "Purchase", StringComparison.Ordinal), document.Text.Snapshot.ToString());
+        Assert.Equal(Till.Replace("Order", "Purchase", StringComparison.Ordinal), File.ReadAllText(Path.Combine(folder, "Till.cs")));
+        window.Close();
+    }
+
+    /// <summary>A rename reads and writes the closed files it changes off the window's thread: renaming a method used in
+    /// three closed files of 2 MB each costs that thread no more than renaming one used in three small ones, where a read of
+    /// one of them there costs at least its bytes; and the rename is still one step of Undo, which puts every file back.</summary>
+    private void A_rename_across_large_closed_files_costs_the_window_thread_what_one_across_small_ones_does_and_undo_takes_it_back_whole()
+    {
+        const int Large = 2 * 1024 * 1024;
+        const string Filler = "// a line of filler, with nothing in it to rename\n";
+        string filler = string.Concat(Enumerable.Repeat(Filler, Large / Filler.Length + 1));
+        TestFolders.Write(folder, "Tally.cs", "namespace Shop;\n\npublic static class Tally\n{\n    public static int Few(int value) => value;\n\n    public static int Many(int value) => value;\n}\n");
+        List<string> written = [Path.Combine(folder, "Tally.cs")];
+        for (int i = 0; i < 3; i++)
+        {
+            written.Add(TestFolders.Write(folder, $"Small{i}.cs", $"namespace Shop;\n\npublic static class Small{i}\n{{\n    public static int Use() => Tally.Few({i});\n}}\n"));
+            written.Add(TestFolders.Write(folder, $"Large{i}.cs", $"namespace Shop;\n\npublic static class Large{i}\n{{\n    public static int Use() => Tally.Many({i});\n}}\n" + filler));
+        }
+        // Long written: a rename waits for its server to read a file written a moment before, which the measure would count.
+        foreach (string path in written)
+        {
+            File.SetLastWriteTimeUtc(path, DateTime.UtcNow - TimeSpan.FromMinutes(1));
+        }
+        string large = Path.Combine(folder, "Large0.cs");
+        string before = File.ReadAllText(large);
+        MainWindow window = Open("Tally.cs");
+        List<(string Title, string Text)> asked = Answer(window);
+        try
+        {
+            long few = Cost("int Fe", "Fewer");
+            long many = Cost("int Ma", "More");
+            Assert.True(many < few + Large,
+                $"A rename across three closed files of 2 MB allocated {many / 1024} KB on the window's thread, across three small ones {few / 1024} KB: the files are read or written there, freezing the window as they grow");
+            Assert.Equal(before.Replace("Tally.Many(", "Tally.More(", StringComparison.Ordinal), File.ReadAllText(large));
+            Assert.Contains("Tally.Fewer(1)", File.ReadAllText(Path.Combine(folder, "Small1.cs")), StringComparison.Ordinal);
+
+            Ui.Run(window, EditorActions.Undo);
+            Ui.WaitFor(() => window.Status == "Undone: Rename Many to More", () => $"Undo of the rename across the large files; the status says '{window.Status}'");
+            (string title, string text) = Assert.Single(asked);
+            Assert.Equal("Undo", title);
+            Assert.True(text.StartsWith("Undo Rename Many to More? It changes ", StringComparison.Ordinal) && new[] { "Large0.cs", "Large1.cs", "Large2.cs", "Tally.cs" }.All(n => text.Contains(n, StringComparison.Ordinal)),
+                $"Undo asked '{text}', not once for the whole rename");
+            Assert.Equal(before, File.ReadAllText(large));
+            Assert.Contains("Tally.Fewer(1)", File.ReadAllText(Path.Combine(folder, "Small1.cs")), StringComparison.Ordinal);
+            Assert.Contains("int Many(int value)", window.EditorArea.Active?.Text.Snapshot.ToString(), StringComparison.Ordinal);
+            Assert.Contains("int Fewer(int value)", window.EditorArea.Active?.Text.Snapshot.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+
+        // What renaming the method at the end of a piece of Tally.cs allocated on the window's thread, from Enter till done.
+        long Cost(string after, string name)
+        {
+            Ui.PlaceAfter(window.EditorArea.CodeEditor, after);
+            window.EditorArea.CodeEditor.Focus();
+            Ui.Run(window, AppActions.Rename);
+            Ui.Settle();
+            Assert.True(window.Assist.Renaming is not null, "Rename opened no box");
+            window.KeyTextInput(name);
+            long start = GC.GetAllocatedBytesForCurrentThread();
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => window.Status == "Renamed in 4 files", () => $"the rename to {name}; the status says '{window.Status}'");
+            return GC.GetAllocatedBytesForCurrentThread() - start;
+        }
+    }
+
+    /// <summary>Undo pressed in the open file as soon as a rename across closed files shows there, while those files are
+    /// still being written, waits for the rename and then takes all of it back, asked once: the open file's change is
+    /// never undone on its own, which would leave the rename's Undo refused and the solution half renamed.</summary>
+    private void Undo_pressed_while_a_rename_writes_its_closed_files_waits_for_it_and_takes_the_whole_rename_back()
+    {
+        IReadOnlyList<string> uses = WriteTally(6);
+        MainWindow window = Open("Tally.cs");
+        List<(string Title, string Text)> asked = Answer(window);
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            Task held = window.EditorArea.Commands.HoldNextWrite(release.Task);
+            OpenRenameBox(window, "int Ma", "More");
+            Ui.Press(window, "ENTER", settle: false);
+            Ui.PumpUntil(() => held.IsCompleted, "the rename's writes of its closed files to be held");
+            Assert.Contains("int More(int value)", Text(window), StringComparison.Ordinal);
+
+            Ui.Run(window, EditorActions.Undo, settle: false);
+            Ui.Hold(TimeSpan.FromMilliseconds(300), "a moment in which Undo would take the open file's step on its own");
+            Assert.True(Text(window).Contains("int More(int value)", StringComparison.Ordinal),
+                $"Undo took the open file's part of the rename on its own while its closed files were written: {window.Status}");
+            release.SetResult();
+            Ui.WaitFor(() => window.Status == "Undone: Rename Many to More", () => $"Undo of the whole rename once it was made; the status says '{window.Status}'");
+            (string title, string text) = Assert.Single(asked);
+            Assert.Equal("Undo", title);
+            Assert.StartsWith("Undo Rename Many to More? It changes ", text, StringComparison.Ordinal);
+            Assert.Contains("int Many(int value)", Text(window), StringComparison.Ordinal);
+            foreach (string use in uses)
+            {
+                Assert.True(File.ReadAllText(use).Contains("Tally.Many(", StringComparison.Ordinal), $"{Path.GetFileName(use)} kept the rename after its Undo: {File.ReadAllText(use)}");
+            }
+        }
+        finally
+        {
+            release.TrySetResult();
+            window.Close();
+        }
+    }
+
+    /// <summary>A rename asked for while an Undo's writes of closed files are held waits for them, then is worked out on the
+    /// files as Undo left them: never made on the text before the Undo, nor only in the open file while Undo puts the
+    /// closed files back, either of which leaves the solution half renamed.</summary>
+    private void A_rename_asked_for_while_an_undos_writes_are_held_waits_for_them_and_renames_every_use_as_undo_left_it()
+    {
+        IReadOnlyList<string> uses = WriteTally(4);
+        MainWindow window = Open("Tally.cs");
+        Answer(window);
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            RenameAt(window, "int Ma", "More", offered: false);
+            Assert.True(window.Status == "Renamed in 5 files", $"The first rename: {window.Status}");
+            Task held = window.EditorArea.Commands.HoldNextWrite(release.Task);
+            Ui.Run(window, EditorActions.Undo, settle: false);
+            Ui.PumpUntil(() => held.IsCompleted, "Undo's writes of the closed files to be held");
+            Assert.Contains("int Many(int value)", Text(window), StringComparison.Ordinal);
+
+            OpenRenameBox(window, "int Ma", "Most");
+            Ui.Press(window, "ENTER", settle: false);
+            Ui.Hold(TimeSpan.FromMilliseconds(500), "a moment in which the rename would be asked of the files before Undo wrote them");
+            release.SetResult();
+            Ui.WaitFor(() => window.Status == "Renamed in 5 files" || window.Status?.StartsWith("Rename was not applied", StringComparison.Ordinal) == true,
+                () => $"the second rename to be made or refused; the status says '{window.Status}'");
+            string name = window.Status == "Renamed in 5 files" ? "Most" : "Many";
+            Assert.Contains($"int {name}(int value)", Text(window), StringComparison.Ordinal);
+            foreach (string use in uses)
+            {
+                Assert.True(File.ReadAllText(use).Contains($"Tally.{name}(", StringComparison.Ordinal),
+                    $"{Path.GetFileName(use)} does not call Tally.{name} as Tally.cs declares it ({window.Status}): {File.ReadAllText(use)}");
+            }
+        }
+        finally
+        {
+            release.TrySetResult();
+            window.Close();
+        }
+    }
+
+    /// <summary>A rename refused partway, a closed file gone as its writes reach it, takes back all it did: the open files
+    /// as they were with nothing left unsaved, the closed files it had written put back, and no command left for Undo.</summary>
+    private void A_rename_refused_partway_by_a_closed_file_gone_takes_back_every_change_and_leaves_nothing_unsaved()
+    {
+        IReadOnlyList<string> uses = WriteTally(4);
+        Dictionary<string, string> before = uses.ToDictionary(u => u, File.ReadAllText);
+        MainWindow window = Open(Path.GetFileName(uses[0]));
+        window.OpenFile(Path.Combine(folder, "Tally.cs"));
+        Ui.Settle();
+        string tally = Text(window);
+        OpenDocument use = window.EditorArea.Find(uses[0]) ?? throw new Xunit.Sdk.XunitException("Use0.cs is not open");
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            Task held = window.EditorArea.Commands.HoldNextWrite(release.Task);
+            OpenRenameBox(window, "int Ma", "More");
+            Ui.Press(window, "ENTER", settle: false);
+            Ui.PumpUntil(() => held.IsCompleted, "the rename's writes of its closed files to be held");
+            Assert.True(Text(window).Contains("int More(int value)", StringComparison.Ordinal) && use.Text.Snapshot.ToString().Contains("Tally.More(", StringComparison.Ordinal),
+                "The rename was not made in the open files before its closed files were written");
+            // The closed file the rename writes last goes, so those before it are written and the write is refused there.
+            IReadOnlyList<string> writing = window.EditorArea.Commands.PathsWriting();
+            string gone = writing[^1];
+            File.Delete(gone);
+            release.SetResult();
+            Ui.WaitFor(() => window.Status?.StartsWith("Rename failed: ", StringComparison.Ordinal) == true, () => $"the rename to be refused; the status says '{window.Status}'");
+
+            Assert.StartsWith($"Rename failed: {Path.GetFileName(gone)} could not be written: ", window.Status, StringComparison.Ordinal);
+            Assert.DoesNotContain("could not all be put back", window.Status, StringComparison.Ordinal);
+            Assert.True(Text(window) == tally, $"Tally.cs kept the rename refused:\n{Text(window)}");
+            Assert.True(use.Text.Snapshot.ToString() == before[uses[0]], $"Use0.cs kept the rename refused:\n{use.Text.Snapshot}");
+            Assert.True(window.EditorArea.Documents.All(d => !d.IsModified),
+                $"The rename refused left {string.Join(", ", window.EditorArea.Documents.Where(d => d.IsModified).Select(d => d.Name))} changed and unsaved");
+            Assert.False(File.Exists(gone), $"{Path.GetFileName(gone)} came back");
+            foreach (string written in writing.Take(writing.Count - 1))
+            {
+                Assert.True(File.ReadAllText(written) == before[written], $"{Path.GetFileName(written)} kept the rename refused: {File.ReadAllText(written)}");
+                Assert.True(File.GetLastWriteTimeUtc(written) > DateTime.UtcNow - TimeSpan.FromSeconds(30), $"{Path.GetFileName(written)} was never written, so the rename was refused before it began");
+            }
+            Assert.True(window.EditorArea.Commands.ToUndo(null) is null, "The rename refused left a command for Undo to take back");
+        }
+        finally
+        {
+            release.TrySetResult();
+            window.Close();
+        }
+    }
+
+    /// <summary>Rename of a class whose file the disk will not rename (held open by another program on Windows, its folder
+    /// read-only elsewhere) is refused before anything changes, naming the file: no file's code renamed, none written, no
+    /// command left for Undo; asked again once the file is let go, it renames the code and the file.</summary>
+    private void Rename_of_a_class_whose_file_cannot_be_renamed_is_refused_before_anything_changes_and_made_once_the_file_is_let_go()
+    {
+        const string Declared = "namespace Shop;\n\npublic class Ledger\n{\n    public int Lines;\n}\n";
+        string ledger = TestFolders.Write(folder, "Ledgers/Ledger.cs", Declared);
+        string journal = Path.Combine(folder, "Ledgers", "Journal.cs");
+        List<string> uses = [];
+        for (int i = 0; i < 3; i++)
+        {
+            uses.Add(TestFolders.Write(folder, $"Book{i}.cs", $"namespace Shop;\n\npublic static class Book{i}\n{{\n    public static int Count(Ledger ledger) => ledger.Lines + {i};\n}}\n"));
+        }
+        foreach (string path in uses.Append(ledger))
+        {
+            File.SetLastWriteTimeUtc(path, DateTime.UtcNow - TimeSpan.FromMinutes(1));
+        }
+        Dictionary<string, string> before = uses.ToDictionary(u => u, File.ReadAllText);
+        MainWindow window = Open(Path.Combine("Ledgers", "Ledger.cs"));
+        Answer(window);
+        IDisposable? held = Unrenamable(ledger);
+        try
+        {
+            RenameAt(window, "class Led", "Journal");
+            Assert.True(window.Status?.StartsWith("Rename failed: Ledger.cs ", StringComparison.Ordinal) == true && window.Status.EndsWith(": nothing was changed", StringComparison.Ordinal),
+                $"A rename whose file the disk would not let go said '{window.Status}', not that it was refused before anything changed");
+            Assert.Equal(Declared, Text(window));
+            Assert.Equal(Declared, File.ReadAllText(ledger));
+            Assert.False(File.Exists(journal), "Ledger.cs was renamed though the disk refused it");
+            foreach (string use in uses)
+            {
+                Assert.True(File.ReadAllText(use) == before[use], $"{Path.GetFileName(use)} was changed by a rename refused: {File.ReadAllText(use)}");
+            }
+            Assert.True(window.EditorArea.Commands.ToUndo(null) is null, "The rename refused left a command for Undo to take back");
+
+            held.Dispose();
+            held = null;
+            RenameAt(window, "class Led", "Journal");
+            Assert.Equal("Renamed in 4 files; Ledger.cs to Journal.cs", window.Status);
+            Assert.True(File.Exists(journal) && !File.Exists(ledger), "Ledger.cs was not renamed with its class once the disk let it go");
+            Assert.Contains("public class Journal", Text(window), StringComparison.Ordinal);
+            foreach (string use in uses)
+            {
+                Assert.True(File.ReadAllText(use).Contains("(Journal ledger)", StringComparison.Ordinal), $"{Path.GetFileName(use)} was left calling Ledger: {File.ReadAllText(use)}");
+            }
+        }
+        finally
+        {
+            held?.Dispose();
+            window.Close();
+        }
+    }
+
+    /// <summary>A file the disk will not rename until disposed: on Windows held open by another program, elsewhere in a
+    /// folder made read-only.</summary>
+    private static IDisposable Unrenamable(string path)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+        return new ReadOnlyFolder(Path.GetDirectoryName(path)!);
+    }
+
+    /// <summary>A folder made read-only, its own mode given back once disposed.</summary>
+    [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
+    private sealed class ReadOnlyFolder : IDisposable
+    {
+        private readonly string folder;
+        private readonly UnixFileMode was;
+
+        public ReadOnlyFolder(string folder)
+        {
+            this.folder = folder;
+            was = File.GetUnixFileMode(folder);
+            File.SetUnixFileMode(folder, UnixFileMode.UserRead | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupExecute);
+        }
+
+        public void Dispose() => File.SetUnixFileMode(folder, was);
+    }
+
+    /// <summary>A line typed at the top of a partial class's open file while the Solution view renames the file with its
+    /// class goes in above it, and the class's other part named after it is renamed with it all the same.</summary>
+    private void A_line_typed_in_a_file_the_solution_view_renames_with_its_class_still_takes_the_classs_other_part_along()
+    {
+        MainWindow window = Open("Basket.cs");
+        OpenDocument document = window.EditorArea.Active!;
+        Choose(window, Path.Combine(folder, "Basket.cs"));
+        Ui.Run(window, AppActions.Rename);
+        NamePopup popup = Assert.IsType<NamePopup>(window.Popup);
+        Assert.True(popup.Option?.IsChecked == true, "Renaming Basket.cs did not offer to rename the class Basket with it");
+        window.KeyTextInput("Cart");
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.None, null);
+        window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(0, 0, "// typed meanwhile\n")]);
+        Ui.WaitFor(() => !window.IsPopupOpen, $"the rename to finish: {popup.Problem}");
+        Ui.Settle();
+
+        Assert.Equal(["Cart.Lines.cs", "Cart.cs"], Directory.GetFiles(folder, "Cart*").Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Empty(Directory.GetFiles(folder, "Basket.*"));
+        Assert.Equal(Path.Combine(folder, "Cart.cs"), document.Path);
+        Assert.StartsWith("// typed meanwhile\nnamespace Shop;\n\npublic partial class Cart\n", document.Text.Snapshot.ToString(), StringComparison.Ordinal);
+        Assert.Contains("public partial class Cart", File.ReadAllText(Path.Combine(folder, "BasketExtras.cs")), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>Show Context Actions' Fix name violation on a class named like its file renames the file with it, in letter
+    /// case alone, as Rename does: the tab follows, the language server takes the file under its new name, and one Undo takes
+    /// the class, its use and the file's name back, asked first. With Also rename files to reflect this change turned off,
+    /// the fix leaves the file's name as Rename does. Where the file kept its name, the server went on offering to rename it.</summary>
+    private void Fix_name_violation_on_a_class_named_like_its_file_renames_the_file_in_letter_case_and_undo_takes_both_back()
+    {
+        string lower = Path.Combine(folder, "shelf.cs");
+        string upper = Path.Combine(folder, "Shelf.cs");
+        string stock = Path.Combine(folder, "Stock.cs");
+        MainWindow window = Open("shelf.cs");
+        List<(string Title, string Text)> asked = Answer(window);
+        OpenDocument document = window.EditorArea.Active!;
+
+        ContextAction(window, "class she", "Fix name violation: Shelf");
+        Ui.WaitFor(() => Names().Contains("Shelf.cs"), () => $"shelf.cs to be renamed Shelf.cs with its class: {window.Status}; the folder holds {string.Join(", ", Names())}");
+
+        Assert.DoesNotContain("shelf.cs", Names());
+        Assert.True(ReferenceEquals(document, Assert.Single(window.EditorArea.Documents)), "The renamed file's tab was closed and opened again");
+        Assert.Equal(upper, document.Path);
+        Assert.Equal("Shelf.cs", window.EditorArea.Active?.Name);
+        Assert.Equal(Shelf.Replace("shelf", "Shelf", StringComparison.Ordinal), document.Text.Snapshot.ToString());
+        Assert.Equal(Stock.Replace("shelf", "Shelf", StringComparison.Ordinal), File.ReadAllText(stock));
+        Ui.WaitFor(() => window.CSharpService?.For(document)?.Lsp?.Uri.EndsWith("/Shelf.cs", StringComparison.Ordinal) == true, "the language server to take the file as Shelf.cs");
+        Pitstop.App.Mcp.PitstopTools tools = new(window);
+        Ui.WaitFor(() => !Ui.Await(tools.CodeActions("Shelf.cs", 3, 14), "the actions at Shelf").Any(a => a.StartsWith("Rename file", StringComparison.Ordinal)),
+            "the language server to hold the file as Shelf.cs, offering to rename it no more");
+
+        window.EditorArea.CodeEditor.Focus();
+        Ui.Run(window, EditorActions.Undo);
+        Assert.Equal([("Undo", "Undo Fix name violation: Shelf? It changes Shelf.cs and Stock.cs, and renames Shelf.cs back to shelf.cs.")], asked);
+        Assert.Contains("shelf.cs", Names());
+        Assert.DoesNotContain("Shelf.cs", Names());
+        Assert.Equal(lower, document.Path);
+        Assert.Equal(Shelf, document.Text.Snapshot.ToString());
+        Assert.Equal(Stock, File.ReadAllText(stock));
+
+        window.Assist.RenameSettings = window.Assist.RenameSettings with { RenameFiles = false };
+        ContextAction(window, "class she", "Fix name violation: Shelf");
+        Ui.WaitFor(() => document.Text.Snapshot.ToString().Contains("class Shelf", StringComparison.Ordinal), () => $"the fix with the file option off: {window.Status}");
+        Assert.Contains("shelf.cs", Names());
+        Assert.Equal(lower, document.Path);
+        window.Close();
+    }
+
+    /// <summary>The C# files in the folder by their names as the disk spells them.</summary>
+    private IReadOnlyList<string> Names() => [.. Directory.GetFiles(folder, "*.cs").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal)];
+
+    /// <summary>Show Context Actions by its key at the end of a piece of the active file, and the action of that title
+    /// chosen once offered.</summary>
+    internal static void ContextAction(MainWindow window, string after, string title)
+    {
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, after);
+        window.EditorArea.CodeEditor.Focus();
+        Ui.Press(window, "alt ENTER");
+        Ui.WaitFor(() => window.Assist.Offered.Contains(title), () => $"Show Context Actions to offer {title}: [{string.Join("; ", window.Assist.Offered)}]");
+        for (int i = window.Assist.Offered.ToList().IndexOf(title); i > 0; i--)
+        {
+            Ui.Press(window, "DOWN");
+        }
+        Ui.Press(window, "ENTER");
+    }
+
+    private MainWindow Open(string file)
+    {
+        MainWindow window = Ui.OpenFolder(folder, autosaves: false);
+        window.OpenFile(Path.Combine(folder, file));
+        Ui.Settle();
+        Assert.True(window.CSharpService?.IsReady, window.CSharpService?.State);
+        return window;
+    }
+
+    /// <summary>Tally.cs declaring Few and Many, and closed files each calling Tally.Many, long written: a rename refuses a
+    /// file written a moment before, which its server may not have read. The closed files.</summary>
+    private IReadOnlyList<string> WriteTally(int count)
+    {
+        List<string> uses = [];
+        string tally = TestFolders.Write(folder, "Tally.cs", "namespace Shop;\n\npublic static class Tally\n{\n    public static int Few(int value) => value;\n\n    public static int Many(int value) => value;\n}\n");
+        for (int i = 0; i < count; i++)
+        {
+            uses.Add(TestFolders.Write(folder, $"Use{i}.cs", $"namespace Shop;\n\npublic static class Use{i}\n{{\n    public static int Call() => Tally.Many({i});\n}}\n"));
+        }
+        foreach (string path in uses.Append(tally))
+        {
+            File.SetLastWriteTimeUtc(path, DateTime.UtcNow - TimeSpan.FromMinutes(1));
+        }
+        return uses;
+    }
+
+    /// <summary>Rename's box opened at the end of a piece of the active file and the new name typed, Enter left to the
+    /// caller; nothing waited for but the box, so writes held meanwhile stay held.</summary>
+    private static void OpenRenameBox(MainWindow window, string after, string name)
+    {
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, after);
+        window.EditorArea.CodeEditor.Focus();
+        Ui.Run(window, AppActions.Rename, settle: false);
+        Ui.PumpUntil(() => window.Assist.Renaming is not null, "Rename's box");
+        window.KeyTextInput(name);
+    }
+
+    private static string Text(MainWindow window) => window.EditorArea.Active?.Text.Snapshot.ToString() ?? string.Empty;
+
+    /// <summary>Rename at the end of a piece of the active file, the new name typed into its box and Enter pressed, once
+    /// the box has offered the files named after the type (or, when none is to be, once it has had the chance); the
+    /// files it offered.</summary>
+    private static IReadOnlyList<string> RenameAt(MainWindow window, string after, string name, bool offered = true)
+    {
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, after);
+        window.EditorArea.CodeEditor.Focus();
+        Ui.Run(window, AppActions.Rename);
+        Ui.Settle();
+        Assert.True(window.Assist.Renaming is not null, "Rename opened no box");
+        Assert.True(offered == window.Assist.RenameOffersFiles.Count > 0,
+            $"The rename {(offered ? "did not offer" : "offered")} to rename files: [{string.Join(", ", window.Assist.RenameOffersFiles)}]");
+        IReadOnlyList<string> files = window.Assist.RenameOffersFiles;
+        window.KeyTextInput(name);
+        Ui.Press(window, "ENTER");
+        Ui.Settle();
+        return files;
+    }
+
+    private static CheckBox Option(MainWindow window, string text) =>
+        window.GetVisualDescendants().OfType<CheckBox>().FirstOrDefault(c => c.IsEffectivelyVisible && (string?)c.Content == text)
+        ?? throw new Xunit.Sdk.XunitException($"No check box '{text}' shows");
+
+    /// <summary>Clicks a file's row in the Explorer, its folders opened down to it, as a person chooses it before a key.</summary>
+    private static void Choose(MainWindow window, string path)
+    {
+        window.ExplorerView.Reveal(path);
+        Ui.Settle();
+        ExplorerNode row = window.ExplorerView.Tree.Rows.FirstOrDefault(r => r.Path == path)
+            ?? throw new Xunit.Sdk.XunitException($"The Explorer does not show {path}: [{string.Join(", ", window.ExplorerView.Tree.Rows.Select(r => r.Name))}]");
+        Ui.ClickRow(window, row);
+    }
+
+    /// <summary>Agrees to every question the window asks, keeping each one's title and text in order.</summary>
+    private static List<(string Title, string Text)> Answer(MainWindow window)
+    {
+        List<(string, string)> asked = [];
+        window.Confirm = (title, text, _) =>
+        {
+            asked.Add((title, text));
+            return Task.FromResult(true);
+        };
+        return asked;
+    }
+
+    private string Git(params string[] arguments) => TestGit.Run(folder, arguments);
+
+    /// <summary>What a commit changed as git shows it, renames found.</summary>
+    private string[] Shown(string commit) =>
+        [.. Git("show", "--name-status", "--format=", "-M", commit).Split('\n', StringSplitOptions.RemoveEmptyEntries).Order(StringComparer.Ordinal)];
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes the C# for Aspire's resource service protocol, src/Passenger.App/Aspire/Protocol/DashboardService.cs and
+"""Writes the C# for Aspire's resource service protocol, src/Pitstop.App/Aspire/Protocol/DashboardService.cs and
 DashboardServiceGrpc.cs, from dashboard_service.proto beside them, with protoc and gRPC's C# plugin from Grpc.Tools.
 
 The generated code is checked in, so no build runs protoc. The proto changes only with the Aspire version Passenger
@@ -25,7 +25,7 @@ VERSION = "2.85.0"
 SHA512 = "2jKm1yx1zXk37Xjr0Y5lQljW0MomMoZjw2j2afOmD83WGZdE4jFJWWKVfM1ldp67GxoZ+deATvKYhpbJBWNp+g=="
 
 ROOT = fetched.ROOT
-APP = os.path.join(ROOT, "src", "Passenger.App")
+APP = os.path.join(ROOT, "src", "Pitstop.App")
 PROTO = "Aspire/Protocol/dashboard_service.proto"
 WORK = os.path.join(ROOT, "artifacts", "aspire-protocol")
 

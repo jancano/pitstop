@@ -1,0 +1,1488 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
+using Pitstop.App;
+using Pitstop.Core;
+using Pitstop.Profiler;
+
+namespace Pitstop.Tests;
+
+/// <summary>The profiler's sampling, from the window: a configuration profiled is caught from its first instruction to
+/// its end, its busy method on the main thread's hot path, its allocations and collections listed, and a .NET program it
+/// starts runs free rather than held at the profiler's port; one that never reaches the profiler is said to, and a
+/// running one's heap is counted by type. The tests that start a program which waits on its input and end it share one
+/// (<see cref="Waits"/>), restored and built once.</summary>
+[Collection(Alone.Name)]
+public sealed class ProfilerTests : IClassFixture<ProfilerTests.Waits>, IDisposable
+{
+    private readonly string folder = TestFolders.Create("profile-");
+    private readonly Waits waits;
+
+    public ProfilerTests(Waits waits)
+    {
+        this.waits = waits;
+        waits.Reset();
+    }
+
+    public void Dispose() => TestFolders.Delete(folder);
+
+    /// <summary>Profile builds and runs the configuration and its end shows the snapshot; Go to Source opens each
+    /// profiled method where its PDB says; ten thousand stacks read, drag and draw in what their bars keep; a program
+    /// that crashes at once, or has not reached the profiler, ends or is ended whole; one goes on after its snapshot
+    /// until Stop; Profile and Run each wait for the Run console; a program needing a terminal is offered one; a trace
+    /// of allocations alone lists them; a snapshot in a folder Passenger cannot write opens, twice at once.</summary>
+    [AvaloniaFact]
+    public void Profile_records_a_run_from_its_start_to_its_end_and_opens_its_snapshot_where_its_methods_are()
+    {
+        Flow.StepApart<ProfilerTests>("profile builds and runs the configuration and its end shows the snapshot", () => new ProfilerTests(waits), t =>
+        {
+            t.Profile_builds_and_runs_the_configuration_and_its_end_shows_the_snapshot();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("go to Source opens each profiled method where its PDB says async nested generic and lambda alike", () => new ProfilerTests(waits), t =>
+        {
+            t.Go_to_Source_opens_each_profiled_method_where_its_PDB_says_async_nested_generic_and_lambda_alike();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a profile of ten thousand stacks reads drags and draws in what its stacks and bars keep", () => new ProfilerTests(waits), t =>
+        {
+            t.A_profile_of_ten_thousand_stacks_reads_drags_and_draws_in_what_its_stacks_and_bars_keep();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a profiled program that crashes at once ends its run saying its trace was cut short", () => new ProfilerTests(waits), t =>
+        {
+            t.A_profiled_program_that_crashes_at_once_ends_its_run_saying_its_trace_was_cut_short();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a profiled program that has not reached the profiler is started once and Kill or closing the folder ends it", () => new ProfilerTests(waits), t =>
+        {
+            t.A_profiled_program_that_has_not_reached_the_profiler_is_started_once_and_Kill_or_closing_the_folder_ends_it();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a profiled program goes on after its snapshot until stop ends it", () => new ProfilerTests(waits), t =>
+        {
+            t.A_profiled_program_goes_on_after_its_snapshot_until_stop_ends_it();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("Profile and Run each wait for the Run console while the other's program has it", () => new ProfilerTests(waits), t =>
+        {
+            t.Profile_and_Run_each_wait_for_the_Run_console_while_the_other_s_program_has_it();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a profiled program needing a terminal is offered one and Profile in the Terminal profiles it reading the key typed there", () => new ProfilerTests(waits), t =>
+        {
+            t.A_profiled_program_needing_a_terminal_is_offered_one_and_Profile_in_the_Terminal_profiles_it_reading_the_key_typed_there();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a trace of allocations and collections alone lists them", () => new ProfilerTests(waits), t =>
+        {
+            t.A_trace_of_allocations_and_collections_alone_lists_them();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a snapshot in a folder pitstop cannot write opens and two reads of it at once both open", () => new ProfilerTests(waits), t =>
+        {
+            t.A_snapshot_in_a_folder_passenger_cannot_write_opens_and_two_reads_of_it_at_once_both_open();
+            OpenWindows.CloseAll();
+        });
+    }
+
+    /// <summary>Attach Profiler and Get Memory Snapshot refuse a program the debugger holds and take it once it goes
+    /// on; a memory snapshot of a profiled program counts its heap by type and leaving the folder ends the run; Attach
+    /// Profiler that cannot write its snapshot releases EventPipe and leaves the program running; Get Snapshot of a
+    /// program whose runtime refuses the stop still reads the run; Attach Profiler profiles a program run in the
+    /// terminal and the app dotnet watch runs; a session started on a program is on once its start returns.</summary>
+    [AvaloniaFact]
+    public void Attach_Profiler_and_Get_Snapshot_take_a_running_program_and_let_it_go_running()
+    {
+        Flow.StepApart<ProfilerTests>("attach Profiler and Get Memory Snapshot refuse a program the debugger holds at once and take it once it goes on", () => new ProfilerTests(waits), t =>
+        {
+            t.Attach_Profiler_and_Get_Memory_Snapshot_refuse_a_program_the_debugger_holds_at_once_and_take_it_once_it_goes_on();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("a memory snapshot of a program being profiled counts its heap by type and leaving the folder then ends the run", () => new ProfilerTests(waits), t =>
+        {
+            t.A_memory_snapshot_of_a_program_being_profiled_counts_its_heap_by_type_and_leaving_the_folder_then_ends_the_run();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("attach Profiler that cannot write its snapshot says why releases EventPipe and leaves the program running unrecorded", () => new ProfilerTests(waits), t =>
+        {
+            t.Attach_Profiler_that_cannot_write_its_snapshot_says_why_releases_EventPipe_and_leaves_the_program_running_unrecorded();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("get Snapshot of a program whose runtime refuses the stop still reads the run and lets it go", () => new ProfilerTests(waits), t =>
+        {
+            t.Get_Snapshot_of_a_program_whose_runtime_refuses_the_stop_still_reads_the_run_and_lets_it_go();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<ProfilerTests>("attach Profiler profiles the program run in the terminal and the app dotnet watch runs", () => new ProfilerTests(waits), t =>
+        {
+            t.Attach_Profiler_profiles_the_program_run_in_the_terminal_and_the_app_dotnet_watch_runs();
+            OpenWindows.CloseAll();
+        });
+        Flow.Step("a session started to hear a program from its first moment has its providers on once its start returns",
+            () => Ui.AwaitPumped(Waiting.Apart(SessionStartTests.A_session_started_to_hear_a_program_from_its_first_moment_has_its_providers_on_once_its_start_returns),
+                "ten sessions started and stopped on this process", TimeSpan.FromMinutes(2)));
+    }
+
+    private void Profile_builds_and_runs_the_configuration_and_its_end_shows_the_snapshot()
+    {
+        // Twenty threads, the main one spinning; 60 MB of short-lived arrays; and a .NET program of its own.
+        string project = Project("Spinner", """
+            using System.Diagnostics;
+            if (args is ["child"])
+            {
+                Console.WriteLine("child ran");
+                return;
+            }
+            using ManualResetEventSlim spun = new();
+            Thread[] waiting = [.. Enumerable.Range(0, 19).Select(i => new Thread(() => Work.Wait(spun)))];
+            foreach (Thread thread in waiting) { thread.Start(); }
+            Console.WriteLine($"spun {Work.Spin(TimeSpan.FromMilliseconds(1000)) > 0}");
+            spun.Set();
+            foreach (Thread thread in waiting) { thread.Join(); }
+            Console.WriteLine($"allocated {Work.Allocate(60_000)}");
+            ProcessStartInfo own = new(Environment.ProcessPath!) { RedirectStandardOutput = true };
+            if (Path.GetFileNameWithoutExtension(Environment.ProcessPath) == "dotnet") { own.ArgumentList.Add(typeof(Work).Assembly.Location); }
+            own.ArgumentList.Add("child");
+            using Process child = Process.Start(own)!;
+            Console.WriteLine($"child said: {(child.WaitForExit(15000) ? child.StandardOutput.ReadToEnd().Trim() : "nothing, held at its start")}");
+            static class Work
+            {
+                public static long Allocate(int count)
+                {
+                    long made = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        byte[] block = new byte[1024];
+                        block[i % 1024] = 1;
+                        made += block.Length;
+                    }
+                    return made;
+                }
+
+                public static double Spin(TimeSpan time)
+                {
+                    Stopwatch clock = Stopwatch.StartNew();
+                    double total = 0;
+                    while (clock.Elapsed < time)
+                    {
+                        for (int i = 1; i < 10000; i++) { total += Math.Sqrt(i); }
+                    }
+                    return total;
+                }
+
+                [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+                public static void Wait(ManualResetEventSlim until) => until.Wait();
+            }
+            """);
+        // The GC sizes its youngest generation from the machine's largest cache, which can outgrow the 60 MB.
+        Directory.CreateDirectory(Path.Combine(project, "Properties"));
+        File.WriteAllText(Path.Combine(project, "Properties", "launchSettings.json"),
+            "{ \"profiles\": { \"Young\": { \"commandName\": \"Project\", \"environmentVariables\": { \"DOTNET_GCgen0size\": \"0x400000\" } } } }");
+        string settings = TestFolders.Create("settings-");
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings, StartsLanguageServer = false };
+        window.Show();
+        window.OpenFolder(project);
+        Ui.Settle();
+        // As many snapshots as the cap from earlier runs, the first the oldest.
+        string kept = window.SnapshotFolder;
+        Assert.StartsWith(Path.Combine(settings, "workspaces", "Spinner-"), kept, StringComparison.Ordinal);
+        Directory.CreateDirectory(kept);
+        for (int i = 0; i < Snapshots.Kept; i++)
+        {
+            string earlier = Path.Combine(kept, $"Spinner-earlier-{i}.nettrace");
+            File.WriteAllText(earlier, "an earlier run");
+            File.SetLastWriteTimeUtc(earlier, DateTime.UtcNow.AddHours(-Snapshots.Kept + i));
+        }
+
+        Task<string?> started = window.ProfileAsync();
+        Ui.Launched(window, started, "the build and the start", TimeSpan.FromMinutes(3));
+        Assert.True(window.DockHost.IsShown(ToolWindowIds.Profiler));
+        Ui.WaitFor(() => window.ProfilerView.Snapshot is not null, "the program's end to show its snapshot", TimeSpan.FromMinutes(2));
+        Ui.Settle();
+
+        Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+        Snapshot snapshot = view.Snapshot!;
+        Assert.True(snapshot.CutShort is null, $"The trace of a program that ended by itself was read as cut short: {snapshot.CutShort}");
+        Assert.StartsWith("Main thread", snapshot.Threads[0].Name, StringComparison.Ordinal);
+        Assert.Equal(snapshot.Samples, view.Flame.Root!.Total);
+        Assert.Contains(view.Rows, r => r.Node.Name.StartsWith("Work.Spin", StringComparison.Ordinal));
+        TreeKeysCheck.Press(window, view.Rows, view.Rows[0], "the profiler's call tree");
+        Assert.StartsWith("Spinner-", Path.GetFileName(snapshot.TracePath), StringComparison.Ordinal);
+        string console = window.BottomPanel.Run.Document.Snapshot.ToString();
+        Assert.Contains("spun True", console, StringComparison.Ordinal);
+        Assert.Contains("child said: child ran", console, StringComparison.Ordinal);
+
+        Assert.Equal("System.Byte[]", view.Types[0].Name);
+        Assert.InRange(view.Types[0].Bytes, 30_000_000, 120_000_000);
+        Assert.Contains(view.BackTraces, r => r.Node.Name.StartsWith("Work.Allocate", StringComparison.Ordinal));
+        Assert.Contains("of generation 0", view.CollectionsSummary, StringComparison.Ordinal);
+
+        // What the run holds grows with where its threads were caught, not how often: each stack is kept once.
+        Assert.True(snapshot.Stacks * 10 < snapshot.Samples, $"{snapshot.Stacks} stacks kept for {snapshot.Samples} samples");
+        Assert.True(snapshot.Runs * 4 < snapshot.Samples, $"{snapshot.Runs} runs kept for {snapshot.Samples} samples");
+        IReadOnlyList<CallNode> waiters = [.. snapshot.Threads.Where(t => Find(t.Children, n => n.Name.StartsWith("Work.Wait", StringComparison.Ordinal)) is not null)];
+        Assert.Equal(19, waiters.Count);
+        foreach (CallNode waiter in waiters)
+        {
+            ThreadLine line = Assert.Single(snapshot.Timeline, l => l.Name == waiter.Name);
+            Assert.True(line.Runs.Count * 4 <= line.Samples, $"{waiter.Name} waited through {line.Samples} samples, kept as {line.Runs.Count} runs");
+        }
+
+        Assert.Equal(kept, Path.GetDirectoryName(snapshot.TracePath));
+        Assert.Equal(Snapshots.Kept, Directory.GetFiles(kept, "*.nettrace").Length);
+        Assert.False(File.Exists(Path.Combine(kept, "Spinner-earlier-0.nettrace")), "the oldest snapshot was kept past the cap");
+        Assert.True(File.Exists(Path.Combine(kept, "Spinner-earlier-1.nettrace")), "a snapshot within the cap was removed");
+        // The status names where the snapshot is kept as a person finds it, never by its folder deep in Passenger's state.
+        Assert.True(window.Status?.EndsWith("kept on the Performance Profiler's Snapshots page", StringComparison.Ordinal) == true
+            && !window.Status.Contains(kept, StringComparison.Ordinal), $"The snapshot's status said \"{window.Status}\", naming its folder {kept}");
+        Assert.Equal(snapshot.TracePath, view.Kept[0].Path);
+        Assert.Equal(Snapshots.Kept, view.Kept.Count);
+        Assert.Contains(kept, view.KeptSummary, StringComparison.Ordinal);
+
+        // The stretch is worked out off the UI thread, so the choice takes it a sliver of what working it out takes.
+        (double From, double To) half = (snapshot.StartMs, snapshot.StartMs + ((snapshot.EndMs - snapshot.StartMs) / 2));
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        Snapshot worked = snapshot.Within(half.From, half.To);
+        long working = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        allocated = GC.GetAllocatedBytesForCurrentThread();
+        view.Timeline.Select(half.From, half.To);
+        long choosing = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        Assert.True(choosing * 4 < working, $"choosing a stretch made {choosing} bytes on the UI thread, working it out {working}");
+        Assert.Same(snapshot, view.Snapshot);
+        Ui.Settle();
+        Assert.NotSame(snapshot, view.Snapshot);
+        Assert.Same(snapshot, view.Snapshot!.Whole);
+        Assert.Equal(worked.Samples, view.Snapshot.Samples);
+        Assert.True(view.Snapshot.Samples < snapshot.Samples);
+        Assert.Contains("ms of", view.Status, StringComparison.Ordinal);
+
+        view.Timeline.Select(snapshot.StartMs, snapshot.EndMs - 1);
+        view.Timeline.Select(half.To, snapshot.EndMs);
+        Ui.Settle();
+        Assert.Equal(half.To, view.Snapshot.StartMs);
+        view.Timeline.Select(half.From, half.To);
+        view.Timeline.ClearSelection();
+        Ui.Settle();
+        Assert.Same(snapshot, view.Snapshot);
+        window.Close();
+    }
+
+    /// <summary>Go to Source on a hot spot opens its method where its PDB says it is, at its first statement's line, in a
+    /// folder with no language server to look a name up in: an async method's (its state machine's MoveNext), a nested
+    /// type's, a generic type's (shared code, its type argument __Canon) and a lambda's; and Enter on the call tree's row of
+    /// the nested type's method opens it too.</summary>
+    private void Go_to_Source_opens_each_profiled_method_where_its_PDB_says_async_nested_generic_and_lambda_alike()
+    {
+        string project = Project("Shapes", """
+            using System.Runtime.CompilerServices;
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    DateTime until = DateTime.UtcNow.AddSeconds(3);
+                    Func<int, long> spin = n => { long sum = 0; for (int i = 0; i < n; i++) { sum += i % 7; } return sum; };
+                    while (DateTime.UtcNow < until)
+                    {
+                        Worker.CrunchAsync().GetAwaiter().GetResult();
+                        Outer.Inner.Spin();
+                        Box<string>.Churn();
+                        GC.KeepAlive(spin(1_000_000));
+                    }
+                }
+            }
+
+            public static class Worker
+            {
+                public static async Task CrunchAsync()
+                {
+                    await Task.CompletedTask;
+                    long sum = 0;
+                    for (int i = 0; i < 2_000_000; i++) { sum += i % 13; }
+                    GC.KeepAlive(sum);
+                }
+            }
+
+            public static class Outer
+            {
+                public static class Inner
+                {
+                    [MethodImpl(MethodImplOptions.NoInlining)]
+                    public static void Spin()
+                    {
+                        long sum = 0;
+                        for (int i = 0; i < 8_000_000; i++) { sum += i % 11; }
+                        GC.KeepAlive(sum);
+                    }
+                }
+            }
+
+            public static class Box<T>
+            {
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                public static void Churn()
+                {
+                    long sum = 0;
+                    for (int i = 0; i < 2_000_000; i++) { sum += i % 5; }
+                    GC.KeepAlive(sum);
+                }
+            }
+            """);
+        string program = PathNames.Canonical(Path.Combine(project, "Program.cs"));
+        string[] lines = File.ReadAllLines(program);
+        // The line (from zero) of a method's opening brace, its first statement in its PDB; a lambda's is on its own line.
+        int Brace(string signature) => Array.FindIndex(lines, l => l.Contains(signature, StringComparison.Ordinal)) + 1;
+        int lambda = Array.FindIndex(lines, l => l.Contains("Func<int, long> spin", StringComparison.Ordinal));
+        MainWindow window = Ui.OpenFolder(project, languageServer: false);
+        try
+        {
+            Ui.Launched(window, window.ProfileAsync(), "the build and the start", TimeSpan.FromMinutes(3));
+            Ui.WaitFor(() => window.ProfilerView.Snapshot is not null, "the program's end to show its snapshot", TimeSpan.FromMinutes(2));
+            Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+            view.ShowPage(Pitstop.App.Profiling.ProfilerPage.HotSpots);
+            Ui.Settle();
+            Avalonia.Controls.ListBox spots = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Avalonia.Controls.ListBox>()
+                .Single(l => ReferenceEquals(l.ItemsSource, view.Snapshot!.HotSpots));
+            foreach ((string frame, int line) in (ReadOnlySpan<(string, int)>)[("Worker+<CrunchAsync>d__0.MoveNext(", Brace("static async Task CrunchAsync()")),
+                ("Outer+Inner.Spin(", Brace("static void Spin()")), ("Box`1[System.__Canon].Churn(", Brace("static void Churn()")), ("Program+<>c.<Main>b__", lambda)])
+            {
+                HotSpot spot = view.Snapshot!.HotSpots.FirstOrDefault(h => h.Name.StartsWith(frame, StringComparison.Ordinal))
+                    ?? throw new Xunit.Sdk.XunitException($"No hot spot is {frame}…: {string.Join(", ", view.Snapshot.HotSpots.Take(12).Select(h => h.Name))}");
+                window.OpenFile(Path.Combine(project, "Shapes.csproj"));
+                Ui.DoubleClick(Ui.Row(spots, spot));
+                Ui.WaitFor(() => window.EditorArea.Active?.Path is { } open && PathNames.Same(open, program),
+                    () => $"Go to Source on {spot.Name} to open Program.cs, where {window.EditorArea.Active?.Path} is open ({window.Status})");
+                Assert.True(window.EditorArea.CodeEditor.CaretPosition.Line == line,
+                    $"Go to Source on {spot.Name} opened line {window.EditorArea.CodeEditor.CaretPosition.Line + 1}, not its method's first line, {line + 1}");
+            }
+
+            view.ShowPage(Pitstop.App.Profiling.ProfilerPage.CallTree);
+            Ui.Settle();
+            Pitstop.App.Profiling.CallRow spin = view.Rows.FirstOrDefault(r => r.Node.Name.StartsWith("Outer+Inner.Spin(", StringComparison.Ordinal))
+                ?? throw new Xunit.Sdk.XunitException($"The call tree's hot path does not reach Outer+Inner.Spin: {string.Join(" > ", view.Rows.Select(r => r.Node.Name))}");
+            Avalonia.Controls.ListBox tree = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Avalonia.Controls.ListBox>()
+                .Single(l => ReferenceEquals(l.ItemsSource, view.Rows));
+            window.OpenFile(Path.Combine(project, "Shapes.csproj"));
+            Ui.Click(Ui.Row(tree, spin));
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => window.EditorArea.Active?.Path is { } open && PathNames.Same(open, program),
+                () => $"Enter on the call tree's {spin.Node.Name} to open Program.cs, where {window.EditorArea.Active?.Path} is open ({window.Status})");
+            Assert.Equal(Brace("static void Spin()"), window.EditorArea.CodeEditor.CaretPosition.Line);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>Opening a profile costs a stack what keeping it takes, not a name made again for each frame: from a thousand
+    /// stacks about seventy frames deep to ten thousand, under 12 KB a stack more (on every thread, the least of three). Over
+    /// the larger, a drag's pointer move across the timeline costs the UI thread no more 2,400 wide than 800 wide, and under
+    /// 16 KB more than a pointer passing over it; a frame of the flame graph, under 400 bytes a bar more whole than zoomed
+    /// into a leaf, and under 400 too where every bar is labelled.</summary>
+    private void A_profile_of_ten_thousand_stacks_reads_drags_and_draws_in_what_its_stacks_and_bars_keep()
+    {
+        // Each count forty calls deep, then a path of its own down a binary tree, to a spin a busy machine's sampler still catches hundreds of times and a large array (an allocation tick).
+        string project = Project("Stacks", """
+            using System.Runtime.CompilerServices;
+            int count = int.Parse(args[0]);
+            int levels = 0;
+            while ((1 << levels) < count) { levels++; }
+            long made = 0;
+            for (int i = 0; i < count; i++) { made += Tree.Down(40, i, levels); }
+            Console.WriteLine($"made {made}");
+            static class Tree
+            {
+                public static byte[]? Kept;
+
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                public static int Down(int depth, int path, int levels) => depth > 0 ? Down(depth - 1, path, levels) + 1 : Branch(path, levels) + 1;
+
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                private static int Branch(int path, int level) => level == 0 ? Leaf() + 1 : (path & 1) == 0 ? Left(path >> 1, level - 1) + 1 : Right(path >> 1, level - 1) + 1;
+
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                private static int Left(int path, int level) => Branch(path, level) + 1;
+
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                private static int Right(int path, int level) => Branch(path, level) + 1;
+
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                private static int Leaf()
+                {
+                    int spun = 0;
+                    for (int i = 0; i < 100_000; i++) { spun = (spun * 31) + i; }
+                    Kept = new byte[110_000];
+                    return (Kept.Length + spun) & 1;
+                }
+            }
+            """);
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = TestFolders.Create("settings-"), StartsLanguageServer = false };
+        window.Show();
+        try
+        {
+            window.OpenFolder(project);
+            Ui.Settle();
+            Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+            Dictionary<int, string> traces = [];
+            foreach (int count in (int[])[1000, 10000])
+            {
+                string? before = view.Snapshot?.TracePath;
+                Ui.Launched(window, window.ProfileAsync($"{count}"), $"the program of {count} stacks to build and start under the profiler", TimeSpan.FromMinutes(3));
+                Ui.WaitFor(() => view.Snapshot is { } snapshot && snapshot.TracePath != before, () => $"the end of the program of {count} stacks to show its snapshot ({view.Status})",
+                    TimeSpan.FromMinutes(2));
+                traces[count] = view.Snapshot!.TracePath;
+            }
+
+            (long Bytes, int Stacks) few = Read(traces[1000]);
+            (long Bytes, int Stacks) many = Read(traces[10000]);
+            long each = (many.Bytes - few.Bytes) / Math.Max(1, many.Stacks - few.Stacks);
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"Opening a profile of {few.Stacks:N0} stacks allocated {few.Bytes / 1024:N0} KB, one of {many.Stacks:N0} {many.Bytes / 1024:N0} KB: {each:N0} bytes for each stack more");
+            Assert.True(few.Stacks >= 1000 && many.Stacks >= 10000, $"The profiles kept {few.Stacks} and {many.Stacks} stacks, where the programs allocated from 1,000 and 10,000");
+            Assert.True(each < 12 * 1024,
+                $"Opening a profile of {many.Stacks:N0} stacks allocated {many.Bytes / 1024:N0} KB, one of {few.Stacks:N0} {few.Bytes / 1024:N0} KB: {each:N0} bytes for each stack more, as if each of its frames were named again");
+
+            (long Drag, long Hover) narrowMove = Moves(800);
+            (long Drag, long Hover) wideMove = Moves(2400);
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"A pointer move of a drag across the timeline allocated {narrowMove.Drag:N0} bytes on the UI thread 800 wide, {wideMove.Drag:N0} 2,400 wide; one passing over it {narrowMove.Hover:N0} and {wideMove.Hover:N0}");
+            Assert.True(wideMove.Drag <= narrowMove.Drag + 2048,
+                $"A pointer move of a drag across the timeline allocated {wideMove.Drag:N0} bytes on the UI thread in a window 2,400 wide, {narrowMove.Drag:N0} in one 800 wide: every pixel's column of its rows was drawn again");
+            Assert.True(wideMove.Drag <= wideMove.Hover + (16 * 1024),
+                $"A pointer move of a drag across the timeline allocated {wideMove.Drag:N0} bytes on the UI thread, one passing over it {wideMove.Hover:N0}: the rows' words were laid out again for the stretch");
+
+            // The flame graph whole; zoomed where every bar is wide enough for its label, the most bars so; and into a leaf.
+            window.Width = 1200;
+            view.ShowPage(Pitstop.App.Profiling.ProfilerPage.FlameGraph);
+            Pitstop.App.Profiling.FlameGraph flame = view.Flame;
+            (long Bytes, int Bars) whole = Frame();
+            (CallNode? Node, int Bars) narrow = Narrowest(flame.Root!, 0, (int)(flame.Bounds.Width / 25));
+            CallNode leaf = flame.Root!;
+            while (leaf.Ordered.Count > 0)
+            {
+                leaf = leaf.Ordered[0];
+            }
+            flame.ZoomTo(narrow.Node ?? leaf);
+            (long Bytes, int Bars) labelled = Frame();
+            flame.ZoomTo(leaf);
+            (long Bytes, int Bars) zoomed = Frame();
+            long eachBar = (whole.Bytes - zoomed.Bytes) / Math.Max(1, whole.Bars - zoomed.Bars);
+            long eachLabelled = (labelled.Bytes - zoomed.Bytes) / Math.Max(1, labelled.Bars - zoomed.Bars);
+            TestContext.Current.TestOutputHelper?.WriteLine(
+                $"A frame of the flame graph allocated {whole.Bytes / 1024:N0} KB on the UI thread for {whole.Bars:N0} bars, {zoomed.Bytes / 1024:N0} KB for {zoomed.Bars:N0}: {eachBar:N0} bytes a bar; "
+                + $"{labelled.Bytes / 1024:N0} KB for {labelled.Bars:N0} bars each labelled: {eachLabelled:N0} bytes a bar");
+            Assert.True(whole.Bars > zoomed.Bars + 500, $"The flame graph drew {whole.Bars} bars whole and {zoomed.Bars} zoomed into a leaf, of {flame.Root!.Total} samples");
+            Assert.True(labelled.Bars > zoomed.Bars + 200,
+                $"The flame graph drew {labelled.Bars} bars zoomed into {narrow.Node?.Total} of its {flame.Root!.Total} samples, each with room for a label, and {zoomed.Bars} zoomed into a leaf");
+            Assert.True(eachBar < 400,
+                $"A frame of the flame graph allocated {whole.Bytes / 1024:N0} KB on the UI thread for {whole.Bars:N0} bars, {zoomed.Bytes / 1024:N0} KB for {zoomed.Bars:N0}: {eachBar:N0} bytes for each bar more, its colour and label worked out again");
+            Assert.True(eachLabelled < 400,
+                $"A frame of the flame graph allocated {labelled.Bytes / 1024:N0} KB on the UI thread for {labelled.Bars:N0} bars each labelled, {zoomed.Bytes / 1024:N0} KB for {zoomed.Bars:N0}: {eachLabelled:N0} bytes for each bar more, its label clipped or drawn as more than one glyph run");
+        }
+        finally
+        {
+            window.Close();
+        }
+
+        // What opening a profile allocates on every thread to its views shown, the least of three, as a test beside it may allocate meanwhile.
+        (long Bytes, int Stacks) Read(string trace)
+        {
+            long least = long.MaxValue;
+            int stacks = 0;
+            for (int time = 0; time < 3; time++)
+            {
+                Ui.Settle();
+                long before = GC.GetTotalAllocatedBytes(precise: true);
+                Snapshot? opened = Ui.Await(window.OpenSnapshotAsync(trace), $"{Path.GetFileName(trace)} to open");
+                Ui.Settle();
+                least = Math.Min(least, GC.GetTotalAllocatedBytes(precise: true) - before);
+                stacks = opened?.Stacks ?? throw new Xunit.Sdk.XunitException($"{Path.GetFileName(trace)} did not open: {window.Status}");
+            }
+            return (least, stacks);
+        }
+
+        // What a pointer move of a drag across the timeline allocates on the UI thread to its frame drawn, and one passing over it, the least of eight.
+        (long Drag, long Hover) Moves(double width)
+        {
+            window.Width = width;
+            Ui.Settle();
+            Pitstop.App.Profiling.Timeline timeline = window.ProfilerView.Timeline;
+            Assert.True(Math.Abs(timeline.Bounds.Width - width) < 100, $"The timeline is {timeline.Bounds.Width} wide in a window {width} wide");
+            Point start = timeline.TranslatePoint(new Point(200, 20), window) ?? throw new Xunit.Sdk.XunitException("The timeline is not shown");
+            window.MouseDown(start, Avalonia.Input.MouseButton.Left);
+            long least = long.MaxValue;
+            for (int step = 1; step <= 10; step++)
+            {
+                Ui.Draw();
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                window.MouseMove(start + new Vector(step * 20, 0), Avalonia.Input.RawInputModifiers.LeftMouseButton);
+                Ui.Draw();
+                if (step > 2)
+                {
+                    least = Math.Min(least, GC.GetAllocatedBytesForCurrentThread() - before);
+                }
+            }
+            window.MouseUp(start + new Vector(200, 0), Avalonia.Input.MouseButton.Left);
+            Ui.Settle();
+            Assert.NotNull(timeline.Selection);
+            long hover = long.MaxValue;
+            for (int step = 1; step <= 10; step++)
+            {
+                Ui.Draw();
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                window.MouseMove(start + new Vector(step * 20, 4));
+                Ui.Draw();
+                if (step > 2)
+                {
+                    hover = Math.Min(hover, GC.GetAllocatedBytesForCurrentThread() - before);
+                }
+            }
+            timeline.ClearSelection();
+            Ui.Settle();
+            return (least, hover);
+        }
+
+        // What a frame of the flame graph allocates on the UI thread, the least of five, and how many bars it drew.
+        (long Bytes, int Bars) Frame()
+        {
+            Ui.Settle();
+            Pitstop.App.Profiling.FlameGraph flame = window.ProfilerView.Flame;
+            long least = long.MaxValue;
+            for (int frame = 0; frame < 6; frame++)
+            {
+                Ui.Draw();
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                flame.InvalidateVisual();
+                Ui.Draw();
+                if (frame > 0)
+                {
+                    least = Math.Min(least, GC.GetAllocatedBytesForCurrentThread() - before);
+                }
+            }
+            return (least, flame.BarsDrawn);
+        }
+
+        // Of the nodes of so few samples that zoomed into, each bar has room for a label, the one drawing the most bars.
+        static (CallNode? Node, int Bars) Narrowest(CallNode node, int callers, int samples)
+        {
+            if (node.Total <= samples)
+            {
+                return (node, callers + Bars(node));
+            }
+            (CallNode? Node, int Bars) most = (null, 0);
+            foreach (CallNode callee in node.Ordered)
+            {
+                (CallNode? Node, int Bars) below = Narrowest(callee, callers + 1, samples);
+                most = below.Bars > most.Bars ? below : most;
+            }
+            return most;
+        }
+
+        static int Bars(CallNode node) => 1 + node.Ordered.Sum(Bars);
+    }
+
+    /// <summary>A profiled program that crashes as it starts ends its run as it ends, whatever of its trace was written
+    /// before the crash: the status bar says it ended before its trace was whole, the profiler window shows the run over,
+    /// with no Get Snapshot or Kill, and no IDE error is caught. Its trace cut anywhere past its header, down to none of
+    /// its events (where TraceEvent's index of it holds none), opens saying it was cut short, and within its header is no
+    /// snapshot; each cut is let go of once read, so the next is written over it at once.</summary>
+    private void A_profiled_program_that_crashes_at_once_ends_its_run_saying_its_trace_was_cut_short()
+    {
+        string project = Project("Crashes", "throw new InvalidOperationException(\"crashed at once\");\n");
+        MainWindow window = Ui.OpenFolder(project);
+        string Said() => window.Status ?? string.Empty;
+        try
+        {
+            Ui.Launched(window, window.ProfileAsync(), "the build and the start", TimeSpan.FromMinutes(3));
+            Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+            Ui.WaitFor(() => Said().StartsWith("Crashes ended before its trace was whole", StringComparison.Ordinal),
+                () => $"the status bar to say the program ended before its trace was whole, where it says {window.Status} and the profiler window {view.Status}", TimeSpan.FromMinutes(1));
+            Assert.False(view.IsFollowing, $"The profiler window goes on following a run whose program crashed: {view.Status}");
+            Assert.False(view.CanKill, "The profiler window offers Kill for a program that crashed");
+            Assert.True(view.Status.Contains("cut short", StringComparison.Ordinal) || view.Status.StartsWith("Crashes ended before its trace was whole", StringComparison.Ordinal),
+                $"The profiler window does not say the run's trace was cut short: {view.Status}");
+            Assert.True(Shows(window.BottomPanel.Run, "crashed at once"), "The Run console does not show the exception the program crashed with");
+            Assert.True(IdeErrors.Errors.Count == 0, $"The crashed program's trace reached IDE Internal Errors: {string.Join("; ", IdeErrors.Errors.Select(e => e.Message))}");
+
+            string trace = Directory.GetFiles(window.SnapshotFolder, "Crashes-*.nettrace").Single();
+            byte[] written = File.ReadAllBytes(trace);
+            string cut = Path.Combine(folder, "cut.nettrace");
+            IEnumerable<int> lengths = Enumerable.Range(1, 40).Select(i => i * 8).Concat(Enumerable.Range(1, 20).Select(i => written.Length * i / 21)).Where(l => l < written.Length);
+            foreach (int length in lengths.Distinct())
+            {
+                File.WriteAllBytes(cut, written[..length]);
+                Snapshot? opened = Ui.Await(window.OpenSnapshotAsync(cut), $"the trace cut at {length} bytes to open");
+                if (HeaderWhole(cut))
+                {
+                    Assert.True(opened is { CutShort: not null } && Said().Contains("its trace cut short", StringComparison.Ordinal),
+                        $"The trace cut at {length} of its {written.Length} bytes, past its header, did not open saying it was cut short: {Said()}");
+                }
+                else
+                {
+                    Assert.True(opened is null && Said().StartsWith("cut.nettrace is not a snapshot Pitstop can read: ", StringComparison.Ordinal),
+                        $"The trace cut at {length} of its {written.Length} bytes, within its header, was not refused as no snapshot: {Said()}");
+                }
+                Assert.True(IdeErrors.Errors.Count == 0, $"The trace cut at {length} of its {written.Length} bytes reached IDE Internal Errors: {string.Join("; ", IdeErrors.Errors.Select(e => e.Message))}");
+            }
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>Whether TraceEvent's EventPipe reader takes a trace's header up to its Trace block, which tells the trace's
+    /// pointer size: read through a stream the test holds, so the trace is let go of whatever the reader makes of it.</summary>
+    private static bool HeaderWhole(string trace)
+    {
+        using FileStream file = new(trace, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using Microsoft.Diagnostics.Tracing.EventPipeEventSource source = new(file);
+        try
+        {
+            source.Process();
+        }
+        catch (Exception broken) when (TraceFailures.Broken(broken))
+        {
+        }
+        return source.PointerSize != 0;
+    }
+
+    /// <summary>A profiled program that has not reached the profiler (its diagnostics off, so it never comes to the
+    /// profiler's port): Profile pressed again starts no second program; Kill ends it at once; a configuration whose working
+    /// folder is gone, and one that ends before it reaches the profiler, are said to in the profiler window; and Close
+    /// Solution ends a start under way with the folder's other programs. None leaves a port listening.</summary>
+    private void A_profiled_program_that_has_not_reached_the_profiler_is_started_once_and_Kill_or_closing_the_folder_ends_it()
+    {
+        string pids = TestFolders.Create("pids-");
+        MainWindow window = OpenWaits("Starting: Undiagnosed", pids, undiagnosed: true);
+        Dictionary<int, OwnProcess> own = [];
+        IReadOnlyList<int> Programs() => Held(ProfilerTests.Programs(pids), own);
+        IReadOnlyList<string> before = Ports();
+        Task<string?> started = window.ProfileAsync();
+        Task<string?>? again = null;
+        int closed = 0;
+        try
+        {
+            Ui.PumpUntil(() => Programs().Count > 0, "the program to run as the profiler waits for it", TimeSpan.FromMinutes(2));
+            Assert.Equal("Already under way: Starting Starting: Undiagnosed under the profiler…", window.Actions.WhyNot(AppActions.Profile, window.Actions.Context()));
+
+            Task<string?> second = window.ProfileAsync();
+            again = second;
+            Assert.True(Ui.Pumped(() => second.IsCompleted, TimeSpan.FromSeconds(10)), $"A second Profile while the first program started went on to start it again ({Programs().Count} programs)");
+            Assert.Equal(Refusals.Profiling, Ui.AwaitPumped(second, "the second Profile's refusal"));
+            Assert.Single(Programs());
+            Assert.False(started.IsCompleted, $"The first profile's start ended: {(started.IsCompleted ? Ui.AwaitPumped(started, "the first profile's start") : null)}");
+
+            Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+            Avalonia.Controls.Button kill = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Avalonia.Controls.Button>()
+                .Single(b => b.Content as string == "Kill");
+            Assert.True(kill.IsVisible, "The profiler window had no Kill while the program it started had not reached it");
+            Ui.Click(kill, settle: false);
+            string? killed = Ui.AwaitPumped(started, "Kill to end the profile's start", TimeSpan.FromSeconds(10));
+            Assert.Equal("Profiling Starting: Undiagnosed was stopped as it started", killed);
+            Assert.True(Processes.Gone(Programs()[0]), $"Kill left the program running: {Processes.Describe(Programs()[0])}");
+            Assert.Null(window.Profiling);
+            Assert.Equal(killed, view.Status);
+            Assert.False(kill.IsVisible, "Kill stayed once the start was ended");
+            Assert.Equal(before, Ports());
+            Assert.Null(window.Actions.WhyNot(AppActions.Profile, window.Actions.Context()));
+
+            Configure(window, "Elsewhere", pids, workingDirectory: "gone");
+            string? refused = Ui.Await(window.ProfileAsync(), "the build and the start", TimeSpan.FromMinutes(3));
+            string gone = Path.Combine(window.Folder!, "gone");
+            Assert.Equal($"Could not profile Waits: its working folder {gone} does not exist", refused);
+            Assert.Null(window.Profiling);
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Profiler));
+            Assert.Equal(refused, view.Status);
+            Assert.Equal(refused, view.Placeholder);
+            Assert.Equal(before, Ports());
+
+            // A program that ends at once, its diagnostics off as a program that is not .NET never comes.
+            Configure(window, "Ends first", pids: null, undiagnosed: true);
+            string? ended = Ui.Await(window.ProfileAsync(), "the build and the start", TimeSpan.FromMinutes(3));
+            Assert.StartsWith("Waits never reached the profiler: it ended first, with exit code ", ended, StringComparison.Ordinal);
+            Assert.Null(window.Profiling);
+            Assert.Equal(ended, view.Status);
+            Assert.Equal(before, Ports());
+
+            string closing = TestFolders.Create("pids-");
+            Configure(window, "Closed: Undiagnosed", closing, undiagnosed: true);
+            Task<string?> waiting = window.ProfileAsync();
+            closed = Started(closing, "the program to run as the profiler waits for it");
+            own[closed] = OwnProcess.Of(closed);
+            Assert.False(waiting.IsCompleted, $"The profiler gave up on the program before the folder was closed: {(waiting.IsCompleted ? Ui.AwaitPumped(waiting, "the profile's start") : null)}");
+            Assert.Null(window.CloseSolution());
+            Assert.Equal(Refusals.SolutionClosed, Ui.AwaitPumped(waiting, "the profile's start to end with its folder", TimeSpan.FromSeconds(10)));
+            Assert.True(Processes.Gone(closed), $"Closing the folder left the program being profiled running: {Processes.Describe(closed)}");
+            Assert.Equal(before, Ports());
+            window.Close();
+        }
+        finally
+        {
+            foreach (OwnProcess program in own.Values)
+            {
+                program.Kill();
+            }
+            if (again is { IsCompleted: false })
+            {
+                Ui.PumpUntil(() => again.IsCompleted, "the second profile's start to give up", TimeSpan.FromSeconds(60));
+            }
+        }
+    }
+
+    /// <summary>A program the debugger holds, at a breakpoint or by Pause, is never left waiting on the profiler: Attach
+    /// Profiler, greyed saying why, refuses it at once with nothing left under way, and attaches once it goes on; Get Memory
+    /// Snapshot of it so attached and then paused refuses likewise, and Get Snapshot too, its run going on, read once the
+    /// program goes on.</summary>
+    private void Attach_Profiler_and_Get_Memory_Snapshot_refuse_a_program_the_debugger_holds_at_once_and_take_it_once_it_goes_on()
+    {
+        MainWindow window = OpenWaits("Held", TestFolders.Create("pids-"));
+        string program = PathNames.Canonical(waits.PathOf("Program.cs"));
+        window.Debugger.Breakpoints.Toggle(program, Array.FindIndex(File.ReadAllLines(program), l => l.Contains("Console.WriteLine($\"read {line}\");", StringComparison.Ordinal)));
+        const string Attaching = "Waits is paused in the debugger: continue it to profile";
+        const string Snapshotting = "Waits is paused in the debugger: continue it to take a memory snapshot";
+        try
+        {
+            Ui.Launched(window, window.DebugAsync(), "the program to start under the debugger", TimeSpan.FromMinutes(3));
+            Ui.TypeToDebugged(window, "to the breakpoint");
+            Ui.WaitFor(() => window.Debugger.Session?.State == Pitstop.App.Debugging.DebugState.Paused, "the program to stop at its breakpoint", TimeSpan.FromMinutes(1));
+
+            Assert.Equal(Attaching, window.Actions.WhyNot(AppActions.AttachProfiler, window.Actions.Context()));
+            Task<string?> refused = window.AttachProfilerAsync();
+            Assert.True(refused.IsCompleted, "Attach Profiler waited on the program the debugger holds");
+            Assert.Equal(Attaching, Ui.Await(refused, "Attach Profiler's refusal"));
+            Assert.Null(window.Actions.Work.Of(AppActions.AttachProfiler));
+            Assert.Null(window.Profiling);
+
+            Resume(window);
+            Assert.Null(window.Actions.WhyNot(AppActions.AttachProfiler, window.Actions.Context()));
+            Ui.Launched(window, window.AttachProfilerAsync(), "the profiler to attach to the program gone on");
+            Assert.True(window.Profiling is { Attached: true }, "Attach Profiler did not attach once the program went on");
+
+            Assert.True(window.Perform(AppActions.Pause), "Pause did not run");
+            Ui.WaitFor(() => window.Debugger.Session?.State == Pitstop.App.Debugging.DebugState.Paused, "the program to pause", TimeSpan.FromMinutes(1));
+            Assert.Equal(Snapshotting, window.Actions.WhyNot(AppActions.MemorySnapshot, window.Actions.Context()));
+            window.ShowToolWindow(ToolWindowIds.Profiler);
+            Ui.Settle();
+            Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+            Avalonia.Controls.Button take = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Avalonia.Controls.Button>()
+                .Single(b => b.Content as string == "Get Memory Snapshot");
+            Ui.Click(take);
+            Assert.Equal(Snapshotting, window.Status);
+            Assert.Null(window.Actions.Work.Of(AppActions.MemorySnapshot));
+            Task<MemorySnapshot?> heap = window.MemorySnapshotAsync();
+            Assert.True(heap.IsCompleted, "Get Memory Snapshot waited on the program the debugger holds");
+            Assert.Null(Ui.Await(heap, "Get Memory Snapshot's refusal"));
+            Assert.Null(view.Memory);
+            Task<Pitstop.App.Profiling.SnapshotRead> unread = window.SnapshotAsync();
+            Assert.True(unread.IsCompleted, "Get Snapshot waited on the program the debugger holds");
+            Assert.Equal("Waits is paused in the debugger: continue it to get its snapshot", Ui.Await(unread, "Get Snapshot's refusal").Message);
+            Assert.True(window.Profiling is { HasExited: false }, "Get Snapshot of the program the debugger holds ended its run unread");
+
+            Resume(window);
+            Pitstop.App.Profiling.SnapshotRead read = Ui.Await(window.SnapshotAsync(), "the attached run's snapshot once the program went on", TimeSpan.FromMinutes(2));
+            Assert.True(read.Snapshot is not null, read.Message);
+            Assert.True(window.Debugger.IsDebugging, "The program debugged ended with the profiler's snapshot");
+            Assert.Null(window.Actions.WhyNot(AppActions.AttachProfiler, window.Actions.Context()));
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the program debugged to end");
+            window.Close();
+        }
+    }
+
+    /// <summary>Resumes the program debugged, and waits for it to leave its stop.</summary>
+    private static void Resume(MainWindow window)
+    {
+        Pitstop.App.Debugging.DebugSession session = window.Debugger.Session!;
+        bool resumed = false;
+        session.StateChanged += (_, _) => resumed |= session.State != Pitstop.App.Debugging.DebugState.Paused;
+        Assert.True(window.Perform(AppActions.Resume), "Resume did not run");
+        Ui.WaitFor(() => resumed, "the program to go on");
+    }
+
+    /// <summary>A memory snapshot of a program being profiled counts its heap by type and it runs on; then Close Solution
+    /// ends the run whole: the program killed, the profiler's port gone with its listener, and the profiler window no longer
+    /// following the run, its time no longer counting and its Kill and Get Snapshot gone.</summary>
+    private void A_memory_snapshot_of_a_program_being_profiled_counts_its_heap_by_type_and_leaving_the_folder_then_ends_the_run()
+    {
+        string pids = TestFolders.Create("pids-");
+        MainWindow window = OpenWaits("Waits for its input", pids);
+        IReadOnlyList<string> before = Ports();
+        OwnProcess program = default;
+        try
+        {
+            Ui.Launched(window, window.ProfileAsync(), "the build and the start", TimeSpan.FromMinutes(3));
+            program = OwnProcess.Of(Started(pids, "the profiled program to start"));
+            Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+            Assert.True(view.IsFollowing, "The profiler window does not follow the run");
+            Assert.NotEqual(before, Ports());
+            Ui.PumpUntil(() => window.BottomPanel.Run.Document.Snapshot.ToString().Contains("waiting", StringComparison.Ordinal), "the program to wait on its input");
+
+            Avalonia.Controls.Button take = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Avalonia.Controls.Button>()
+                .Single(b => b.Content as string == "Get Memory Snapshot");
+            // Where only the runtime can write it, into the program's output (Linux's ptrace_scope), that is let.
+            window.Confirm = (_, _, _) => Task.FromResult(true);
+            Ui.Click(take, settle: false);
+            // Bounded, so a createdump that never finishes fails here, not the run.
+            Ui.WaitFor(() => view.Memory is not null || window.Status?.StartsWith("No memory snapshot", StringComparison.Ordinal) == true,
+                "the memory snapshot", TimeSpan.FromMinutes(2));
+            Assert.True(view.Memory is not null, window.Status);
+            HeapType strings = Assert.Single(view.HeapTypes, t => t.Name == "System.String");
+            Assert.True(strings.Count > 10, $"{strings.Count} strings");
+            Assert.Equal(view.Memory.Bytes, view.HeapTypes.Sum(t => t.Bytes));
+            Assert.True(window.Profiling is { HasExited: false }, "The program being profiled ended with its memory snapshot");
+
+            Assert.Null(window.CloseSolution());
+            Assert.True(Processes.Gone(program.Id), $"Closing the folder left the program being profiled running: {Processes.Describe(program.Id)}");
+            Ui.WaitFor(() => Ports().SequenceEqual(before), "the profiler's port to go with its folder");
+            Assert.False(view.IsFollowing, "The profiler window went on timing the run of the folder left");
+            Assert.False(view.CanKill, "The profiler window kept Kill for the program of the folder left");
+            Assert.Equal("Profiling Waits for its input ended with its folder", view.Status);
+            Ui.Hold(TimeSpan.FromMilliseconds(500), "the profiler window's clock to tick, were it still counting");
+            Assert.Equal("Profiling Waits for its input ended with its folder", view.Status);
+            window.Close();
+        }
+        finally
+        {
+            program.Kill();
+        }
+    }
+
+    /// <summary>Get Snapshot ends the run, not the program Profile started: it goes on, read from and typed to in the Run
+    /// console, with Kill there and Stop able to end it, and nothing of the profiler's left listening for it; meanwhile
+    /// Profile starts no other, which Kill and Stop could not reach.</summary>
+    private void A_profiled_program_goes_on_after_its_snapshot_until_stop_ends_it()
+    {
+        string pids = TestFolders.Create("pids-");
+        MainWindow window = OpenWaits("Lasting", pids);
+        IReadOnlyList<string> before = Ports();
+        int program = 0;
+        List<OwnProcess> own = [];
+        try
+        {
+            Ui.Launched(window, window.ProfileAsync(), "the build and the start", TimeSpan.FromMinutes(3));
+            program = Started(pids, "the profiled program to start");
+            own.Add(OwnProcess.Of(program));
+            Pitstop.App.ToolWindows.OutputView run = window.BottomPanel.Run;
+            Ui.WaitFor(() => Shows(run, "waiting"), "the program to wait on its input");
+
+            Pitstop.App.Profiling.SnapshotRead read = Ui.Await(window.SnapshotAsync(), "the snapshot", TimeSpan.FromMinutes(2));
+            Assert.True(read.Snapshot is not null, read.Message);
+            Pitstop.App.Profiling.ProfilerView view = window.ProfilerView;
+            Assert.True(Processes.IsRunning(program), "The program Profile started ended with its snapshot");
+            Assert.True(view.CanKill, "Kill went with the snapshot, though the program Profile started goes on");
+            Assert.Null(window.Actions.WhyNot(AppActions.Stop, window.Actions.Context()));
+            // Windows lists a named pipe until its last handle goes, which the program closes soon, not at once.
+            Ui.WaitFor(() => Ports().SequenceEqual(before),
+                () => $"the profiler's port to go with the snapshot, the program going on, where {string.Join(", ", Ports())} is still listed",
+                TimeSpan.FromSeconds(10));
+            Assert.Equal($"{window.Configuration!.Name} goes on after its snapshot: Kill it first, or Attach Profiler to profile it again",
+                window.Actions.WhyNot(AppActions.Profile, window.Actions.Context()));
+            Ui.TypeToRun(window, "after the snapshot");
+            Ui.WaitFor(() => Shows(run, "read after the snapshot"), "the program to read what was typed after its snapshot");
+
+            Ui.Run(window, AppActions.Stop);
+            Assert.True(Processes.Gone(program), $"Stop left the program Profile started running: {Processes.Describe(program)}");
+            Ui.WaitFor(() => !view.CanKill, "Kill to go with the program");
+            Assert.Equal("Nothing is running", window.Actions.WhyNot(AppActions.Stop, window.Actions.Context()));
+            Assert.Null(window.Actions.WhyNot(AppActions.Profile, window.Actions.Context()));
+            Assert.Null(window.Profiling);
+
+            int first = program;
+            Ui.Launched(window, window.ProfileAsync(), "the second start", TimeSpan.FromMinutes(2));
+            Ui.PumpUntil(() => (program = Programs(pids).FirstOrDefault(p => p != first)) > 0, "the program profiled again to start", TimeSpan.FromMinutes(2));
+            own.Add(OwnProcess.Of(program));
+            Pitstop.App.Profiling.SnapshotRead again = Ui.Await(window.SnapshotAsync(), "the second snapshot", TimeSpan.FromMinutes(2));
+            Assert.True(again.Snapshot is not null, again.Message);
+            Assert.True(Processes.IsRunning(program), "The program profiled again ended with its snapshot");
+            Assert.Null(window.CloseSolution());
+            Assert.True(Processes.Gone(program), $"Closing the folder left the program Profile started running after its snapshot: {Processes.Describe(program)}");
+            window.Close();
+        }
+        finally
+        {
+            own.ForEach(left => left.Kill());
+        }
+    }
+
+    /// <summary>The Run console is one program's at a time: Profile of another configuration is refused while Run's program
+    /// runs there, its output and typing left to it; Profile of the configuration Run runs ends that run and profiles it;
+    /// and Run is refused while Profile's program has it, until that ends, after which typing reaches Run's
+    /// program.</summary>
+    private void Profile_and_Run_each_wait_for_the_Run_console_while_the_other_s_program_has_it()
+    {
+        string pids = TestFolders.Create("pids-");
+        MainWindow window = OpenWaits("Echo", pids);
+        Pitstop.App.ToolWindows.OutputView run = window.BottomPanel.Run;
+        string name = window.Configuration!.Name;
+        window.SetConfigurations([window.Configuration!, window.Configuration! with { Name = "Other" }], name);
+        try
+        {
+            Ui.Launched(window, window.RunAsync(), "the run", TimeSpan.FromMinutes(3));
+            Ui.WaitFor(() => Shows(run, "waiting"), "Run's program to wait on its input");
+            int ran = Started(pids, "Run's program to write its id");
+            Assert.True(window.SelectConfiguration("Other"), "No configuration Other");
+            string taken = "Run's program uses the Run console: stop it first, or Attach Profiler to profile it";
+            Assert.Equal(taken, window.Actions.WhyNot(AppActions.Profile, window.Actions.Context()));
+            Assert.Equal(taken, Ui.Await(window.ProfileAsync(), "Profile's refusal"));
+            Assert.True(Shows(run, "waiting"), "Profile cleared the Run console of Run's program");
+            Ui.TypeToRun(window, "to the run");
+            Ui.WaitFor(() => Shows(run, "read to the run"), "Run's program to read what was typed once Profile was refused");
+
+            Assert.True(window.SelectConfiguration(name), $"No configuration {name}");
+            Assert.Null(window.Actions.WhyNot(AppActions.Profile, window.Actions.Context()));
+            Ui.Launched(window, window.ProfileAsync(), "the profiled run", TimeSpan.FromMinutes(3));
+            Assert.True(Processes.Gone(ran), $"Profile of {name} left the program Run started for it running: {Processes.Describe(ran)}");
+            Assert.False(window.Runner.IsRunning, $"Profile of {name} left Run's program holding the Run console");
+            Ui.WaitFor(() => Shows(run, "waiting"), "the profiled program to wait on its input");
+            Assert.Equal($"{name}, which Profile started, uses the Run console: Kill it first", Ui.Await(window.RunAsync(), "Run's refusal"));
+            Assert.False(window.Runner.IsRunning, "Run started a program in the Run console the profiled one writes to");
+            Ui.TypeToRun(window, "to the profile");
+            Ui.WaitFor(() => Shows(run, "read to the profile"), "the profiled program to read what was typed");
+            window.ShowToolWindow(ToolWindowIds.Profiler);
+            Avalonia.Controls.Button kill = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window.ProfilerView).OfType<Avalonia.Controls.Button>()
+                .Single(b => b.Content as string == "Kill");
+            Ui.Click(kill, settle: false);
+            Ui.WaitFor(() => window.ProfilerView.Snapshot is not null, "the killed program's snapshot", TimeSpan.FromMinutes(2));
+
+            Ui.Launched(window, window.RunAsync(), "the run after the profile", TimeSpan.FromMinutes(2));
+            Ui.WaitFor(() => Shows(run, "waiting"), "Run's program to wait on its input after the profile");
+            Ui.TypeToRun(window, "after the profile");
+            Ui.WaitFor(() => Shows(run, "read after the profile"), "Run's program to read what was typed after a profile");
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning && window.Profiling is null, "what ran to stop");
+            window.Close();
+        }
+    }
+
+    /// <summary>A profiled program that needs a terminal (Console.ReadKey refusing the Run window's pipe) has the Profiler
+    /// window and the Run window it writes to say so, read from the exception .NET writes there, with Profile in the
+    /// Terminal, which keeps the configuration's Use external console on and profiles it from its start in a tab of the
+    /// Terminal window, the offer then gone: there it reads the key typed, the Run console left as it was, and its end shows
+    /// its snapshot, samples taken.</summary>
+    private void A_profiled_program_needing_a_terminal_is_offered_one_and_Profile_in_the_Terminal_profiles_it_reading_the_key_typed_there()
+    {
+        string project = Project("Keys", """
+            using System.Diagnostics;
+            Console.WriteLine("key?");
+            ConsoleKeyInfo key = Console.ReadKey(intercept: true);
+            Console.WriteLine($"key {key.KeyChar}");
+            Stopwatch spun = Stopwatch.StartNew();
+            double total = 0;
+            while (spun.ElapsedMilliseconds < 300)
+            {
+                total += Math.Sqrt(spun.ElapsedTicks);
+            }
+            Console.WriteLine($"spun {total > 0}");
+            """);
+        MainWindow window = Ui.OpenFolder(project, languageServer: false);
+        Pitstop.App.ToolWindows.OutputView run = window.BottomPanel.Run;
+        try
+        {
+            Ui.Launched(window, window.ProfileAsync(), "the profiled run", TimeSpan.FromMinutes(3));
+            Ui.WaitFor(() => window.Session.Profiled is null, () => $"the profiled program to end; the Run window shows:\n{run.Document.Snapshot}", TimeSpan.FromMinutes(2));
+            const string said = "Keys needs a terminal for Console.ReadKey: the Run window gives it pipes";
+            Assert.True(run.Offered == said && window.ProfilerView.Offered == said,
+                $"The profiled program is not offered a terminal, the Profiler window saying {window.ProfilerView.Offered ?? "nothing"} and the Run window {run.Offered ?? "nothing"}, where it shows:\n{run.Document.Snapshot}");
+            string console = run.Document.Snapshot.ToString();
+            Snapshot? crashed = window.ProfilerView.Snapshot;
+
+            Ui.ClickButton(window.ProfilerView, "Profile in the Terminal");
+            Ui.WaitFor(() => window.Session.Profiled is { Terminal: { } tab } && Terminal(tab).Contains("key?", StringComparison.Ordinal),
+                () => $"the program to be profiled in the terminal and ask for its key: {Ui.Said(window)}", TimeSpan.FromMinutes(2));
+            Pitstop.App.Run.TerminalRun program = window.Session.Profiled!.Terminal!;
+            Assert.Equal(Pitstop.App.Run.ConsoleKind.Terminal, window.Configuration?.Console);
+            Assert.True(window.ProfilerView.IsFollowing, $"The profiler window does not follow the run in the terminal: {window.ProfilerView.Status}");
+            Assert.True(window.ProfilerView.Offered is null && run.Offered is null, $"The offer taken is still made: {window.ProfilerView.Offered ?? run.Offered}");
+            Assert.Equal(console, run.Document.Snapshot.ToString());
+
+            window.ShowToolWindow(ToolWindowIds.Terminal);
+            window.TerminalPanel.FocusView();
+            Ui.WaitFor(() => window.TerminalPanel.View.IsFocused && window.TerminalPanel.ActiveTab?.Run == program, "the keys to go to the program's tab");
+            Assert.True(window.Session.Profiled is { Run.HasExited: false }, $"The profiled program in the terminal ended before its key: {Ui.Said(window)}; {window.ProfilerView.Status}");
+            window.KeyTextInput("q");
+            Ui.WaitFor(() => Terminal(program).Contains("key q", StringComparison.Ordinal), () => $"the program to read the key typed in the terminal; its tab shows:\n{Terminal(program)}");
+            Ui.WaitFor(() => window.ProfilerView.Snapshot is { } shown && shown != crashed, () => $"the program's end to show its snapshot: {Ui.Said(window)}", TimeSpan.FromMinutes(2));
+            Snapshot snapshot = window.ProfilerView.Snapshot!;
+            Assert.True(snapshot.Samples > 0 && snapshot.CutShort is null,
+                $"The run in the terminal has {snapshot.Samples} samples{(snapshot.CutShort is { } cut ? $", its trace cut short: {cut}" : string.Empty)}: {Ui.Said(window)}");
+            Assert.True(Terminal(program).Contains("spun True", StringComparison.Ordinal), $"The program in the terminal did not run on to its end: {Terminal(program)}");
+            Assert.Equal(console, run.Document.Snapshot.ToString());
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            Ui.WaitFor(() => window.Session.Profiled is null, "the program in the terminal to stop");
+            window.Close();
+        }
+    }
+
+    /// <summary>The text of a program's tab of the Terminal window, its scrollback and its screen.</summary>
+    private static string Terminal(Pitstop.App.Run.TerminalRun run) =>
+        string.Join('\n', run.Session.Screen.Scrollback.Select(l => l.Text()).Concat(run.Session.Screen.Lines.Select(l => l.Text())));
+
+    /// <summary>Attach Profiler where its snapshot cannot be written says so and leaves the program as it was, running and
+    /// recorded by nothing: the recording it began there ended (EventPipe released), which the program's frames provider
+    /// hears as turned off. Once a snapshot can be written, Attach Profiler records it.</summary>
+    private void Attach_Profiler_that_cannot_write_its_snapshot_says_why_releases_EventPipe_and_leaves_the_program_running_unrecorded()
+    {
+        MainWindow window = OpenWaits("Attached", TestFolders.Create("pids-"));
+        try
+        {
+            Ui.Launched(window, window.RunAsync(), "the program", TimeSpan.FromMinutes(3));
+            Pitstop.App.ToolWindows.OutputView run = window.BottomPanel.Run;
+            Ui.WaitFor(() => Shows(run, "waiting"), "the program to start");
+            // A folder in the place of each name the snapshot could take for the next while: the recording begins, its file cannot.
+            DateTime now = DateTime.Now;
+            List<string> blocked = [];
+            for (int second = -1; second <= TimeSpan.FromMinutes(2).Scaled().TotalSeconds; second++)
+            {
+                string stamp = now.AddSeconds(second).ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+                string path = Path.Combine(window.SnapshotFolder, $"Waits-{stamp}.nettrace");
+                // A trace a test before began in that second has the name: the one the profiler would take next is blocked.
+                for (int again = 2; File.Exists(path); again++)
+                {
+                    path = Path.Combine(window.SnapshotFolder, $"Waits-{stamp}-{again}.nettrace");
+                }
+                Directory.CreateDirectory(path);
+                blocked.Add(path);
+            }
+            string? refused = Ui.Await(window.AttachProfilerAsync(), "Attach Profiler's answer");
+            Assert.StartsWith("Could not profile Waits: no snapshot can be written in ", refused, StringComparison.Ordinal);
+            Assert.Null(window.Profiling);
+            Assert.True(window.Runner.IsRunning, "Attach Profiler ended the program it could not record");
+            Ui.WaitFor(() => Shows(run, "frames Enable") && Shows(run, "frames Disable"), "the recording begun in the program to end");
+
+            foreach (string path in blocked)
+            {
+                Directory.Delete(path);
+            }
+            Assert.Null(Ui.Await(window.AttachProfilerAsync(), "the recovered trace attachment"));
+            Assert.NotNull(Ui.Await(window.SnapshotAsync(), "the recovered attachment's snapshot").Snapshot);
+            Assert.True(window.Runner.IsRunning);
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            window.Close();
+        }
+    }
+
+    /// <summary>Get Snapshot of a program attached to whose runtime answers the stop with an error (of the diagnostics
+    /// library's, not the program gone) still reads the run and lets it go: the snapshot shows, the recording ended, the
+    /// program running, and nothing of the profiler's left connected to its port.</summary>
+    private void Get_Snapshot_of_a_program_whose_runtime_refuses_the_stop_still_reads_the_run_and_lets_it_go()
+    {
+        string pids = TestFolders.Create("pids-");
+        MainWindow window = OpenWaits("Refused", pids);
+        try
+        {
+            Ui.Launched(window, window.RunAsync(), "the program", TimeSpan.FromMinutes(3));
+            Pitstop.App.ToolWindows.OutputView run = window.BottomPanel.Run;
+            Ui.WaitFor(() => Shows(run, "waiting"), "the program to start");
+            using StopRefusingPort port = new(Started(pids, "the program to write its id"));
+            Assert.Null(Ui.Await(window.AttachProfilerAsync(), "Attach Profiler's answer"));
+            Ui.WaitFor(() => Shows(run, "frames Enable"), "the recording to begin in the program");
+
+            Pitstop.App.Profiling.SnapshotRead read = Ui.Await(window.SnapshotAsync(), "the snapshot", TimeSpan.FromMinutes(2));
+            Assert.Equal(1, port.Refused);
+            Assert.True(read.Snapshot is not null, $"The run whose stop was refused was not read: {read.Message}");
+            Assert.Null(window.Profiling);
+            Ui.WaitFor(() => Shows(run, "frames Disable"), "the recording in the program to end");
+            Ui.WaitFor(() => port.Open == 0, () => $"the profiler's {port.Open} connections to the program's port to close");
+            Assert.True(window.Runner.IsRunning, "The program ended with its snapshot");
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            window.Close();
+        }
+    }
+
+    /// <summary>Attach Profiler profiles the program the person runs wherever Run started it: one in a tab of the terminal,
+    /// and under Hot Reload the app dotnet watch started, never dotnet watch's own process.</summary>
+    private void Attach_Profiler_profiles_the_program_run_in_the_terminal_and_the_app_dotnet_watch_runs()
+    {
+        string pids = TestFolders.Create("pids-");
+        string project = Project("Spun", $"File.WriteAllText(Path.Combine(@\"{pids}\", $\"{{Environment.ProcessId}}.pid\"), \"\");\n" + """
+            System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
+            while (clock.Elapsed < TimeSpan.FromMinutes(5))
+            {
+                Work.Spin();
+            }
+            static class Work
+            {
+                [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+                public static double Spin()
+                {
+                    double total = 0;
+                    for (int i = 1; i < 100000; i++) { total += Math.Sqrt(i); }
+                    return total;
+                }
+            }
+            """);
+        MainWindow window = Ui.OpenFolder(project, languageServer: false);
+        Dictionary<int, OwnProcess> own = [];
+        IReadOnlyList<int> Programs() => Held(ProfilerTests.Programs(pids), own);
+        string generated = window.Configuration!.Name;
+        try
+        {
+            window.SetConfigurations([new Pitstop.App.Run.RunConfiguration
+            {
+                Name = "In the terminal", Project = PathNames.Canonical(Path.Combine(project, "Spun.csproj")), Console = Pitstop.App.Run.ConsoleKind.Terminal,
+            }], "In the terminal");
+            Ui.Launched(window, window.RunAsync(), "the run in the terminal", TimeSpan.FromMinutes(3));
+            Ui.PumpUntil(() => Programs().Count == 1, "the program to start in the terminal", TimeSpan.FromMinutes(2));
+            int inTerminal = Programs()[0];
+            Assert.Null(window.Actions.WhyNot(AppActions.AttachProfiler, window.Actions.Context()));
+            Ui.Launched(window, window.AttachProfilerAsync(), "the profiler to attach to the program in the terminal");
+            Assert.Equal(inTerminal, window.Profiling?.ProcessId);
+            Ui.Hold(TimeSpan.FromSeconds(1), "the attached profiler to sample the spinning program");
+            Pitstop.App.Profiling.SnapshotRead terminal = Ui.Await(window.SnapshotAsync(), "the terminal program's snapshot", TimeSpan.FromMinutes(2));
+            Assert.True(terminal.Snapshot?.HotSpots.Any(h => h.Name.StartsWith("Work.Spin", StringComparison.Ordinal)) == true, terminal.Message);
+            Ui.Run(window, AppActions.Stop);
+            Assert.True(Processes.Gone(inTerminal), $"Stop left the program in the terminal running: {Processes.Describe(inTerminal)}");
+            Ui.WaitFor(() => !window.IsRunning, "the terminal's program to end");
+
+            window.ApplySettings(window.Settings with { HotReload = true });
+            Assert.True(window.SelectConfiguration(generated));
+            Ui.Launched(window, window.RunAsync(), "the run under dotnet watch", TimeSpan.FromMinutes(3));
+            Ui.PumpUntil(() => Programs().Count == 2, "dotnet watch to start the app", TimeSpan.FromMinutes(3));
+            int app = Programs().Single(p => p != inTerminal);
+            Ui.Launched(window, window.AttachProfilerAsync(), "the profiler to attach to the app dotnet watch runs");
+            int profiled = window.Profiling?.ProcessId ?? 0;
+            Assert.True(profiled == app, $"Attach Profiler profiled {Processes.Describe(profiled)}, not the app dotnet watch runs, {Processes.Describe(app)}");
+            Ui.Hold(TimeSpan.FromSeconds(1), "the attached profiler to sample the spinning app");
+            Pitstop.App.Profiling.SnapshotRead watched = Ui.Await(window.SnapshotAsync(), "the app's snapshot", TimeSpan.FromMinutes(2));
+            Assert.True(watched.Snapshot?.HotSpots.Any(h => h.Name.StartsWith("Work.Spin", StringComparison.Ordinal)) == true, watched.Message);
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            Ui.WaitFor(() => !window.IsRunning, "what ran to stop");
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+            window.Close();
+            foreach (OwnProcess program in own.Values)
+            {
+                program.Kill();
+            }
+            TestFolders.Delete(pids);
+        }
+    }
+
+    /// <summary>A trace holding only the runtime's allocation ticks and collections, no samples and no frames (a recording of
+    /// a program's memory alone), lists them on the Allocations and GC pages as any run's.</summary>
+    private void A_trace_of_allocations_and_collections_alone_lists_them()
+    {
+        string trace = Path.Combine(folder, "MemoryOnly.nettrace");
+        MemoryRecorded recorded = Ui.Await(Waiting.Apart(() => RecordMemory(trace)), "the allocations' and collections' trace");
+        MainWindow window = new() { Width = 1300, Height = 900 };
+        window.Show();
+        try
+        {
+            Snapshot snapshot = Ui.Await(window.OpenSnapshotAsync(trace), "the snapshot to open") ?? throw new InvalidOperationException($"The snapshot did not open: {window.Status}");
+            Assert.Equal(0, snapshot.Samples);
+            AllocatedType arrays = snapshot.Allocations.FirstOrDefault(a => a.Name == "System.Byte[]")
+                ?? throw new Xunit.Sdk.XunitException($"The byte arrays allocated are not listed, of [{string.Join(", ", snapshot.Allocations.Select(a => a.Name))}]: {TraceSaid(trace, recorded, snapshot)}");
+            Assert.True(arrays.Bytes >= 4_000_000, $"The byte arrays allocated are listed with {arrays.Bytes:N0} bytes, not the 8 MB allocated: {TraceSaid(trace, recorded, snapshot)}");
+            Assert.True(snapshot.Collections.Count(c => c.Generation == 2) >= 3,
+                $"The three collections of generation 2 are not all listed: [{string.Join(", ", snapshot.Collections.Select(c => c.Generation))}]: {TraceSaid(trace, recorded, snapshot)}");
+            window.ProfilerView.ShowPage(Pitstop.App.Profiling.ProfilerPage.Allocations);
+            Ui.Settle();
+            Assert.Contains(window.ProfilerView.Types, t => t.Name == "System.Byte[]");
+            Assert.StartsWith($"{snapshot.Collections.Count} collections", window.ProfilerView.CollectionsSummary, StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>A snapshot kept where Passenger cannot write (a read-only folder, a mounted image) opens as any other, and
+    /// two reads of one snapshot at once both open it: reading one writes nothing beside it.</summary>
+    private void A_snapshot_in_a_folder_passenger_cannot_write_opens_and_two_reads_of_it_at_once_both_open()
+    {
+        string kept = Directory.CreateDirectory(Path.Combine(folder, "kept")).FullName;
+        string trace = Path.Combine(kept, "MemoryOnly.nettrace");
+        Ui.Await(Waiting.Apart(() => RecordMemory(trace)), "the allocations' and collections' trace");
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(kept, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+        }
+        MainWindow window = new() { Width = 1300, Height = 900 };
+        window.Show();
+        try
+        {
+            Snapshot? alone = Ui.Await(window.OpenSnapshotAsync(trace), "the snapshot to open");
+            Assert.True(alone is not null, $"A snapshot in a folder Pitstop cannot write did not open: {window.Status}");
+            Task<Snapshot?> first = window.OpenSnapshotAsync(trace);
+            Task<Snapshot?> second = window.OpenSnapshotAsync(trace);
+            Snapshot? one = Ui.Await(first, "the first of two reads at once");
+            Snapshot? other = Ui.Await(second, "the second of two reads at once");
+            Assert.True(one is not null && other is not null, $"Of two reads of one snapshot at once, one did not open it: {window.Status}");
+            Assert.Equal([trace], Directory.GetFiles(kept));
+        }
+        finally
+        {
+            window.Close();
+            if (!OperatingSystem.IsWindows())
+            {
+                File.SetUnixFileMode(kept, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            }
+        }
+    }
+
+    /// <summary>This process's allocations of 8 MB of small byte arrays and three full collections, recorded by an EventPipe
+    /// session of its own into a .nettrace with the runtime's GC events alone: no sampler, so no samples. Small, since on Linux
+    /// the runtime can leave most large objects' ticks out once its process has allocated large objects before. Begun once
+    /// the session is on, as Passenger's own sessions that hear a program from its first moment are (<see cref="SessionStarts.OnAsync"/>).</summary>
+    private static async Task<MemoryRecorded> RecordMemory(string trace)
+    {
+        long asked = System.Diagnostics.Stopwatch.GetTimestamp();
+        using Microsoft.Diagnostics.NETCore.Client.EventPipeSession session = await SessionStarts.OnAsync(new(Environment.ProcessId),
+            [new Microsoft.Diagnostics.NETCore.Client.EventPipeProvider(Snapshot.RuntimeProvider, System.Diagnostics.Tracing.EventLevel.Verbose, 0x1)], circularBufferMB: 256,
+            TestContext.Current.CancellationToken);
+        Task copying = Waiting.Apart(() =>
+        {
+            using FileStream file = File.Create(trace);
+            session.EventStream.CopyTo(file);
+        });
+        long allocating = System.Diagnostics.Stopwatch.GetTimestamp();
+        List<byte[]> kept = new(80_000);
+        for (int i = 0; i < 80_000; i++)
+        {
+            kept.Add(new byte[100]);
+        }
+        long collecting = System.Diagnostics.Stopwatch.GetTimestamp();
+        for (int i = 0; i < 3; i++)
+        {
+            GC.Collect(2, GCCollectionMode.Forced, blocking: true);
+        }
+        long collected = System.Diagnostics.Stopwatch.GetTimestamp();
+        GC.KeepAlive(kept);
+        session.Stop();
+        Assert.True(await Waiting.Within(copying, TimeSpan.FromSeconds(30), scaled: false), "The EventPipe session's trace never ended");
+        await copying;
+        return new MemoryRecorded(System.Diagnostics.Stopwatch.GetElapsedTime(asked, allocating), System.Diagnostics.Stopwatch.GetElapsedTime(allocating, collecting),
+            System.Diagnostics.Stopwatch.GetElapsedTime(collecting, collected));
+    }
+
+    /// <summary>How long a memory trace's session took to start and come on, and its allocations and its collections took.</summary>
+    private readonly record struct MemoryRecorded(TimeSpan Starting, TimeSpan Allocating, TimeSpan Collecting);
+
+    /// <summary>What a memory trace holds, read apart from the snapshot: how many events, of them allocation ticks and
+    /// collections begun, and when (from its session's start) its first and last came and each collection began, against
+    /// how long the session's start, the allocations and the collections took; and whether it, and the snapshot's read of
+    /// it, was whole.</summary>
+    private static string TraceSaid(string trace, MemoryRecorded recorded, Snapshot snapshot)
+    {
+        using FileStream file = new(trace, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        using Microsoft.Diagnostics.Tracing.EventPipeEventSource source = new(file);
+        int events = 0;
+        int ticks = 0;
+        List<double> begun = [];
+        double first = double.NaN;
+        double last = double.NaN;
+        source.Clr.GCAllocationTick += _ => ticks++;
+        source.Clr.GCStart += data => begun.Add(data.TimeStampRelativeMSec);
+        source.AllEvents += data =>
+        {
+            events++;
+            first = double.IsNaN(first) ? data.TimeStampRelativeMSec : first;
+            last = data.TimeStampRelativeMSec;
+        };
+        string read;
+        try
+        {
+            source.Process();
+            read = "whole";
+        }
+        catch (Exception broken) when (TraceFailures.Broken(broken))
+        {
+            read = $"cut short: {broken.Message}";
+        }
+        return $"the session took {Durations.Said(recorded.Starting)} to start and come on, the allocations {Durations.Said(recorded.Allocating)} and the collections"
+            + $" {Durations.Said(recorded.Collecting)} after them; the trace ({read}) holds {events:N0} events from {first:F1} to {last:F1} ms of its session, {ticks:N0}"
+            + $" allocation ticks and {begun.Count} collections begun, at [{string.Join(", ", begun.Select(at => $"{at:F1}"))}] ms;"
+            + $" the snapshot {(snapshot.CutShort is { } cut ? $"was cut short ({cut})" : "was read whole")}, listing {snapshot.Collections.Count} collections";
+    }
+
+    /// <summary>Frames of these times on the UI thread, told by this process as the Live Visual Tree's inspector tells an
+    /// app's, recorded by an EventPipe session of its own into a .nettrace.</summary>
+    private static async Task RecordFrames(string trace, double[] times)
+    {
+        Microsoft.Diagnostics.NETCore.Client.DiagnosticsClient client = new(Environment.ProcessId);
+        using Microsoft.Diagnostics.NETCore.Client.EventPipeSession session = client.StartEventPipeSession(
+            [new Microsoft.Diagnostics.NETCore.Client.EventPipeProvider(UiFrames.Provider, System.Diagnostics.Tracing.EventLevel.Informational)], requestRundown: false);
+        Task copying = Waiting.Apart(() =>
+        {
+            using FileStream file = File.Create(trace);
+            session.EventStream.CopyTo(file);
+        });
+        using (InspectorFrames frames = new())
+        {
+            Assert.True(Waiting.Until(frames.IsEnabled, TimeSpan.FromSeconds(5)), "The EventPipe session never turned the frames' events on");
+            for (int i = 0; i < times.Length; i++)
+            {
+                frames.Frame(i + 1, times[i], 0, 1, 1, times[i] / 2, times[i] / 4, times[i] / 4, 1, 1);
+                Waiting.For(TimeSpan.FromMilliseconds(times[i] + 20), "each frame's time to pass before the next, as an app's frames take theirs");
+            }
+        }
+        session.Stop();
+        Assert.True(await Waiting.Within(copying, TimeSpan.FromSeconds(30), scaled: false), "The EventPipe session's trace never ended");
+        await copying;
+    }
+
+    /// <summary>The inspector's frame event (Pitstop.Inspector's FrameEvents), by the number and names the profiler reads.</summary>
+    [System.Diagnostics.Tracing.EventSource(Name = UiFrames.Provider)]
+    private sealed class InspectorFrames : System.Diagnostics.Tracing.EventSource
+    {
+        [System.Diagnostics.Tracing.Event(Pitstop.Inspector.FrameWire.FrameEvent, Level = System.Diagnostics.Tracing.EventLevel.Informational)]
+        public void Frame(int frame, double durationMs, double endedMsAgo, int measurePasses, int arrangePasses, double measureMs, double arrangeMs,
+            double renderMs, int measures, int arranges) =>
+            WriteEvent(Pitstop.Inspector.FrameWire.FrameEvent, frame, durationMs, endedMsAgo, measurePasses, arrangePasses, measureMs, arrangeMs, renderMs, measures, arranges);
+    }
+
+    /// <summary>A window on <see cref="Waits"/> with the configuration of <see cref="Configure"/>, and no C# language server,
+    /// which profiling asks nothing of.</summary>
+    private MainWindow OpenWaits(string name, string pids, bool undiagnosed = false)
+    {
+        MainWindow window = Ui.OpenFolder(waits.Folder, languageServer: false, autosaves: false);
+        Configure(window, name, pids, undiagnosed);
+        return window;
+    }
+
+    /// <summary>The window's one configuration, of <see cref="Waits"/>, of this name (never the project's own, which names
+    /// its generated one): the program writes its id into <paramref name="pids"/> (with none it ends at once), its runtime's
+    /// diagnostics off when <paramref name="undiagnosed"/>, so it never reaches the profiler's port, in the working folder
+    /// given (the project's own for none).</summary>
+    private void Configure(MainWindow window, string name, string? pids, bool undiagnosed = false, string workingDirectory = "")
+    {
+        Pitstop.App.Run.RunConfiguration configuration = new()
+        {
+            Name = name,
+            Project = Path.Combine(PathNames.Canonical(waits.Folder), "Waits.csproj"),
+            Arguments = pids is null ? string.Empty : $"\"{pids}\"",
+            WorkingDirectory = workingDirectory,
+        };
+        if (undiagnosed)
+        {
+            configuration = configuration with { Environment = new Dictionary<string, string> { [RuntimeVariables.EnableDiagnostics] = "0" } };
+        }
+        window.SetConfigurations([configuration], name);
+    }
+
+    /// <summary>The ids of the programs of <see cref="Waits"/> that have written theirs into a folder.</summary>
+    private static IReadOnlyList<int> Programs(string pids) =>
+        [.. Directory.GetFiles(pids, "*.pid").Select(p => int.Parse(Path.GetFileNameWithoutExtension(p), System.Globalization.CultureInfo.InvariantCulture))];
+
+    /// <summary>The programs' ids, each one not seen before held as it is now, while it runs: by a test's end one may have
+    /// gone, its id perhaps another program's.</summary>
+    private static IReadOnlyList<int> Held(IReadOnlyList<int> programs, Dictionary<int, OwnProcess> own)
+    {
+        foreach (int program in programs.Where(p => !own.ContainsKey(p)))
+        {
+            own[program] = OwnProcess.Of(program);
+        }
+        return programs;
+    }
+
+    /// <summary>The id of the first program of <see cref="Waits"/> to write its id into a folder, the window's loop running
+    /// meanwhile (not settling, which a profile's start under way would not let it do).</summary>
+    private static int Started(string pids, string what)
+    {
+        int id = 0;
+        Ui.PumpUntil(() => (id = Programs(pids).FirstOrDefault()) > 0, what, TimeSpan.FromMinutes(2));
+        return id;
+    }
+
+    /// <summary>A program that writes its id into the folder its argument names, a file named for it, says it is waiting and
+    /// prints each line it reads until its input ends, or with no argument ends at once: the tests that start a program, act
+    /// on it as it waits and end it. Its frames provider, the one an Avalonia app's inspector has, says when a recording turns
+    /// it on and off.</summary>
+    public sealed class Waits : SharedProject
+    {
+        public Waits()
+            : base("profile-waits-")
+        {
+            File.WriteAllText(PathOf("Waits.csproj"),
+                TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>"));
+            File.WriteAllText(PathOf("Program.cs"), $$"""
+                using System.Diagnostics.Tracing;
+                if (args.Length == 0)
+                {
+                    Environment.Exit(3);
+                }
+                File.WriteAllText(Path.Combine(args[0], $"{Environment.ProcessId}.pid"), Environment.ProcessId.ToString());
+                using Frames frames = new();
+                Console.WriteLine("waiting");
+                while (Console.ReadLine() is { } line)
+                {
+                    frames.Tick();
+                    Console.WriteLine($"read {line}");
+                }
+                sealed class Frames : EventSource
+                {
+                    public Frames() : base("{{Pitstop.Inspector.FrameWire.Provider}}") { }
+                    [Event(1)] public void Tick() => WriteEvent(1);
+                    protected override void OnEventCommand(EventCommandEventArgs command) => Console.WriteLine($"frames {command.Command}");
+                }
+
+                """);
+            // The first build makes bin, which a reset would take for a file the test added: made now, the folder stays as reset.
+            Directory.CreateDirectory(PathOf("bin"));
+        }
+    }
+
+    private string Project(string name, string program, string more = "")
+    {
+        string project = Path.Combine(folder, name);
+        Directory.CreateDirectory(project);
+        File.WriteAllText(Path.Combine(project, $"{name}.csproj"),
+            TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>").With($"  {more}\n"));
+        File.WriteAllText(Path.Combine(project, "Program.cs"), program);
+        Restore.Run(project);
+        return project;
+    }
+
+    /// <summary>Whether a console shows a line holding this, what is on its way there taken in first.</summary>
+    private static bool Shows(Pitstop.App.ToolWindows.OutputView console, string text)
+    {
+        console.Flush();
+        return console.Document.Snapshot.ToString().Contains(text, StringComparison.Ordinal);
+    }
+
+    /// <summary>The diagnostic ports this process's profiler is listening at: a socket in the run's socket folder each, or a
+    /// named pipe on Windows.</summary>
+    private static IReadOnlyList<string> Ports() => OperatingSystem.IsWindows()
+        ? [.. Directory.GetFiles(@"\\.\pipe\").Where(p => Path.GetFileName(p).StartsWith($"pitstop-profile-{Environment.ProcessId}-", StringComparison.Ordinal)).Order(StringComparer.Ordinal)]
+        : Directory.Exists(Pitstop.App.Mcp.McpHost.SocketFolder)
+            ? [.. Directory.GetFiles(Pitstop.App.Mcp.McpHost.SocketFolder, $"{Environment.ProcessId}-*.profiler").Order(StringComparer.Ordinal)]
+            : [];
+
+    private static CallNode? Find(IEnumerable<CallNode> nodes, Func<CallNode, bool> match)
+    {
+        foreach (CallNode node in nodes)
+        {
+            if (match(node))
+            {
+                return node;
+            }
+            if (Find(node.Children, match) is { } found)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+}

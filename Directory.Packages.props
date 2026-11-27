@@ -5,7 +5,7 @@
     <!-- Roslyn's language server, a package per system downloaded rather than referenced (RoslynServer.targets), so its
          version is a property: the newest on nuget.org, prerelease or not, at least as new as the compiler of
          global.json's SDK. A build that starts Visual Studio Telemetry's session even with telemetry off (from
-         5.12.0-1.26475.2 until one carries dotnet/roslyn#86130) is carried with it cut off (tools/Passenger.RoslynPatch). -->
+         5.12.0-1.26475.2 until one carries dotnet/roslyn#86130) is carried with it cut off (tools/Pitstop.RoslynPatch). -->
     <RoslynServerVersion>5.13.0-1.26514.10</RoslynServerVersion>
     <!-- Avalonia's dotnet new templates at the Avalonia version below, downloaded for the tests' local feed so no test
          reaches nuget.org for them. -->
@@ -40,7 +40,7 @@
     <AspireTemplatesVersion>17.0.0</AspireTemplatesVersion>
     <!-- And Aspire 13's AppHost SDK and AppHost package, kept while people use 13 far more than 17 (#2345): one test runs
          an AppHost of that SDK, adding a service with AddProject, whose dashboard and orchestrator come from its packages
-         (Passenger.Tests.csproj downloads them where PassengerAspireRuntime is true), not the CLI's bundle. Dropped once
+         (Pitstop.Tests.csproj downloads them where PassengerAspireRuntime is true), not the CLI's bundle. Dropped once
          Aspire 17 overtakes 13 in use. -->
     <Aspire13Version>13.6.5</Aspire13Version>
     <!-- The Azure Functions app (.NET isolated worker) the Aspire tests write: its MSBuild SDK, downloaded for the tests'
@@ -148,7 +148,7 @@
     <PackageVersion Include="Microsoft.Maui.Controls.Xaml" Version="$(MauiVersion)" />
     <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.85.0" />
-    <!-- Also what Passenger's analyzers are compiled against (src/Passenger.Analyzers), so never past the compiler of
+    <!-- Also what Passenger's analyzers are compiled against (src/Pitstop.Analyzers), so never past the compiler of
          global.json's SDK, nor of Roslyn's server at RoslynServerVersion, which load them. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" />
     <!-- The unit tests' workspaces, at the compiler's version above: what the extension inside Roslyn's server keeps by a
@@ -183,14 +183,14 @@
     <!-- The Windows install's hooks, at the version of the vpk tool that packs it (dotnet-tools.json). -->
     <PackageVersion Include="Velopack" Version="1.2.161" />
   </ItemGroup>
-  <!-- The project host (Passenger.Host): MSBuild compiled against at the oldest an SDK it may load carries (8.0.4xx's
+  <!-- The project host (Pitstop.Host): MSBuild compiled against at the oldest an SDK it may load carries (8.0.4xx's
        17.11), never copied, and MSBuildLocator at the version Roslyn's own build host uses. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Build" Version="17.11.48" />
     <PackageVersion Include="Microsoft.Build.Framework" Version="17.11.48" />
     <PackageVersion Include="Microsoft.Build.Locator" Version="1.10.2" />
   </ItemGroup>
-  <!-- Roslyn's server written again without Visual Studio Telemetry's session (tools/Passenger.RoslynPatch), a tool of
+  <!-- Roslyn's server written again without Visual Studio Telemetry's session (tools/Pitstop.RoslynPatch), a tool of
        the build, never carried: at the version GdUnit4 names for the tests' package cache, one version for both. -->
   <ItemGroup>
     <PackageVersion Include="Mono.Cecil" Version="$(MonoCecilVersion)" />
@@ -245,7 +245,7 @@
     <!-- The theme Avalonia's templates give an app they make, restored for the tests' package cache (tests/AvaloniaGraphs). -->
     <PackageVersion Include="Avalonia.Themes.Fluent2" Version="12.2.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
-    <!-- The analyzers' (src/Passenger.Analyzers): the last release, MIT where netstandard2.0's 1.1.0 is not. -->
+    <!-- The analyzers' (src/Pitstop.Analyzers): the last release, MIT where netstandard2.0's 1.1.0 is not. -->
     <PackageVersion Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />

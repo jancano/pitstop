@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes src/Passenger.App/Theme/Icons.axaml from Microsoft's Fluent UI System Icons (MIT), a few made of two of them,
+"""Writes src/Pitstop.App/Theme/Icons.axaml from Microsoft's Fluent UI System Icons (MIT), a few made of two of them,
 and, where an icon is taken from Visual Studio Code, its Codicons (CC BY 4.0).
 
 Each icon is fetched once into artifacts/icons/ and kept there (tools/fetched.py); the lists below are the only places an
@@ -208,7 +208,7 @@ def main():
             sys.exit(f"icons: {key} has no shape of {folder} or no badge of {badged} at its size")
         lines.append(f'    <StreamGeometry x:Key="Icon.{key}">F1 {"".join(shape + badge)}</StreamGeometry>')
     lines.append("</ResourceDictionary>")
-    target = os.path.join(root, "src", "Passenger.App", "Theme", "Icons.axaml")
+    target = os.path.join(root, "src", "Pitstop.App", "Theme", "Icons.axaml")
     with open(target, "w", encoding="utf-8") as out:
         out.write("\n".join(lines) + "\n")
     print(f"icons: {len(ICONS) + len(CODICONS) + len(COMPOSED)} written to {os.path.relpath(target, root)}")

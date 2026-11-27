@@ -2,7 +2,7 @@
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
-app := "src/Passenger.App"
+app := "src/Pitstop.App"
 
 # Avalonia's build task sends usage data from every build of an Avalonia project unless this is in the environment.
 export AVALONIA_TELEMETRY_OPTOUT := "1"
@@ -130,29 +130,29 @@ app-icon:
     tools/app-icon.sh
 
 # Rewrite the generated themes (Sorbet.json and the rest) from the palettes in tools/themes.py, contrast checked, into a
-# source's folder, their pictures too: a checkout of Zaneris/pitstop-themes, or the tests' copy (tests/Passenger.Tests/Themes);
+# source's folder, their pictures too: a checkout of Zaneris/pitstop-themes, or the tests' copy (tests/Pitstop.Tests/Themes);
 # and the themes Passenger carries (Cubicle) into its built-in source.
-themes folder="tests/Passenger.Tests/Themes":
+themes folder="tests/Pitstop.Tests/Themes":
     python3 -I tools/themes.py {{ quote(folder) }}
     python3 -I tools/theme-pictures.py {{ quote(folder) }}
-    python3 -I tools/themes.py src/Passenger.App/Theme/BuiltIn
+    python3 -I tools/themes.py src/Pitstop.App/Theme/BuiltIn
 
-# Rewrite src/Passenger.Workspace/GodotShaderTypes.json, Godot's shading language as its sources at one commit say it
+# Rewrite src/Pitstop.Workspace/GodotShaderTypes.json, Godot's shading language as its sources at one commit say it
 # (tools/godot-shader-types.py).
 godot-shader-types:
     python3 -I tools/godot-shader-types.py
 
-# Rewrite src/Passenger.Workspace/GodotDefaultTheme.json, Godot's default theme as its sources at one commit say it
+# Rewrite src/Pitstop.Workspace/GodotDefaultTheme.json, Godot's default theme as its sources at one commit say it
 # (tools/godot-theme.py).
 godot-theme:
     python3 -I tools/godot-theme.py
 
-# Rewrite src/Passenger.Workspace/GDScript/GodotRenames.json, the Godot 3 names Godot 4's GDScript analyzer hints at, as
+# Rewrite src/Pitstop.Workspace/GDScript/GodotRenames.json, the Godot 3 names Godot 4's GDScript analyzer hints at, as
 # its sources at one commit say them (tools/godot-renames.py).
 godot-renames:
     python3 -I tools/godot-renames.py
 
-# Rewrite tests/Passenger.Tests/RiderKeymaps.json, the keys Rider's keymaps give the actions RiderKeymaps.cs names, from
+# Rewrite tests/Pitstop.Tests/RiderKeymaps.json, the keys Rider's keymaps give the actions RiderKeymaps.cs names, from
 # an installed Rider (tools/rider-keymaps.py): just rider-keymaps [RIDER.app]
 rider-keymaps rider="":
     python3 -I tools/rider-keymaps.py {{ quote(rider) }}
@@ -165,7 +165,7 @@ icons:
 file-icons:
     python3 -I tools/file-icons.py
 
-# Rewrite the C# of Aspire's resource service protocol (src/Passenger.App/Aspire/Protocol) from its .proto, with protoc
+# Rewrite the C# of Aspire's resource service protocol (src/Pitstop.App/Aspire/Protocol) from its .proto, with protoc
 # from a pinned Grpc.Tools fetched into artifacts/aspire-protocol (tools/aspire-protocol.py).
 aspire-protocol:
     python3 -I tools/aspire-protocol.py
@@ -206,7 +206,7 @@ godot-sweep *args:
 site-shots *scenes:
     tools/site-shots/shots.sh {{scenes}}
 
-# Retake the first start's pictures of each theme Passenger carries, src/Passenger.App/Assets/FirstStart, after just build
+# Retake the first start's pictures of each theme Passenger carries, src/Pitstop.App/Assets/FirstStart, after just build
 # (macOS), as the version moves: just first-start-shots
 [unix]
 first-start-shots:

@@ -191,7 +191,7 @@ if [ -d "$app/Contents/MacOS/debugger/relay" ]; then
     mkdir -p "$(dirname "$relays")"
     mv "$app/Contents/MacOS/debugger/relay" "$relays"
 fi
-# The pitstop-ide command's script too, which Pitstop links in ~/.local/bin when the person asks (PassengerCommand.cs).
+# The pitstop-ide command's script too, which Pitstop links in ~/.local/bin when the person asks (PitstopCommand.cs).
 mv "$app/Contents/MacOS/bin" "$app/Contents/Resources/bin"
 # Nothing dotted may stay among the code, or codesign refuses the app's seal as a bundle it cannot read.
 dotted_code() {
@@ -199,7 +199,7 @@ dotted_code() {
     [ -z "$dotted" ] || fail "the app's code carries a dotted folder, which codesign takes for a bundle: ${dotted#"$1/"}"
 }
 dotted_code "$app"
-cp "$root/src/Passenger.App/Assets/Pitstop.icns" "$app/Contents/Resources/Pitstop.icns"
+cp "$root/src/Pitstop.App/Assets/Pitstop.icns" "$app/Contents/Resources/Pitstop.icns"
 # The document types Open With and the Dock offer Pitstop: solutions, C# projects and folders, never as default.
 cat > "$app/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -326,7 +326,7 @@ rm -rf "$work/zip"
 # Beside the app: a link to /Applications and the volume's icon; its name carries the version, as the file's cannot.
 volume_name="Pitstop $version"
 ln -s /Applications "$stage/Applications"
-cp "$root/src/Passenger.App/Assets/Pitstop.icns" "$stage/.VolumeIcon.icns"
+cp "$root/src/Pitstop.App/Assets/Pitstop.icns" "$stage/.VolumeIcon.icns"
 # The window's picture at 1x and 2x in one TIFF; sips's exit status ignores a file it skipped, so its absence says it.
 background="$root/tools/dmg-background.svg"
 size=$(sed -n 's/^<svg [^>]*width="\([0-9]*\)" height="\([0-9]*\)".*/\1 \2/p' "$background")
@@ -384,8 +384,8 @@ said=$(plutil -extract CFBundleShortVersionString raw -o - "$plist")
 [ "$said" = "$version" ] || fail "the app's Info.plist says version $said, not $version"
 said=$(plutil -extract CFBundleVersion raw -o - "$plist")
 [ "$said" = "$build" ] || fail "the app's Info.plist says build $said, not $build"
-for part in roslyn/Microsoft.CodeAnalysis.LanguageServer.dll roslyn-extension/Passenger.Roslyn.Extension.dll debugger/Passenger.DebugAdapter.dll \
-    debugger/libdbgshim.dylib inspector/Passenger.Inspector.dll inspector/Avalonia.Headless.dll pitstop-helper pitstop-helper.dll \
+for part in roslyn/Microsoft.CodeAnalysis.LanguageServer.dll roslyn-extension/Pitstop.Roslyn.Extension.dll debugger/Pitstop.DebugAdapter.dll \
+    debugger/libdbgshim.dylib inspector/Pitstop.Inspector.dll inspector/Avalonia.Headless.dll pitstop-helper pitstop-helper.dll \
     pitstop-helper.deps.json pitstop-helper.runtimeconfig.json LICENSE.txt THIRD-PARTY-NOTICES.txt; do
     [ -f "$shipped/Contents/MacOS/$part" ] || fail "the app has no $part"
 done

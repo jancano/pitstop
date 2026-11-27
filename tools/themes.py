@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Writes the generated themes, <Name>.json (theme format 1, docs/themes.md), from the palettes below, into the folder it
-is given: a checkout of Zaneris/passenger-themes, or the copy the tests carry (tests/Passenger.Tests/Themes).
+is given: a checkout of Zaneris/passenger-themes, or the copy the tests carry (tests/Pitstop.Tests/Themes).
 
 Each theme is a few colours per variant (its grounds, words, accent and hues); every token Tokens.axaml gives is worked
 out from them here, then nudged in lightness until each pair Tokens.axaml declares (read:Text, read:Mark, read:Edge)
 passes, so a palette never has to be tuned token by token. The token list is read from Tokens.axaml, so a token added
 there and not here fails this script rather than leaving a theme without it. Adding a theme is a palette here, its file in that folder's index
 (passenger-themes.json beside them) and `just themes FOLDER`. The themes Passenger carries (BUILT_IN) are written the
-same way into its built-in source, src/Passenger.App/Theme/BuiltIn, when that is the folder given.
+same way into its built-in source, src/Pitstop.App/Theme/BuiltIn, when that is the folder given.
 """
 import json
 import math
@@ -16,7 +16,7 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-THEME = os.path.join(ROOT, "src", "Passenger.App", "Theme")
+THEME = os.path.join(ROOT, "src", "Pitstop.App", "Theme")
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Colour arithmetic: sRGB hex, OKLab for moving lightness while hue and chroma hold, WCAG's luminance and CIELAB's L*.
@@ -625,8 +625,8 @@ def variant(theme, p, dark):
     up = 0.07 if dark else -0.07
     t["Passenger.Terminal.Ansi0"] = mix(editor, text, 0.2) if dark else shift(text, -0.1)
     for i, name in enumerate(ansi, 1):
-        t[f"Passenger.Terminal.Ansi{i}"] = hue(name) if dark else legible(hue(name), [editor], round(M - 0.1, 2), dark)
-        t[f"Passenger.Terminal.Ansi{i + 8}"] = shift(t[f"Passenger.Terminal.Ansi{i}"], up * (1 if dark else -0.6))
+        t[f"Pitstop.Terminal.Ansi{i}"] = hue(name) if dark else legible(hue(name), [editor], round(M - 0.1, 2), dark)
+        t[f"Pitstop.Terminal.Ansi{i + 8}"] = shift(t[f"Pitstop.Terminal.Ansi{i}"], up * (1 if dark else -0.6))
     t["Passenger.Terminal.Ansi7"] = mix(muted, text, 0.3)
     t["Passenger.Terminal.Ansi8"] = mix(editor, text, 0.42)
     t["Passenger.Terminal.Ansi15"] = shift(text, 0.08) if dark else mix(editor, text, 0.32)
@@ -690,7 +690,7 @@ def variant(theme, p, dark):
     # A wash under the code gives way where the code's words would not read on it.
     for under_code in ["SelectionInactive", "SearchMatch", "SearchCurrent", "BreakpointLine", "ExceptionBack", "UsageRead", "UsageWrite",
                   "MatchedBrace", "SmartStepTarget", "SmartStepChosen"]:
-        t[f"Passenger.Editor.{under_code}"] = legible(t[f"Passenger.Editor.{under_code}"], [t["Passenger.Editor.Text"]], T, not dark)
+        t[f"Pitstop.Editor.{under_code}"] = legible(t[f"Pitstop.Editor.{under_code}"], [t["Passenger.Editor.Text"]], T, not dark)
     for name in ("Added", "Modified", "Deleted", "Conflict"):
         for key in (f"Passenger.Diff.{name}", f"Passenger.Diff.{name}Word"):
             t[key] = legible(t[key], [t["Passenger.Editor.Text"]], T, not dark)
@@ -857,7 +857,7 @@ def write(folder, name, theme):
 def main():
     if len(sys.argv) != 2 or not os.path.isfile(os.path.join(sys.argv[1], "passenger-themes.json")):
         raise SystemExit("themes.py takes the folder of a source to write into, holding its passenger-themes.json: "
-                         "a checkout of Zaneris/passenger-themes, tests/Passenger.Tests/Themes or src/Passenger.App/Theme/BuiltIn")
+                         "a checkout of Zaneris/passenger-themes, tests/Pitstop.Tests/Themes or src/Pitstop.App/Theme/BuiltIn")
     folder = sys.argv[1]
     built_in = os.path.realpath(folder) == os.path.realpath(os.path.join(THEME, "BuiltIn"))
     themes = BUILT_IN if built_in else THEMES

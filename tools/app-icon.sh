@@ -1,12 +1,12 @@
 #!/bin/sh
-# Passenger's own icons from src/Passenger.App/Assets/pitstop.svg (`just app-icon`, on macOS, since sips draws them):
+# Passenger's own icons from src/Pitstop.App/Assets/pitstop.svg (`just app-icon`, on macOS, since sips draws them):
 # Pitstop.icns at each size macOS asks of an app icon, pitstop.png at 256 pixels for the IDE's mark and Linux's
 # desktop entry, and Pitstop.ico at the sizes Windows draws Pitstop.exe's and every window's icon, each a PNG inside.
 # Every picture the three files hold is read back, failing the script unless its corner is fully transparent.
 set -eu
 . "$(dirname "$0")/release-common.sh"
 root=$(checkout_root)
-assets="$root/src/Passenger.App/Assets"
+assets="$root/src/Pitstop.App/Assets"
 svg="$assets/pitstop.svg"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

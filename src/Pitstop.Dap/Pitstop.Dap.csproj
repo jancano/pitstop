@@ -6,6 +6,6 @@
 
   <ItemGroup>
     <!-- The requests waiting for their answers, kept as every peer of Passenger's keeps them (PendingRequests). -->
-    <ProjectReference Include="../Passenger.Core/Passenger.Core.csproj" />
+    <ProjectReference Include="../Pitstop.Core/Pitstop.Core.csproj" />
   </ItemGroup>
 </Project>

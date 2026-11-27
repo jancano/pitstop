@@ -1,0 +1,1059 @@
+using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+
+namespace Pitstop.Core;
+
+/// <summary>A C# text as it stands, read for where it certainly is code, so nothing in a string or a comment closes what's
+/// open: comments, strings, characters, verbatim and raw strings, and interpolated ones of each kind nested four deep, are
+/// read as C#'s lexer reads them, and anything else (a shape the lexer reads as an error, a line a directive may start within
+/// a token taking lines in a branch that may be left out) leaves the rest of the text unsure. Openers count everywhere, a
+/// directive's levels to its line's end; a closer or a semicolon only in code, and within a condition only where each group
+/// open was read from its <c>#if</c>, as a branch may be text no lexer reads: each branch then reads on from what was open at
+/// the <c>#if</c>, and what follows the group from the most any branch, or none, left open (<see cref="Group"/>). What a
+/// string or a comment opens is set aside at its end, as the lexer's tokens leave it, but for what an unsure stretch opens,
+/// which stays.</summary>
+public partial struct Brackets
+{
+    private const string Lines = "\r\n\u0085\u2028\u2029";
+
+    /// <summary>What C#'s lexer takes for white space: what a directive's <c>#</c> and its name may follow on their line.</summary>
+    private const string Space = "\t\v\f\u001a \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\ufeff";
+
+    /// <summary>The most interpolated strings read nested, one in a hole of another.</summary>
+    private const int MostNestings = 4;
+
+    /// <summary>The most brackets a hole's closers are kept for, two bits each.</summary>
+    private const int MostNested = 32;
+
+    /// <summary>The most condition groups, one within another, whose branches are read from their <c>#if</c>.</summary>
+    private const int MostGroups = 8;
+
+    private static readonly SearchValues<char> CodeMarks = SearchValues.Create("()[]{};<>?n\"'/@$#" + Lines);
+
+    private static readonly SearchValues<char> HoleMarks = SearchValues.Create("()[]{}<>?n\"'/@$#:" + Lines);
+
+    private static readonly SearchValues<char> DocMarks = SearchValues.Create("([{<>?n#$" + Lines);
+
+    private static readonly SearchValues<char> DocBlockMarks = SearchValues.Create("([{<>?n#$*" + Lines);
+
+    private static readonly SearchValues<char> BlockMarks = SearchValues.Create("*" + Lines);
+
+    private static readonly SearchValues<char> StringMarks = SearchValues.Create("\"\\" + Lines);
+
+    private static readonly SearchValues<char> CharMarks = SearchValues.Create("'\\" + Lines);
+
+    private static readonly SearchValues<char> QuoteMarks = SearchValues.Create("\"" + Lines);
+
+    private static readonly SearchValues<char> ContentMarks = SearchValues.Create("\"\\{}" + Lines);
+
+    private static readonly SearchValues<char> VerbatimContentMarks = SearchValues.Create("\"{}" + Lines);
+
+    private static readonly SearchValues<char> RawContentMarks = SearchValues.Create("\"{}" + Lines);
+
+    private static readonly SearchValues<char> FormatMarks = SearchValues.Create("\"\\{}" + Lines);
+
+    private static readonly SearchValues<char> DirectiveMarks = SearchValues.Create("/\"(!&|=" + Lines);
+
+    private static readonly SearchValues<char> UnsureDirectiveMarks = SearchValues.Create("()[]{};#$<>?n!&|=" + Lines);
+
+    private static readonly SearchValues<char> NewLines = SearchValues.Create(Lines);
+
+    private static readonly SearchValues<char> Spaces = SearchValues.Create(Space);
+
+    private static readonly int If = Named("if");
+
+    private static readonly int EndIf = Named("endif");
+
+    private static readonly int Else = Named("else");
+
+    private static readonly int Elif = Named("elif");
+
+    /// <summary>Where the text was read to: in code, unsure, or inside what a lexer reads as one token or trivia.</summary>
+    private enum Place : byte
+    {
+        Code,
+        Unsure,
+        Slash,
+        SlashSlash,
+        SlashSlashSlash,
+        Line,
+        DocLine,
+        AfterDoc,
+        SlashStar,
+        SlashStarStar,
+        Block,
+        BlockStar,
+        DocBlock,
+        DocBlockStar,
+        Directive,
+        DirectiveRest,
+        DirectiveSlash,
+        DirectiveQuotes,
+        UnsureName,
+        UnsureDirective,
+        LineStart,
+        Quote,
+        QuoteQuote,
+        String,
+        StringEscape,
+        Char,
+        CharEscape,
+        RawOpen,
+        RawAfterOpen,
+        Raw,
+        RawQuotes,
+        At,
+        AtDollar,
+        Verbatim,
+        VerbatimQuote,
+        Dollar,
+        DollarAt,
+        InterpolatedQuote,
+        InterpolatedQuoteQuote,
+        RawInterpolatedOpen,
+        RawInterpolatedAfterOpen,
+        RawContent,
+        RawContentQuotes,
+        RawContentOpen,
+        RawContentClose,
+        RawHoleClose,
+        Content,
+        ContentEscape,
+        ContentHex,
+        VerbatimContent,
+        VerbatimContentQuote,
+        ContentOpen,
+        ContentClose,
+        Hole,
+        HoleSlash,
+        Format,
+    }
+
+    /// <summary>What's open that a condition's branch reads on from.</summary>
+    private Open Opened
+    {
+        readonly get => new() { Statement = counts.Statement, Braces = counts.Braces, Holes = counts.Holes };
+        set => (counts.Statement, counts.Braces, counts.Holes) = (value.Statement, value.Braces, value.Holes);
+    }
+
+    private void ReadCode(ReadOnlySpan<char> text)
+    {
+        if (!midLine && text.Length > 0 && place == Place.Code && Conflicted(text, 0))
+        {
+            GoUnsure();
+        }
+        for (int at = 0; at < text.Length && !TooDeepToLex;)
+        {
+            at = Step(text, at);
+        }
+        int line = text.LastIndexOfAny(NewLines);
+        int written = text[(line + 1)..].LastIndexOfAnyExcept(Spaces);
+        lineWritten = written >= 0 || (line < 0 && lineWritten);
+        writtenAfter = written >= 0 ? consumed + line + 2 + written : line < 0 ? writtenAfter : 0;
+        (midLine, previous) = text.Length > 0 ? (!NewLines.Contains(text[^1]), text[^1]) : (midLine, previous);
+        consumed += text.Length;
+    }
+
+    /// <summary>Whether a C# text read from within, not from its start, starts past more than white space on its line.</summary>
+    public bool StartsAfterText
+    {
+        init => lineWritten = value;
+    }
+
+    /// <summary>Whether a C# text read from within starts past its line's first character.</summary>
+    public bool StartsMidLine
+    {
+        init => midLine = value;
+    }
+
+    /// <summary>Whether a C# text read so far ends in code with no conditional access read ahead through: what follows is read
+    /// as on its own.</summary>
+    public readonly bool Settled => place == Place.Code && counts.Linked == 0;
+
+    /// <summary>Where a string read within code or a hole goes back to.</summary>
+    private readonly Place Back => nestings > 0 ? Place.Hole : Place.Code;
+
+    /// <summary>Reads on from a place in a stretch, to where what's read next starts.</summary>
+    private int Step(ReadOnlySpan<char> text, int at)
+    {
+        char c = text[at];
+        switch (place)
+        {
+            case Place.Code:
+                return InCode(text, at);
+            case Place.Unsure:
+                return Unsure(text, at);
+            case Place.UnsureName:
+                return UnsureName(text, at);
+            case Place.UnsureDirective:
+                return UnsureDirective(text, at);
+            case Place.LineStart:
+                return InLineStart(text, at);
+            case Place.Slash:
+                place = c switch { '/' => Place.SlashSlash, '*' => Place.SlashStar, _ => Place.Code };
+                if (place != Place.SlashSlash)
+                {
+                    EndDoc();
+                }
+                return place == Place.Code ? at : at + 1;
+            case Place.SlashSlash:
+                if (c != '/')
+                {
+                    EndDoc();
+                }
+                place = c == '/' ? Place.SlashSlashSlash : Place.Line;
+                return c == '/' ? at + 1 : at;
+            case Place.SlashSlashSlash:
+                if (c == '/')
+                {
+                    EndDoc();
+                }
+                else if (!docGoesOn)
+                {
+                    Hold();
+                }
+                docGoesOn = false;
+                place = c == '/' ? Place.Line : Place.DocLine;
+                return c == '/' ? at + 1 : at;
+            case Place.Line:
+                return To(text, at, NewLines, Place.Code);
+            case Place.DocLine:
+                return InDoc(text, at, DocMarks, Place.DocLine);
+            case Place.AfterDoc:
+                return AfterDoc(text, at);
+            case Place.SlashStar:
+                place = c == '*' ? Place.SlashStarStar : Place.Block;
+                return c == '*' ? at + 1 : at;
+            case Place.SlashStarStar:
+                if (c == '/')
+                {
+                    return To(Place.Code, at + 1);
+                }
+                Hold();
+                return To(Place.DocBlock, at);
+            case Place.Block:
+                return InBlock(text, at);
+            case Place.BlockStar:
+                place = c switch { '/' => Place.Code, '*' => Place.BlockStar, _ => Place.Block };
+                return place == Place.Block ? at : at + 1;
+            case Place.DocBlock:
+                return InDoc(text, at, DocBlockMarks, Place.DocBlock);
+            case Place.DocBlockStar:
+                if (c == '/')
+                {
+                    Restore();
+                    docEnded = consumed + at + 1;
+                }
+                place = c switch { '/' => Place.Code, '*' => Place.DocBlockStar, _ => Place.DocBlock };
+                return place == Place.DocBlock ? at : at + 1;
+            case Place.Directive:
+                return InDirective(text, at);
+            case Place.DirectiveRest:
+                return InDirectiveRest(text, at);
+            case Place.DirectiveSlash:
+                if (c == '/')
+                {
+                    EndLevels();
+                    return To(Place.Line, at + 1);
+                }
+                return c == '*' ? Lost(at) : To(Place.DirectiveRest, at);
+            case Place.DirectiveQuotes:
+                // Three quotes may open a raw string, which carries a directive past its line.
+                return c != '"' ? To(Place.DirectiveRest, at) : ++run == 3 ? Lost(at) : at + 1;
+            case Place.Quote:
+                return c == '"' ? To(Place.QuoteQuote, at + 1) : To(Place.String, at);
+            case Place.QuoteQuote:
+                if (c == '"')
+                {
+                    quotes = 3;
+                    return To(Place.RawOpen, at + 1);
+                }
+                return To(Back, at);
+            case Place.String:
+                return InString(text, at, StringMarks, '"', Place.StringEscape);
+            case Place.StringEscape:
+                return Escaped(text, at, Place.String);
+            case Place.Char:
+                return InString(text, at, CharMarks, '\'', Place.CharEscape);
+            case Place.CharEscape:
+                return Escaped(text, at, Place.Char);
+            case Place.RawOpen:
+                if (c == '"')
+                {
+                    quotes++;
+                    return at + 1;
+                }
+                return To(Place.RawAfterOpen, at);
+            case Place.RawAfterOpen:
+                if (c is ' ' or '\t')
+                {
+                    return at + 1;
+                }
+                lines = IsNewLine(c);
+                return To(Place.Raw, at);
+            case Place.Raw:
+                return InRaw(text, at);
+            case Place.RawQuotes:
+                if (c == '"')
+                {
+                    run++;
+                    return at + 1;
+                }
+                return To(run >= quotes ? Back : Place.Raw, at);
+            case Place.At:
+                return c switch
+                {
+                    '"' => To(Place.Verbatim, at + 1),
+                    '$' => To(Place.AtDollar, at + 1),
+                    _ when CSharpNames.Starts(c) => To(Back, at),
+                    _ => Lost(at),
+                };
+            case Place.AtDollar or Place.DollarAt:
+                return c == '"' ? Interpolated(at + 1, verbatim: true) : Lost(at);
+            case Place.Verbatim:
+                return InVerbatim(text, at);
+            case Place.VerbatimQuote:
+                return c == '"' ? To(Place.Verbatim, at + 1) : To(Back, at);
+            case Place.Dollar:
+                if (c == '$')
+                {
+                    dollars++;
+                    return at + 1;
+                }
+                return c switch
+                {
+                    '"' => Interpolated(at + 1, verbatim: false),
+                    '@' when dollars == 1 => To(Place.DollarAt, at + 1),
+                    _ => Lost(at),
+                };
+            case Place.InterpolatedQuote:
+                return c == '"' ? To(Place.InterpolatedQuoteQuote, at + 1) : Inner.Dollars == 1 ? To(Place.Content, at) : Lost(at);
+            case Place.InterpolatedQuoteQuote:
+                if (c == '"')
+                {
+                    (Inner.Raw, Inner.Quotes) = (true, 3);
+                    return To(Place.RawInterpolatedOpen, at + 1);
+                }
+                if (Inner.Dollars > 1)
+                {
+                    return Lost(at);
+                }
+                EndInterpolated();
+                return at;
+            case Place.RawInterpolatedOpen:
+                if (c == '"')
+                {
+                    Inner.Quotes++;
+                    return at + 1;
+                }
+                return To(Place.RawInterpolatedAfterOpen, at);
+            case Place.RawInterpolatedAfterOpen:
+                if (c is ' ' or '\t')
+                {
+                    return at + 1;
+                }
+                Inner.Lines = IsNewLine(c);
+                return To(Place.RawContent, at);
+            case Place.RawContent:
+                return InRawContent(text, at);
+            case Place.RawContentQuotes:
+                if (c == '"')
+                {
+                    run++;
+                    return at + 1;
+                }
+                if (run >= Inner.Quotes)
+                {
+                    EndInterpolated();
+                    return at;
+                }
+                return To(Place.RawContent, at);
+            case Place.RawContentOpen:
+                if (c == '{')
+                {
+                    run++;
+                    return at + 1;
+                }
+                return run < Inner.Dollars ? To(Place.RawContent, at) : run >= 2 * Inner.Dollars ? Lost(at) : OpenHole(at);
+            case Place.RawContentClose:
+                if (c == '}')
+                {
+                    run++;
+                    return at + 1;
+                }
+                return run >= Inner.Dollars ? Lost(at) : To(Place.RawContent, at);
+            case Place.RawHoleClose:
+                if (c == '}')
+                {
+                    run++;
+                    return at + 1;
+                }
+                // The braces past a hole's own are text, which as many as open a hole would make an error of.
+                return run < Inner.Dollars || run - Inner.Dollars >= Inner.Dollars ? Lost(at) : To(Place.RawContent, at);
+            case Place.Content:
+                return InContent(text, at, ContentMarks);
+            case Place.ContentEscape:
+                if (c is 'u' or 'U' or 'x')
+                {
+                    (escaped, hexLeft) = (0, c == 'U' ? 8 : 4);
+                    return To(Place.ContentHex, at + 1);
+                }
+                // An escaped brace puts the lexer in its error state, where it reads a hole's quote apart.
+                return IsNewLine(c) || c is '{' or '}' ? Lost(at) : To(Place.Content, at + 1);
+            case Place.ContentHex:
+                if (hexLeft > 0 && char.IsAsciiHexDigit(c))
+                {
+                    (escaped, hexLeft) = ((escaped * 16) + (uint)(c <= '9' ? c - '0' : (c | 0x20) - 'a' + 10), hexLeft - 1);
+                    return at + 1;
+                }
+                // The lexer takes the hex digits there are, however few, and an escape that comes to a brace is one.
+                return escaped is '{' or '}' ? Lost(at) : To(Place.Content, at);
+            case Place.VerbatimContent:
+                return InContent(text, at, VerbatimContentMarks);
+            case Place.VerbatimContentQuote:
+                if (c == '"')
+                {
+                    return To(Place.VerbatimContent, at + 1);
+                }
+                EndInterpolated();
+                return at;
+            case Place.ContentOpen:
+                return c == '{' ? To(InnerContent, at + 1) : OpenHole(at);
+            case Place.ContentClose:
+                return c == '}' ? To(InnerContent, at + 1) : Lost(at);
+            case Place.Hole:
+                return InHole(text, at);
+            case Place.HoleSlash:
+                return c is '/' or '*' ? Lost(at) : To(Place.Hole, at);
+            default:
+                return InFormat(text, at);
+        }
+    }
+
+    private int InCode(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(CodeMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        switch (text[at])
+        {
+            case '"':
+                place = Place.Quote;
+                break;
+            case '\'':
+                place = Place.Char;
+                break;
+            case '/':
+                place = Place.Slash;
+                break;
+            case '@':
+                Hold();
+                place = Place.At;
+                break;
+            case '$':
+                Hold();
+                (place, dollars) = (Place.Dollar, 1);
+                break;
+            case '#':
+                if (AfterDocComment(text, at))
+                {
+                    // The lexer reads a directive past a documentation comment on its line, but not in a branch left out.
+                    return Lost(at);
+                }
+                // Past the line's start a directive is read to the line's end, its condition taking no part.
+                (place, directive, named, directiveAt) = (AtLineStart(text, at) ? Place.Directive : Place.DirectiveRest, 0, 0, consumed + at);
+                break;
+            case '\r' or '\n' or '\u0085' or '\u2028' or '\u2029':
+                if (at + 1 < text.Length && Conflicted(text, at + 1))
+                {
+                    GoUnsure();
+                }
+                break;
+            default:
+                Mark(text, at, closes: counts.Conditions == grouped, endsLinks: counts.Conditions == 0);
+                break;
+        }
+        return at + 1;
+    }
+
+    /// <summary>What's past what this reads exactly, where openers count and nothing closes.</summary>
+    private int Unsure(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(CSharpMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        if (text[at] == '#')
+        {
+            (place, directive, named) = (Place.UnsureName, 0, 0);
+            return at + 1;
+        }
+        Mark(text, at, closes: false, endsLinks: false);
+        return at + 1;
+    }
+
+    /// <summary>What may be a directive's name past what this reads exactly: <c>#if</c> opens a condition, as does a branch
+    /// with none open, and nothing closes one.</summary>
+    private int UnsureName(ReadOnlySpan<char> text, int at)
+    {
+        if (Naming(text[at]))
+        {
+            return at + 1;
+        }
+        if ((named == 2 && directive == If) || (named == 4 && (directive == Else || directive == Elif) && counts.Conditions == 0))
+        {
+            counts.Conditions++;
+            Check(consumed + at);
+        }
+        return To(Place.UnsureDirective, at);
+    }
+
+    /// <summary>What may be a directive's line past what this reads exactly: its expression's levels count to the line's end.</summary>
+    private int UnsureDirective(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(UnsureDirectiveMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        switch (text[at])
+        {
+            case '!' or '&' or '|' or '=':
+                Level(at);
+                break;
+            case '\r' or '\n' or '\u0085' or '\u2028' or '\u2029':
+                EndLevels();
+                place = Place.Unsure;
+                break;
+            default:
+                Mark(text, at, closes: false, endsLinks: false);
+                break;
+        }
+        return at + 1;
+    }
+
+    /// <summary>Reading becomes unsure here, for the rest of the text.</summary>
+    private int Lost(int at)
+    {
+        GoUnsure();
+        return at;
+    }
+
+    /// <summary>Reading becomes unsure, for the rest of the text, where nothing closes: what's open is the most that's open
+    /// here whichever branches of the conditions read from their <c>#if</c> are taken, a directive's levels among it.</summary>
+    private void GoUnsure()
+    {
+        for (int group = 0; group < grouped; group++)
+        {
+            Opened = Open.Most(Opened, groups[group].Began);
+        }
+        (place, levels) = (Place.Unsure, 0);
+    }
+
+    private int To(Place then, int at)
+    {
+        place = then;
+        return at;
+    }
+
+    /// <summary>Reads on to the first of some characters, where reading goes on in another place.</summary>
+    private int To(ReadOnlySpan<char> text, int at, SearchValues<char> marks, Place then)
+    {
+        int next = text[at..].IndexOfAny(marks);
+        return next < 0 ? text.Length : To(then, at + next);
+    }
+
+    /// <summary>A documentation comment, which a parser reads: its openers count, until the line or the comment ends.</summary>
+    private int InDoc(ReadOnlySpan<char> text, int at, SearchValues<char> marks, Place doc)
+    {
+        int next = text[at..].IndexOfAny(marks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        if (text[at] == '*')
+        {
+            return To(Place.DocBlockStar, at + 1);
+        }
+        if (IsNewLine(text[at]))
+        {
+            return doc == Place.DocLine ? To(Place.AfterDoc, at) : NextLine(at, doc);
+        }
+        Mark(text, at, closes: false, endsLinks: false);
+        return at + 1;
+    }
+
+    /// <summary>Past a documentation comment's line: another such line goes on with it, as the lexer's one trivia, and what
+    /// it opened is set aside once anything else comes (<see cref="EndDoc"/>). Whatever a lexer may take for space is passed
+    /// over.</summary>
+    private int AfterDoc(ReadOnlySpan<char> text, int at)
+    {
+        while (at < text.Length && char.IsWhiteSpace(text[at]))
+        {
+            at++;
+        }
+        if (at == text.Length)
+        {
+            return at;
+        }
+        bool column = at > 0 ? IsNewLine(text[at - 1]) : !midLine;
+        if (text[at] != '/')
+        {
+            Restore();
+        }
+        docGoesOn = text[at] == '/';
+        return column && Conflicted(text, at) ? Lost(at) : To(Place.Code, at);
+    }
+
+    private int InBlock(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(BlockMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        return text[at] == '*' ? To(Place.BlockStar, at + 1) : NextLine(at, Place.Block);
+    }
+
+    /// <summary>A directive's name: <c>#if</c> opens a condition, and <c>#endif</c> closes one, being one wherever it
+    /// lies, as reading stops being sure before anything could hide one; in a group read from its <c>#if</c>, each branch
+    /// reads on from what was open there, and what follows from the most any branch, or none, left open. A directive in a
+    /// branch, which may be left out, counts from the most open at each group's <c>#if</c> too, to its line's end.</summary>
+    private int InDirective(ReadOnlySpan<char> text, int at)
+    {
+        if (Naming(text[at]))
+        {
+            return at + 1;
+        }
+        if (named == 2 && directive == If)
+        {
+            if (counts.Conditions == grouped && grouped < MostGroups)
+            {
+                groups[grouped++] = new Group { Began = Opened, Most = Opened };
+            }
+            counts.Conditions++;
+        }
+        else if (named == 5 && directive == EndIf)
+        {
+            if (grouped > 0 && counts.Conditions == grouped)
+            {
+                Opened = Open.Most(groups[--grouped].Most, Opened);
+            }
+            counts.Conditions = Math.Max(0, counts.Conditions - 1);
+        }
+        else if (named == 4 && (directive == Else || directive == Elif))
+        {
+            if (counts.Conditions == 0)
+            {
+                // A text read from within a condition goes on into a branch left out.
+                counts.Conditions = 1;
+            }
+            else if (counts.Conditions == grouped)
+            {
+                ref Group group = ref groups[grouped - 1];
+                group.Most = Open.Most(group.Most, Opened);
+                Opened = group.Began;
+            }
+        }
+        for (int group = 0; group < grouped; group++)
+        {
+            levels = Math.Max(levels, groups[group].Began.Statement + groups[group].Began.Braces - counts.Statement - counts.Braces);
+        }
+        counts.Statement += levels;
+        Check(directiveAt);
+        return To(Place.DirectiveRest, at);
+    }
+
+    /// <summary>Reads a character of a directive's name, or the white space before it; false past the name.</summary>
+    private bool Naming(char c)
+    {
+        if (named == 0 && Spaces.Contains(c))
+        {
+            return true;
+        }
+        if (!CSharpNames.Continues(c))
+        {
+            return false;
+        }
+        directive = c is >= 'a' and <= 'z' && named < 6 ? (directive * 32) + (c - 'a' + 1) : 0;
+        named = directive == 0 ? 7 : named + 1;
+        return true;
+    }
+
+    /// <summary>The rest of a directive's line, which no comment or raw string may carry past: each bracket, negation and
+    /// operator of a condition's expression is a level its parser and evaluator recurse through, counted on every directive's
+    /// line to its end or its comment.</summary>
+    private int InDirectiveRest(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(DirectiveMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        switch (text[at])
+        {
+            case '/':
+                return To(Place.DirectiveSlash, at + 1);
+            case '"':
+                run = 1;
+                return To(Place.DirectiveQuotes, at + 1);
+            case '(' or '!' or '&' or '|' or '=':
+                Level(at);
+                return at + 1;
+            default:
+                EndLevels();
+                return To(Place.Code, at);
+        }
+    }
+
+    /// <summary>A level of a directive's expression, open to its end.</summary>
+    private void Level(int at)
+    {
+        (counts.Statement, levels) = (counts.Statement + 1, levels + 1);
+        Check(consumed + at);
+    }
+
+    /// <summary>A directive's expression ends, setting aside the levels it opened.</summary>
+    private void EndLevels() => (counts.Statement, levels) = (counts.Statement - levels, 0);
+
+    /// <summary>A line's end within a comment or a string taking lines: in a condition, whose branch may be left out, the next
+    /// line's start is looked at for a directive (<see cref="InLineStart"/>).</summary>
+    private int NextLine(int at, Place within)
+    {
+        if (counts.Conditions == 0)
+        {
+            return at + 1;
+        }
+        resume = within;
+        return To(Place.LineStart, at + 1);
+    }
+
+    /// <summary>A line's start within a comment or a string taking lines in a condition: a branch left out is read only for
+    /// the lines a directive starts, so one starting here leaves reading unsure, and any other line reads on as it did.</summary>
+    private int InLineStart(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAnyExcept(Spaces);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        return text[at] == '#' ? Lost(at) : IsNewLine(text[at]) ? at + 1 : To(resume, at);
+    }
+
+    /// <summary>A string or a character, which ends at its quote and goes on past an escape, or at a line's end, where the
+    /// lexer ends it and reads on as code; in a hole, that leaves reading unsure.</summary>
+    private int InString(ReadOnlySpan<char> text, int at, SearchValues<char> marks, char quote, Place escape)
+    {
+        int next = text[at..].IndexOfAny(marks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        char c = text[at];
+        return c == quote ? To(Back, at + 1) : c == '\\' ? To(escape, at + 1) : nestings == 0 ? To(Place.Code, at) : Lost(at);
+    }
+
+    /// <summary>An escape's character: a line's end the lexer takes into the string leaves reading unsure.</summary>
+    private int Escaped(ReadOnlySpan<char> text, int at, Place then) => IsNewLine(text[at]) ? Lost(at) : To(then, at + 1);
+
+    /// <summary>A raw string, which ends at as many quotes in a row as opened it, or more: one on one line ends there too.</summary>
+    private int InRaw(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(QuoteMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        if (text[at] == '"')
+        {
+            run = 1;
+            return To(Place.RawQuotes, at + 1);
+        }
+        return lines ? NextLine(at, Place.Raw) : Lost(at);
+    }
+
+    private int InVerbatim(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(QuoteMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        return text[at] == '"' ? To(Place.VerbatimQuote, at + 1) : NextLine(at, Place.Verbatim);
+    }
+
+    /// <summary>An interpolated string opens, in code or in a hole of another.</summary>
+    private int Interpolated(int at, bool verbatim)
+    {
+        if (nestings == MostNestings)
+        {
+            return Lost(at);
+        }
+        strings[nestings++] = new Interpolation { Verbatim = verbatim, Dollars = verbatim ? 1 : dollars };
+        return To(verbatim ? Place.VerbatimContent : Place.InterpolatedQuote, at);
+    }
+
+    /// <summary>An interpolated string ends: in code, what its holes opened is set aside.</summary>
+    private void EndInterpolated()
+    {
+        nestings--;
+        if (nestings == 0)
+        {
+            Restore();
+        }
+        place = Back;
+    }
+
+    /// <summary>The innermost interpolated string read into.</summary>
+    [UnscopedRef]
+    private ref Interpolation Inner => ref strings[nestings - 1];
+
+    private readonly Place InnerContent => strings[nestings - 1] switch
+    {
+        { Raw: true } => Place.RawContent,
+        { Verbatim: true } => Place.VerbatimContent,
+        _ => Place.Content,
+    };
+
+    /// <summary>A hole opens in an interpolated string's text, its braces counted as code's.</summary>
+    private int OpenHole(int at)
+    {
+        counts.Braces++;
+        counts.Depth++;
+        Check(consumed + at);
+        (Inner.Closers, Inner.Nested) = (0, 0);
+        return To(Place.Hole, at);
+    }
+
+    /// <summary>A hole's closing brace: a raw string's takes as many as opened it.</summary>
+    private int HoleEnded(int at)
+    {
+        run = 1;
+        return To(Inner.Raw ? Place.RawHoleClose : InnerContent, at + 1);
+    }
+
+    /// <summary>A raw interpolated string's text: as many quotes as opened it end it, as many braces as its dollars open a
+    /// hole, and a line's end leaves reading unsure but in one taking lines.</summary>
+    private int InRawContent(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(RawContentMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        run = 1;
+        return text[at] switch
+        {
+            '"' => To(Place.RawContentQuotes, at + 1),
+            '{' => To(Place.RawContentOpen, at + 1),
+            '}' => To(Place.RawContentClose, at + 1),
+            _ => Inner.Lines ? NextLine(at, Place.RawContent) : Lost(at),
+        };
+    }
+
+    /// <summary>An interpolated string's text: its quote ends it, a brace opens a hole, and a line's end leaves reading unsure
+    /// but in a verbatim one's.</summary>
+    private int InContent(ReadOnlySpan<char> text, int at, SearchValues<char> marks)
+    {
+        int next = text[at..].IndexOfAny(marks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        bool verbatim = place == Place.VerbatimContent;
+        switch (text[at])
+        {
+            case '"' when verbatim:
+                return To(Place.VerbatimContentQuote, at + 1);
+            case '"':
+                EndInterpolated();
+                return at + 1;
+            case '\\':
+                return To(Place.ContentEscape, at + 1);
+            case '{':
+                return To(Place.ContentOpen, at + 1);
+            case '}':
+                return To(Place.ContentClose, at + 1);
+            default:
+                return verbatim ? NextLine(at, Place.VerbatimContent) : Lost(at);
+        }
+    }
+
+    /// <summary>A hole, code a parser reads, whose openers count: its brackets are kept to find its end as the lexer does, and
+    /// what the lexer reads as an error there, as a bracket out of place, a comment or a directive, leaves reading unsure.</summary>
+    private int InHole(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(HoleMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        char c = text[at];
+        ref Interpolation hole = ref strings[nestings - 1];
+        switch (c)
+        {
+            case '"':
+                return To(Place.Quote, at + 1);
+            case '\'':
+                return To(Place.Char, at + 1);
+            case '@':
+                return To(Place.At, at + 1);
+            case '$':
+                dollars = 1;
+                return To(Place.Dollar, at + 1);
+            case '/':
+                return To(Place.HoleSlash, at + 1);
+            case ':' when hole.Nested == 0:
+                return To(Place.Format, at + 1);
+            case ':':
+                return at + 1;
+            case '(' or '[' or '{' when hole.Nested < MostNested:
+                hole.Closers = (hole.Closers << 2) | (c == '(' ? 1UL : c == '[' ? 2UL : 3UL);
+                hole.Nested++;
+                Mark(text, at, closes: false, endsLinks: false);
+                return at + 1;
+            case '}' when hole.Nested == 0:
+                return HoleEnded(at);
+            case ')' or ']' or '}' when hole.Nested > 0 && (hole.Closers & 3) == (c == ')' ? 1UL : c == ']' ? 2UL : 3UL):
+                hole.Closers >>= 2;
+                hole.Nested--;
+                return at + 1;
+            case '<' or '>' or '?' or 'n':
+                Mark(text, at, closes: false, endsLinks: false);
+                return at + 1;
+            case '\r' or '\n' or '\u0085' or '\u2028' or '\u2029':
+                return NextLine(at, Place.Hole);
+            default:
+                return Lost(at);
+        }
+    }
+
+    /// <summary>A hole's format, text to its closing brace.</summary>
+    private int InFormat(ReadOnlySpan<char> text, int at)
+    {
+        int next = text[at..].IndexOfAny(FormatMarks);
+        if (next < 0)
+        {
+            return text.Length;
+        }
+        at += next;
+        return text[at] == '}' ? HoleEnded(at) : Lost(at);
+    }
+
+    /// <summary>Keeps what's open before a string or a comment whose openers count, to set it back at its end.</summary>
+    private void Hold() => held = counts;
+
+    private void Restore() => counts = held;
+
+    /// <summary>A documentation comment ends where its line is followed by a slash that starts no other such line.</summary>
+    private void EndDoc()
+    {
+        if (docGoesOn)
+        {
+            Restore();
+            docGoesOn = false;
+        }
+    }
+
+    /// <summary>Whether a <c>#</c> is the first of its line but for white space, where a lexer reads a directive.</summary>
+    private readonly bool AtLineStart(ReadOnlySpan<char> text, int at)
+    {
+        int line = text[..at].LastIndexOfAny(NewLines);
+        return text[(line + 1)..at].IndexOfAnyExcept(Spaces) < 0 && (line >= 0 || !lineWritten);
+    }
+
+    /// <summary>Whether white space alone lies between a place and a documentation block comment's end before it on its line.</summary>
+    private readonly bool AfterDocComment(ReadOnlySpan<char> text, int at)
+    {
+        int line = text[..at].LastIndexOfAny(NewLines);
+        int written = text[(line + 1)..at].LastIndexOfAnyExcept(Spaces);
+        return docEnded > 0 && (written >= 0 ? consumed + line + 2 + written : line < 0 ? writtenAfter : 0) == docEnded;
+    }
+
+    /// <summary>Whether a line may start with a merge's conflict marker, seven alike, which a lexer reads with what follows
+    /// as trivia: as many alike as a stretch holds may be one.</summary>
+    private static bool Conflicted(ReadOnlySpan<char> text, int at)
+    {
+        char c = text[at];
+        return c is '<' or '=' or '>' or '|' && text[at..Math.Min(text.Length, at + 7)].IndexOfAnyExcept(c) < 0;
+    }
+
+    private static bool IsNewLine(char c) => c is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029';
+
+    private static int Named(string name)
+    {
+        int packed = 0;
+        foreach (char c in name)
+        {
+            packed = (packed * 32) + (c - 'a' + 1);
+        }
+        return packed;
+    }
+
+    /// <summary>An interpolated string read into: its kind, a raw one's dollars and quotes, and its hole's brackets, two bits
+    /// each.</summary>
+    private struct Interpolation
+    {
+        public bool Verbatim;
+        public bool Raw;
+        public bool Lines;
+        public int Dollars;
+        public int Quotes;
+        public ulong Closers;
+        public int Nested;
+    }
+
+    [InlineArray(MostNestings)]
+    private struct Interpolations
+    {
+        private Interpolation first;
+    }
+
+    /// <summary>A condition group read from its <c>#if</c>: what was open there, which each branch reads on from, and the
+    /// most that the branches read so far, or none taken, left open, which what follows reads on from. A branch's
+    /// conditional accesses read ahead through stay open, as in a condition not read from its <c>#if</c>.</summary>
+    private struct Group
+    {
+        public Open Began;
+        public Open Most;
+    }
+
+    /// <summary>What's open that a condition's branch reads on from.</summary>
+    private struct Open
+    {
+        public int Statement;
+        public int Braces;
+        public int Holes;
+
+        /// <summary>The most of each that either leaves open.</summary>
+        public static Open Most(Open one, Open other) => new()
+        {
+            Statement = Math.Max(one.Statement, other.Statement),
+            Braces = Math.Max(one.Braces, other.Braces),
+            Holes = Math.Max(one.Holes, other.Holes),
+        };
+    }
+
+    [InlineArray(MostGroups)]
+    private struct Groups
+    {
+        private Group first;
+    }
+}

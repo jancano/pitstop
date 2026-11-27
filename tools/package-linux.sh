@@ -36,8 +36,8 @@ linux="$root/tools/linux"
 mkdir -p "$folder"
 cp -R "$publish" "$folder/app"
 cp "$linux/pitstop" "$linux/install.sh" "$linux/$app.desktop" "$linux/$app.xml" "$folder/"
-cp "$root/src/Passenger.App/Assets/pitstop.png" "$folder/$app.png"
-cp "$root/src/Passenger.App/Assets/pitstop.svg" "$folder/$app.svg"
+cp "$root/src/Pitstop.App/Assets/pitstop.png" "$folder/$app.png"
+cp "$root/src/Pitstop.App/Assets/pitstop.svg" "$folder/$app.svg"
 chmod 755 "$folder/pitstop" "$folder/install.sh"
 chmod 644 "$folder/$app.desktop" "$folder/$app.xml" "$folder/$app.png" "$folder/$app.svg"
 
@@ -60,7 +60,7 @@ for part in pitstop install.sh app/Pitstop app/pitstop-helper app/createdump; do
 done
 for part in "$app.desktop" "$app.xml" "$app.png" "$app.svg" app/Pitstop.dll app/libSkiaSharp.so app/libHarfBuzzSharp.so \
     app/libporta_pty.so app/LICENSE.txt app/THIRD-PARTY-NOTICES.txt app/roslyn/Microsoft.CodeAnalysis.LanguageServer.dll \
-    app/roslyn-extension/Passenger.Roslyn.Extension.dll app/debugger/Passenger.DebugAdapter.dll app/debugger/libdbgshim.so \
+    app/roslyn-extension/Pitstop.Roslyn.Extension.dll app/debugger/Pitstop.DebugAdapter.dll app/debugger/libdbgshim.so \
     app/pitstop-helper.dll app/pitstop-helper.deps.json app/pitstop-helper.runtimeconfig.json; do
     [ -f "$shipped/$part" ] || fail "the archive has no $part"
 done

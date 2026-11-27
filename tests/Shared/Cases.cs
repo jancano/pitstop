@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Xunit.Sdk;
 
-namespace Passenger.TestTables;
+namespace Pitstop.TestTables;
 
 /// <summary>One test over a table of rows, where a theory would list each row as a test of its own: every row runs
 /// whatever another does, and a failure names each row that failed, by its values (or the name given it), with what it

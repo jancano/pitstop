@@ -1,0 +1,578 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.VisualTree;
+using Pitstop.App;
+using Pitstop.App.Templates;
+using Pitstop.App.Workspace;
+using Pitstop.Core;
+
+namespace Pitstop.Tests;
+
+/// <summary>New Solution's templates in families, read ahead: the dialog opens with every family listed, the templates
+/// read once the window started; related templates are one family (Unit Test's xUnit, NUnit and MSTest, Web's ASP.NET
+/// Core and Blazor apps), each a Type with its own options, a value set on one kept by another that has it; the search
+/// finds a family by any of its Types; and a template installed or uninstalled while the dialog is open fills in its
+/// family, the family and Type chosen kept.</summary>
+public sealed class TemplateFamiliesTests : IDisposable
+{
+    private const string TestRunner = "Test runner";
+    private const string Platform = "Microsoft.Testing.Platform";
+
+    private readonly string settings = TestFolders.Create("settings-");
+    private readonly string place = TestFolders.Create("families-");
+
+    public void Dispose()
+    {
+        TestFolders.Delete(settings);
+        TestFolders.Delete(place);
+    }
+
+    /// <summary>New Solution lists every family at once and finds one by any Type, keeps the recent ones first, makes
+    /// the kind of project a Unit Test framework's options choose, offers to install what it lacks and takes in a
+    /// template installed while open, as one flow, each step the check one test made in an instance of its
+    /// own.</summary>
+    [AvaloniaFact]
+    public void New_Solution_lists_every_template_family_and_makes_the_kind_of_project_chosen()
+    {
+        Flow.StepApart<TemplateFamiliesTests>("New Solution opens with every family listed at once the templates read ahead and the search finds one by any of its Types", t => t.New_Solution_opens_with_every_family_listed_at_once_the_templates_read_ahead_and_the_search_finds_one_by_any_of_its_Types());
+        Flow.StepApart<TemplateFamiliesTests>("the templates made from lately stand under Recent the newest first and the last made comes first", t => t.The_templates_made_from_lately_stand_under_Recent_the_newest_first_and_the_last_made_comes_first());
+        Flow.StepApart<TemplateFamiliesTests>("Unit Test shows each frameworks options keeps a value set where the next Type has it and makes that kind of project", t => t.Unit_Test_shows_each_frameworks_options_keeps_a_value_set_where_the_next_Type_has_it_and_makes_that_kind_of_project());
+        Flow.StepApart<TemplateFamiliesTests>("Aspire is greyed with an Install link without its templates and xUnit v2 shows its project running on VSTest", t => t.Aspire_is_greyed_with_an_Install_link_without_its_templates_and_xUnit_v2_shows_its_project_running_on_VSTest());
+        Flow.StepApart<TemplateFamiliesTests>("a template installed while the dialog is open fills in its family the family Type and values chosen kept", t => t.A_template_installed_while_the_dialog_is_open_fills_in_its_family_the_family_Type_and_values_chosen_kept());
+        Flow.StepApart<TemplateFamiliesTests>("a template with an ide host json offers the parameters it leaves out each switch once", t => t.A_template_with_an_ide_host_json_offers_the_parameters_it_leaves_out_each_switch_once());
+    }
+
+    private void New_Solution_opens_with_every_family_listed_at_once_the_templates_read_ahead_and_the_search_finds_one_by_any_of_its_Types()
+    {
+        using IDisposable theme = TestsTheme();
+        MainWindow window = Started();
+
+        // The templates are read as the window starts, below its input and drawing, so no settle waits for that read.
+        Ui.WaitFor(() => ProjectTemplates.Ready(place) is not null, "the templates to be read ahead of New Solution", TimeSpan.FromMinutes(2));
+        Assert.True(window.Perform(AppActions.NewSolution));
+        NewProjectDialog dialog = Assert.Single(window.OwnedWindows.OfType<NewProjectDialog>());
+        // Rider's types first, in its order (Desktop where WPF builds, MAUI installed or offered with its workload), then the rest by name.
+        string[] atOnce = [.. dialog.Families.Select(f => f.Name)];
+        string[] riders = ["Console", "Class Library", "Desktop", "Web", "AI Extensions", "Services", "Unit Test", "Aspire", "Azure Functions", "MAUI"];
+        Assert.Equal(riders, atOnce.Take(riders.Length));
+        string[] others = atOnce[riders.Length..];
+        Assert.Contains("Avalonia", others);
+        Assert.Equal(others.Order(StringComparer.OrdinalIgnoreCase), others);
+        Assert.True(dialog.Chosen is { Name: "Console App" } && dialog.Family?.Name == "Console", $"The dialog opened on {dialog.Family?.Name}, {dialog.Chosen?.Name}");
+        Assert.Empty(dialog.TypeNames);
+
+        Ui.WaitFor(() => dialog.TemplatesRead.IsCompleted, "the dialog's folder's templates to be read");
+        Assert.True(dialog.Problem is null, $"The templates could not be read: {dialog.Problem}");
+        Assert.Equal(atOnce, dialog.Families.Select(f => f.Name));
+        Assert.Equal("Console App", dialog.Chosen?.Name);
+
+        Assert.All(dialog.Templates.Where(t => t.Classifications.Contains("Test") && !t.Classifications.Contains("Aspire")),
+            t => Assert.True(t.Family == "Unit Test", $"{t.Name}, a test template, is in {t.Family}"));
+        // MAUI's own Aspire service defaults among them, where its workload has it.
+        Assert.All(dialog.Templates.Where(t => t.Classifications.Contains("MAUI")),
+            t => Assert.True(t.Family == "MAUI", $"{t.Name}, a MAUI template, is in {t.Family}"));
+        Assert.Equal(["xUnit", "NUnit", "MSTest"], Family(dialog, "Unit Test").Types.Take(3).Select(t => t.TypeName));
+        Assert.Equal(["Web App (Razor Pages)", "Web App (Model-View-Controller)", "Web API", "Empty"], Family(dialog, "Web").Types.Take(4).Select(t => t.TypeName));
+        Assert.Contains("Blazor Web App", Family(dialog, "Web").Types.Select(t => t.TypeName));
+        Assert.Equal(["Class Library", "Blazor Web Worker"], Family(dialog, "Class Library").Types.Take(2).Select(t => t.TypeName));
+        Assert.Equal(["Worker Service"], Family(dialog, "Services").Types.Select(t => t.Name));
+        // Desktop's WPF and Windows Forms apps are listed everywhere, marked off Windows, where they build but do not run.
+        string[] desktopMarks = [.. dialog.FamilyRow("Desktop")!.GetVisualDescendants().OfType<TextBlock>().Where(t => t.IsVisible).Select(t => t.Text ?? string.Empty)];
+        Assert.True(desktopMarks.Contains("Windows only") != OperatingSystem.IsWindows(), $"Desktop's row reads [{string.Join(", ", desktopMarks)}] here");
+        // Not installed unless dotnet new has Aspire's own templates, whatever another workload's it has tagged Aspire.
+        bool aspire = Lists(["aspire-apphost"]);
+        Assert.True(Family(dialog, "Aspire").NotInstalled != aspire, aspire
+            ? "Aspire's family is marked not installed though dotnet new has its AppHost"
+            : "Aspire's family is not marked not installed though dotnet new has none of its templates");
+        Assert.Equal(["App", "MVVM App", "Cross Platform Application"], Family(dialog, "Avalonia").Types.Select(t => t.TypeName));
+        // MAUI's templates are listed whether or not its workload is, which Install installs where it is not.
+        bool maui = Lists(["--tag", "MAUI"]);
+        TemplateFamily mauis = Family(dialog, "MAUI");
+        Assert.True(mauis.NotInstalled != maui && mauis.Types.Any(t => t.ShortName == "maui"),
+            $"MAUI's family, {(maui ? "installed" : "not installed")}, lists {string.Join(", ", mauis.Types.Select(t => t.ShortName))}, not installed: {mauis.NotInstalled}");
+        Assert.True(maui || mauis.Types.All(t => t.Pack is { IsWorkload: true }), "A MAUI template not installed is offered as no workload's");
+
+        Ui.Click(dialog.SearchBox);
+        Type(dialog, "nunit");
+        Assert.Equal(["Unit Test", "Aspire"], dialog.Listed.Select(f => f.Name));
+        Assert.True(dialog.Family?.Name == "Unit Test" && dialog.Chosen?.ShortName == "nunit", $"The search for nunit opened {dialog.Family?.Name} on {dialog.Chosen?.Name}");
+        Assert.Equal("NUnit", dialog.TypeChooser.SelectedItem is ProjectTemplate { TypeName: var shown } ? shown : null);
+        Ui.Click(dialog.FamilyRow("Aspire")!);
+        Assert.Equal("aspire-nunit", dialog.Chosen?.ShortName);
+
+        Search(dialog, "razor pages");
+        Assert.True(dialog.Family?.Name == "Web" && dialog.Chosen?.ShortName == "webapp", $"The search for razor pages opened {dialog.Family?.Name} on {dialog.Chosen?.Name}");
+        Search(dialog, "mvvm");
+        Assert.True(dialog.Family?.Name == "Avalonia" && dialog.Chosen?.ShortName == "avalonia.mvvm", $"The search for mvvm opened {dialog.Family?.Name} on {dialog.Chosen?.Name}");
+        Search(dialog, "test");
+        Assert.Equal(["Unit Test", "Aspire"], dialog.Listed.Select(f => f.Name));
+        Assert.True(dialog.Family?.Name == "Unit Test" && dialog.Chosen?.ShortName == "nunit", $"Unit Test, found by its name, did not open on the Type chosen in it last: {dialog.Chosen?.Name}");
+        Ui.Click(dialog.SearchBox);
+        Press(dialog, Key.Down);
+        Assert.True(dialog.Family?.Name == "Aspire" && dialog.Chosen?.ShortName == "aspire-nunit", $"Down from the search chose {dialog.Family?.Name}, {dialog.Chosen?.Name}");
+
+        Search(dialog, "nothing like it");
+        Assert.True(dialog.Listed.Count == 0 && dialog.Chosen is null, $"A search for nothing listed [{string.Join(", ", dialog.Listed.Select(f => f.Name))}], {dialog.Chosen?.Name} chosen");
+        Assert.False(dialog.CreateButton.IsEnabled, "Create was offered with nothing found");
+
+        Press(dialog, Key.Escape);
+        Assert.Equal(string.Empty, dialog.Query);
+        Assert.Equal(atOnce, dialog.Listed.Select(f => f.Name));
+        Assert.True(dialog.IsVisible && dialog.Chosen?.ShortName == "aspire-nunit", $"Escape in the search left {dialog.Chosen?.Name} chosen, the dialog shown: {dialog.IsVisible}");
+        Press(dialog, Key.Escape);
+        Assert.False(dialog.IsVisible, "Escape with no search left the dialog open");
+        window.Close();
+    }
+
+    /// <summary>The templates something was made from lately stand under Recent, the newest first, over every family under
+    /// All templates: New Solution opens on the newest, the keys pass over the headings, the search finds a recent one by
+    /// its family's name or its own, one chosen there opens its family on its Type, and the template Create makes from
+    /// comes first under Recent the next time.</summary>
+    private void The_templates_made_from_lately_stand_under_Recent_the_newest_first_and_the_last_made_comes_first()
+    {
+        using IDisposable theme = TestsTheme();
+        AvaloniaApp.UseFeed(place);
+        File.WriteAllText(Path.Combine(settings, "recentTemplates.json"),
+            """{"version": 1, "used": {"xunit": "2026-01-01T00:00:00+00:00", "console": "2026-01-02T00:00:00+00:00"}}""");
+        MainWindow window = Started();
+        // Read ahead, so the dialog chooses a row before its own read of the templates lists them again.
+        Ui.WaitFor(() => ProjectTemplates.Ready(place) is not null, "the templates to be read ahead of New Solution", TimeSpan.FromMinutes(2));
+        Assert.True(window.Perform(AppActions.NewSolution));
+        NewProjectDialog dialog = Opened(window);
+        dialog.Folder = place;
+        Assert.Equal(["Recent", "Console App", "xUnit Test Project", "All templates", "Console"], dialog.Rows.Take(5).Select(Said));
+        Assert.True(dialog.ChosenRow == dialog.Rows[1] && dialog.Chosen is { ShortName: "console" } && dialog.Family?.Name == "Console",
+            $"New Solution opened on {(dialog.ChosenRow is { } row ? Said(row) : "nothing")}, not the newest made from under Recent");
+
+        Ui.Click(dialog.SearchBox);
+        Press(dialog, Key.Down);
+        Assert.True(dialog.ChosenRow == dialog.Rows[2] && dialog.Chosen?.ShortName == "xunit", $"Down chose {dialog.Chosen?.Name}, not Recent's xUnit");
+        Assert.Equal(["xUnit", "NUnit", "MSTest"], dialog.TypeNames.Take(3));
+        Press(dialog, Key.Down);
+        Assert.True(dialog.ChosenRow == dialog.Rows[4] && dialog.Chosen?.ShortName == "console" && dialog.Family?.Name == "Console",
+            $"Down from Recent's last chose {(dialog.ChosenRow is { } past ? Said(past) : "nothing")}, not past the All templates heading to the Console family");
+        Press(dialog, Key.Up);
+        Assert.True(dialog.ChosenRow == dialog.Rows[2], $"Up from the Console family chose {(dialog.ChosenRow is { } back ? Said(back) : "nothing")}, not past the heading back to Recent's xUnit");
+
+        Search(dialog, "test");
+        Assert.Equal(["Recent", "xUnit Test Project", "All templates"], dialog.Rows.Take(3).Select(Said));
+        Assert.DoesNotContain(dialog.Rows, r => r.Recent?.ShortName == "console");
+        Search(dialog, string.Empty);
+
+        Ui.Click(dialog.FamilyRow("Class Library")!);
+        Assert.Equal("classlib", dialog.Chosen?.ShortName);
+        dialog.SolutionName = "Shelf";
+        Created(dialog, "the class library");
+
+        Ui.Run(window, AppActions.NewProject);
+        NewProjectDialog adding = Opened(window);
+        Assert.Equal(["Recent", "Class Library", "Console App", "xUnit Test Project", "All templates"], adding.Rows.Take(5).Select(Said));
+        Ui.Click(adding.RecentRow("xUnit Test Project")!);
+        Assert.True(adding.Chosen?.ShortName == "xunit" && adding.Family?.Name == "Unit Test", $"Recent's xUnit opened {adding.Family?.Name}, {adding.Chosen?.Name}");
+        // The list's own keys, the row clicked having them, pass over the heading too.
+        Press(adding, Key.Down);
+        Assert.True(adding.ChosenRow is { Recent: null, Family.Name: "Console" }, $"Down in the list from Recent's last chose {(adding.ChosenRow is { } next ? Said(next) : "nothing")}");
+        adding.Close();
+        window.Close();
+
+        static string Said(TemplateRow row) => row.Heading ?? row.Recent?.Name ?? row.Family!.Name;
+    }
+
+    private void Unit_Test_shows_each_frameworks_options_keeps_a_value_set_where_the_next_Type_has_it_and_makes_that_kind_of_project()
+    {
+        using IDisposable theme = TestsTheme();
+        // Restores take the run's own feed alone, so a project made never reaches nuget.org for its packages.
+        AvaloniaApp.UseFeed(place);
+        MainWindow window = Started();
+        Assert.True(window.Perform(AppActions.NewSolution));
+        NewProjectDialog dialog = Opened(window);
+        dialog.Folder = place;
+
+        Ui.Click(dialog.FamilyRow("Unit Test")!);
+        Assert.Equal("xunit", dialog.Chosen?.ShortName);
+        Assert.Equal(["xUnit", "NUnit", "MSTest"], dialog.TypeNames.Take(3));
+        Leading(dialog, ["xUnit.net version", TestRunner]);
+        // Its ide.host.json's options first, then the rest of its parameters, as LangVersion.
+        Assert.Contains("Language version", dialog.OptionLabels);
+        Assert.StartsWith("dotnet new xunit ", dialog.Command, StringComparison.Ordinal);
+
+        Choose(dialog, "NUnit");
+        Leading(dialog, [TestRunner]);
+        Assert.StartsWith("dotnet new nunit ", dialog.Command, StringComparison.Ordinal);
+        Assert.Equal("VSTest", Value(dialog, TestRunner));
+        Pick(dialog, TestRunner, Platform);
+        Assert.Contains($"--test-runner {Platform}", dialog.Command, StringComparison.Ordinal);
+
+        Choose(dialog, "MSTest");
+        Leading(dialog, ["Use MSTest.Sdk", TestRunner, "Testing extensions profile", "Use explicit Program.cs file", "Coverage tool", "Fixture"]);
+        Assert.Equal(Platform, Value(dialog, TestRunner));
+        Assert.StartsWith("dotnet new mstest ", dialog.Command, StringComparison.Ordinal);
+        Assert.Contains($"--test-runner {Platform}", dialog.Command, StringComparison.Ordinal);
+        Pick(dialog, "Fixture", "TestInitialize");
+
+        Choose(dialog, "xUnit");
+        Leading(dialog, ["xUnit.net version", TestRunner]);
+        // xUnit v2 turns its runner off, its project running on VSTest; v3 takes the value set again.
+        Assert.Equal("VSTest", Value(dialog, TestRunner));
+        Pick(dialog, "xUnit.net version", "v3");
+        Assert.Equal(Platform, Value(dialog, TestRunner));
+        Assert.DoesNotContain("--fixture", dialog.Command, StringComparison.Ordinal);
+        Choose(dialog, "MSTest");
+        Assert.Equal("TestInitialize", Value(dialog, "Fixture"));
+        Assert.Contains("--fixture TestInitialize", dialog.Command, StringComparison.Ordinal);
+
+        dialog.SolutionName = "Checks";
+        Created(dialog, "the MSTest project");
+        string solution = Path.Combine(PathNames.Canonical(place), "Checks");
+        Assert.True(window.WorkspaceModel?.OpenedAs?.StartsWith(Path.Combine(solution, "Checks."), StringComparison.Ordinal) == true,
+            $"The new solution was made, but the window opened {window.WorkspaceModel?.OpenedAs ?? "nothing"}");
+        Assert.Matches("Include=\"MSTest\"|Sdk=\"MSTest\\.Sdk", Text(solution, "Checks", "Checks.csproj"));
+        Assert.Contains("TestInitialize", string.Concat(Directory.EnumerateFiles(Path.Combine(solution, "Checks"), "*.cs").Select(File.ReadAllText)), StringComparison.Ordinal);
+
+        foreach ((string type, string name, string package) in ((string, string, string)[])[("NUnit", "Checks.NUnit", "Include=\"NUnit\""), ("xUnit", "Checks.XUnit", "Include=\"xunit")])
+        {
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog adding = Opened(window);
+            adding.ProjectName = name;
+            Ui.Click(adding.FamilyRow("Unit Test")!);
+            Choose(adding, type);
+            Assert.Equal(name, adding.ProjectName);
+            Created(adding, $"the {type} project");
+            Assert.Contains(package, Text(solution, name, $"{name}.csproj"), StringComparison.Ordinal);
+            Assert.Contains(name, window.WorkspaceModel!.Projects.Select(p => p.Name));
+        }
+        window.Close();
+    }
+
+    /// <summary>With Aspire's templates not installed (a template home of the test's own, which has none), New Solution's web
+    /// project offers no Aspire set-up, saying why and offering the link that installs them; and xUnit v2's Test runner,
+    /// which its template turns off, shows VSTest, which its project runs on, greyed, until v3 turns it on.</summary>
+    private void Aspire_is_greyed_with_an_Install_link_without_its_templates_and_xUnit_v2_shows_its_project_running_on_VSTest()
+    {
+        using IDisposable theme = TestsTheme();
+        string? hive = ProjectTemplates.Hive;
+        ProjectTemplates.Hive = Directory.CreateDirectory(Path.Combine(place, "hive")).FullName;
+        ProjectTemplates.Forget();
+        try
+        {
+            MainWindow window = Started();
+            Assert.True(window.Perform(AppActions.NewSolution));
+            NewProjectDialog dialog = Opened(window);
+            Assert.True(Family(dialog, "Aspire").NotInstalled, "The test's own template home has Aspire's templates");
+            NewServiceSetupTests.Choose(dialog, "web");
+            Assert.False(dialog.Offers(ProjectSetup.Aspire), $"A web project was offered Aspire with its templates not installed: {dialog.SetupNote}");
+            Assert.Contains("Aspire's templates are not installed: Aspire is not offered", dialog.SetupNote, StringComparison.Ordinal);
+            Assert.True(dialog.SetupInstall is { IsEffectivelyVisible: true, IsEffectivelyEnabled: true, Content: "Install Aspire.ProjectTemplates" },
+                $"No link installs Aspire's templates beside the set-up: '{dialog.SetupInstall.Content}', shown {dialog.SetupInstall.IsEffectivelyVisible}");
+            Assert.True(dialog.Offers(ProjectSetup.None), "A web project was offered no set-up at all");
+
+            Ui.Click(dialog.FamilyRow("Unit Test")!);
+            Choose(dialog, "xUnit");
+            Assert.Equal("v2", Value(dialog, "xUnit.net version"));
+            Assert.True(Value(dialog, TestRunner) == "VSTest" && dialog.OptionEditor(TestRunner) is { IsEnabled: false },
+                $"xUnit v2's project runs on VSTest, but its greyed Test runner shows {Value(dialog, TestRunner)}");
+            Assert.DoesNotContain("--test-runner", dialog.Command, StringComparison.Ordinal);
+            Assert.False(dialog.SetupInstall.IsEffectivelyVisible, "A test project, which is no service, offers to install Aspire's templates for its set-up");
+            Pick(dialog, "xUnit.net version", "v3");
+            Assert.True(Value(dialog, TestRunner) == Platform && dialog.OptionEditor(TestRunner) is { IsEnabled: true },
+                $"xUnit v3's Test runner shows {Value(dialog, TestRunner)}, not its own default, the Testing Platform");
+            dialog.Cancel();
+            window.Close();
+        }
+        finally
+        {
+            ProjectTemplates.Hive = hive;
+            ProjectTemplates.Forget();
+        }
+    }
+
+    private void A_template_installed_while_the_dialog_is_open_fills_in_its_family_the_family_Type_and_values_chosen_kept()
+    {
+        using IDisposable theme = TestsTheme();
+        string probe = WriteProbeTemplate();
+        MainWindow window = Started();
+        Assert.True(window.Perform(AppActions.NewSolution));
+        NewProjectDialog dialog = Opened(window);
+        Type(dialog, "Probing");
+        Ui.Click(dialog.FamilyRow("Unit Test")!);
+        Choose(dialog, "NUnit");
+        Pick(dialog, TestRunner, Platform);
+        bool installed = false;
+        try
+        {
+            // A terminal's dotnet new install into the run's own home: another author's test template joins Unit Test.
+            DotnetNew(["install", probe]);
+            installed = true;
+            Ui.WaitFor(() => dialog.Family?.Types.Any(t => t.ShortName == "probetest") == true, "the template installed to join Unit Test in the open dialog", TimeSpan.FromSeconds(60));
+            Assert.Contains("Probe", dialog.TypeNames);
+            Assert.True(dialog.Family?.Name == "Unit Test" && dialog.Chosen?.ShortName == "nunit", $"The installed template moved the choice to {dialog.Family?.Name}, {dialog.Chosen?.Name}");
+            Assert.Equal("Probing", dialog.SolutionName);
+            Assert.Equal(Platform, Value(dialog, TestRunner));
+            Assert.Equal("Unit Test", Family(dialog, "Unit Test").Types.Single(t => t.ShortName == "probetest").Family);
+
+            DotnetNew(["uninstall", probe]);
+            installed = false;
+            Ui.WaitFor(() => dialog.Family?.Types.All(t => t.ShortName != "probetest") == true, "the template uninstalled to leave Unit Test in the open dialog", TimeSpan.FromSeconds(60));
+            Assert.True(dialog.Family?.Name == "Unit Test" && dialog.Chosen?.ShortName == "nunit", $"The uninstall moved the choice to {dialog.Family?.Name}, {dialog.Chosen?.Name}");
+        }
+        finally
+        {
+            if (installed)
+            {
+                DotnetNew(["uninstall", probe]);
+            }
+        }
+        dialog.Cancel();
+        window.Close();
+    }
+
+    /// <summary>A template whose ide.host.json shows two of its options still offers the parameters it leaves out, under
+    /// More options, as dotnet new's command line does, but one its command line hides and one a computed symbol makes the
+    /// same switch as one shown; an option only an IDE's host reads goes to the command line through the parameter that does.</summary>
+    private void A_template_with_an_ide_host_json_offers_the_parameters_it_leaves_out_each_switch_once()
+    {
+        using IDisposable theme = TestsTheme();
+        string probe = WriteHostProbeTemplate();
+        bool installed = false;
+        try
+        {
+            DotnetNew(["install", probe]);
+            installed = true;
+            ProjectTemplates.Forget();
+            MainWindow window = Started();
+            Assert.True(window.Perform(AppActions.NewSolution));
+            NewProjectDialog dialog = Opened(window);
+            Search(dialog, "probehost");
+            Assert.Equal("probehost", dialog.Chosen?.ShortName);
+            Assert.Equal(["Use the full kind", "Include extras", "Greeting", "--farewell"], dialog.OptionLabels);
+
+            Ui.Click(dialog.OptionEditor("Use the full kind")!);
+            Ui.Click(dialog.OptionEditor("Include extras")!);
+            Assert.Contains("--use-minimal false", dialog.Command, StringComparison.Ordinal);
+            Assert.Contains("--bare true", dialog.Command, StringComparison.Ordinal);
+            Assert.DoesNotContain("--include-extras", dialog.Command, StringComparison.Ordinal);
+
+            // The parameters ide.host.json leaves out wait under More options, one with no name of its own named by its switch.
+            Assert.True(dialog.MoreOptions.IsEffectivelyVisible && !dialog.OptionEditor("--farewell")!.IsEffectivelyVisible,
+                "probehost shows the parameters its ide.host.json leaves out beside the ones it picks, not under More options");
+            Ui.Click(dialog.MoreOptions);
+            Assert.True(dialog.OptionEditor("Greeting")!.IsEffectivelyVisible, "More options opens without Greeting");
+            Ui.Click(dialog.OptionEditor("--farewell")!);
+            Type(dialog, "Bye");
+            Assert.Contains("--farewell Bye", dialog.Command, StringComparison.Ordinal);
+            dialog.Cancel();
+            window.Close();
+        }
+        finally
+        {
+            if (installed)
+            {
+                DotnetNew(["uninstall", probe]);
+            }
+            ProjectTemplates.Forget();
+            // What a dialog lists at once is the last read, which was this test's with its template: read again without it.
+            Ui.Await(Waiting.Apart(() => ProjectTemplates.LoadAsync(place)), "the templates read again once the probe was uninstalled", TimeSpan.FromMinutes(2));
+        }
+    }
+
+    /// <summary>A project template of the tests' own with an ide.host.json, in the test's folder: Probe Host App
+    /// (probehost), whose ide.host.json shows UseMinimal (as its opposite) and IncludeExtras, which only an IDE's host reads,
+    /// the command line's Bare doing it there; UseFull restates UseMinimal, Greeting and Farewell (no name of its own) are
+    /// in no host file and Secret is hidden from the command line.</summary>
+    private string WriteHostProbeTemplate()
+    {
+        string folder = Directory.CreateDirectory(Path.Combine(place, "HostProbeTemplate", ".template.config")).Parent!.FullName;
+        File.WriteAllText(Path.Combine(folder, ".template.config", "template.json"), """
+            {
+              "$schema": "http://json.schemastore.org/template",
+              "author": "Pitstop's tests",
+              "classifications": [ "Probe" ],
+              "identity": "Pitstop.Tests.ProbeHost.CSharp",
+              "groupIdentity": "Pitstop.Tests.ProbeHost",
+              "name": "Probe Host App",
+              "shortName": "probehost",
+              "sourceName": "ProbeHost",
+              "preferNameDirectory": true,
+              "tags": { "language": "C#", "type": "project" },
+              "symbols": {
+                "UseMinimal": { "type": "parameter", "datatype": "bool", "defaultValue": "true", "description": "Whether to stay minimal." },
+                "UseFull": { "type": "parameter", "datatype": "bool", "defaultValue": "false", "description": "Whether to go full." },
+                "UsingFull": { "type": "computed", "value": "(UseFull || !UseMinimal)" },
+                "IncludeExtras": { "type": "parameter", "datatype": "bool", "defaultValue": "true", "description": "Whether to include extras." },
+                "Bare": { "type": "parameter", "datatype": "bool", "defaultValue": "false", "description": "Whether to leave the extras out." },
+                "Extras": { "type": "computed", "value": "((IncludeExtras && (HostIdentifier != \"dotnetcli\" && HostIdentifier != \"dotnetcli-preview\")) || (!Bare && (HostIdentifier == \"dotnetcli\" || HostIdentifier == \"dotnetcli-preview\")))" },
+                "Greeting": { "type": "parameter", "datatype": "string", "defaultValue": "Hello", "displayName": "Greeting", "description": "What it says." },
+                "Farewell": { "type": "parameter", "datatype": "string", "defaultValue": "", "description": "What it says on leaving." },
+                "Secret": { "type": "parameter", "datatype": "string", "defaultValue": "", "description": "Hidden from the command line." },
+                "HostIdentifier": { "type": "bind", "binding": "host:HostIdentifier" }
+              }
+            }
+            """);
+        File.WriteAllText(Path.Combine(folder, ".template.config", "ide.host.json"), """
+            {
+              "$schema": "http://json.schemastore.org/ide.host",
+              "symbolInfo": [
+                { "id": "UseMinimal", "name": { "text": "Use the full kind" }, "invertBoolean": true, "isVisible": true },
+                { "id": "IncludeExtras", "name": { "text": "Include extras" }, "isVisible": true }
+              ]
+            }
+            """);
+        File.WriteAllText(Path.Combine(folder, ".template.config", "dotnetcli.host.json"), """
+            {
+              "$schema": "http://json.schemastore.org/dotnetcli.host",
+              "symbolInfo": {
+                "UseMinimal": { "longName": "use-minimal", "isHidden": true },
+                "UseFull": { "longName": "use-full" },
+                "IncludeExtras": { "longName": "include-extras", "isHidden": true },
+                "Bare": { "longName": "bare" },
+                "Greeting": { "longName": "greeting" },
+                "Farewell": { "longName": "farewell" },
+                "Secret": { "longName": "secret", "isHidden": true }
+              }
+            }
+            """);
+        File.WriteAllText(Path.Combine(folder, "ProbeHost.csproj"), TestProjects.Library());
+        return PathNames.Canonical(folder);
+    }
+
+    /// <summary>A test project template of the tests' own, in the test's folder: Probe Test Project (probetest), classified
+    /// as a test.</summary>
+    private string WriteProbeTemplate()
+    {
+        string folder = Directory.CreateDirectory(Path.Combine(place, "ProbeTemplate", ".template.config")).Parent!.FullName;
+        File.WriteAllText(Path.Combine(folder, ".template.config", "template.json"), """
+            {
+              "$schema": "http://json.schemastore.org/template",
+              "author": "Pitstop's tests",
+              "classifications": [ "Test", "Probe" ],
+              "identity": "Pitstop.Tests.ProbeTest.CSharp",
+              "groupIdentity": "Pitstop.Tests.ProbeTest",
+              "name": "Probe Test Project",
+              "shortName": "probetest",
+              "sourceName": "ProbeTest",
+              "preferNameDirectory": true,
+              "tags": { "language": "C#", "type": "project" }
+            }
+            """);
+        File.WriteAllText(Path.Combine(folder, "ProbeTest.csproj"), TestProjects.Library());
+        return PathNames.Canonical(folder);
+    }
+
+    /// <summary>dotnet new with these arguments in the run's own template home, as a terminal runs it.</summary>
+    private void DotnetNew(string[] arguments)
+    {
+        ChildResult ran = Ui.Await(Waiting.Apart(() => ChildProcesses.RunAsync(ProjectTemplates.NewCommand(arguments, place), limit: TimeSpan.FromMinutes(2))),
+            $"dotnet new {string.Join(' ', arguments)}", TimeSpan.FromMinutes(2) + TestFolders.Spare);
+        Assert.True(ran.Succeeded, $"dotnet new {string.Join(' ', arguments)} failed:\n{ran.Output}{ran.Error}");
+    }
+
+    /// <summary>Whether dotnet new, in the run's own template home, lists a project template this filter finds (a name, or
+    /// --tag and a classification), asked apart from Passenger's reading: it exits 103 when none matches.</summary>
+    private bool Lists(string[] filter)
+    {
+        string asked = $"dotnet new list {string.Join(' ', filter)}";
+        ChildResult ran = Ui.Await(Waiting.Apart(() => ChildProcesses.RunAsync(ProjectTemplates.NewCommand(["list", .. filter, "--type", "project"], place),
+            limit: TimeSpan.FromMinutes(2))), asked, TimeSpan.FromMinutes(2) + TestFolders.Spare);
+        Assert.True(ran.Succeeded || ran.ExitCode == 103, $"{asked} failed:\n{ran.Output}{ran.Error}");
+        return ran.Succeeded;
+    }
+
+    /// <summary>A search put in the search box, as typing it there would.</summary>
+    private static void Search(NewProjectDialog dialog, string query)
+    {
+        dialog.Query = query;
+        Ui.Settle();
+    }
+
+    /// <summary>The options a template's ide.host.json shows, first and in its order.</summary>
+    private static void Leading(NewProjectDialog dialog, string[] labels) =>
+        Assert.True(dialog.OptionLabels.Take(labels.Length).SequenceEqual(labels),
+            $"{dialog.Chosen?.Name} shows [{string.Join(", ", dialog.OptionLabels)}], not its ide.host.json's [{string.Join(", ", labels)}] first");
+
+    private static TemplateFamily Family(NewProjectDialog dialog, string name) =>
+        dialog.Families.FirstOrDefault(f => f.Name == name)
+        ?? throw new InvalidOperationException($"The dialog lists no {name}: [{string.Join(", ", dialog.Families.Select(f => f.Name))}]");
+
+    /// <summary>A Type of the family chosen, chosen as the Type chooser's list chooses one.</summary>
+    private static void Choose(NewProjectDialog dialog, string type)
+    {
+        Assert.True(dialog.TypeNames.Count > 1, $"{dialog.Family?.Name} shows no Type to choose");
+        dialog.TypeChooser.SelectedItem = dialog.Family!.Types.FirstOrDefault(t => t.TypeName == type)
+            ?? throw new InvalidOperationException($"{dialog.Family.Name} has no Type {type}: [{string.Join(", ", dialog.TypeNames)}]");
+        Ui.Settle();
+        Assert.Equal(type, dialog.Chosen?.TypeName);
+    }
+
+    /// <summary>A choice of an option's list, as its drop-down chooses one.</summary>
+    private static void Pick(NewProjectDialog dialog, string option, string choice)
+    {
+        ComboBox editor = dialog.OptionEditor(option) as ComboBox ?? throw new InvalidOperationException($"{dialog.Chosen?.Name} shows no list for {option}: [{string.Join(", ", dialog.OptionLabels)}]");
+        editor.SelectedItem = choice;
+        Ui.Settle();
+        Assert.Equal(choice, Value(dialog, option));
+    }
+
+    private static string? Value(NewProjectDialog dialog, string option) =>
+        dialog.OptionEditor(option) is ComboBox { SelectedItem: string chosen } ? chosen
+        : throw new InvalidOperationException($"{dialog.Chosen?.Name} shows no list for {option}: [{string.Join(", ", dialog.OptionLabels)}]");
+
+    /// <summary>Create, as its button does, failing with why when it made nothing.</summary>
+    private static void Created(NewProjectDialog dialog, string what)
+    {
+        Ui.Click(dialog.CreateButton);
+        Ui.WaitFor(() => !dialog.IsVisible || dialog.Problem is not null, $"dotnet new to make {what}", TimeSpan.FromMinutes(5));
+        Assert.True(dialog.Problem is null, $"{what} was not made: {dialog.Problem}");
+    }
+
+    private static string Text(params string[] parts) => File.ReadAllText(Path.Combine(parts));
+
+    /// <summary>The dialog an action opened, once its folder's templates are read.</summary>
+    private static NewProjectDialog Opened(MainWindow window)
+    {
+        Ui.Settle();
+        NewProjectDialog dialog = Assert.Single(window.OwnedWindows.OfType<NewProjectDialog>(), d => d.IsVisible);
+        Ui.WaitFor(() => dialog.TemplatesRead.IsCompleted, "dotnet new's templates to be read", TimeSpan.FromMinutes(3));
+        Assert.True(dialog.Families.Count > 0, $"The dialog lists no templates: {dialog.Problem}");
+        return dialog;
+    }
+
+    /// <summary>The window a person starts, its state in the test's folder, on the Welcome screen; with no C# language server,
+    /// which the templates ask nothing of and which would restore each test project made from nuget.org.</summary>
+    private MainWindow Started()
+    {
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings, StartsLanguageServer = false };
+        window.Show();
+        window.KeepLayout();
+        window.KeepSettings();
+        window.Start(LaunchOptions.Empty);
+        Ui.Settle();
+        return window;
+    }
+
+    private static void Type(TopLevel window, string text)
+    {
+        window.KeyTextInput(text);
+        Ui.Settle();
+    }
+
+    private static void Press(TopLevel window, Key key)
+    {
+        window.KeyPress(key, RawInputModifiers.None, PhysicalKey.None, null);
+        if (window.IsVisible)
+        {
+            window.KeyRelease(key, RawInputModifiers.None, PhysicalKey.None, null);
+        }
+        Ui.Settle();
+    }
+
+    /// <summary>Puts the tests' theme back once a window that keeps its settings has put the person's in force.</summary>
+    private static IDisposable TestsTheme() => new ThemeBack(Avalonia.Application.Current!.RequestedThemeVariant);
+
+    private sealed class ThemeBack(Avalonia.Styling.ThemeVariant? theme) : IDisposable
+    {
+        public void Dispose() => Avalonia.Application.Current!.RequestedThemeVariant = theme;
+    }
+}

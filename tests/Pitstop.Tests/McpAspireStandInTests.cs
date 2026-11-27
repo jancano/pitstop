@@ -1,0 +1,616 @@
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Text.Json;
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
+using Pitstop.App.Mcp;
+using Pitstop.Core;
+
+namespace Pitstop.Tests;
+
+/// <summary>An agent's Aspire tools on an AppHost its Passenger runs: the stand-in AppHost (<see cref="StandInAppHost"/>), whose
+/// launch profile names a stand-in resource service and, as its own address, a stand-in dashboard of the test's, so what the
+/// agent gets back is held: a dashboard's answers read whole with their credentials hidden, a dashboard elsewhere never sent
+/// the key, and an AppHost whose connection has ended said as such. No Aspire package, dashboard or CLI, so these run on every
+/// system.</summary>
+[Collection(Beside.Name)]
+public sealed class McpAspireStandInTests(StandInAppHost project) : McpRig, IClassFixture<StandInAppHost>
+{
+    /// <summary>An agent's telemetry of an AppHost as one flow, each step one test's check in an instance of its own:
+    /// the dashboard's own answer with its credentials hidden and never another resource's, a resource's trace holding
+    /// the spans its service sent from an instance, the key never sent to a dashboard elsewhere or named with
+    /// credentials, a service's request duration read through its metrics, and a runtime slow to take its first session
+    /// asked again, saying so.</summary>
+    [Fact]
+    public async Task An_agents_telemetry_is_the_dashboards_own_never_sending_its_key_elsewhere_and_asking_a_slow_runtime_again()
+    {
+        await Flow.StepApartAsync("an agents telemetry is the dashboards own answer with its credentials hidden and never another resources", () => new McpAspireStandInTests(project), t => t.An_agents_telemetry_is_the_dashboards_own_answer_with_its_credentials_hidden_and_never_another_resources());
+        await Flow.StepApartAsync("an agents trace of a resource holds the spans its service sent from an instance", () => new McpAspireStandInTests(project), t => t.An_agents_trace_of_a_resource_holds_the_spans_its_service_sent_from_an_instance());
+        await Flow.StepApartAsync("an agents telemetry never sends the key to a dashboard elsewhere or named with credentials", () => new McpAspireStandInTests(project), t => t.An_agents_telemetry_never_sends_the_key_to_a_dashboard_elsewhere_or_named_with_credentials());
+        await Flow.StepApartAsync("an agent reads a services request duration through telemetry metrics", () => new McpAspireStandInTests(project), t => t.An_agent_reads_a_services_request_duration_through_telemetry_metrics());
+        await Flow.StepApartAsync("an agents metrics of a runtime slow to take its first session are asked again and say so", () => new McpAspireStandInTests(project), t => t.An_agents_metrics_of_a_runtime_slow_to_take_its_first_session_are_asked_again_and_say_so());
+    }
+
+    /// <summary>An agent's runs of an AppHost as one flow, each step one test's check in an instance of its own: its
+    /// run answering with the AppHost's own console, an AppHost whose connection ended said to list no resources while
+    /// the rest answers, its resources' commands through container_action with those it cannot refused, a resource
+    /// whose container runtime is unhealthy failing saying so, and one replica's debug start debugging that replica's
+    /// own program.</summary>
+    [Fact]
+    public async Task An_agent_runs_an_AppHost_its_resources_commands_and_one_replicas_debugging_as_the_AppHost_and_its_engine_answer()
+    {
+        await Flow.StepApartAsync("an agents run of an AppHost answers with the AppHosts own console", () => new McpAspireStandInTests(project), t => t.An_agents_run_of_an_AppHost_answers_with_the_AppHosts_own_console());
+        await Flow.StepApartAsync("an agent is told why an AppHost whose connection ended lists no resources and the rest of the workspace answers", () => new McpAspireStandInTests(project), t => t.An_agent_is_told_why_an_AppHost_whose_connection_ended_lists_no_resources_and_the_rest_of_the_workspace_answers());
+        await Flow.StepApartAsync("an agent runs an AppHost resources commands through container action and is refused those it cannot", () => new McpAspireStandInTests(project), t => t.An_agent_runs_an_AppHost_resources_commands_through_container_action_and_is_refused_those_it_cannot());
+        await Flow.StepApartAsync("an agents run of a resource whose container runtime is unhealthy fails saying so", () => new McpAspireStandInTests(project), t => t.An_agents_run_of_a_resource_whose_container_runtime_is_unhealthy_fails_saying_so());
+        await Flow.StepApartAsync("an agents debug start of one replica debugs that replicas own program", () => new McpAspireStandInTests(project), t => t.An_agents_debug_start_of_one_replica_debugs_that_replicas_own_program());
+    }
+
+    /// <summary>An agent's run of an AppHost answers with the AppHost's own console, which begins with the command that
+    /// started it, never Run's console, which holds whatever Run ran before it.</summary>
+    private async Task An_agents_run_of_an_AppHost_answers_with_the_AppHosts_own_console()
+    {
+        await project.ResetAsync();
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "api-owned-instance", DisplayName = "api", Uid = "api", ResourceType = "Project", State = "Running" });
+        await using AspireDashboardHost dashboard = await AspireDashboardHost.StartAsync();
+        await project.ServeAsync(resources, dashboard.Endpoint);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        Assert.True(await Waiting.UntilAsync(async () => (await Call(client, McpTools.Workspace)).GetProperty("runConfigurations").EnumerateArray()
+            .Any(item => item.GetString() == StandInAppHost.Configuration), TimeSpan.FromMinutes(2), Cancel),
+            $"The stand-in AppHost's Aspire configuration was not found.{Said()}");
+        JsonElement ran = await Call(client, McpTools.Run, new() { ["configuration"] = StandInAppHost.Configuration });
+        string output = ran.GetProperty("output").GetString()!;
+        Assert.True(output.Contains("The stand-in AppHost is up", StringComparison.Ordinal),
+            $"An agent's run of the AppHost answered with a console that is not the AppHost's, so it reads nothing of its start: {ran}");
+    }
+
+    private async Task An_agents_telemetry_is_the_dashboards_own_answer_with_its_credentials_hidden_and_never_another_resources()
+    {
+        await project.ResetAsync();
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "api-owned-instance", DisplayName = "api", Uid = "api", ResourceType = "Project", State = "Running" });
+        await using AspireDashboardHost dashboard = await AspireDashboardHost.StartAsync();
+        await project.ServeAsync(resources, dashboard.Endpoint);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        string host = PathNames.Canonical(project.ProjectFile);
+        string api = host + "::api-owned-instance";
+        await Running(client, host);
+        string key = File.ReadAllText(project.DashboardKeyFile);
+
+        dashboard.Answer = _ => (200, "application/json", AspireDashboardHost.Wrapped(Logs));
+        foreach (Dictionary<string, object?> asked in (Dictionary<string, object?>[])[new() { ["appHost"] = host, ["limit"] = 1 }, new() { ["resource"] = api, ["limit"] = 1 }])
+        {
+            int before = dashboard.Requests.Length;
+            JsonElement answer = await Call(client, McpTools.Telemetry, asked);
+            JsonElement log = Assert.Single(answer.GetProperty("logs").EnumerateArray());
+            Assert.Equal("api-owned-instance", log.GetProperty("resourceName").GetString());
+            Assert.Equal("42", log.GetProperty("attributes").GetProperty("code.line.number").GetString());
+            string text = log.GetRawText();
+            Assert.Contains("true", text, StringComparison.Ordinal);
+            foreach (string secret in (string[])["private-value", "cHJpdmF0ZQ==", key])
+            {
+                Assert.DoesNotContain(secret, Text(answer), StringComparison.Ordinal);
+            }
+            AspireDashboardHost.Asked request = Assert.Single(dashboard.Requests.Skip(before));
+            Assert.Equal("/api/telemetry/logs?limit=1" + (asked.ContainsKey("resource") ? "&resource=api-owned-instance" : string.Empty), request.PathAndQuery);
+            Assert.Equal(key, request.Key);
+        }
+
+        // A resource the dashboard does not know is an empty snapshot; any other 404 is the agent's error.
+        (string Kind, bool Resource, string? TraceId, string? Title, string ContentType, bool Empty)[] cases =
+        [
+            ("logs", true, null, "Resource not found", "application/problem+json", true),
+            ("traces", true, null, "Resource not found", "application/problem+json", true),
+            ("logs", true, null, "Resource not found", "application/json", true),
+            ("logs", true, null, null, "application/json", true),
+            ("traces", true, null, null, "application/json", true),
+            ("logs", false, null, "Resource not found", "application/problem+json", false),
+            ("logs", true, null, "Not Found", "application/problem+json", false),
+            ("traces", true, "11111111111111111111111111111111", "Trace not found", "application/problem+json", false),
+            ("logs", false, null, null, "application/json", false),
+            ("traces", true, "11111111111111111111111111111111", null, "application/json", false),
+        ];
+        foreach ((string kind, bool resource, string? traceId, string? title, string contentType, bool empty) in cases)
+        {
+            string said = $"{kind}, {(resource ? "a resource" : "the AppHost")}{(traceId is null ? string.Empty : ", a trace")}, a 404 titled {title ?? "nothing"} as {contentType}";
+            dashboard.Answer = _ => (404, contentType, title is null ? "{}" : JsonSerializer.Serialize(new { title, status = 404 }));
+            int before = dashboard.Requests.Length;
+            Dictionary<string, object?> asked = new() { ["kind"] = kind, ["limit"] = 1 };
+            asked[resource ? "resource" : "appHost"] = resource ? api : host;
+            if (traceId is not null)
+            {
+                asked["traceId"] = traceId;
+            }
+            CallToolResult answer = await Result(client, McpTools.Telemetry, asked);
+            if (empty)
+            {
+                Assert.True(answer.IsError != true, $"{said}: {Text(answer)}");
+                using JsonDocument snapshot = JsonDocument.Parse(Text(answer));
+                Assert.Equal(0, snapshot.RootElement.GetProperty(kind).GetArrayLength());
+            }
+            else
+            {
+                Assert.True(answer.IsError == true && Text(answer).Contains("HTTP 404", StringComparison.Ordinal), $"{said}: {Text(answer)}");
+                Assert.DoesNotContain(key, Text(answer), StringComparison.Ordinal);
+            }
+            AspireDashboardHost.Asked request = Assert.Single(dashboard.Requests.Skip(before));
+            string path = traceId is null ? kind : $"traces/{traceId}";
+            Assert.Equal($"/api/telemetry/{path}?limit=1" + (resource ? "&resource=api-owned-instance" : string.Empty), request.PathAndQuery);
+        }
+
+        // An answer from the dashboard that cannot be read is the dashboard's to say, in the Telemetry view's words.
+        dashboard.Answer = _ => (200, "text/plain", "not telemetry");
+        CallToolResult unread = await Result(client, McpTools.Telemetry, new() { ["appHost"] = host, ["limit"] = 1 });
+        Assert.True(unread.IsError == true && Text(unread).Contains("dashboard's logs and traces could not be read", StringComparison.Ordinal)
+            && !Text(unread).Contains(Pitstop.App.Mcp.PitstopTools.Faulted, StringComparison.Ordinal), $"A dashboard's unreadable answer: {Text(unread)}");
+        Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+        Assert.Empty(resources.Errors);
+    }
+
+    /// <summary>A trace an agent reads for a resource is the dashboard's whole, its spans those of the resource's service
+    /// whatever instance sent them: a trace of the service api, its instance instance1, read for the resource api by its id.</summary>
+    private async Task An_agents_trace_of_a_resource_holds_the_spans_its_service_sent_from_an_instance()
+    {
+        await project.ResetAsync();
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "api", DisplayName = "api", Uid = "api", ResourceType = "Project", State = "Running" });
+        await using AspireDashboardHost dashboard = await AspireDashboardHost.StartAsync();
+        await project.ServeAsync(resources, dashboard.Endpoint);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        string host = PathNames.Canonical(project.ProjectFile);
+        await Running(client, host, "api");
+
+        dashboard.Answer = _ => (200, "application/json", AspireDashboardHost.Wrapped(Spans));
+        JsonElement answer = await Call(client, McpTools.Telemetry, new() { ["kind"] = "traces", ["resource"] = $"{host}::api", ["traceId"] = TraceId });
+        JsonElement trace = Assert.Single(answer.GetProperty("traces").EnumerateArray());
+        Assert.Equal(TraceId, trace.GetProperty("traceId").GetString());
+        Assert.Equal(2, trace.GetProperty("spans").GetArrayLength());
+        string asked = Assert.Single(dashboard.Requests).PathAndQuery;
+        Assert.True(asked.StartsWith($"/api/telemetry/traces/{TraceId}?", StringComparison.Ordinal) && asked.EndsWith("&resource=api", StringComparison.Ordinal), asked);
+        Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+        Assert.Empty(resources.Errors);
+    }
+
+    private async Task An_agents_telemetry_never_sends_the_key_to_a_dashboard_elsewhere_or_named_with_credentials()
+    {
+        await using AspireDashboardHost dashboard = await AspireDashboardHost.StartAsync();
+        // An address no machine answers at (TEST-NET-1), and the stand-in dashboard's own named with a user.
+        foreach (Uri elsewhere in (Uri[])[new("http://192.0.2.10:5000"), new($"http://agent@127.0.0.1:{dashboard.Endpoint.Port}")])
+        {
+            await project.ResetAsync();
+            await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+            resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "api-owned-instance", DisplayName = "api", Uid = "api", ResourceType = "Project", State = "Running" });
+            await project.ServeAsync(resources, elsewhere);
+            await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+            string host = PathNames.Canonical(project.ProjectFile);
+            await Running(client, host);
+            CallToolResult refused = await Result(client, McpTools.Telemetry, new() { ["appHost"] = host });
+            Assert.True(refused.IsError == true && Text(refused).Contains("loopback", StringComparison.Ordinal), $"{elsewhere}: {Text(refused)}");
+            Assert.DoesNotContain(File.ReadAllText(project.DashboardKeyFile), Text(refused), StringComparison.Ordinal);
+            Assert.Empty(dashboard.Requests);
+            Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+            Assert.Empty(resources.Errors);
+        }
+    }
+
+    private async Task An_agent_is_told_why_an_AppHost_whose_connection_ended_lists_no_resources_and_the_rest_of_the_workspace_answers()
+    {
+        await project.ResetAsync();
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "api-owned-instance", DisplayName = "api", Uid = "api", ResourceType = "Project", State = "Running" });
+        await project.ServeAsync(resources);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        string host = PathNames.Canonical(project.ProjectFile);
+        await Running(client, host);
+
+        // The resource service ends its calls while the AppHost runs on.
+        resources.Drop();
+        JsonElement workspace = default;
+        Assert.True(await Waiting.UntilAsync(async () =>
+        {
+            workspace = await Call(client, McpTools.Workspace);
+            return workspace.GetProperty("aspireApps").EnumerateArray().Any(app => app.GetProperty("state").GetString() != "Running");
+        }, TimeSpan.FromSeconds(30), Cancel), $"The agent was not told the AppHost's connection ended: {workspace}");
+        JsonElement ended = Assert.Single(workspace.GetProperty("aspireApps").EnumerateArray());
+        Assert.True(ended.GetProperty("state").GetString()!.Contains("failed", StringComparison.Ordinal), $"The agent was not told why: {ended}");
+        Assert.Equal(0, ended.GetProperty("resources").GetArrayLength());
+        Assert.Contains(workspace.GetProperty("runConfigurations").EnumerateArray(), item => item.GetString() == StandInAppHost.Configuration);
+        Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+        Assert.Empty(resources.Errors);
+    }
+
+    /// <summary>An agent runs an AppHost resource's advertised commands through container_action, by the command's name, or
+    /// restart as Aspire's resource-restart; a confirmation asks no one (nobody would answer a headless IDE's question), while
+    /// one that asks the person for input, one the resource lacks and one not enabled now are refused saying why, the AppHost
+    /// never asked; workspace lists the commands it may run and how the AppHost's run was started.</summary>
+    private async Task An_agent_runs_an_AppHost_resources_commands_through_container_action_and_is_refused_those_it_cannot()
+    {
+        await project.ResetAsync();
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        Pitstop.App.Aspire.Protocol.Resource api = new() { Name = "api-owned-instance", DisplayName = "api", Uid = "api", ResourceType = "Project", State = "Running" };
+        api.Commands.Add(new Pitstop.App.Aspire.Protocol.ResourceCommand
+        {
+            Name = "resource-restart", DisplayName = "Restart", State = Pitstop.App.Aspire.Protocol.ResourceCommandState.Enabled, ConfirmationMessage = "Restart api?",
+        });
+        api.Commands.Add(new Pitstop.App.Aspire.Protocol.ResourceCommand { Name = "pitstop-ping", DisplayName = "Ping", State = Pitstop.App.Aspire.Protocol.ResourceCommandState.Enabled });
+        api.Commands.Add(new Pitstop.App.Aspire.Protocol.ResourceCommand { Name = "resource-start", DisplayName = "Start", State = Pitstop.App.Aspire.Protocol.ResourceCommandState.Disabled });
+        api.Commands.Add(new Pitstop.App.Aspire.Protocol.ResourceCommand
+        {
+            Name = "pitstop-seed", DisplayName = "Seed", State = Pitstop.App.Aspire.Protocol.ResourceCommandState.Enabled,
+            ArgumentInputs = { new Pitstop.App.Aspire.Protocol.InteractionInput { Name = "rows", Label = "Rows", InputType = Pitstop.App.Aspire.Protocol.InputType.Number } },
+        });
+        resources.PushResource(api);
+        await project.ServeAsync(resources);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        string host = PathNames.Canonical(project.ProjectFile);
+        await Running(client, host);
+
+        JsonElement app = Assert.Single((await Call(client, McpTools.Workspace)).GetProperty("aspireApps").EnumerateArray());
+        Assert.Equal("run", app.GetProperty("how").GetString());
+        JsonElement listed = Assert.Single(app.GetProperty("resources").EnumerateArray());
+        Assert.Equal(["resource-restart", "pitstop-ping", "pitstop-seed"], listed.GetProperty("commands").EnumerateArray().Select(c => c.GetString()));
+        string target = listed.GetProperty("target").GetString()!;
+
+        Assert.Equal("api-owned-instance: resource-restart Succeeded", Text(await Call(client, McpTools.ContainerAction, new() { ["container"] = "api", ["action"] = "restart" })));
+        Assert.Equal("api-owned-instance: pitstop-ping Succeeded", Text(await Call(client, McpTools.ContainerAction, new() { ["container"] = target, ["action"] = "pitstop-ping" })));
+        Assert.Equal(["resource-restart", "pitstop-ping"], resources.Commands.Select(command => command.CommandName));
+        Assert.All(resources.Commands, command => Assert.Equal("api-owned-instance", command.ResourceName));
+
+        foreach ((string action, string why) in ((string, string)[])[
+            ("explode", "its commands are resource-restart, pitstop-ping, resource-start, pitstop-seed"),
+            ("start", "resource-start is not enabled now"),
+            ("pitstop-seed", "asks for input the person gives")])
+        {
+            CallToolResult refused = await Result(client, McpTools.ContainerAction, new() { ["container"] = target, ["action"] = action });
+            Assert.True(refused.IsError == true && Text(refused).Contains(why, StringComparison.Ordinal), $"container_action {action} on the resource answered: {Text(refused)}");
+        }
+        Assert.Equal(2, resources.Commands.Length);
+
+        // run of a resource the AppHost runs itself (a container) runs nothing and answers how its resources stand.
+        Pitstop.App.Aspire.Protocol.Resource cache = new() { Name = "cache", DisplayName = "cache", Uid = "cache", ResourceType = "Container", State = "Running" };
+        cache.Commands.Add(new Pitstop.App.Aspire.Protocol.ResourceCommand { Name = "resource-restart", DisplayName = "Restart", State = Pitstop.App.Aspire.Protocol.ResourceCommandState.Enabled });
+        resources.PushResource(cache);
+        // Named once workspace lists it, as an agent learns of a resource its AppHost adds as it runs.
+        Assert.True(await Waiting.UntilAsync(async () => (await Call(client, McpTools.Workspace)).GetProperty("aspireApps").EnumerateArray()
+            .Any(app => app.GetProperty("resources").EnumerateArray().Any(resource => resource.GetProperty("name").GetString() == "cache")),
+            TimeSpan.FromSeconds(30), Cancel), $"workspace never listed the cache the AppHost added.{Said()}");
+        JsonElement ran = await Call(client, McpTools.Run, new() { ["resource"] = "cache", ["waitSeconds"] = 10 });
+        string status = ran.GetProperty("status").GetString()!;
+        Assert.True(ran.GetProperty("stillRunning").GetBoolean() && status.StartsWith($"cache of {StandInAppHost.Configuration} is up\nResources of {StandInAppHost.Configuration}:\n", StringComparison.Ordinal)
+            && status.Contains("\n  api-owned-instance: Running", StringComparison.Ordinal) && status.Contains("\n  cache: Running", StringComparison.Ordinal), $"run of the cache answered: {ran}");
+        Assert.Equal(2, resources.Commands.Length);
+        Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+        Assert.Empty(resources.Errors);
+    }
+
+    /// <summary>An agent's run of a resource its AppHost cannot start where it is (RuntimeUnhealthy: its container engine is
+    /// not running) fails at once saying so, as the Aspire window's red dot shows it, never waiting out the call's whole wait
+    /// for it to come up and then answering as if it might yet.</summary>
+    private async Task An_agents_run_of_a_resource_whose_container_runtime_is_unhealthy_fails_saying_so()
+    {
+        await project.ResetAsync();
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "cache", DisplayName = "cache", Uid = "cache", ResourceType = "Container", State = "RuntimeUnhealthy" });
+        await project.ServeAsync(resources);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        await Running(client, PathNames.Canonical(project.ProjectFile), "cache");
+        CallToolResult ran = await Result(client, McpTools.Run, new() { ["resource"] = "cache", ["waitSeconds"] = 20 });
+        Assert.True(ran.IsError == true && Text(ran).Contains($"cache of {StandInAppHost.Configuration} failed: RuntimeUnhealthy\n", StringComparison.Ordinal),
+            $"run of a cache that cannot start, which the Aspire window shows failed, answered as if it might yet come up: {Text(ran)}");
+        Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+        Assert.Empty(resources.Errors);
+    }
+
+    /// <summary>An agent's debug_start of one replica of a service its AppHost runs as two, named by its resource, debugs that
+    /// replica: restarted held by its own resource's command, its session attached to its own new program (stopped at a
+    /// breakpoint, its process's id a local there), workspace naming that session on its resource alone, and the other
+    /// replica left running as it was, undebugged. The test starts each replica as DCP does, as the stand-in's commands ask.</summary>
+    private async Task An_agents_debug_start_of_one_replica_debugs_that_replicas_own_program()
+    {
+        await project.ResetAsync();
+        await project.BuildApiAsync();
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "cache", DisplayName = "cache", Uid = "cache", ResourceType = "Container", State = "Running" });
+        await project.ServeAsync(resources);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        string host = PathNames.Canonical(project.ProjectFile);
+        Assert.True(await Waiting.UntilAsync(async () => (await Call(client, McpTools.Workspace)).GetProperty("runConfigurations").EnumerateArray()
+            .Any(item => item.GetString() == StandInAppHost.Configuration), TimeSpan.FromMinutes(2), Cancel),
+            $"The stand-in AppHost's Aspire configuration was not found.{Said()}");
+        JsonElement ran = await Call(client, McpTools.Run, new() { ["configuration"] = StandInAppHost.Configuration });
+        Assert.True(ran.GetProperty("stillRunning").GetBoolean(), $"run of the stand-in AppHost answered: {ran}");
+        (string first, string second) = ("aaaaaaaa", "bbbbbbbb");
+        ConcurrentBag<System.Net.WebSockets.ClientWebSocket> sockets = [];
+        ConcurrentQueue<Task<int>> restarts = new();
+        Dictionary<string, int> programs = [];
+        ConcurrentDictionary<int, OwnProcess> own = new();
+        try
+        {
+            foreach (string instance in (string[])[first, second])
+            {
+                programs[instance] = await StartReplicaAsync(instance, subscribe: instance == first);
+            }
+            resources.OnCommand = command =>
+            {
+                string instance = command.ResourceName["apiservice-".Length..];
+                if (command.CommandName == "resource-restart")
+                {
+                    own[programs[instance]].Kill();
+                    restarts.Enqueue(Waiting.Apart(() => StartReplicaAsync(instance, subscribe: false)));
+                }
+            };
+            JsonElement[] listed = [];
+            Assert.True(await Waiting.UntilAsync(async () => (listed = Replicas(await Call(client, McpTools.Workspace))).Length == 2, TimeSpan.FromSeconds(30), Cancel),
+                $"workspace never listed both replicas running: {string.Join(", ", listed)}{Said()}");
+            await Call(client, McpTools.BreakpointSet, new() { ["path"] = $"{StandInAppHost.Api}/Program.cs", ["line"] = project.ApiLoop });
+
+            JsonElement stop = await Call(client, McpTools.DebugStart, new() { ["resource"] = $"{host}::apiservice-{second}", ["waitSeconds"] = 60 });
+            int restarted = await Assert.Single(restarts);
+            Assert.True(restarted != programs[second] && stop.GetProperty("state").GetString() == "paused" && Local(stop, "pid") == restarted.ToString(CultureInfo.InvariantCulture),
+                $"debug_start of the second replica stopped elsewhere than in its own new program {restarted} (it ran as {programs[second]}, the first as {programs[first]}): {stop}");
+            Assert.True(Processes.IsRunning(programs[first]), "debug_start of the second replica ended the first");
+            Assert.Equal(("resource-restart", $"apiservice-{second}"), Assert.Single(resources.Commands, command => command.CommandName != "resource-stop") is { } asked
+                ? (asked.CommandName, asked.ResourceName) : default);
+            Assert.True(await Waiting.UntilAsync(async () => (listed = Replicas(await Call(client, McpTools.Workspace))).Length == 2
+                && SessionOf(listed, second) == $"{StandInAppHost.Name}: apiservice-{second}", TimeSpan.FromSeconds(30), Cancel),
+                $"workspace did not name the second replica's own session on its resource: {string.Join(", ", listed)}");
+            Assert.True(SessionOf(listed, first) is null, $"workspace named a session on the first replica, which nothing debugs: {string.Join(", ", listed)}");
+            // Its runtime answers no session's start while the debugger holds it, so its metrics are refused rather than waited for.
+            CallToolResult metrics = await Result(client, McpTools.Telemetry, new() { ["kind"] = "metrics", ["resource"] = $"{host}::apiservice-{second}" });
+            Assert.True(metrics.IsError == true && Text(metrics).Contains(Pitstop.App.Refusals.PausedInDebugger("apiservice", "read its metrics"), StringComparison.Ordinal),
+                $"telemetry's metrics of the replica paused in the debugger answered: {Text(metrics)}");
+            Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+            Assert.Empty(resources.Errors);
+        }
+        finally
+        {
+            // A restart's program is held once it has said its id.
+            foreach (Task<int> start in restarts)
+            {
+                await Waiting.Within(start, TimeSpan.FromMinutes(1), Cancel);
+            }
+            foreach (OwnProcess program in own.Values)
+            {
+                program.Kill();
+            }
+            foreach (System.Net.WebSockets.ClientWebSocket socket in sockets)
+            {
+                socket.Dispose();
+            }
+        }
+
+        // A replica started as DCP starts it, telling its instance; once its program has said its id, its resource as its AppHost says it runs.
+        async Task<int> StartReplicaAsync(string instance, bool subscribe)
+        {
+            string told = $"{project.KeyFile}.{instance}.pid";
+            File.Delete(told);
+            (System.Net.WebSockets.ClientWebSocket notified, System.Net.HttpStatusCode answer) = await project.StartApiAsync("apiservice", environment: new Dictionary<string, string>
+            {
+                [OtelVariables.ResourceAttributes] = $"service.instance.id={instance}",
+                ["STAND_IN_PID_FILE"] = told,
+            }, subscribe: subscribe);
+            sockets.Add(notified);
+            Assert.True((int)answer is >= 200 and < 300, $"The IDE refused replica {instance}'s run session: {answer}");
+            int program = 0;
+            Assert.True(await Waiting.UntilAsync(() => (program = Processes.ReadId(told)) > 0, TimeSpan.FromMinutes(1), Cancel), $"Replica {instance} never said its process's id");
+            own[program] = OwnProcess.Of(program);
+            Pitstop.App.Aspire.Protocol.Resource resource = new()
+            {
+                Name = $"apiservice-{instance}", DisplayName = "apiservice", Uid = $"api-{instance}", ResourceType = "Project", State = "Running",
+                Properties =
+                {
+                    new Pitstop.App.Aspire.Protocol.ResourceProperty { Name = "project.path", Value = Google.Protobuf.WellKnownTypes.Value.ForString(PathNames.Canonical(project.ApiProject)) },
+                    new Pitstop.App.Aspire.Protocol.ResourceProperty { Name = "executable.pid", Value = Google.Protobuf.WellKnownTypes.Value.ForNumber(program) },
+                },
+            };
+            resource.Commands.Add(new Pitstop.App.Aspire.Protocol.ResourceCommand
+            {
+                Name = "resource-restart", DisplayName = "Restart", State = Pitstop.App.Aspire.Protocol.ResourceCommandState.Enabled,
+            });
+            resources.PushResource(resource);
+            return program;
+        }
+
+        // The replicas' resources workspace lists running.
+        static JsonElement[] Replicas(JsonElement workspace) => [.. workspace.GetProperty("aspireApps").EnumerateArray().SelectMany(app => app.GetProperty("resources").EnumerateArray())
+            .Where(resource => resource.GetProperty("name").GetString()!.StartsWith("apiservice-", StringComparison.Ordinal) && resource.GetProperty("state").GetString() == "Running")];
+
+        // The session workspace names on a replica's resource, or null.
+        static string? SessionOf(JsonElement[] replicas, string instance) => replicas.Single(resource => resource.GetProperty("name").GetString() == $"apiservice-{instance}")
+            .TryGetProperty("session", out JsonElement session) && session.ValueKind == JsonValueKind.String ? session.GetString() : null;
+    }
+
+    /// <summary>An agent reads a service's metrics through telemetry's kind metrics, as the Stats tab reads them: a web app the
+    /// stand-in AppHost has Passenger start, sent requests meanwhile, answers its request duration with its rate and median,
+    /// heard from its runtime.</summary>
+    private async Task An_agent_reads_a_services_request_duration_through_telemetry_metrics() => await RequestDurationAsync(slowFirstSession: false);
+
+    /// <summary>An agent's metrics of a service whose runtime takes Passenger's first session too late but answers the next
+    /// request at once (a port in front of web's that holds the first connection and passes the rest to the runtime) are
+    /// asked again rather than given up, the answer saying so, with the request duration heard.</summary>
+    private async Task An_agents_metrics_of_a_runtime_slow_to_take_its_first_session_are_asked_again_and_say_so() => await RequestDurationAsync(slowFirstSession: true);
+
+    /// <summary>The web app's request duration read by the agent, its runtime's first session held where
+    /// <paramref name="slowFirstSession"/>.</summary>
+    private async Task RequestDurationAsync(bool slowFirstSession)
+    {
+        await project.ResetAsync();
+        string web = await project.WriteWebAppAsync();
+        // Held from every other program until web runs, which binds only past its gate: a port freed a minute ahead may be taken.
+        using HeldPort port = new();
+        string address = $"http://127.0.0.1:{port.Port.ToString(System.Globalization.CultureInfo.InvariantCulture)}/";
+        string told = $"{project.KeyFile}.web.pid";
+        string gate = $"{project.KeyFile}.web.gate";
+        File.Delete(told);
+        File.Delete(gate);
+        await using AspireInteractionHost resources = await AspireInteractionHost.StartAsync(project.KeyFile);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource { Name = "web", DisplayName = "web", Uid = "web", ResourceType = "Project", State = "Starting" });
+        await project.ServeAsync(resources);
+        await using McpClient client = await Start(["--mcp", project.Folder], languageServer: false);
+        await Running(client, PathNames.Canonical(project.ProjectFile), "web");
+        (System.Net.WebSockets.ClientWebSocket notified, System.Net.HttpStatusCode answer) = await project.StartApiAsync("web",
+            environment: new Dictionary<string, string> { [AspNetCoreVariables.Urls] = address, ["STAND_IN_PID_FILE"] = told, ["STAND_IN_GATE"] = gate }, projectPath: web);
+        using System.Net.WebSockets.ClientWebSocket subscribed = notified;
+        Assert.True((int)answer is >= 200 and < 300, $"The IDE refused the web service's run session: {answer}");
+        int program = 0;
+        Assert.True(await Waiting.UntilAsync(() => (program = Processes.ReadId(told)) > 0, TimeSpan.FromMinutes(1), Cancel), "The web service never said its process's id");
+        OwnProcess own = OwnProcess.Of(program);
+        // Held while it runs, so how it ended reads should it end.
+        using System.Diagnostics.Process webProcess = System.Diagnostics.Process.GetProcessById(program);
+        Assert.False(webProcess.SafeHandle.IsInvalid, "The web service's process could not be held");
+        await using SilentPort? held = slowFirstSession ? new SilentPort(program, holding: 1) : null;
+        held?.PassOn();
+        port.LetGo(gate);
+        resources.PushResource(new Pitstop.App.Aspire.Protocol.Resource
+        {
+            Name = "web", DisplayName = "web", Uid = "web", ResourceType = "Project", State = "Running",
+            Properties =
+            {
+                new Pitstop.App.Aspire.Protocol.ResourceProperty { Name = "project.path", Value = Google.Protobuf.WellKnownTypes.Value.ForString(web) },
+                new Pitstop.App.Aspire.Protocol.ResourceProperty { Name = "executable.pid", Value = Google.Protobuf.WellKnownTypes.Value.ForNumber(program) },
+            },
+        });
+        // The push reaches the IDE in its own time: until then web is starting with no program, which telemetry refuses.
+        Assert.True(await Waiting.UntilAsync(async () => (await Call(client, McpTools.Workspace)).GetProperty("aspireApps").EnumerateArray()
+            .SelectMany(app => app.GetProperty("resources").EnumerateArray())
+            .Any(listed => listed.GetProperty("name").GetString() == "web" && listed.GetProperty("state").GetString() == "Running"), TimeSpan.FromMinutes(1), Cancel),
+            $"The IDE never heard that web runs its program.{Said()}");
+        using CancellationTokenSource stopAsking = CancellationTokenSource.CreateLinkedTokenSource(Cancel);
+        int served = 0;
+        int sent = 0;
+        int slow = 0;
+        // Until the agent is told: one slower than the client waits (a loaded machine's first) is let go, web measuring it all the same.
+        Task asking = Waiting.Apart(async () =>
+        {
+            using HttpClient http = new() { Timeout = TimeSpan.FromSeconds(5) };
+            while (!stopAsking.IsCancellationRequested)
+            {
+                Interlocked.Increment(ref sent);
+                try
+                {
+                    using HttpResponseMessage answered = await http.GetAsync(address, stopAsking.Token);
+                    if (answered.IsSuccessStatusCode)
+                    {
+                        Interlocked.Increment(ref served);
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // Not yet listening.
+                }
+                catch (OperationCanceledException) when (!stopAsking.IsCancellationRequested)
+                {
+                    Interlocked.Increment(ref slow);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Stopped as the test ends.
+                }
+                await Waiting.ForAsync(TimeSpan.FromMilliseconds(100), "a request's pause", stopAsking.Token).Ended();
+            }
+        }, Cancel);
+        try
+        {
+            JsonElement heard = default;
+            List<string> waited = [];
+            if (!await Waiting.UntilAsync(async () =>
+            {
+                CallToolResult answer = await Result(client, McpTools.Telemetry, new() { ["kind"] = "metrics", ["resource"] = "web" });
+                if (answer.IsError == true)
+                {
+                    Assert.Fail($"telemetry failed: {Text(answer)}\n{await WebSaidAsync()}{Said()}");
+                }
+                using JsonDocument read = JsonDocument.Parse(Text(answer));
+                heard = read.RootElement.Clone();
+                if (heard.TryGetProperty("waited", out JsonElement wait))
+                {
+                    waited.Add(wait.GetString()!);
+                }
+                return heard.TryGetProperty("metrics", out JsonElement metrics) && metrics.EnumerateArray().Any(m => m.GetProperty("instrument").GetString() == "http.server.request.duration"
+                    && m.GetProperty("value").GetString()!.Contains("median", StringComparison.Ordinal));
+            }, TimeSpan.FromMinutes(1), Cancel))
+            {
+                Assert.Fail($"The agent was not told the web service's request duration: {heard}\n{await WebSaidAsync()}");
+            }
+            JsonElement duration = heard.GetProperty("metrics").EnumerateArray().Single(m => m.GetProperty("instrument").GetString() == "http.server.request.duration");
+            Assert.Equal(("Microsoft.AspNetCore.Hosting", "s"), (duration.GetProperty("meter").GetString(), duration.GetProperty("unit").GetString()));
+            Assert.Matches(@"^[0-9.,]+/s, median ", duration.GetProperty("value").GetString()!);
+            if (held is not null)
+            {
+                Assert.True(waited.Any(said => said.Contains("Asked web's runtime again: it took no session for reading its metrics in ", StringComparison.Ordinal)),
+                    $"The agent was not told web's runtime was asked again: it was told it waited for {(waited.Count == 0 ? "nothing" : string.Join("; ", waited))}; "
+                    + $"the port took {held.Account()}");
+            }
+            Assert.Empty(resources.Errors);
+        }
+        finally
+        {
+            await stopAsking.CancelAsync();
+            await asking.Ended();
+            own.Kill();
+        }
+
+        // How far web had come: the requests it was sent and answered, its program and what the agent's Passenger logged of it, its console.
+        async Task<string> WebSaidAsync()
+        {
+            CallToolResult console = await Result(client, McpTools.Output, new() { ["resource"] = "web", ["lines"] = 40 });
+            string stopped = asking.IsFaulted ? $" (the requests stopped: {asking.Exception!.InnerException!.Message})" : string.Empty;
+            string log = Path.Combine(OwnState, "logs", "pitstop.log");
+            string logged = string.Empty;
+            if (File.Exists(log))
+            {
+                using FileStream read = new(log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                logged = string.Join("\n  ", new StreamReader(read).ReadToEnd().Split('\n').Where(line => line.Contains($"rocess {program}", StringComparison.Ordinal)).TakeLast(10));
+            }
+            string ran = !DotnetProcesses.Runs(webProcess)
+                ? $"began at {webProcess.StartTime:HH:mm:ss.fff} and ended at {webProcess.ExitTime:HH:mm:ss.fff} with exit code {webProcess.ExitCode}" : $"began at {webProcess.StartTime:HH:mm:ss.fff} and runs";
+            string port = held is null ? string.Empty : $"; at {DateTime.Now:HH:mm:ss.fff} the port in front of web's took {held.Account()}";
+            return $"web was sent {Volatile.Read(ref sent)} requests{stopped}, answered {Volatile.Read(ref served)} of them and was slower than 5 s to {Volatile.Read(ref slow)}, "
+                + $"its program {program} {ran} (the agent's Pitstop logged {(logged.Length == 0 ? "nothing of it" : $"of it:\n  {logged}\n")}){port}, "
+                + $"and its console says:\n{Text(console)}";
+        }
+    }
+
+    /// <summary>The stand-in AppHost run by the agent from its Aspire configuration, which run answers once the AppHost is
+    /// up: its Passenger lists it with its resource from the stand-in resource service, running, as the answer comes.</summary>
+    private async Task Running(McpClient client, string host, string resource = "api-owned-instance")
+    {
+        Assert.True(await Waiting.UntilAsync(async () => (await Call(client, McpTools.Workspace)).GetProperty("runConfigurations").EnumerateArray()
+            .Any(item => item.GetString() == StandInAppHost.Configuration), TimeSpan.FromMinutes(2), Cancel),
+            $"The stand-in AppHost's Aspire configuration was not found.{Said()}");
+        JsonElement ran;
+        try
+        {
+            ran = await Call(client, McpTools.Run, new() { ["configuration"] = StandInAppHost.Configuration });
+        }
+        catch (Xunit.Sdk.XunitException failed)
+        {
+            throw new Xunit.Sdk.XunitException(failed.Message + project.StartSaid(), failed);
+        }
+        Assert.True(ran.GetProperty("stillRunning").GetBoolean(), $"run of the stand-in AppHost answered: {ran}");
+        JsonElement workspace = await Call(client, McpTools.Workspace);
+        Assert.True(workspace.GetProperty("aspireApps").EnumerateArray().Any(app => PathNames.Same(app.GetProperty("appHostPath").GetString()!, host)
+            && app.GetProperty("resources").EnumerateArray().Any(listed => listed.GetProperty("name").GetString() == resource)),
+            $"run of the stand-in AppHost answered before the AppHost was up with its resource: {workspace}{Said()}");
+    }
+
+    private const string TraceId = "4bf92f3577b34da6a3ce929d0e0e4736";
+
+    /// <summary>A trace of two spans of the API's service, sent from its instance instance1.</summary>
+    private const string Spans = """
+        {"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"api"}},{"key":"service.instance.id","value":{"stringValue":"instance1"}}]},
+        "scopeSpans":[{"scope":{"name":"Microsoft.AspNetCore"},"spans":[
+        {"traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","name":"GET /","kind":2,"startTimeUnixNano":"1760000000000000000","endTimeUnixNano":"1760000000100000000"},
+        {"traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b8","parentSpanId":"00f067aa0ba902b7","name":"SELECT","kind":3,"startTimeUnixNano":"1760000000010000000","endTimeUnixNano":"1760000000050000000"}]}]}]}
+        """;
+
+    /// <summary>One structured log of the API, its body a boolean and its attributes an integer, an authorization header and
+    /// an exception's credentials.</summary>
+    private const string Logs = """
+        {"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"api"}},{"key":"service.instance.id","value":{"stringValue":"owned-instance"}}]},
+        "scopeLogs":[{"logRecords":[{"timeUnixNano":"1760000000000000000","severityText":"Information","body":{"boolValue":true},
+        "attributes":[{"key":"code.line.number","value":{"intValue":"42"}},{"key":"http.request.header.authorization","value":{"stringValue":"Bearer private-value"}},
+        {"key":"exception.message","value":{"stringValue":"failure: Basic cHJpdmF0ZQ=="}}]}]}]}]}
+        """;
+}

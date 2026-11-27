@@ -5,7 +5,7 @@
 # server does. Standard output is the protocol's.
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
-build="$root/artifacts/bin/Passenger.App/debug"
+build="$root/artifacts/bin/Pitstop.App/debug"
 if [ ! -x "$build/Pitstop" ]; then
     echo "pitstop: no build at $build; run just build first" >&2
     exit 1

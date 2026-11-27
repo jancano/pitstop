@@ -1,0 +1,1948 @@
+using System.Text;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
+using Pitstop.App.Editors;
+using Pitstop.App;
+using Pitstop.App.Debugging;
+using Pitstop.App.Testing;
+using Pitstop.Core;
+using Pitstop.Editor;
+using Pitstop.Text;
+
+namespace Pitstop.Tests;
+
+/// <summary>Unit testing from the window: the Unit Tests window shows a solution's tests from their code as it opens and
+/// follows them as they are typed, Run All finds and runs a project's tests and marks each where the code put it, and Run
+/// Tests at the caret runs that test alone. The project is xUnit's, run through the SDK's own VSTest. The windows start no
+/// C# language server, which finding, running and showing tests ask nothing of.</summary>
+public sealed class UnitTestsTests : UnitTestsFolders, IClassFixture<RestoredFolders>
+{
+    /// <summary>The Sums.Tests each step of a flow takes its own of.</summary>
+    private readonly RestoredFolders restored;
+
+    public UnitTestsTests(RestoredFolders restored)
+        : base(restored) => this.restored = restored;
+
+    /// <summary>The gate's Unit Tests window as one flow: Run All marking each test with a failure linked to its line,
+    /// a test run at the caret alone, a build's failure brought forward, runs until a failure, under each framework, of
+    /// a solution folder chosen and stopped while building or finding, tests shown from code before any build and as
+    /// they are typed, renamed and run, kept on their lines below line breaks only Roslyn counts, and the tree's
+    /// grouping, filters and find, kept with the folder.</summary>
+    [Gate]
+    [AvaloniaFact]
+    public void The_gates_unit_tests_window_holds_as_one_flow()
+    {
+        Flow.StepApart("Run all marks each test a failure links to its line run at the caret runs that test alone and a failed build brings the build window forward", () => new UnitTestsTests(restored), t => t.Run_all_marks_each_test_a_failure_links_to_its_line_run_at_the_caret_runs_that_test_alone_and_a_failed_build_brings_the_build_window_forward());
+        Flow.StepApart("below a comment holding line breaks only roslyn counts each tests icon and menu stay on its line", () => new UnitTestsTests(restored), t => t.Below_a_comment_holding_line_breaks_only_roslyn_counts_each_tests_icon_and_menu_stay_on_its_line());
+        Flow.StepApart("Run until failure repeats a test until it fails and shows that run", () => new UnitTestsTests(restored), t => t.Run_until_failure_repeats_a_test_until_it_fails_and_shows_that_run());
+        Flow.StepApart("a project built for two frameworks runs under each and shows each ones results under it", () => new UnitTestsTests(restored), t => t.A_project_built_for_two_frameworks_runs_under_each_and_shows_each_ones_results_under_it());
+        Flow.StepApart("Stop in the unit tests window ends a run while it builds and while it finds the tests", () => new UnitTestsTests(restored), t => t.Stop_in_the_unit_tests_window_ends_a_run_while_it_builds_and_while_it_finds_the_tests());
+        Flow.StepApart("typing in one file among many open reads and marks that files tests and no others", () => new UnitTestsTests(restored), t => t.Typing_in_one_file_among_many_open_reads_and_marks_that_files_tests_and_no_others());
+        Flow.StepApart("Run unit tests on a solution folder chosen in the explorer runs the tests of its projects alone", () => new UnitTestsTests(restored), t => t.Run_unit_tests_on_a_solution_folder_chosen_in_the_explorer_runs_the_tests_of_its_projects_alone());
+        Flow.StepApart("a solution never built shows its xunit nunit and mstest tests from their code as it opens", () => new UnitTestsTests(restored), t => t.A_solution_never_built_shows_its_xunit_nunit_and_mstest_tests_from_their_code_as_it_opens());
+        Flow.StepApart("Run all lands on the tests shown from code with a theorys rows under it and a test it never ran stays", () => new UnitTestsTests(restored), t => t.Run_all_lands_on_the_tests_shown_from_code_with_a_theorys_rows_under_it_and_a_test_it_never_ran_stays());
+        Flow.StepApart("typing a test adds it to the tree renaming or removing one follows and a test that ran keeps its result", () => new UnitTestsTests(restored), t => t.Typing_a_test_adds_it_to_the_tree_renaming_or_removing_one_follows_and_a_test_that_ran_keeps_its_result());
+        Flow.StepApart("Group by categories shows each test under its xunit traits nunit categories and mstest test categories", () => new UnitTestsTests(restored), t => t.Group_by_categories_shows_each_test_under_its_xunit_traits_nunit_categories_and_mstest_test_categories());
+        Flow.StepApart("after a run the failed filter shows the failures alone as many as it counts and a modifier adds the ignored", () => new UnitTestsTests(restored), t => t.After_a_run_the_failed_filter_shows_the_failures_alone_as_many_as_it_counts_and_a_modifier_adds_the_ignored());
+        Flow.StepApart("Find in the unit tests window narrows the tree to the tests named and the rows above them", () => new UnitTestsTests(restored), t => t.Find_in_the_unit_tests_window_narrows_the_tree_to_the_tests_named_and_the_rows_above_them());
+        Flow.StepApart("the grouping and outcomes chosen come back when the folder opens again and another folder has its own", () => new UnitTestsTests(restored), t => t.The_grouping_and_outcomes_chosen_come_back_when_the_folder_opens_again_and_another_folder_has_its_own());
+    }
+
+    /// <summary>Run All, stopped during its build and pressed again, marks each test, the Unit Tests window kept in front
+    /// through its build, the status bar's tally a link back to it; a failed test's stack trace in its details links to the
+    /// line that failed; Run Tests at the caret runs that test alone; and a build that fails brings the Build window forward
+    /// with its error.</summary>
+    private void Run_all_marks_each_test_a_failure_links_to_its_line_run_at_the_caret_runs_that_test_alone_and_a_failed_build_brings_the_build_window_forward()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Assert.Contains(new TestMark(4, TestMarkKind.NotRun), editor.TestMarks);
+        Assert.Contains(new TestMark(7, TestMarkKind.NotRun), editor.TestMarks);
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Assert.True(window.IsBuilding, "Run All did not build first");
+        window.Perform(AppActions.Stop);
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the runner to hear the build was stopped");
+        Assert.False(window.IsBuilding);
+        Assert.Equal("Build stopped", window.Status);
+
+        string runnerLog = Path.Combine(IdeErrors.LogFolder, "vstest.log");
+        IdeErrors.Flush();
+        int logged = Ui.Shared(runnerLog).Length;
+        // Run All has no key of Rider's: the Unit Tests window's button runs it.
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Assert.Equal("Building Sums.Tests.csproj…", window.Status);
+        Assert.True(window.IsBuilding && window.DockHost.IsShown(ToolWindowIds.Tests), "Run All's build took the Unit Tests window's place as it started");
+        Assert.False(window.Perform(AppActions.RunTests) || window.Perform(AppActions.RunAllTests), "A second test run started while the first one worked");
+        Assert.StartsWith("Already under way: ", window.Actions.WhyNot(AppActions.RunAllTests, window.Actions.Context()), StringComparison.Ordinal);
+        Avalonia.Controls.Button runAll = Avalonia.LogicalTree.LogicalExtensions.GetLogicalDescendants(window.BottomPanel.Tests).OfType<Avalonia.Controls.Button>()
+            .Single(b => ActionButtons.GetAction(b) == AppActions.RunAllTests);
+        Assert.True(ActionButtons.IsWorking(runAll), "The Unit Tests window's Run All should show the run working, as the toolbar's buttons show theirs");
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Two_and_two_make_four")?.State == TestState.Passed, "the run of every test", TimeSpan.FromSeconds(120));
+        Assert.Null(window.Actions.Work.Of(AppActions.RunTests));
+        Assert.True(window.DockHost.IsShown(ToolWindowIds.Tests), "After Run All the Unit Tests window was no longer in front, so its results had to be shown again");
+        // vstest.console ran under the SDK's dotnet, which a VSTest package without the constructor for it fails here.
+        Assert.Equal("Tests passed: 3, failed: 1, skipped: 1 of 5", System.Text.RegularExpressions.Regex.Replace(window.BottomPanel.Tests.Status, $" in {SaidWhile.Pattern}$", string.Empty));
+        // The runner's log in the logs folder has what it found and how the run went.
+        IdeErrors.Flush();
+        string run = Ui.Shared(runnerLog)[Math.Min(logged, Ui.Shared(runnerLog).Length)..];
+        Assert.Matches(@"Discovery complete: \d+ tests? found", run);
+        Assert.Matches($@"Run complete: \d+ results? in {SaidWhile.Pattern}", run);
+        Assert.Equal(TestState.Failed, Method(window, "Two_and_two_make_five")!.State);
+        Assert.Equal(TestState.Passed, Method(window, "Doubles")!.State);
+        Assert.Equal(2, Method(window, "Doubles")!.Results.Count);
+        Assert.Equal(TestState.Skipped, Method(window, "Not_yet")!.State);
+        Assert.Contains("SumTests.cs:line 17", Method(window, "Two_and_two_make_five")!.Details, StringComparison.Ordinal);
+        Assert.Equal(TestState.Failed, window.Tests.Tree.Roots[0].State);
+        Assert.Contains(new TestMark(7, TestMarkKind.Passed), editor.TestMarks);
+        Assert.Contains(new TestMark(14, TestMarkKind.Failed), editor.TestMarks);
+        Assert.Contains(new TestMark(4, TestMarkKind.Failed), editor.TestMarks);
+        window.ShowToolWindow(ToolWindowIds.Problems);
+        Ui.Click(window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "StatusMessage"));
+        Assert.True(window.DockHost.IsShown(ToolWindowIds.Tests), $"A click on \"{window.Status}\" in the status bar did not bring the Unit Tests window back");
+
+        ListBox tree = Tree(window);
+        tree.SelectedItem = Method(window, "Two_and_two_make_five");
+        Ui.Settle();
+        CodeEditor details = Details(window);
+        string shown = Text(details);
+        Assert.True(shown.Contains("SumTests.cs:line 17", StringComparison.Ordinal), $"The failed test's details have no frame at its line:\n{shown}");
+        // The path's start, which the pane shows however long the path is.
+        int frame = shown.IndexOf("Two_and_two_make_five() in ", StringComparison.Ordinal) + "Two_and_two_make_five() in ".Length + 1;
+        // Away from the file's line first, so the click is what brings it back there.
+        editor.GoTo(new TextPosition(0, 0));
+        Avalonia.Point at = details.TranslatePoint(details.PointOf(frame) + new Avalonia.Vector(2, details.LineHeight / 2), window)!.Value;
+        window.MouseMove(at);
+        Ui.Settle();
+        Assert.True(details.HoveredLink is not null, $"The pointer rests on the frame's file in the details, but it is no link:\n{shown}");
+        window.MouseDown(at, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(at, Avalonia.Input.MouseButton.Left);
+        Ui.Settle();
+        Assert.Equal(PathNames.Canonical(Source), window.EditorArea.Active?.Path);
+        Assert.Equal(new TextPosition(16, 0), window.EditorArea.CodeEditor.CaretPosition);
+
+        TestOutcome four = Method(window, "Two_and_two_make_four")!.Results[0];
+        TestOutcome five = Method(window, "Two_and_two_make_five")!.Results[0];
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(9, 8));
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Two_and_two_make_four")!.Results.FirstOrDefault() is { } fresh && fresh != four, "the run of one test", TimeSpan.FromSeconds(60));
+        Assert.Equal(TestState.Passed, Method(window, "Two_and_two_make_four")!.State);
+        Assert.Same(five, Method(window, "Two_and_two_make_five")!.Results[0]);
+        Assert.Equal(TestState.Failed, Method(window, "Two_and_two_make_five")!.State);
+
+        Write("Broken.cs", "namespace Sums.Tests;\n\npublic static class Broken\n{\n    public static int Count => \"none\";\n}\n");
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run to end at its build", TimeSpan.FromSeconds(120));
+        Assert.StartsWith("Build failed", window.Status, StringComparison.Ordinal);
+        Assert.True(window.DockHost.IsShown(ToolWindowIds.Build), "The tests' build failed, but the Build window did not come forward with its error as Rider's does");
+        Assert.True(window.StatusPlace?.Name == "see it in Problems, Build", $"\"{window.Status}\" in the status bar goes to '{window.StatusPlace?.Name}', not to the build's errors in Problems");
+        Assert.Contains("Broken.cs(5,32): error CS0029", window.BottomPanel.Build.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    private void Below_a_comment_holding_line_breaks_only_roslyn_counts_each_tests_icon_and_menu_stay_on_its_line()
+    {
+        // Roslyn counts four more lines in the comment than the editor does.
+        File.WriteAllText(Source, File.ReadAllText(Source).Replace("public class SumTests",
+            "/* Pasted:\u2028a line separator,\u2029a paragraph separator,\u0085a next line,\ra carriage return. */\npublic class SumTests", StringComparison.Ordinal));
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Assert.Contains(new TestMark(5, TestMarkKind.NotRun), editor.TestMarks);
+        Assert.Contains(new TestMark(8, TestMarkKind.NotRun), editor.TestMarks);
+        Assert.Contains(new TestMark(15, TestMarkKind.NotRun), editor.TestMarks);
+
+        int name = editor.Document.Snapshot.ToString().IndexOf("Two_and_two_make_five", StringComparison.Ordinal) + 2;
+        Ui.RightClick(editor, editor.PointOf(name) + new Vector(1, editor.LineHeight / 2));
+        Avalonia.Controls.ContextMenu menu = window.OpenContextMenu ?? throw new InvalidOperationException("No context menu opened");
+        Assert.Contains("Run 'Two_and_two_make_five'", menu.Items.OfType<Avalonia.Controls.MenuItem>().Select(i => i.Header as string));
+        menu.Close();
+        window.Close();
+    }
+
+    private void Run_until_failure_repeats_a_test_until_it_fails_and_shows_that_run()
+    {
+        // Passes twice, then fails: it counts its runs in a file of its own.
+        string count = Path.Combine(Folder, "runs.txt");
+        Write("FlakyTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class FlakyTests\n{\n    [Fact]\n    public void Flaky()\n    {\n" +
+            $"        string path = @\"{count}\";\n" +
+            "        int run = (File.Exists(path) ? int.Parse(File.ReadAllText(path)) : 0) + 1;\n        File.WriteAllText(path, run.ToString());\n" +
+            "        Assert.True(run < 3, $\"failed on its run {run}\");\n    }\n}\n");
+        MainWindow window = Open();
+        Task<string?> found = window.Tests.DiscoverAsync(window.Folder!);
+        Assert.Null(Ui.Await(found, "the tests to be found", TimeSpan.FromSeconds(120)));
+
+        window.Perform(AppActions.ShowTests);
+        Avalonia.Controls.ListBox tree = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window.BottomPanel.Tests)
+            .OfType<Avalonia.Controls.ListBox>().First(l => ReferenceEquals(l.ItemsSource, window.Tests.Tree.Rows));
+        Ui.WaitFor(() => window.Tests.Tree.Rows.Any(r => r.Name == "FlakyTests"), "the flaky test's class in the tree");
+        if (window.Tests.Tree.Rows.First(r => r.Name == "FlakyTests") is { IsExpanded: false } flaky)
+        {
+            window.Tests.Tree.Toggle(flaky);
+        }
+        tree.SelectedItem = window.Tests.Tree.Rows.First(r => r.Name == "Flaky");
+        Ui.ChooseFromMenu(tree, "Run Until Failure");
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Flaky")?.State == TestState.Failed, "the run that fails", TimeSpan.FromSeconds(180));
+        Assert.Equal(3, window.Tests.Runs);
+        Assert.Equal("Flaky failed on run 3", window.Status);
+        Assert.Contains("failed on its run 3", Method(window, "Flaky")!.Details, StringComparison.Ordinal);
+        Assert.Same(Method(window, "Flaky"), tree.SelectedItem);
+        window.Close();
+    }
+
+    private void A_project_built_for_two_frameworks_runs_under_each_and_shows_each_ones_results_under_it()
+    {
+        // The frameworks come from a property, as MSBuild evaluates them, not as the project file writes them.
+        string solution = NewFolder();
+        Write(solution, "Frameworks.Tests/Frameworks.Tests.csproj", TestProject($"{TestProjects.Framework};net11.0"));
+        Write(solution, "Frameworks.Tests/RuntimeTests.cs",
+            "using Xunit;\n\nnamespace Frameworks.Tests;\n\npublic class RuntimeTests\n{\n    [Fact]\n    public void Runs_on_eleven() => Assert.Equal(11, Environment.Version.Major);\n\n" +
+            "    [Fact]\n    public void Runs_anywhere() { }\n}\n");
+        Restore.Run(Path.Combine(solution, "Frameworks.Tests"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run of every test", TimeSpan.FromSeconds(180));
+        TestNode project = Assert.Single(window.Tests.Tree.Roots);
+        Assert.Equal([TestProjects.Framework, "net11.0"], project.Children.Select(c => c.Name));
+        Assert.All(project.Children, c => Assert.Equal(TestNodeKind.Framework, c.Kind));
+        Assert.Equal(TestState.Failed, Under(TestProjects.Framework, "Runs_on_eleven").State);
+        Assert.Equal(TestState.Passed, Under("net11.0", "Runs_on_eleven").State);
+        Assert.Equal(TestState.Passed, Under(TestProjects.Framework, "Runs_anywhere").State);
+        Assert.Equal(TestState.Passed, Under("net11.0", "Runs_anywhere").State);
+        Assert.Equal(TestState.Failed, project.State);
+        Assert.Equal(TestState.Passed, project.Children[1].State);
+        Assert.Equal(["Frameworks.Tests", TestProjects.Framework, "Frameworks.Tests", "RuntimeTests", "Runs_anywhere", "Runs_on_eleven", "net11.0"],
+            window.Tests.Tree.Rows.Take(7).Select(r => r.Name));
+        window.Close();
+
+        TestNode Under(string framework, string method) => project.Children.Single(c => c.Name == framework).Methods.Single(m => m.Name == method);
+    }
+
+    /// <summary>What runs where: each framework of a multi-targeted project, a project's own test attribute, a base
+    /// class's test as each derived one, a platform's build of a solution, one solution's test of two built alone, a
+    /// file's own project, a framework's symbols; NUnit's and MSTest's named rows and fixture instances each a row that
+    /// runs and counts; a data row run alone; test actions offered only where tests are.</summary>
+    [AvaloniaFact]
+    public void A_test_run_from_its_icon_or_the_caret_runs_as_its_framework_and_project_take_it_and_each_case_is_a_row_that_counts()
+    {
+        Flow.StepApart<UnitTestsTests>("the first run of a multi targeted project's test from its run icon runs it under each framework", () => new UnitTestsTests(restored), t =>
+        {
+            t.The_first_run_of_a_multi_targeted_projects_test_from_its_run_icon_runs_it_under_each_framework();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a class run at the caret runs its test marked by an attribute of the project's own", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_class_run_at_the_caret_runs_its_test_marked_by_an_attribute_of_the_projects_own();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a base class's test run at the caret runs as each derived class and its icon takes their result", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_base_classs_test_run_at_the_caret_runs_as_each_derived_class_and_its_icon_takes_their_result();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("tests of an attribute the project derives and of STA test method have run icons before and after a run", () => new UnitTestsTests(restored), t =>
+        {
+            t.Tests_of_an_attribute_the_project_derives_and_of_sta_test_method_have_run_icons_before_and_after_a_run();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("NUnit cases named by test name and MSTest rows named by display name are rows of their methods that run and count", () => new UnitTestsTests(restored), t =>
+        {
+            t.Nunit_cases_named_by_test_name_and_mstest_rows_named_by_display_name_are_rows_of_their_methods_that_run_and_count();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("each instance of an NUnit fixture made with arguments is a row of its method that runs and counts", () => new UnitTestsTests(restored), t =>
+        {
+            t.Each_instance_of_an_nunit_fixture_made_with_arguments_is_a_row_of_its_method_that_runs_and_counts();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a test project its .slnx maps to a platform is found where the solution's build put it and runs from the caret", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_test_project_its_solution_maps_to_a_platform_is_found_where_the_solutions_build_put_it_and_runs_from_the_caret("slnx");
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a test project its .sln maps to a platform is found where the solution's build put it and runs from the caret", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_test_project_its_solution_maps_to_a_platform_is_found_where_the_solutions_build_put_it_and_runs_from_the_caret("sln");
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a test run at the caret in a folder of two solutions builds its project and what it references alone", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_test_run_at_the_caret_in_a_folder_of_two_solutions_builds_its_project_and_what_it_references_alone();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a passing data row run alone leaves its method failed by another row and rerun failed runs that row", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_passing_data_row_run_alone_leaves_its_method_failed_by_another_row_and_rerun_failed_runs_that_row();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a test run from its run icon runs in its file's project alone where another declares the same name", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_test_run_from_its_run_icon_runs_in_its_files_project_alone_where_another_declares_the_same_name();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a test under its framework's symbols is listed from its code and runs at the caret and one under a symbol it lacks is none", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_test_under_its_frameworks_symbols_is_listed_from_its_code_and_runs_at_the_caret_and_one_under_a_symbol_it_lacks_is_none();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("test actions are offered only where tests are and the solution row runs its tests", () => new UnitTestsTests(restored), t =>
+        {
+            t.Test_actions_are_offered_only_where_tests_are_and_the_solution_row_runs_its_tests();
+            OpenWindows.CloseAll();
+        });
+    }
+
+    /// <summary>Stop ends a run whose test never ends with its test host, and the next run runs; a test host's crash
+    /// is said with the test running then, is no pass in Local History and ends Run Until Failure; an assembly VSTest
+    /// cannot look through hides no other project's tests; a test renamed as it runs is counted and a deleted file's
+    /// tests leave the window; a project's run settings give their variables to its tests; a run's results come back
+    /// when the folder opens again, which parses only the test files changed since.</summary>
+    [AvaloniaFact]
+    public void A_run_that_crashes_hangs_or_is_stopped_says_so_and_ends_whole_and_a_runs_settings_and_results_are_kept()
+    {
+        Flow.StepApart<UnitTestsTests>("stop ends a run whose test never ends and its test host and the next run runs", () => new UnitTestsTests(restored), t =>
+        {
+            t.Stop_ends_a_run_whose_test_never_ends_and_its_test_host_and_the_next_run_runs();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a run whose test host crashes says the crash and the test running then", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_run_whose_test_host_crashes_says_the_crash_and_the_test_running_then();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a run whose test host crashes is no pass in local history and ends run until failure", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_run_whose_test_host_crashes_is_no_pass_in_local_history_and_ends_run_until_failure();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("an assembly VSTest cannot look through hides no other project's tests and a run of its own says why", () => new UnitTestsTests(restored), t =>
+        {
+            t.An_assembly_vstest_cannot_look_through_hides_no_other_projects_tests_and_a_run_of_its_own_says_why();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a test renamed as it runs is counted in the tally and a deleted file's tests leave the window", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_test_renamed_as_it_runs_is_counted_in_the_tally_and_a_deleted_files_tests_leave_the_window();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a project's run settings file gives its variables to its tests beside its launch profiles", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_projects_run_settings_file_gives_its_variables_to_its_tests_beside_its_launch_profiles();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsTests>("a run's results come back as an earlier run's when the folder opens again until the tests run again", () => new UnitTestsTests(restored), t =>
+        {
+            t.A_runs_results_come_back_as_an_earlier_runs_when_the_folder_opens_again_until_the_tests_run_again();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<TestsCacheTests>("a second opening parses only the test files changed since and finds every test the first did", t =>
+        {
+            t.A_second_opening_parses_only_the_test_files_changed_since_and_finds_every_test_the_first_did();
+            OpenWindows.CloseAll();
+        });
+    }
+
+    /// <summary>The first run of a multi-targeted project's test, from its run icon before any build, runs it under each
+    /// framework, where the tree's row the menu chose, from the code, is gone once the build's tests come; and the method's
+    /// row chosen in the window before a build runs it under each too.</summary>
+    private void The_first_run_of_a_multi_targeted_projects_test_from_its_run_icon_runs_it_under_each_framework()
+    {
+        string solution = NewFolder();
+        Write(solution, "Frameworks.Tests/Frameworks.Tests.csproj", TestProject($"{TestProjects.Framework};net11.0"));
+        string file = Write(solution, "Frameworks.Tests/RuntimeTests.cs",
+            "using Xunit;\n\nnamespace Frameworks.Tests;\n\npublic class RuntimeTests\n{\n    [Fact]\n    public void Runs_anywhere() { }\n\n    [Fact]\n    public void Runs_too() { }\n}\n");
+        Restore.Run(Path.Combine(solution, "Frameworks.Tests"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Ui.WaitFor(() => Method(window, "Runs_too") is not null, "the tests from their code");
+        TestNode chosenBefore = Method(window, "Runs_too")!;
+
+        Assert.Contains("Run 'Runs_anywhere'", TestMarkMenu(window, file, "    public void Runs_anywhere() { }").Select(i => i.Header as string));
+        Ui.Choose(window.TestMarkMenu, "Run 'Runs_anywhere'");
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run from the run icon", TimeSpan.FromSeconds(180));
+        List<TestNode> anywhere = [.. window.Tests.Tree.Methods.Where(m => m.Name == "Runs_anywhere")];
+        Assert.True(anywhere.Count == 2 && anywhere.All(m => m.State == TestState.Passed),
+            $"The first run of Runs_anywhere from its run icon said '{window.BottomPanel.Tests.Status}' and left it [{string.Join(", ", anywhere.Select(m => $"{m.Framework}: {m.State}"))}], not passed under both frameworks");
+        Assert.StartsWith("Tests passed: 2, failed: 0 of 2", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+
+        Assert.True(chosenBefore.Gone, "The row of Runs_too from the code stayed in the tree once the build found it under each framework");
+        Ui.Launched(window, window.Tests.RunAsync(window.Folder!, [chosenBefore]), "the run of the row chosen before the build", TimeSpan.FromSeconds(180));
+        Assert.All(window.Tests.Tree.Methods.Where(m => m.Name == "Runs_too"), m => Assert.Equal(TestState.Passed, m.State));
+        Assert.StartsWith("Tests passed: 2, failed: 0 of 2", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    private void Stop_in_the_unit_tests_window_ends_a_run_while_it_builds_and_while_it_finds_the_tests()
+    {
+        // Finding this theory's rows waits until it is stopped, once it has said which test host looks for them.
+        string host = Path.Combine(Folder, "discovering.txt");
+        Write("SlowDiscoveryTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class SlowDiscoveryTests\n{\n    public static IEnumerable<object[]> Rows\n    {\n        get\n        {\n" +
+            $"            File.WriteAllText(@\"{host}\", Environment.ProcessId.ToString());\n" +
+            "            Thread.Sleep(TimeSpan.FromMinutes(5));\n            yield return new object[] { 1 };\n        }\n    }\n\n" +
+            "    [Theory]\n    [MemberData(nameof(Rows))]\n    public void Slow(int value) => Assert.Equal(1, value);\n}\n");
+        MainWindow window = Open();
+        Assert.True(window.Perform(AppActions.ShowTests));
+        Ui.Settle();
+        Button stop = StopButton(window);
+        Assert.False(stop.IsEffectivelyEnabled, "The Unit Tests window's Stop could be pressed with no run going on");
+        Assert.True(stop.GetVisualDescendants().OfType<PathIcon>().Single().Opacity < 1, "The Unit Tests window's Stop looked ready to press with no run going on");
+        Assert.False(window.Perform(AppActions.StopTests), "Stop Unit Tests ran with no run going on");
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Assert.True(window.IsBuilding, "Run All did not build first");
+        Assert.True(stop.IsEffectivelyEnabled, "The Unit Tests window's Stop was disabled while Run All built");
+        // The build's dotnet command starts once the project host has held its design-time builds off.
+        Ui.PumpUntil(() => window.Builder.ProcessId is not null, "the build's dotnet command to start");
+        int? build = window.Builder.ProcessId;
+        Assert.True(window.Perform(AppActions.StopTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run to stop while it builds");
+        Assert.False(stop.IsEffectivelyEnabled, "The Unit Tests window's Stop could still be pressed once the run it stopped had ended");
+        Assert.False(window.IsBuilding);
+        Assert.True(build is not { } building || Processes.Gone(building), "The build went on after Stop");
+        Assert.Equal("Build stopped", window.BottomPanel.Tests.Status);
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        int testHost = Processes.WrittenId(host, "the test host finding the tests");
+        Assert.True(window.Perform(AppActions.StopTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run to stop while it finds the tests", TimeSpan.FromSeconds(60));
+        Assert.True(Processes.Gone(testHost, TimeSpan.FromSeconds(30)), $"The test host finding the tests ({Processes.Describe(testHost)}) still ran after Stop");
+        Assert.Equal(TestController.StoppedMessage, window.BottomPanel.Tests.Status);
+        List<TestNode> shown = [.. window.Tests.Tree.Roots.SelectMany(r => r.Methods)];
+        Assert.Contains(shown, m => m.Name == "Slow");
+        Assert.All(shown, m => Assert.Equal(TestState.NotRun, m.State));
+        window.Close();
+    }
+
+    /// <summary>Stop ends a run whose test never ends within seconds, saying it stopped, its test host gone and the test
+    /// not run; and the next run starts and runs.</summary>
+    private void Stop_ends_a_run_whose_test_never_ends_and_its_test_host_and_the_next_run_runs()
+    {
+        string host = Path.Combine(Folder, "hanging.txt");
+        Write("HangingTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class HangingTests\n{\n    [Fact]\n    public void Never_ends()\n    {\n" +
+            $"        File.WriteAllText(@\"{host}\", Environment.ProcessId.ToString());\n" +
+            "        Thread.Sleep(Timeout.Infinite);\n    }\n}\n");
+        MainWindow window = Open();
+        Tree(window);
+        Ui.WaitFor(() => Method(window, "Never_ends") is not null && Method(window, "Two_and_two_make_four") is not null, "the tests in the Unit Tests window");
+
+        Task<string?> hanging = window.Tests.RunAsync(window.Folder!, [Method(window, "Never_ends")!]);
+        int testHost = Processes.WrittenId(host, "the test host running the test that never ends");
+        Assert.True(window.Perform(AppActions.StopTests));
+        Assert.True(Ui.Await(hanging, "the run of the test that never ends to stop", TimeSpan.FromSeconds(20)) is null,
+            $"The run of the test that never ends was refused: {window.BottomPanel.Tests.Status}");
+        Assert.True(Processes.Gone(testHost, TimeSpan.FromSeconds(15)), $"The test host ({Processes.Describe(testHost)}) still ran after Stop");
+        Assert.EndsWith(", stopped", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        Assert.Equal(TestState.NotRun, Method(window, "Never_ends")!.State);
+
+        Ui.Launched(window, window.Tests.RunAsync(window.Folder!, [Method(window, "Two_and_two_make_four")!]), "the run after the stopped one", TimeSpan.FromSeconds(120));
+        Assert.Equal(TestState.Passed, Method(window, "Two_and_two_make_four")!.State);
+        window.Close();
+    }
+
+    /// <summary>Run Unit Tests at the caret on a class runs its every test as its build has them, one marked by an attribute
+    /// of the project's own (a subclass of xUnit's Fact) with the rest, the tests found after the build.</summary>
+    private void A_class_run_at_the_caret_runs_its_test_marked_by_an_attribute_of_the_projects_own()
+    {
+        string file = Write("CustomTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic sealed class MyFactAttribute : FactAttribute\n{\n}\n\npublic class CustomTests\n{\n" +
+            "    [MyFact]\n    public void Via_its_own_attribute() => Assert.Equal(5, 2 + 2);\n\n    [Fact]\n    public void Plain() { }\n}\n");
+        MainWindow window = Open();
+        window.OpenFile(file);
+        Ui.Settle();
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "public class Cust");
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Plain")?.State == TestState.Passed, () => $"the class's run: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        Assert.True(Method(window, "Via_its_own_attribute")?.State == TestState.Failed,
+            $"The class's run left out its test marked by the project's own attribute: it said '{window.BottomPanel.Tests.Status}'");
+        Assert.StartsWith("Tests passed: 1, failed: 1 of 2", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>Run Unit Tests at the caret on an abstract base class's test runs it as each class deriving from it, found by
+    /// the file and line the runner gives them, and the base's run icon takes their result.</summary>
+    private void A_base_classs_test_run_at_the_caret_runs_as_each_derived_class_and_its_icon_takes_their_result()
+    {
+        string file = Write("InheritedTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic abstract class BaseChecks\n{\n    [Fact]\n    public void Shared()\n    {\n        Assert.True(GetType().Name.StartsWith(\"Concrete\"));\n    }\n}\n\n" +
+            "public class ConcreteA : BaseChecks\n{\n}\n\npublic class ConcreteB : BaseChecks\n{\n}\n");
+        MainWindow window = Open();
+        window.OpenFile(file);
+        Ui.Settle();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Pitstop.App.Workspace.OpenDocument document = window.EditorArea.Active!;
+        int shared = Text(editor).Split('\n').ToList().IndexOf("    public void Shared()");
+        Ui.WaitFor(() => document.TestMarks.Any(m => m.Line == shared), "the base class's test's run icon");
+        Ui.PlaceAfter(editor, "void Sha");
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy, () => $"the base class's test's run: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        List<TestNode> derived = [.. window.Tests.Tree.Methods.Where(m => m.Name == "Shared")];
+        Assert.True(derived.Select(m => m.FullName).Order(StringComparer.Ordinal).SequenceEqual(["Sums.Tests.ConcreteA.Shared", "Sums.Tests.ConcreteB.Shared"])
+            && derived.All(m => m.State == TestState.Passed),
+            $"Run at the base class's test said '{window.BottomPanel.Tests.Status}', leaving [{string.Join(", ", derived.Select(m => $"{m.FullName}: {m.State}"))}]");
+        Assert.StartsWith("Tests passed: 2, failed: 0 of 2", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        Ui.WaitFor(() => document.TestMarks.Contains(new TestMark(shared, TestMarkKind.Passed)),
+            () => $"the base class's test's run icon to take its derived tests' result; the file's icons are [{string.Join(", ", document.TestMarks)}]");
+        window.Close();
+    }
+
+    /// <summary>A test marked by a subclass of xUnit's Fact the project declares in another file, and an MSTest test marked
+    /// [STATestMethod], each have a run icon from their code before any build, and after a run the icon takes its result.</summary>
+    private void Tests_of_an_attribute_the_project_derives_and_of_sta_test_method_have_run_icons_before_and_after_a_run()
+    {
+        string solution = NewFolder();
+        Write(solution, "Own.Tests/Own.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "Own.Tests/MyFactAttribute.cs", "using Xunit;\n\nnamespace Own.Tests;\n\npublic sealed class MyFactAttribute : FactAttribute\n{\n}\n");
+        string own = Write(solution, "Own.Tests/OwnTests.cs",
+            "using Xunit;\n\nnamespace Own.Tests;\n\npublic class OwnTests\n{\n    [MyFact]\n    public void Via_its_own_attribute() { }\n}\n");
+        Write(solution, "Sta.Tests/Sta.Tests.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n" +
+            $"    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"MSTest.TestAdapter\" Version=\"{TestPackages.MSTestOnVSTest}\" />\n" +
+            $"    <PackageReference Include=\"MSTest.TestFramework\" Version=\"{TestPackages.MSTestOnVSTest}\" />\n  </ItemGroup>\n</Project>\n");
+        string sta = Write(solution, "Sta.Tests/StaTests.cs",
+            "using Microsoft.VisualStudio.TestTools.UnitTesting;\n\nnamespace Sta.Tests;\n\n[TestClass]\npublic class StaTests\n{\n    [STATestMethod]\n    public void On_its_own_thread() { }\n}\n");
+        Write(solution, "Tests.slnx", "<Solution>\n  <Project Path=\"Own.Tests/Own.Tests.csproj\" />\n  <Project Path=\"Sta.Tests/Sta.Tests.csproj\" />\n</Solution>\n");
+        Restore.Run(Path.Combine(solution, "Tests.slnx"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Assert.Equal(TestMarkKind.NotRun, MarkAt(own, "    public void Via_its_own_attribute() { }"));
+        Assert.Equal(TestMarkKind.NotRun, MarkAt(sta, "    public void On_its_own_thread() { }"));
+        Assert.False(window.IsBuilding, "Showing the run icons started a build");
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run of every test", TimeSpan.FromSeconds(180));
+        Assert.True(MarkAt(sta, "    public void On_its_own_thread() { }") is TestMarkKind.Passed or TestMarkKind.Failed,
+            $"The [STATestMethod] test's run icon took no result of the run, which said '{window.BottomPanel.Tests.Status}'");
+        Assert.Equal(TestMarkKind.Passed, MarkAt(own, "    public void Via_its_own_attribute() { }"));
+        window.Close();
+
+        // The kind of the run icon beside a line of a file, once it has one.
+        TestMarkKind MarkAt(string path, string line)
+        {
+            window.OpenFile(path);
+            Ui.Settle();
+            Pitstop.App.Workspace.OpenDocument document = window.EditorArea.Active!;
+            int at = Array.IndexOf(document.Text.Snapshot.ToString().Split('\n'), line);
+            Ui.WaitFor(() => document.TestMarks.Any(m => m.Line == at),
+                () => $"the run icon beside '{line.Trim()}' in {Path.GetFileName(path)}; it has icons on lines [{string.Join(", ", document.TestMarks.Select(m => m.Line))}]");
+            return document.TestMarks.First(m => m.Line == at).Kind;
+        }
+    }
+
+    /// <summary>NUnit's cases named by TestName and MSTest's data rows named by DisplayName are rows of their methods, by
+    /// the names given: each runs, a failing one's failure is told, and the tally and the outcome filters count each.</summary>
+    private void Nunit_cases_named_by_test_name_and_mstest_rows_named_by_display_name_are_rows_of_their_methods_that_run_and_count()
+    {
+        string solution = NewFolder();
+        Write(solution, "Named.NUnit/Named.NUnit.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n" +
+            $"    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"NUnit\" Version=\"{TestPackages.NUnit}\" />\n" +
+            $"    <PackageReference Include=\"NUnit3TestAdapter\" Version=\"{TestPackages.NUnitAdapter}\" />\n  </ItemGroup>\n</Project>\n");
+        Write(solution, "Named.NUnit/NamedCases.cs",
+            "using NUnit.Framework;\n\nnamespace Named.NUnit;\n\npublic class NamedCases\n{\n    [TestCase(1, 1, 2, TestName = \"OnePlusOne\")]\n" +
+            "    [TestCase(2, 2, 5, TestName = \"TwoPlusTwoIsFive\")]\n    public void Sums(int a, int b, int sum) => Assert.That(a + b, Is.EqualTo(sum));\n}\n");
+        Write(solution, "Named.MSTest/Named.MSTest.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n" +
+            $"    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"MSTest.TestAdapter\" Version=\"{TestPackages.MSTestOnVSTest}\" />\n" +
+            $"    <PackageReference Include=\"MSTest.TestFramework\" Version=\"{TestPackages.MSTestOnVSTest}\" />\n  </ItemGroup>\n</Project>\n");
+        Write(solution, "Named.MSTest/NamedRows.cs",
+            "using Microsoft.VisualStudio.TestTools.UnitTesting;\n\nnamespace Named.MSTest;\n\n[TestClass]\npublic class NamedRows\n{\n    [TestMethod]\n" +
+            "    [DataRow(1, 1, 2, DisplayName = \"small\")]\n    [DataRow(2, 2, 5, DisplayName = \"wrong\")]\n    [DataRow(3, 3, 6)]\n" +
+            "    public void Sums(int a, int b, int sum) => Assert.AreEqual(sum, a + b);\n}\n");
+        Write(solution, "Named.slnx", "<Solution>\n  <Project Path=\"Named.NUnit/Named.NUnit.csproj\" />\n  <Project Path=\"Named.MSTest/Named.MSTest.csproj\" />\n</Solution>\n");
+        Restore.Run(Path.Combine(solution, "Named.slnx"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Tree(window);
+        Ui.WaitFor(() => window.Tests.Tree.Methods.Count(m => m.Name == "Sums") == 2, "both Sums from their code");
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run of every test", TimeSpan.FromSeconds(180));
+        TestNode cases = window.Tests.Tree.Methods.Single(m => m.FullName == "Named.NUnit.NamedCases.Sums");
+        TestNode rows = window.Tests.Tree.Methods.Single(m => m.FullName == "Named.MSTest.NamedRows.Sums");
+        Assert.Equal([("OnePlusOne", TestState.Passed), ("TwoPlusTwoIsFive", TestState.Failed)], cases.Children.Select(r => (r.Name, r.State)));
+        Assert.Equal([("Sums (3,3,6)", TestState.Passed), ("small", TestState.Passed), ("wrong", TestState.Failed)],
+            rows.Children.Select(r => (r.Name, r.State)).OrderBy(r => r.Name, StringComparer.Ordinal));
+        Assert.Contains("TwoPlusTwoIsFive: Failed", cases.Details, StringComparison.Ordinal);
+        Assert.Contains("wrong: Failed", rows.Details, StringComparison.Ordinal);
+        Assert.StartsWith("Tests passed: 3, failed: 2 of 5", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        Assert.Equal(["5", "3", "2"], new[] { "All Tests", "Passed Tests", "Failed Tests" }.Select(f => Count(window, f)));
+        Assert.True(window.Tests.Tree.Methods.Count == 2, $"The tree shows methods besides the two Sums: [{string.Join(", ", window.Tests.Tree.Methods.Select(m => m.FullName))}]");
+        window.Close();
+    }
+
+    /// <summary>A test project its solution maps to a platform (this machine's own: x64, or ARM64 on Arm), as a .slnx or a
+    /// .sln writes it, has its tests found where the solution's build put them, bin/&lt;platform&gt;/…, and runs them from
+    /// the caret.</summary>
+    private void A_test_project_its_solution_maps_to_a_platform_is_found_where_the_solutions_build_put_it_and_runs_from_the_caret(string kind)
+    {
+        string platform = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "ARM64" : "x64";
+        string solution = NewFolder();
+        Write(solution, "Mapped.Tests/Mapped.Tests.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n" +
+            $"    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"NUnit\" Version=\"{TestPackages.NUnit}\" />\n" +
+            $"    <PackageReference Include=\"NUnit3TestAdapter\" Version=\"{TestPackages.NUnitAdapter}\" />\n  </ItemGroup>\n</Project>\n");
+        string file = Write(solution, "Mapped.Tests/ExampleTests.cs",
+            "using NUnit.Framework;\n\nnamespace Mapped.Tests;\n\npublic class ExampleTests\n{\n    [Test]\n    public void Should_Do_Something()\n    {\n        Assert.That(2 + 2, Is.EqualTo(4));\n    }\n}\n");
+        string id = "{6F1C2B9E-2D4A-4C1B-9E1D-2B6A6E2C1A11}";
+        Write(solution, $"Mapped.{kind}", kind == "slnx"
+            ? $"<Solution>\n  <Configurations>\n    <Platform Name=\"{platform}\" />\n  </Configurations>\n  <Project Path=\"Mapped.Tests/Mapped.Tests.csproj\">\n" +
+              $"    <Platform Solution=\"*|{platform}\" Project=\"{platform}\" />\n  </Project>\n</Solution>\n"
+            : "Microsoft Visual Studio Solution File, Format Version 12.00\n# Visual Studio Version 17\n" +
+              $"Project(\"{{9A19103F-16F7-4668-BE54-9A1E7A4F7556}}\") = \"Mapped.Tests\", \"Mapped.Tests\\Mapped.Tests.csproj\", \"{id}\"\nEndProject\nGlobal\n" +
+              $"\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n\t\tDebug|{platform} = Debug|{platform}\n\t\tRelease|{platform} = Release|{platform}\n\tEndGlobalSection\n" +
+              $"\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n\t\t{id}.Debug|{platform}.ActiveCfg = Debug|{platform}\n\t\t{id}.Debug|{platform}.Build.0 = Debug|{platform}\n" +
+              $"\t\t{id}.Release|{platform}.ActiveCfg = Release|{platform}\n\t\t{id}.Release|{platform}.Build.0 = Release|{platform}\n\tEndGlobalSection\nEndGlobal\n");
+        Restore.Run(Path.Combine(solution, $"Mapped.{kind}"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        window.OpenFile(file);
+        Ui.Settle();
+        Tree(window);
+        Ui.WaitFor(() => Method(window, "Should_Do_Something") is not null, "the test from its code");
+
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "public void Should_");
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy, () => $"the run of the test at the caret: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        string built = Path.Combine(solution, "Mapped.Tests", "bin", platform, "Debug", TestProjects.Framework, "Mapped.Tests.dll");
+        Assert.True(File.Exists(built), $"The solution's build did not put the tests in {built}, so this test proves nothing of where they are looked for");
+        Assert.True(Method(window, "Should_Do_Something")?.State == TestState.Passed,
+            $"The test its solution builds for {platform} did not run from the caret: the Unit Tests window said '{window.BottomPanel.Tests.Status}'");
+        Assert.StartsWith("Tests passed: 1, failed: 0 of 1", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>A test run at the caret in a folder of two solutions, each a library and its tests, builds that test's project
+    /// and the library it references alone, the other solution's left unbuilt; Run All then builds both test projects and
+    /// runs both solutions' tests.</summary>
+    private void A_test_run_at_the_caret_in_a_folder_of_two_solutions_builds_its_project_and_what_it_references_alone()
+    {
+        string folder = NewFolder();
+        foreach (string project in WriteTwoSolutions(folder))
+        {
+            Restore.Run(project);
+        }
+        MainWindow window = Ui.OpenFolder(folder, languageServer: false);
+        window.OpenFile(Path.Combine(folder, "One", "Lib.Tests", "DoublerTests.cs"));
+        Ui.Settle();
+        Tree(window);
+        Ui.WaitFor(() => Method(window, "Doubles_two") is not null && Method(window, "Halves_two") is not null, "both solutions' tests from their code");
+
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "public void Doubles_");
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy, () => $"the run of the test at the caret: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        Assert.True(Method(window, "Doubles_two")?.State == TestState.Passed, $"The test at the caret did not run: the Unit Tests window said '{window.BottomPanel.Tests.Status}'");
+        BuiltOneAlone(folder, "The run of a test at the caret");
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, () => $"the run of every test: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        Assert.StartsWith("Tests passed: 2, failed: 0 of 2", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>A library of shared test helpers its project marks as a test project, with no test SDK for VSTest to start a
+    /// test host from, found before a test project referencing it, hides none of that project's tests: its test runs from
+    /// the caret. The library's own test run from the caret, and Run All's tally, say which assembly's tests could not be
+    /// found and what VSTest said of it.</summary>
+    private void An_assembly_vstest_cannot_look_through_hides_no_other_projects_tests_and_a_run_of_its_own_says_why()
+    {
+        string solution = NewFolder();
+        Write(solution, "Helpers.Testing/Helpers.Testing.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n    <IsTestProject>true</IsTestProject>\n  </PropertyGroup>\n" +
+            $"  <ItemGroup>\n    <PackageReference Include=\"NUnit\" Version=\"{TestPackages.NUnit}\" />\n  </ItemGroup>\n</Project>\n");
+        string helpers = Write(solution, "Helpers.Testing/Checks.cs",
+            "using NUnit.Framework;\n\nnamespace Helpers.Testing;\n\npublic static class Checks\n{\n    public static void Four(int value) => Assert.That(value, Is.EqualTo(4));\n}\n\n" +
+            "public class CheckTests\n{\n    [Test]\n    public void Checks_four() => Checks.Four(4);\n}\n");
+        Write(solution, "Real.Tests/Real.Tests.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n" +
+            $"    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"NUnit\" Version=\"{TestPackages.NUnit}\" />\n" +
+            $"    <PackageReference Include=\"NUnit3TestAdapter\" Version=\"{TestPackages.NUnitAdapter}\" />\n" +
+            "    <ProjectReference Include=\"../Helpers.Testing/Helpers.Testing.csproj\" />\n  </ItemGroup>\n</Project>\n");
+        string file = Write(solution, "Real.Tests/ExampleTests.cs",
+            "using NUnit.Framework;\n\nnamespace Real.Tests;\n\npublic class ExampleTests\n{\n    [Test]\n    public void Should_Do_Something() => Helpers.Testing.Checks.Four(2 + 2);\n}\n");
+        Write(solution, "Shared.slnx", "<Solution>\n  <Project Path=\"Helpers.Testing/Helpers.Testing.csproj\" />\n  <Project Path=\"Real.Tests/Real.Tests.csproj\" />\n</Solution>\n");
+        Restore.Run(Path.Combine(solution, "Shared.slnx"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        window.OpenFile(file);
+        Ui.Settle();
+        Tree(window);
+        Ui.WaitFor(() => Method(window, "Should_Do_Something") is not null && Method(window, "Checks_four") is not null, "both tests from their code");
+
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "public void Should_");
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy, () => $"the run of the test at the caret: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        Assert.True(Method(window, "Should_Do_Something")?.State == TestState.Passed,
+            $"The test project's test did not run from the caret beside a library VSTest cannot look through: the Unit Tests window said '{window.BottomPanel.Tests.Status}'");
+
+        window.OpenFile(helpers);
+        Ui.Settle();
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "public void Checks_");
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy && window.BottomPanel.Tests.Status.StartsWith("No test of Checks_four", StringComparison.Ordinal),
+            () => $"the run of the library's test at the caret to find none: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        string said = window.BottomPanel.Tests.Status;
+        Assert.True(said.StartsWith("No test of Checks_four was found: the tests in Helpers.Testing.dll (net10.0) could not be found: ", StringComparison.Ordinal)
+            && said.Contains("Microsoft.NET.Test.Sdk", StringComparison.Ordinal),
+            $"A run of a test in an assembly VSTest could not look through did not say which and why, so nothing tells the person to give it a test SDK: '{said}'");
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && window.BottomPanel.Tests.Status.StartsWith("Tests passed", StringComparison.Ordinal),
+            () => $"the run of every test: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        said = window.BottomPanel.Tests.Status;
+        Assert.True(said.StartsWith("Tests passed: 1, failed: 0 of 1", StringComparison.Ordinal)
+            && said.Contains("; the tests in Helpers.Testing.dll (net10.0) could not be found: ", StringComparison.Ordinal),
+            $"Run All's tally did not say which assembly's tests could not be found, so its tests' absence goes unseen: '{said}'");
+        window.Close();
+    }
+
+    /// <summary>A test renamed on disk while its run is under way has its failure counted in the run's tally, though its
+    /// row left the tree with its old name; and a test file deleted after a run takes the tests a runner found in it out of
+    /// the Unit Tests window.</summary>
+    private void A_test_renamed_as_it_runs_is_counted_in_the_tally_and_a_deleted_files_tests_leave_the_window()
+    {
+        string started = Path.Combine(Folder, "started.txt");
+        string go = Path.Combine(Folder, "go.txt");
+        string renamed = Write("RenamedTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class RenamedTests\n{\n    [Fact]\n    public void Before_its_rename()\n    {\n" +
+            $"        File.WriteAllText(@\"{started}\", Environment.ProcessId.ToString());\n" +
+            $"        for (int i = 0; i < 1200 && !File.Exists(@\"{go}\"); i++)\n        {{\n            Thread.Sleep(100);\n        }}\n" +
+            "        Assert.Fail(\"failed after its rename\");\n    }\n}\n");
+        string doomed = Write("DoomedTests.cs", "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class DoomedTests\n{\n    [Fact]\n    public void Deleted_soon() { }\n}\n");
+        MainWindow window = Open();
+        Tree(window);
+        Ui.WaitFor(() => Method(window, "Before_its_rename") is not null, "the test from its code");
+        Task<string?> run = window.Tests.RunAsync(window.Folder!, [Method(window, "Before_its_rename")!]);
+        Processes.WrittenId(started, "the test host running the test to be renamed");
+        File.WriteAllText(renamed, File.ReadAllText(renamed).Replace("Before_its_rename", "After_its_rename", StringComparison.Ordinal));
+        // The run holds the window busy until the test ends, which waits for the rename to be seen.
+        Ui.PumpUntil(() => Method(window, "After_its_rename") is not null && Method(window, "Before_its_rename") is null, "the renamed test in the tree by its new name");
+        File.WriteAllText(go, "go");
+        Ui.Launched(window, run, "the run of the renamed test", TimeSpan.FromSeconds(120));
+        Assert.True(window.Tests.Summary.StartsWith("Tests passed: 0, failed: 1 of 1", StringComparison.Ordinal),
+            $"The run of a test renamed as it ran did not count its failure: '{window.Tests.Summary}'");
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Deleted_soon")?.State == TestState.Passed, "the run of every test", TimeSpan.FromSeconds(120));
+        File.Delete(doomed);
+        Ui.WaitFor(() => Method(window, "Deleted_soon") is null && !Shown(window).Any(r => r.Contains("DoomedTests", StringComparison.Ordinal)),
+            () => $"the deleted file's test to leave the Unit Tests window, which shows [{string.Join(", ", Shown(window))}]");
+        window.Close();
+    }
+
+    /// <summary>A project's run settings file (RunSettingsFilePath) is the run's, as `dotnet test` takes it: a variable it
+    /// sets reaches the test, beside its launch profile's.</summary>
+    private void A_projects_run_settings_file_gives_its_variables_to_its_tests_beside_its_launch_profiles()
+    {
+        string solution = NewFolder();
+        Write(solution, "Settled.Tests/Settled.Tests.csproj", TestProject(TestProjects.Framework)
+            .Replace("</PropertyGroup>", "    <RunSettingsFilePath>$(MSBuildProjectDirectory)/settled.runsettings</RunSettingsFilePath>\n  </PropertyGroup>", StringComparison.Ordinal));
+        Write(solution, "Settled.Tests/settled.runsettings",
+            "<RunSettings>\n  <RunConfiguration>\n    <EnvironmentVariables>\n      <SETTLED_BY>the run settings</SETTLED_BY>\n    </EnvironmentVariables>\n  </RunConfiguration>\n</RunSettings>\n");
+        Write(solution, "Settled.Tests/Properties/launchSettings.json",
+            "{ \"profiles\": { \"Settled\": { \"commandName\": \"Project\", \"environmentVariables\": { \"PROFILED_BY\": \"the profile\" } } } }");
+        Write(solution, "Settled.Tests/SettledTests.cs",
+            "using Xunit;\n\nnamespace Settled.Tests;\n\npublic class SettledTests\n{\n    [Fact]\n    public void Reads_both() =>\n" +
+            "        Assert.Equal(\"the run settings, the profile\", $\"{Environment.GetEnvironmentVariable(\"SETTLED_BY\")}, {Environment.GetEnvironmentVariable(\"PROFILED_BY\")}\");\n}\n");
+        Restore.Run(Path.Combine(solution, "Settled.Tests"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Reads_both")?.State is TestState.Passed or TestState.Failed, "the run of the test", TimeSpan.FromSeconds(180));
+        TestNode test = Method(window, "Reads_both")!;
+        Assert.True(test.State == TestState.Passed, $"The test ran without its project's run settings' variable beside its profile's:\n{test.Details}");
+        window.Close();
+    }
+
+    /// <summary>A run broken off by its test host's crash, a test calling Environment.Exit(3), says why in its tally, which
+    /// an agent's tests_run answers with, in the Unit Tests window and on the status bar: the crash as VSTest tells it, and
+    /// the test running then.</summary>
+    private void A_run_whose_test_host_crashes_says_the_crash_and_the_test_running_then()
+    {
+        Write("ExitingTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class ExitingTests\n{\n    [Fact]\n    public void Exits() => Environment.Exit(3);\n}\n");
+        MainWindow window = Open();
+        Tree(window);
+        Ui.WaitFor(() => Method(window, "Exits") is not null, "the exiting test in the Unit Tests window");
+        Ui.Launched(window, window.Tests.RunAsync(window.Folder!, [Method(window, "Exits")!]), "the run of the test that exits", TimeSpan.FromSeconds(120));
+        string said = window.Tests.Summary;
+        Assert.True(said.Contains(", broken off: ", StringComparison.Ordinal) && said.Contains("Test host process crashed", StringComparison.Ordinal)
+            && said.EndsWith("while Sums.Tests.ExitingTests.Exits ran", StringComparison.Ordinal),
+            $"A run whose test host crashed as Sums.Tests.ExitingTests.Exits ran did not say so: '{said}'");
+        Assert.Equal(said, window.BottomPanel.Tests.Status);
+        Assert.Equal(said, window.Status);
+        window.Close();
+    }
+
+    /// <summary>A run broken off by its test host's crash, no test having failed, is labelled Tests Broken Off in Local
+    /// History, never Tests Passed; and Run Until Failure of its test stops after that run, saying it broke off.</summary>
+    private void A_run_whose_test_host_crashes_is_no_pass_in_local_history_and_ends_run_until_failure()
+    {
+        Write("ExitingTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class ExitingTests\n{\n    [Fact]\n    public void Exits() => Environment.Exit(3);\n}\n");
+        MainWindow window = Open();
+        ListBox tree = Tree(window);
+        Ui.WaitFor(() => Method(window, "Exits") is not null, "the exiting test in the Unit Tests window");
+        Ui.Launched(window, window.Tests.RunAsync(window.Folder!, [Method(window, "Exits")!]), "the run of the test that exits", TimeSpan.FromSeconds(120));
+        Assert.Contains(", broken off: ", window.Tests.Summary, StringComparison.Ordinal);
+        Ui.WaitFor(() => Labels().Count > 0, "Local History's label of the run");
+        Assert.True(Labels() is ["Tests Broken Off"], $"Local History labelled a run its test host's crash broke off [{string.Join(", ", Labels())}]");
+
+        if (window.Tests.Tree.Rows.First(r => r.Name == "ExitingTests") is { IsExpanded: false } exiting)
+        {
+            window.Tests.Tree.Toggle(exiting);
+        }
+        tree.SelectedItem = Method(window, "Exits");
+        Ui.ChooseFromMenu(tree, "Run Until Failure");
+        Ui.WaitFor(() => window.Status?.StartsWith("Run 1 broke off: ", StringComparison.Ordinal) == true || window.Tests.Runs > 1,
+            () => $"Run Until Failure to stop after its run broken off; it says '{window.Status}'", TimeSpan.FromSeconds(120));
+        Assert.True(window.Tests.Runs == 1, $"Run Until Failure went on to run {window.Tests.Runs} after its first run broke off");
+        Ui.WaitFor(() => !window.Tests.IsBusy, "Run Until Failure to end");
+        Assert.Contains("while Sums.Tests.ExitingTests.Exits ran", window.Status ?? string.Empty, StringComparison.Ordinal);
+        Assert.DoesNotContain("Tests Passed", Labels());
+        window.Close();
+
+        List<string> Labels() => [.. window.LocalHistory!.Snapshot().Events
+            .Where(e => e is { Kind: Pitstop.App.History.HistoryKind.Label, System: true }).Select(e => e.Name ?? string.Empty)];
+    }
+
+    /// <summary>A theory's passing data row run alone leaves its method failed by the row that failed before, whose result
+    /// the method keeps; and Rerun Failed then runs that row.</summary>
+    private void A_passing_data_row_run_alone_leaves_its_method_failed_by_another_row_and_rerun_failed_runs_that_row()
+    {
+        Write("EvenTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class EvenTests\n{\n    [Theory]\n    [InlineData(1)]\n    [InlineData(2)]\n" +
+            "    public void Even(int value) => Assert.Equal(0, value % 2);\n}\n");
+        MainWindow window = Open();
+        ListBox tree = Tree(window);
+        Ui.WaitFor(() => Method(window, "Even") is not null, "the theory in the Unit Tests window");
+        Ui.Launched(window, window.Tests.RunAsync(window.Folder!, [Method(window, "Even")!]), "the run of the theory", TimeSpan.FromSeconds(120));
+        Assert.Equal([("Even(value: 1)", TestState.Failed), ("Even(value: 2)", TestState.Passed)], Method(window, "Even")!.Children.Select(r => (r.Name, r.State)));
+        TestOutcome odd = Row("Even(value: 1)").Results.Single();
+        TestOutcome even = Row("Even(value: 2)").Results.Single();
+
+        window.Tests.Tree.Reveal(Row("Even(value: 2)"));
+        tree.SelectedItem = Row("Even(value: 2)");
+        Ui.ChooseFromMenu(tree, "Run");
+        Ui.WaitFor(() => !window.Tests.IsBusy && Row("Even(value: 2)").Results.SingleOrDefault() is { } fresh && fresh != even,
+            () => $"the run of the passing row alone: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(120));
+        Assert.StartsWith("Tests passed: 1, failed: 0 of 1", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        TestNode method = Method(window, "Even")!;
+        Assert.True(method.State == TestState.Failed, $"Running its passing row alone left the theory {method.State}, though its other row failed:\n{method.Details}");
+        Assert.Same(odd, Row("Even(value: 1)").Results.Single());
+        Assert.Contains("Even(value: 1): Failed", method.Details, StringComparison.Ordinal);
+
+        Assert.True(window.Perform(AppActions.RerunFailedTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Row("Even(value: 1)").Results.SingleOrDefault() is { } fresh && fresh != odd,
+            () => $"Rerun Failed to run the row that failed: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(120));
+        Assert.Equal(TestState.Failed, Method(window, "Even")!.State);
+        window.Close();
+
+        TestNode Row(string name) => Method(window, "Even")!.Children.Single(r => r.Name == name);
+    }
+
+    /// <summary>A test run from its run icon in one project's file runs in that project alone where another project declares
+    /// a test of the same name, and the icon takes that project's result alone.</summary>
+    private void A_test_run_from_its_run_icon_runs_in_its_files_project_alone_where_another_declares_the_same_name()
+    {
+        string solution = NewFolder();
+        Write(solution, "Parser.Tests/Parser.Tests.csproj", TestProject(TestProjects.Framework));
+        string file = Write(solution, "Parser.Tests/ParserTests.cs",
+            "using Xunit;\n\nnamespace Tests;\n\npublic class ParserTests\n{\n    [Fact]\n    public void Parses() { }\n}\n");
+        Write(solution, "Parser.Tests.Copy/Parser.Tests.Copy.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "Parser.Tests.Copy/ParserTests.cs",
+            "using Xunit;\n\nnamespace Tests;\n\npublic class ParserTests\n{\n    [Fact]\n    public void Parses() => Assert.Fail(\"the copy's Parses ran\");\n}\n");
+        Write(solution, "Parsers.slnx", "<Solution>\n  <Project Path=\"Parser.Tests/Parser.Tests.csproj\" />\n  <Project Path=\"Parser.Tests.Copy/Parser.Tests.Copy.csproj\" />\n</Solution>\n");
+        Restore.Run(Path.Combine(solution, "Parsers.slnx"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Tree(window);
+        Ui.WaitFor(() => window.Tests.Tree.Methods.Count(m => m.Name == "Parses") == 2, "both projects' Parses from their code");
+
+        const string Line = "    public void Parses() { }";
+        Assert.Contains("Run 'Parses'", TestMarkMenu(window, file, Line).Select(i => i.Header as string));
+        Ui.Choose(window.TestMarkMenu, "Run 'Parses'");
+        Ui.WaitFor(() => !window.Tests.IsBusy, () => $"the run from the run icon: {window.BottomPanel.Tests.Status}", TimeSpan.FromSeconds(180));
+        Assert.True(Of("Parser.Tests.Copy").State == TestState.NotRun,
+            $"Run 'Parses' from Parser.Tests' file ran the copy's test of the same name too, saying '{window.BottomPanel.Tests.Status}'");
+        Assert.Equal(TestState.Passed, Of("Parser.Tests").State);
+        Assert.StartsWith("Tests passed: 1, failed: 0 of 1", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+        Pitstop.App.Workspace.OpenDocument document = window.EditorArea.Active!;
+        int at = Array.IndexOf(document.Text.Snapshot.ToString().Split('\n'), Line);
+        Ui.WaitFor(() => document.TestMarks.Contains(new TestMark(at, TestMarkKind.Passed)),
+            () => $"the run icon to take Parser.Tests' result alone; the file's icons are [{string.Join(", ", document.TestMarks)}]");
+        window.Close();
+
+        TestNode Of(string project) => window.Tests.Tree.Methods.Single(m => m.Name == "Parses" && Path.GetFileNameWithoutExtension(m.ProjectPath) == project);
+    }
+
+    private void Typing_in_one_file_among_many_open_reads_and_marks_that_files_tests_and_no_others()
+    {
+        string solution = NewFolder();
+        List<string> paths = [];
+        for (int i = 0; i < 12; i++)
+        {
+            StringBuilder file = new("using Xunit;\n\nnamespace Many.Tests;\n\n");
+            file.Append(System.Globalization.CultureInfo.InvariantCulture, $"public class File{i}Tests\n{{\n");
+            for (int test = 0; test < 3; test++)
+            {
+                file.Append(System.Globalization.CultureInfo.InvariantCulture, $"    [Fact]\n    public void Case_{test}() {{ }}\n\n");
+            }
+            paths.Add(Write(solution, $"File{i}Tests.cs", file.Append("}\n").ToString()));
+        }
+        MainWindow window = Ui.OpenFolder(solution, autosaves: false);
+        foreach (string path in paths)
+        {
+            window.OpenFile(path);
+        }
+        Ui.Settle();
+        List<Pitstop.App.Workspace.OpenDocument> open = [.. window.EditorArea.Documents];
+        Assert.Equal(12, open.Count);
+        Ui.WaitFor(() => open.All(d => d.TestMarks.Count == 4), "every file's run icons");
+        Pitstop.App.Workspace.OpenDocument typed = window.EditorArea.Active!;
+        List<Pitstop.App.Workspace.OpenDocument> others = [.. open.Where(d => d != typed)];
+        Dictionary<Pitstop.App.Workspace.OpenDocument, int> marked = others.ToDictionary(d => d, _ => 0);
+        foreach (Pitstop.App.Workspace.OpenDocument other in others)
+        {
+            other.PropertyChanged += (_, e) => marked[other] += e.PropertyName == nameof(other.TestMarks) ? 1 : 0;
+        }
+        Dictionary<Pitstop.App.Workspace.OpenDocument, int> reads = others.ToDictionary(d => d, window.TestGutter.Reads);
+
+        // A test typed into the file shown, a key at a time with pauses, then left long enough for anything waiting on one.
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.Selections = SelectionSet.Single(editor.Document.Snapshot.ToString().LastIndexOf('}'));
+        editor.Focus();
+        foreach (string key in new[] { "[", "Fact", "]", "\n", "public void Added(", ") ", "{", " }", "\n" })
+        {
+            window.KeyTextInput(key);
+            Ui.Hold(TimeSpan.FromMilliseconds(40), "a pause between keys, as a person types");
+        }
+        Ui.WaitFor(() => typed.TestMarks.Count == 5, "the new test's run icon");
+        Ui.Hold(TimeSpan.FromMilliseconds(400), "long enough for anything waiting on a pause in typing to run");
+        Ui.Settle();
+        Assert.Contains(new TestMark(editor.Document.Snapshot.GetLineFromOffset(editor.Document.Snapshot.ToString().IndexOf("Added", StringComparison.Ordinal)), TestMarkKind.NotRun), typed.TestMarks);
+        Assert.True(others.All(d => marked[d] == 0), $"Typing in {typed.Name} gave other files their run icons again: {string.Join(", ", others.Where(d => marked[d] > 0).Select(d => $"{d.Name} {marked[d]} times"))}");
+        Assert.True(others.All(d => window.TestGutter.Reads(d) == reads[d]), $"Typing in {typed.Name} read other files' tests again: {string.Join(", ", others.Where(d => window.TestGutter.Reads(d) != reads[d]).Select(d => d.Name))}");
+        Assert.True(window.TestGutter.Reads(typed) > 0, "The file typed in was never read for its tests");
+        window.Close();
+    }
+
+    private void Run_unit_tests_on_a_solution_folder_chosen_in_the_explorer_runs_the_tests_of_its_projects_alone()
+    {
+        string solution = NewFolder();
+        Write(solution, "tests/Fast.Tests/Fast.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "tests/Fast.Tests/FastTests.cs", "using Xunit;\n\nnamespace Fast.Tests;\n\npublic class FastTests\n{\n    [Fact]\n    public void Quick() { }\n}\n");
+        Write(solution, "slow/Slow.Tests/Slow.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "slow/Slow.Tests/SlowTests.cs", "using Xunit;\n\nnamespace Slow.Tests;\n\npublic class SlowTests\n{\n    [Fact]\n    public void Patient() { }\n}\n");
+        Write(solution, "Suite.slnx", "<Solution>\n  <Folder Name=\"/tests/\">\n    <Project Path=\"tests/Fast.Tests/Fast.Tests.csproj\" />\n  </Folder>\n  <Project Path=\"slow/Slow.Tests/Slow.Tests.csproj\" />\n</Solution>\n");
+        Restore.Run(Path.Combine(solution, "Suite.slnx"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+
+        Pitstop.App.Explorer.ExplorerNode folder = window.ExplorerView.Tree.Rows.First(r => r.Kind == Pitstop.App.Explorer.NodeKind.SolutionFolder && r.Name == "tests");
+        Ui.ClickRow(window, folder);
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Quick")?.State == TestState.Passed, "the solution folder's tests to run", TimeSpan.FromSeconds(180));
+        Assert.True(Method(window, "Patient")?.State == TestState.NotRun, "Run Unit Tests on the tests folder ran the tests of a project outside it too");
+        window.Close();
+    }
+
+    /// <summary>Run Unit Tests is offered only where there is a test: never on a console's Main, on a test method and on a
+    /// test class's other members (its class's tests), never on a project without tests, on a test project and on the
+    /// solution, whose row runs its tests.</summary>
+    private void Test_actions_are_offered_only_where_tests_are_and_the_solution_row_runs_its_tests()
+    {
+        string solution = NewFolder();
+        Write(solution, "App/App.csproj", TestProjects.Console());
+        Write(solution, "App/Program.cs", "namespace App;\n\npublic static class Program\n{\n    public static void Main()\n    {\n    }\n}\n");
+        Write(solution, "App.Tests/App.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "App.Tests/SumTests.cs",
+            "using Xunit;\n\nnamespace App.Tests;\n\npublic class SumTests\n{\n    [Fact]\n    public void Adds() => Assert.Equal(4, Two() + Two());\n\n    private static int Two() => 2;\n}\n");
+        Write(solution, "Both.slnx", "<Solution>\n  <Project Path=\"App/App.csproj\" />\n  <Project Path=\"App.Tests/App.Tests.csproj\" />\n</Solution>\n");
+        Restore.Run(Path.Combine(solution, "Both.slnx"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Ui.WaitFor(() => Method(window, "Adds") is not null, "the test from its code in the Unit Tests window");
+
+        window.OpenFile(Path.Combine(solution, "App", "Program.cs"));
+        Ui.Settle();
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "void Ma");
+        Assert.True(TestItems(window) is [], $"The editor's menu on Main offers {string.Join(", ", TestItems(window))}, where Main is no test");
+        Assert.Equal("No test is at the caret", window.Actions[AppActions.RunTests]!.WhyNot(window.Actions.Context()));
+        window.OpenFile(Path.Combine(solution, "App.Tests", "SumTests.cs"));
+        Ui.Settle();
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "void Ad");
+        Assert.Equal(["Run 'Adds'", "Debug 'Adds'", "Run 'Adds' Until Failure"], TestItems(window));
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "int Tw");
+        Assert.Equal(["Run 'SumTests'", "Debug 'SumTests'", "Run 'SumTests' Until Failure"], TestItems(window));
+
+        Pitstop.App.Explorer.ExplorerNode Row(Pitstop.App.Explorer.NodeKind kind, string name) =>
+            window.ExplorerView.Tree.Rows.First(r => r.Kind == kind && r.Name == name);
+        Assert.DoesNotContain("Run Unit Tests", RowMenu(window, Row(Pitstop.App.Explorer.NodeKind.Project, "App")));
+        Assert.Contains("Run Unit Tests", RowMenu(window, Row(Pitstop.App.Explorer.NodeKind.Project, "App.Tests")));
+        Ui.ChooseFromRowMenu(window, Row(Pitstop.App.Explorer.NodeKind.Solution, "Both"), "Run Unit Tests");
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Adds")?.State == TestState.Passed, "the solution's tests to run", TimeSpan.FromSeconds(180));
+        window.Close();
+
+        // A row's menu as its right-click opens it, by its items' titles.
+        static List<string> RowMenu(MainWindow window, Pitstop.App.Explorer.ExplorerNode row)
+        {
+            Ui.RightClick(Ui.Row(window.ExplorerView, row));
+            Avalonia.Controls.ContextMenu menu = window.ExplorerView.OpenMenu ?? throw new InvalidOperationException($"A right-click on {row.Name} opened no menu");
+            List<string> items = [.. menu.Items.OfType<Avalonia.Controls.MenuItem>().Select(i => i.Header as string ?? string.Empty)];
+            menu.Close();
+            Ui.Settle();
+            return items;
+        }
+    }
+
+    /// <summary>A test under a symbol its framework defines (#if NET8_0_OR_GREATER) is one as its project compiles it:
+    /// the Unit Tests window lists it from its code, the editor offers it at the caret, and Run Tests runs it there; one
+    /// under a symbol the framework lacks is no test.</summary>
+    private void A_test_under_its_frameworks_symbols_is_listed_from_its_code_and_runs_at_the_caret_and_one_under_a_symbol_it_lacks_is_none()
+    {
+        string solution = NewFolder();
+        Write(solution, "Gated.Tests/Gated.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "Gated.Tests/GatedTests.cs",
+            "using Xunit;\n\nnamespace Gated.Tests;\n\npublic class GatedTests\n{\n#if NET8_0_OR_GREATER\n    [Fact]\n    public void Modern() => Assert.Equal(4, 2 + 2);\n#endif\n\n" +
+            "#if !NET8_0_OR_GREATER\n    [Fact]\n    public void Legacy() => Assert.Equal(5, 2 + 2);\n#endif\n}\n");
+        Restore.Run(Path.Combine(solution, "Gated.Tests"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Ui.WaitFor(() => Method(window, "Modern") is not null,
+            () => $"the test under #if NET8_0_OR_GREATER in the Unit Tests window from its code, which lists [{string.Join(", ", Shown(window))}]");
+        Assert.True(Method(window, "Legacy") is null, $"The Unit Tests window lists Legacy, under #if !NET8_0_OR_GREATER, which its {TestProjects.Framework} project never compiles");
+
+        window.OpenFile(Path.Combine(solution, "Gated.Tests", "GatedTests.cs"));
+        Ui.Settle();
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "void Mod");
+        Assert.Equal(["Run 'Modern'", "Debug 'Modern'", "Run 'Modern' Until Failure"], TestItems(window));
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Modern")?.State == TestState.Passed, () => $"the test at the caret to run: {window.Status}", TimeSpan.FromSeconds(180));
+        window.Close();
+    }
+
+    /// <summary>A button in the Unit Tests window's header.</summary>
+    private static Button HeaderButton(MainWindow window, string action) =>
+        window.BottomPanel.Tests.GetVisualAncestors().OfType<DockPanel>().First(p => p.Classes.Contains(StyleClasses.ToolPane))
+            .GetVisualDescendants().OfType<Button>().First(b => b.Name == action);
+
+    private void A_solution_never_built_shows_its_xunit_nunit_and_mstest_tests_from_their_code_as_it_opens()
+    {
+        string solution = NewFolder();
+        Write(solution, "Library/Library.csproj", TestProjects.Library());
+        Write(solution, "Library/Sum.cs", "namespace Library;\n\npublic static class Sum\n{\n    public static int Of(int a, int b) => a + b;\n}\n");
+        Write(solution, "Xunit.Tests/Xunit.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "Xunit.Tests/SumTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class SumTests\n{\n    [Fact]\n    public void Adds() { }\n\n    [Theory]\n    [InlineData(1)]\n    [InlineData(2)]\n" +
+            "    public void Doubles(int value) { }\n\n    public void Helper() { }\n}\n\npublic abstract class BaseTests\n{\n    [Fact]\n    public void Inherited() { }\n}\n");
+        Write(solution, "NUnit.Tests/NUnit.Tests.csproj", PackagesProject("NUnit", "NUnit3TestAdapter"));
+        Write(solution, "NUnit.Tests/ParserTests.cs",
+            "using NUnit.Framework;\n\nnamespace Parsing.Tests;\n\n[TestFixture]\npublic class ParserTests\n{\n    [Test]\n    public void Reads() { }\n\n" +
+            "    [TestCase(1)]\n    [TestCase(2)]\n    public void Counts(int lines) { }\n}\n");
+        Write(solution, "MSTest.Tests/MSTest.Tests.csproj", PackagesProject("MSTest"));
+        Write(solution, "MSTest.Tests/StoreTests.cs",
+            "using Microsoft.VisualStudio.TestTools.UnitTesting;\n\nnamespace Store.Tests;\n\n[TestClass]\npublic class StoreTests\n{\n    [TestMethod]\n    public void Keeps() { }\n}\n");
+        Write(solution, "Tests.slnx", "<Solution>\n  <Project Path=\"Library/Library.csproj\" />\n  <Project Path=\"Xunit.Tests/Xunit.Tests.csproj\" />\n" +
+            "  <Project Path=\"NUnit.Tests/NUnit.Tests.csproj\" />\n  <Project Path=\"MSTest.Tests/MSTest.Tests.csproj\" />\n</Solution>\n");
+
+        // No C# language server, whose restore would ask nuget.org for the floating NUnit and MSTest versions every run.
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Tree(window);
+        // A theory is one test, and an abstract class's tests show only under the classes deriving from it.
+        Assert.Equal(
+            [
+                "Xunit.Tests", "  Sums.Tests", "    SumTests", "      Adds", "      Doubles",
+                "NUnit.Tests", "  Parsing.Tests", "    ParserTests", "      Counts", "      Reads",
+                "MSTest.Tests", "  Store.Tests", "    StoreTests", "      Keeps",
+            ],
+            Shown(window));
+        Assert.False(window.IsBuilding, "Showing the tests started a build");
+        TestNode doubles = Method(window, "Doubles")!;
+        Assert.Empty(doubles.Children);
+        Assert.Equal((Path.Combine(solution, "Xunit.Tests", "SumTests.cs"), 13), (doubles.Path, doubles.Line));
+
+        Write(solution, "Xunit.Tests/MoreTests.cs", "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class MoreTests\n{\n    [Fact]\n    public void Written_elsewhere() { }\n}\n");
+        File.Delete(Path.Combine(solution, "MSTest.Tests", "StoreTests.cs"));
+        Ui.WaitFor(() => Method(window, "Written_elsewhere") is not null && Method(window, "Keeps") is null, "the tree to follow a file written and one deleted by another program");
+        Assert.DoesNotContain("MSTest.Tests", Shown(window));
+        TreeKeysCheck.Press(window, window.Tests.Tree.Rows, window.Tests.Tree.Rows.First(r => r.Name == "Sums.Tests"), "the Unit Tests window");
+
+        string plain = NewFolder();
+        Write(plain, "Library/Library.csproj", TestProjects.Library());
+        window.OpenFolder(plain);
+        Ui.Settle();
+        Assert.Empty(window.Tests.Tree.Rows);
+        Assert.Contains("No test projects: none references xUnit, NUnit or MSTest", ShownTexts(window));
+        window.Close();
+    }
+
+    private void Run_all_lands_on_the_tests_shown_from_code_with_a_theorys_rows_under_it_and_a_test_it_never_ran_stays()
+    {
+        // xUnit cannot list a theory's rows of a record before it runs them: they come from the run.
+        Write("ShapeTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic sealed record Shape(int Sides);\n\npublic class ShapeTests\n{\n" +
+            "    public static IEnumerable<object[]> Shapes => [[new Shape(3)], [new Shape(4)]];\n\n" +
+            "    [Theory]\n    [MemberData(nameof(Shapes))]\n    public void Has_sides(Shape shape) => Assert.True(shape.Sides > 2);\n}\n");
+        MainWindow window = Open();
+        window.Autosaves = false;
+        Tree(window);
+        TestNode four = Method(window, "Two_and_two_make_four")!;
+        TestNode five = Method(window, "Two_and_two_make_five")!;
+        TestNode doubles = Method(window, "Doubles")!;
+        TestNode sides = Method(window, "Has_sides")!;
+        Assert.All([four, five, doubles, sides], m => Assert.Equal(TestState.NotRun, m.State));
+        Assert.Empty(doubles.Children);
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Assert.True(window.IsBuilding, "Run All did not build first");
+        // Typed while the run builds what was saved, so the run never hears of it.
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.Selections = SelectionSet.Single(Text(editor).LastIndexOf('}'));
+        editor.Focus();
+        foreach (string key in new[] { "[", "Fact", "]", "\n", "public void Typed_during_the_run(", ") ", "{", " }", "\n" })
+        {
+            window.KeyTextInput(key);
+            Ui.Hold(TimeSpan.FromMilliseconds(40), "a pause between keys, as a person types");
+        }
+        Ui.WaitFor(() => !window.Tests.IsBusy && four.State == TestState.Passed, "the run of every test", TimeSpan.FromSeconds(120));
+
+        Assert.Same(four, Method(window, "Two_and_two_make_four"));
+        Assert.Same(doubles, Method(window, "Doubles"));
+        Assert.Same(sides, Method(window, "Has_sides"));
+        Assert.Equal(TestState.Failed, five.State);
+        Assert.Equal(TestState.Skipped, Method(window, "Not_yet")!.State);
+        Assert.Equal(["Doubles(value: 1, twice: 2)", "Doubles(value: 2, twice: 4)"], doubles.Children.Select(r => r.Name).Order(StringComparer.Ordinal));
+        Assert.All(doubles.Children, r => Assert.Equal(TestState.Passed, r.State));
+        Assert.Equal(TestState.Passed, doubles.State);
+        Assert.Equal(["Has_sides(shape: Shape { Sides = 3 })", "Has_sides(shape: Shape { Sides = 4 })"], sides.Children.Select(r => r.Name).Order(StringComparer.Ordinal));
+        Assert.All(sides.Children, r => Assert.Equal(TestState.Passed, r.State));
+        TestNode typed = Method(window, "Typed_during_the_run") ?? throw new InvalidOperationException("The test typed during the run left the tree when the run ended");
+        Assert.Equal(TestState.NotRun, typed.State);
+        Assert.Empty(typed.Results);
+
+        window.Tests.Tree.Toggle(doubles);
+        ListBox tree = Tree(window);
+        TestNode row = doubles.Children[0];
+        Assert.Equal(window.Tests.Tree.Rows.IndexOf(doubles) + 1, window.Tests.Tree.Rows.IndexOf(row));
+        tree.SelectedItem = row;
+        Ui.Settle();
+        Assert.Equal("Passed", Text(Details(window)));
+        window.Close();
+    }
+
+    /// <summary>NUnit's fixtures made with arguments or type arguments: each instance's test is a row under the method its
+    /// code declares, with its own result, counted by Run All's tally and the outcome filters and marked in the gutter; the
+    /// test at the caret and the method's row run every instance, and an instance's row, found by Find, runs alone.</summary>
+    private void Each_instance_of_an_nunit_fixture_made_with_arguments_is_a_row_of_its_method_that_runs_and_counts()
+    {
+        string solution = NewFolder();
+        Write(solution, "Fixtures.Tests/Fixtures.Tests.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n" +
+            $"    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"NUnit\" Version=\"{TestPackages.NUnit}\" />\n" +
+            $"    <PackageReference Include=\"NUnit3TestAdapter\" Version=\"{TestPackages.NUnitAdapter}\" />\n  </ItemGroup>\n</Project>\n");
+        Write(solution, "Fixtures.Tests/FixtureTests.cs",
+            "using NUnit.Framework;\n\nnamespace Fixtures.Tests;\n\n[TestFixture(1)]\n[TestFixture(-1)]\npublic class Parameterised(int value)\n{\n" +
+            "    [Test]\n    public void Positive() => Assert.That(value, Is.GreaterThan(0));\n}\n\n" +
+            "[TestFixture(typeof(int))]\n[TestFixture(typeof(string))]\npublic class Typed<T>\n{\n    [Test]\n    public void Named() => Assert.That(typeof(T).Name, Is.Not.Empty);\n}\n\n" +
+            "[TestFixture(\"a.b\")]\n[TestFixture(\"x(y\")]\npublic class Worded(string word)\n{\n    [TestCase(1)]\n    [TestCase(2)]\n" +
+            "    public void Long(int at) => Assert.That(word.Length, Is.GreaterThan(at));\n}\n");
+        Restore.Run(Path.Combine(solution, "Fixtures.Tests"));
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        ListBox tree = Tree(window);
+        Ui.WaitFor(() => Method(window, "Positive") is not null, "the fixture's test read from its code");
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Named") is not null, "the run of every test", TimeSpan.FromSeconds(180));
+        Assert.Equal("Tests passed: 7, failed: 1 of 8", System.Text.RegularExpressions.Regex.Replace(window.BottomPanel.Tests.Status, $" in {SaidWhile.Pattern}$", string.Empty));
+        Assert.Equal("8", Count(window, "All Tests"));
+        Assert.Equal(["Fixtures.Tests", "  Fixtures.Tests", "    Parameterised", "      Positive", "    Typed", "      Named", "    Worded", "      Long"], Shown(window));
+        TestNode positive = Method(window, "Positive")!;
+        Assert.Equal(["Parameterised(-1).Positive", "Parameterised(1).Positive"], positive.Children.Select(r => r.Name));
+        Assert.Equal([TestState.Failed, TestState.Passed], positive.Children.Select(r => r.State));
+        Assert.Contains("Parameterised(-1).Positive: Failed", positive.Details, StringComparison.Ordinal);
+        Assert.Equal(["Typed<Int32>.Named", "Typed<String>.Named"], Method(window, "Named")!.Children.Select(r => r.Name));
+        Assert.Equal(["Worded(\"a.b\").Long(1)", "Worded(\"a.b\").Long(2)", "Worded(\"x(y\").Long(1)", "Worded(\"x(y\").Long(2)"],
+            Method(window, "Long")!.Children.Select(r => r.Name));
+        Assert.All(Method(window, "Long")!.Children, r => Assert.Equal(TestState.Passed, r.State));
+
+        window.OpenFile(Path.Combine(solution, "Fixtures.Tests", "FixtureTests.cs"));
+        Ui.Settle();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Assert.Contains(new TestMark(9, TestMarkKind.Failed), editor.TestMarks);
+        Assert.Contains(new TestMark(14, TestMarkKind.Passed), editor.TestMarks);
+        Assert.Contains(new TestMark(17, TestMarkKind.Passed), editor.TestMarks);
+        TestNode typed = Method(window, "Named")!.Children[1];
+        TestOutcome before = typed.Results[0];
+        editor.GoTo(new TextPosition(17, 8));
+        Ui.Run(window, AppActions.RunTests);
+        Ui.WaitFor(() => !window.Tests.IsBusy && typed.Results.FirstOrDefault() is { } fresh && fresh != before, "the run of the generic fixture's test at the caret", TimeSpan.FromSeconds(120));
+        Assert.Equal("Tests passed: 2, failed: 0 of 2", System.Text.RegularExpressions.Regex.Replace(window.BottomPanel.Tests.Status, $" in {SaidWhile.Pattern}$", string.Empty));
+
+        TestNode failing = positive.Children[0];
+        TestNode passing = positive.Children[1];
+        TestOutcome failed = failing.Results[0];
+        tree.SelectedItem = positive;
+        Ui.ChooseFromMenu(tree, "Run");
+        Ui.WaitFor(() => !window.Tests.IsBusy && failing.Results.FirstOrDefault() is { } fresh && fresh != failed, "the run of the fixture's method", TimeSpan.FromSeconds(120));
+        Assert.Equal("Tests passed: 1, failed: 1 of 2", System.Text.RegularExpressions.Regex.Replace(window.BottomPanel.Tests.Status, $" in {SaidWhile.Pattern}$", string.Empty));
+
+        failed = failing.Results[0];
+        TestOutcome passed = passing.Results[0];
+        Ui.Click(tree.ContainerFromItem(window.Tests.Tree.Rows.Single(r => r.Name == "Parameterised"))!);
+        Ui.Run(window, AppActions.Find);
+        window.KeyTextInput("Parameterised(1)");
+        Ui.Settle();
+        Assert.Equal(["Fixtures.Tests", "  Fixtures.Tests", "    Parameterised", "      Positive", "        Parameterised(1).Positive"], Shown(window));
+        tree.SelectedItem = passing;
+        Ui.ChooseFromMenu(tree, "Run");
+        Ui.WaitFor(() => !window.Tests.IsBusy && passing.Results.FirstOrDefault() is { } fresh && fresh != passed, "the run of the instance found", TimeSpan.FromSeconds(120));
+        Assert.Equal("Tests passed: 1, failed: 0 of 1", System.Text.RegularExpressions.Regex.Replace(window.BottomPanel.Tests.Status, $" in {SaidWhile.Pattern}$", string.Empty));
+        Assert.Same(failed, failing.Results[0]);
+        Assert.Equal(TestState.Failed, failing.State);
+        window.Close();
+    }
+
+    private void Typing_a_test_adds_it_to_the_tree_renaming_or_removing_one_follows_and_a_test_that_ran_keeps_its_result()
+    {
+        MainWindow window = Open();
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Two_and_two_make_four")?.State == TestState.Passed, "the run of every test", TimeSpan.FromSeconds(120));
+        TestNode four = Method(window, "Two_and_two_make_four")!;
+        TestOutcome ran = four.Results[0];
+        CodeEditor editor = window.EditorArea.CodeEditor;
+
+        editor.Selections = SelectionSet.Single(Text(editor).LastIndexOf('}'));
+        editor.Focus();
+        foreach (string key in new[] { "[", "Fact", "]", "\n", "public void Added(", ") ", "{", " }", "\n" })
+        {
+            window.KeyTextInput(key);
+            Ui.Hold(TimeSpan.FromMilliseconds(40), "a pause between keys, as a person types");
+        }
+        Ui.WaitFor(() => Method(window, "Added") is not null, "the typed test in the tree");
+        Assert.Equal(TestState.NotRun, Method(window, "Added")!.State);
+
+        int five = Text(editor).IndexOf("make_five", StringComparison.Ordinal) + "make_".Length;
+        editor.Selections = SelectionSet.Single(new Selection(five, five + "five".Length));
+        window.KeyTextInput("six");
+        Ui.WaitFor(() => Method(window, "Two_and_two_make_six") is not null && Method(window, "Two_and_two_make_five") is null, "the renamed test in the tree by its new name alone");
+
+        int from = Text(editor).IndexOf("    [Fact(Skip", StringComparison.Ordinal);
+        int to = Text(editor).IndexOf("Not_yet() { }\n", StringComparison.Ordinal) + "Not_yet() { }\n".Length;
+        editor.Selections = SelectionSet.Single(new Selection(from, to));
+        Ui.Press(window, "Back");
+        Ui.WaitFor(() => Method(window, "Not_yet") is null, "the removed test gone from the tree");
+
+        Assert.Same(four, Method(window, "Two_and_two_make_four"));
+        Assert.Equal(TestState.Passed, four.State);
+        Assert.Same(ran, four.Results[0]);
+        Assert.Equal(TestState.Passed, Method(window, "Doubles")!.State);
+        Assert.Equal(2, Method(window, "Doubles")!.Children.Count);
+        window.Close();
+    }
+
+    private void Group_by_categories_shows_each_test_under_its_xunit_traits_nunit_categories_and_mstest_test_categories()
+    {
+        string solution = NewFolder();
+        Write(solution, "Xunit.Tests/Xunit.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "Xunit.Tests/SumTests.cs",
+            "using Xunit;\n\nnamespace Sums.Tests;\n\n[Trait(\"Category\", \"Slow\")]\npublic class SumTests\n{\n    [Fact]\n    [Trait(\"Owner\", \"Ann\")]\n    public void Adds() { }\n\n" +
+            "    [Fact]\n    public void Subtracts() { }\n}\n\npublic class PlainTests\n{\n    [Fact]\n    public void Plain() { }\n}\n");
+        Write(solution, "NUnit.Tests/NUnit.Tests.csproj", PackagesProject("NUnit", "NUnit3TestAdapter"));
+        Write(solution, "NUnit.Tests/ParserTests.cs",
+            "using NUnit.Framework;\n\nnamespace Parsing.Tests;\n\n[TestFixture]\npublic class ParserTests\n{\n    [Test]\n    [Category(\"Fast\")]\n    public void Reads() { }\n}\n");
+        Write(solution, "MSTest.Tests/MSTest.Tests.csproj", PackagesProject("MSTest"));
+        Write(solution, "MSTest.Tests/StoreTests.cs",
+            "using Microsoft.VisualStudio.TestTools.UnitTesting;\n\nnamespace Store.Tests;\n\n[TestClass]\npublic class StoreTests\n{\n    [TestMethod]\n" +
+            "    [TestCategory(\"Fast\")]\n    [TestCategory(\"Slow\")]\n    public void Keeps() { }\n}\n");
+        Write(solution, "Tests.slnx", "<Solution>\n  <Project Path=\"Xunit.Tests/Xunit.Tests.csproj\" />\n  <Project Path=\"NUnit.Tests/NUnit.Tests.csproj\" />\n" +
+            "  <Project Path=\"MSTest.Tests/MSTest.Tests.csproj\" />\n</Solution>\n");
+        // No C# language server, nor its restore of the floating versions from nuget.org: the categories are read from code.
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Tree(window);
+        Ui.WaitFor(() => Method(window, "Keeps") is not null, "the tests read from the code");
+
+        // Each test under every category it has (its class's too), a trait not named Category by name and value.
+        GroupBy(window, "Categories");
+        Assert.Equal(
+            [
+                "Fast", "  Parsing.Tests.ParserTests", "    Reads", "  Store.Tests.StoreTests", "    Keeps",
+                "Owner [Ann]", "  Sums.Tests.SumTests", "    Adds",
+                "Slow", "  Store.Tests.StoreTests", "    Keeps", "  Sums.Tests.SumTests", "    Adds", "    Subtracts",
+                "<Uncategorized>", "  Sums.Tests.PlainTests", "    Plain",
+            ],
+            Shown(window));
+        Assert.True(Count(window, "All Tests") == "5", $"A test under two categories was counted twice: All says {Count(window, "All Tests")} of 5 tests");
+
+        GroupBy(window, "Project");
+        Assert.Equal(
+            [
+                "Xunit.Tests", "  Owner [Ann]", "    Sums.Tests.SumTests", "      Adds", "  Slow", "    Sums.Tests.SumTests", "      Adds", "      Subtracts",
+                "  <Uncategorized>", "    Sums.Tests.PlainTests", "      Plain",
+                "NUnit.Tests", "  Fast", "    Parsing.Tests.ParserTests", "      Reads",
+                "MSTest.Tests", "  Fast", "    Store.Tests.StoreTests", "      Keeps", "  Slow", "    Store.Tests.StoreTests", "      Keeps",
+            ],
+            Shown(window));
+        Ui.Click(ToolbarControl<Button>(window, "Group By"));
+        MenuItem ticked = Assert.Single(window.BottomPanel.Tests.OpenMenu!.Items.OfType<MenuItem>(), i => i is { ToggleType: MenuItemToggleType.Radio, IsChecked: true });
+        Assert.Equal("Project and Categories", ticked.Header);
+        window.BottomPanel.Tests.OpenMenu!.Close();
+
+        GroupBy(window, "Projects and Namespaces");
+        Assert.Equal(
+            [
+                "Xunit.Tests", "  Sums.Tests", "    PlainTests", "      Plain", "    SumTests", "      Adds", "      Subtracts",
+                "NUnit.Tests", "  Parsing.Tests", "    ParserTests", "      Reads",
+                "MSTest.Tests", "  Store.Tests", "    StoreTests", "      Keeps",
+            ],
+            Shown(window));
+        window.Close();
+    }
+
+    private void After_a_run_the_failed_filter_shows_the_failures_alone_as_many_as_it_counts_and_a_modifier_adds_the_ignored()
+    {
+        MainWindow window = Open();
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Two_and_two_make_four")?.State == TestState.Passed, "the run of every test", TimeSpan.FromSeconds(120));
+        Tree(window);
+        // Each outcome's filter counts a theory's rows each, as the run's tally does; one no test has is hidden.
+        Assert.Equal(["5", "3", "1", "1"], new[] { "All Tests", "Passed Tests", "Failed Tests", "Ignored Tests" }.Select(f => Count(window, f)));
+        Assert.False(Filter(window, "Tests Not Run").IsVisible, "The filter for tests not run shows though every test ran");
+
+        window.Tests.Tree.Toggle(window.Tests.Tree.Rows.Single(r => r.Name == "SumTests"));
+        Ui.Click(Filter(window, "Failed Tests"));
+        Assert.Equal(["Sums.Tests", "  Sums.Tests", "    SumTests", "      Two_and_two_make_five"], Shown(window));
+        Assert.Equal(int.Parse(Count(window, "Failed Tests"), System.Globalization.CultureInfo.CurrentCulture), ShownTests(window));
+        Assert.Equal([true, false], new[] { "Failed Tests", "All Tests" }.Select(f => Filter(window, f).IsChecked == true));
+
+        Ui.Click(Filter(window, "Ignored Tests"), modifiers: OperatingSystem.IsMacOS() ? Avalonia.Input.RawInputModifiers.Meta : Avalonia.Input.RawInputModifiers.Control);
+        Assert.Equal(["Sums.Tests", "  Sums.Tests", "    SumTests", "      Not_yet", "      Two_and_two_make_five"], Shown(window));
+        Assert.Equal(2, ShownTests(window));
+
+        Ui.Click(Filter(window, "Passed Tests"));
+        Assert.Equal(
+            ["Sums.Tests", "  Sums.Tests", "    SumTests", "      Doubles", "        Doubles(value: 1, twice: 2)", "        Doubles(value: 2, twice: 4)", "      Two_and_two_make_four"],
+            Shown(window));
+        Assert.Equal(int.Parse(Count(window, "Passed Tests"), System.Globalization.CultureInfo.CurrentCulture), ShownTests(window));
+
+        Ui.Click(Filter(window, "All Tests"));
+        Assert.Equal(5, ShownTests(window));
+        Assert.Empty(window.Tests.Tree.Outcomes);
+        window.Close();
+    }
+
+    private void Find_in_the_unit_tests_window_narrows_the_tree_to_the_tests_named_and_the_rows_above_them()
+    {
+        Write("ParseTests.cs", "using Xunit;\n\nnamespace Sums.Parsing;\n\npublic class ParseTests\n{\n    [Fact]\n    public void Reads_two() { }\n\n    [Fact]\n    public void Reads_four() { }\n}\n");
+        MainWindow window = Open();
+        ListBox tree = Tree(window);
+        Ui.WaitFor(() => Method(window, "Reads_four") is not null, "the tests read from the code");
+
+        Ui.Click(tree.ContainerFromItem(window.Tests.Tree.Rows.Single(r => r.Name == "SumTests"))!);
+        Ui.Run(window, AppActions.Find);
+        window.KeyTextInput("FOUR");
+        Ui.Settle();
+        Assert.Equal(["Sums.Tests", "  Sums.Parsing", "    ParseTests", "      Reads_four", "  Sums.Tests", "    SumTests", "      Two_and_two_make_four"], Shown(window));
+
+        Ui.Run(window, AppActions.Find);
+        window.KeyTextInput("parsetests");
+        Ui.Settle();
+        Assert.Equal(["Sums.Tests", "  Sums.Parsing", "    ParseTests", "      Reads_four", "      Reads_two"], Shown(window));
+
+        window.KeyTextInput("x");
+        Ui.Settle();
+        Assert.Empty(window.Tests.Tree.Rows);
+        Assert.Contains("No matching tests", ShownTexts(window));
+        Ui.Press(window, "Escape");
+        Assert.Equal(6, ShownTests(window));
+        window.Close();
+    }
+
+    private void The_grouping_and_outcomes_chosen_come_back_when_the_folder_opens_again_and_another_folder_has_its_own()
+    {
+        string settings = NewFolder();
+        string other = NewFolder();
+        Write(other, "Other.Tests/Other.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(other, "Other.Tests/OtherTests.cs", "using Xunit;\n\nnamespace Other.Tests;\n\npublic class OtherTests\n{\n    [Fact]\n    public void Elsewhere() { }\n}\n");
+        MainWindow first = Keeping(settings, Folder);
+        Ui.WaitFor(() => Method(first, "Doubles") is not null, "the tests read from the code");
+        GroupBy(first, "Categories");
+        Ui.Click(Filter(first, "Tests Not Run"));
+        first.Close();
+
+        MainWindow second = Keeping(settings, Folder);
+        Ui.WaitFor(() => Method(second, "Doubles") is not null, "the tests read from the code");
+        Assert.Equal([TestGroupLevel.Category], second.Tests.Tree.Grouping);
+        Assert.True(Filter(second, "Tests Not Run").IsChecked, "The filter chosen for tests not run was not chosen when the folder opened again");
+        Assert.Equal(
+            ["<Uncategorized>", "  Sums.Tests.SumTests", "    Doubles", "    Not_yet", "    Two_and_two_make_five", "    Two_and_two_make_four"],
+            Shown(second));
+
+        second.OpenFolder(other);
+        Ui.WaitFor(() => Method(second, "Elsewhere") is not null, "the other folder's tests");
+        Assert.Equal(TestGroupings.Default, second.Tests.Tree.Grouping);
+        Assert.True(Filter(second, "All Tests").IsChecked, "Another folder opened with the first folder's filter");
+        Assert.Equal(["Other.Tests", "  Other.Tests", "    OtherTests", "      Elsewhere"], Shown(second));
+        Task reopened = second.OpenFolder(Folder);
+        Ui.WaitFor(() => reopened.IsCompleted, "the first folder to open again");
+        Assert.Equal([TestGroupLevel.Category], second.Tests.Tree.Grouping);
+        Assert.Equal([TestState.NotRun], second.Tests.Tree.Outcomes);
+        second.Close();
+    }
+
+    /// <summary>A run's results come back when the folder opens again, before any build: each test's outcome, time, data rows
+    /// and failure as they were, marked in its row and its details as an earlier run's with when; a test whose code changed
+    /// while the folder was closed says so, one whose code did not says nothing; a run makes them this session's; and a test
+    /// whose code changes after this session's run says so too.</summary>
+    private void A_runs_results_come_back_as_an_earlier_runs_when_the_folder_opens_again_until_the_tests_run_again()
+    {
+        string settings = NewFolder();
+        MainWindow first = Keeping(settings, Folder);
+        Assert.True(first.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !first.Tests.IsBusy && Method(first, "Two_and_two_make_four")?.State == TestState.Passed, "the run of every test", TimeSpan.FromSeconds(120));
+        TimeSpan took = Method(first, "Two_and_two_make_five")!.Duration;
+        Assert.Null(Method(first, "Two_and_two_make_five")!.EarlierRun);
+        Assert.DoesNotContain(ShownTexts(first), t => t?.StartsWith("earlier run", StringComparison.Ordinal) == true);
+        first.Close();
+        Write("SumTests.cs", File.ReadAllText(Source).Replace("Assert.Equal(5, 2 + 2);", "Assert.Equal(5, 2 + 3);", StringComparison.Ordinal));
+
+        MainWindow second = Keeping(settings, Folder);
+        Ui.WaitFor(() => Method(second, "Two_and_two_make_five")?.State == TestState.Failed, "the failed test's result from the earlier run, before any build");
+        TestNode five = Method(second, "Two_and_two_make_five")!;
+        Assert.Equal(TestState.Passed, Method(second, "Two_and_two_make_four")!.State);
+        Assert.Equal(TestState.Skipped, Method(second, "Not_yet")!.State);
+        Assert.Equal(["Doubles(value: 1, twice: 2)", "Doubles(value: 2, twice: 4)"], Method(second, "Doubles")!.Children.Select(r => r.Name));
+        Assert.Equal(TestState.Failed, second.Tests.Tree.Roots[0].State);
+        Assert.True(five.Duration == took, $"The failed test took {took} in the earlier run, and is said to have taken {five.Duration}");
+        Assert.NotNull(five.EarlierRun);
+        Assert.StartsWith("From an earlier run, at ", five.Details, StringComparison.Ordinal);
+        Assert.Contains("SumTests.cs:line 17", five.Details, StringComparison.Ordinal);
+        Ui.WaitFor(() => five.CodeChanged, "the failed test, whose code changed while the folder was closed, to say so");
+        Assert.False(Method(second, "Two_and_two_make_four")!.CodeChanged, "A test whose code did not change says it did");
+        Assert.Contains("; the test's code has changed since", five.Details, StringComparison.Ordinal);
+        Ui.Settle();
+        List<string?> said = ShownTexts(second);
+        Assert.True(said.Any(t => t?.StartsWith("earlier run, ", StringComparison.Ordinal) == true && t.EndsWith("; code changed", StringComparison.Ordinal)),
+            $"No row says its result is from an earlier run and its code changed since: the window says {string.Join(" | ", said)}");
+
+        Assert.True(second.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !second.Tests.IsBusy && Method(second, "Two_and_two_make_five")?.State == TestState.Passed, "the second run, in which the changed test passes", TimeSpan.FromSeconds(120));
+        Assert.All(second.Tests.Tree.Methods, m => Assert.True(m.EarlierRun is null && !m.CodeChanged, $"{m.Name} still shows an earlier run's results after this run"));
+        Ui.Settle();
+        Assert.DoesNotContain(ShownTexts(second), t => t?.StartsWith("earlier run", StringComparison.Ordinal) == true);
+
+        Write("SumTests.cs", File.ReadAllText(Source).Replace("Assert.Equal(5, 2 + 3);", "Assert.Equal(5, 3 + 2);", StringComparison.Ordinal));
+        Ui.WaitFor(() => Method(second, "Two_and_two_make_five")?.CodeChanged == true, "the test this session ran, whose code changed since, to say so");
+        Assert.False(Method(second, "Two_and_two_make_four")!.CodeChanged, "A test whose code did not change since this session's run says it did");
+        Assert.StartsWith(TestNode.ChangedSinceWords, Method(second, "Two_and_two_make_five")!.Details, StringComparison.Ordinal);
+        Ui.Settle();
+        Assert.True(ShownTexts(second).Contains("code changed"), $"No row says its code changed since this session's run: the window says {string.Join(" | ", ShownTexts(second))}");
+        second.Close();
+    }
+}
+
+/// <summary>Debug Tests from the window, on <see cref="UnitTestsFolders"/>' Sums.Tests. Debugged through the window, so the
+/// class runs alone.</summary>
+[Collection(Alone.Name)]
+public sealed class UnitTestsDebuggingTests : UnitTestsFolders, IClassFixture<RestoredFolders>
+{
+    /// <summary>The Sums.Tests each step of a flow takes its own of.</summary>
+    private readonly RestoredFolders restored;
+
+    public UnitTestsDebuggingTests(RestoredFolders restored)
+        : base(restored) => this.restored = restored;
+
+    /// <summary>Debug Tests stops at a breakpoint and at a failed assertion in the test with the launch profile's
+    /// variables, a debugged test host runs Hot Reload's update handlers after an edit applied at a breakpoint, and
+    /// Stop ends a debugged run paused at a breakpoint and the next run runs.</summary>
+    [AvaloniaFact]
+    public void Debug_Tests_stops_in_a_test_with_its_launch_profile_takes_Hot_Reload_and_ends_with_Stop()
+    {
+        Flow.StepApart<UnitTestsDebuggingTests>("debug tests stops at a breakpoint in a test and at a failed assertion in the test and the launch profile gives its variables run and debugged", () => new UnitTestsDebuggingTests(restored), t =>
+        {
+            t.Debug_tests_stops_at_a_breakpoint_in_a_test_and_at_a_failed_assertion_in_the_test_and_the_launch_profile_gives_its_variables_run_and_debugged();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsDebuggingTests>("a test host debugged with hot reload runs its update handlers after an edit applied at a breakpoint", () => new UnitTestsDebuggingTests(restored), t =>
+        {
+            t.A_test_host_debugged_with_hot_reload_runs_its_update_handlers_after_an_edit_applied_at_a_breakpoint();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsDebuggingTests>("stop unit tests ends a debugged run paused at a breakpoint and the next run runs", () => new UnitTestsDebuggingTests(restored), t =>
+        {
+            t.Stop_unit_tests_ends_a_debugged_run_paused_at_a_breakpoint_and_the_next_run_runs();
+            OpenWindows.CloseAll();
+        });
+    }
+
+    /// <summary>Debug Tests at the caret stops at a breakpoint inside the test; a failing test debugged stops at its
+    /// assertion in the test, not inside the assertion library; and the project's launch profile gives its variables to its
+    /// tests, run and debugged.</summary>
+    private void Debug_tests_stops_at_a_breakpoint_in_a_test_and_at_a_failed_assertion_in_the_test_and_the_launch_profile_gives_its_variables_run_and_debugged()
+    {
+        Directory.CreateDirectory(Path.Combine(Folder, "Properties"));
+        Write("Properties/launchSettings.json",
+            "{ \"profiles\": { \"Sums\": { \"commandName\": \"Project\", \"environmentVariables\": { \"PITSTOP_GREETING\": \"from the profile\" } } } }");
+        Write("GreetingTests.cs", "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class GreetingTests\n{\n    [Fact]\n" +
+            "    public void The_profile_greets() => Assert.Equal(\"from the profile\", Environment.GetEnvironmentVariable(\"PITSTOP_GREETING\"));\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(10, 8));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+
+        Ui.Run(window, AppActions.DebugTests);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && window.BottomPanel.Debug.Frames.Count > 0, "the stop in the test", TimeSpan.FromSeconds(120));
+        Assert.Contains(new LineMark(10, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains("Two_and_two_make_four", window.BottomPanel.Debug.Frames[0].Name, StringComparison.Ordinal);
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run to end", TimeSpan.FromSeconds(60));
+        Assert.Equal(TestState.Passed, Method(window, "Two_and_two_make_four")!.State);
+
+        // xunit.assert's PDB names its sources under /_/src, so under Just My Code the stop is shown at the test's line.
+        editor.GoTo(new TextPosition(15, 8));
+        Ui.Run(window, AppActions.DebugTests);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && window.Debugger.Stop is not null, "the stop on the failed assertion", TimeSpan.FromSeconds(120));
+        Assert.Equal("exception", window.Debugger.Session!.StopReason);
+        Assert.True(window.Debugger.Stop!.Top?.Name.Contains("Two_and_two_make_five", StringComparison.Ordinal) == true,
+            $"The stop showed {window.Debugger.Stop.Top?.Name} at {window.Debugger.Stop.Top?.Source?.Path}, not the test whose assertion failed");
+        Assert.Contains(new LineMark(16, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run to end", TimeSpan.FromSeconds(60));
+
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "The_profile_greets")?.State is TestState.Passed or TestState.Failed, "the run of every test", TimeSpan.FromSeconds(120));
+        TestNode greets = Method(window, "The_profile_greets")!;
+        Assert.True(greets.State == TestState.Passed, $"A test ran without its project's launch profile's variables, which Rider gives it:\n{greets.Details}");
+        Ui.Launched(window, window.Tests.RunAsync(window.Folder!, [greets], debug: true), "the test debugged", TimeSpan.FromSeconds(120));
+        Assert.True(greets.State == TestState.Passed, $"A test debugged ran without its project's launch profile's variables:\n{greets.Details}");
+        window.Close();
+    }
+
+    /// <summary>A test debugged with Hot Reload on: an edit applied while it is paused at a breakpoint reaches the test host
+    /// VSTest started and the debugger attached to, whose update handlers run as it goes on, through Passenger's hook.</summary>
+    private void A_test_host_debugged_with_hot_reload_runs_its_update_handlers_after_an_edit_applied_at_a_breakpoint()
+    {
+        string ran = Path.Combine(Folder, "handlers.txt");
+        Write("UpdateProbe.cs", "[assembly: System.Reflection.Metadata.MetadataUpdateHandler(typeof(Sums.Tests.UpdateProbe))]\n\nnamespace Sums.Tests;\n\n"
+            + "internal static class UpdateProbe\n{\n" + $"    public static void UpdateApplication(Type[]? types) => File.WriteAllText(@\"{ran}\", \"ran\");\n}}\n");
+        string tests = Write("ReloadTests.cs", "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class ReloadTests\n{\n    [Fact]\n    public void Reloads()\n    {\n"
+            + "        int value = Value();\n        for (int i = 0; i < 300 && !File.Exists(@\"" + ran + "\"); i++)\n        {\n            Thread.Sleep(100);\n        }\n"
+            + "        Assert.True(File.Exists(@\"" + ran + "\"), \"the update handlers never ran\");\n    }\n\n    private static int Value() => 1;\n}\n");
+        MainWindow window = Open(languageServer: true);
+        window.OpenFile(tests);
+        Ui.Settle();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(9, 8));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Ui.Run(window, AppActions.DebugTests);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && window.BottomPanel.Debug.Frames.Count > 0, "the stop in the test", TimeSpan.FromSeconds(120));
+
+        TextSnapshot text = editor.Document.Snapshot;
+        int one = text.ToString().IndexOf("Value() => 1", StringComparison.Ordinal) + "Value() => ".Length;
+        editor.ApplyEdits([new TextEdit(one, 1, "2")]);
+        Ui.Settle();
+        Assert.True(window.Perform(AppActions.ApplyHotReloadChanges), $"Apply Hot Reload Changes could not run on the debugged test host: {window.Status}");
+        Ui.WaitFor(() => window.Debugger.LastApplied is { Result: HotReloadResult.Applied } && window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null,
+            () => $"the edit applied to the test host; Hot Reload said: {window.Debugger.LastApplied?.Said} ({window.Status})", TimeSpan.FromSeconds(60));
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the run to end", TimeSpan.FromSeconds(60));
+        TestNode reloads = Method(window, "Reloads")!;
+        Assert.True(File.Exists(ran), $"The debugged test host's update handlers never ran after the edit was applied:\n{reloads.Details}");
+        Assert.Equal(TestState.Passed, reloads.State);
+        window.Close();
+    }
+
+    /// <summary>Stop Unit Tests ends a debugged run paused at a breakpoint inside its test within seconds, saying it
+    /// stopped, its test host ended; and the next run runs.</summary>
+    private void Stop_unit_tests_ends_a_debugged_run_paused_at_a_breakpoint_and_the_next_run_runs()
+    {
+        string host = Path.Combine(Folder, "paused.txt");
+        string tests = Write("PausedTests.cs", "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class PausedTests\n{\n    [Fact]\n    public void Pauses()\n    {\n" +
+            $"        File.WriteAllText(@\"{host}\", Environment.ProcessId.ToString());\n" +
+            "        int sum = 2 + 2;\n        Assert.Equal(4, sum);\n    }\n}\n");
+        MainWindow window = Open();
+        window.OpenFile(tests);
+        Ui.Settle();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(11, 9));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Ui.Run(window, AppActions.DebugTests);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && window.BottomPanel.Debug.Frames.Count > 0, "the stop in the test", TimeSpan.FromSeconds(120));
+        int testHost = Processes.WrittenId(host, "the test host paused in the test");
+
+        Assert.True(window.Perform(AppActions.StopTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy, "the debugged run to stop", TimeSpan.FromSeconds(20));
+        Assert.True(Processes.Gone(testHost, TimeSpan.FromSeconds(15)), $"The test host ({Processes.Describe(testHost)}) still ran after Stop");
+        Assert.EndsWith(", stopped", window.BottomPanel.Tests.Status, StringComparison.Ordinal);
+
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Ui.Launched(window, window.Tests.RunAsync(window.Folder!, [Method(window, "Two_and_two_make_four")!]), "the run after the stopped one", TimeSpan.FromSeconds(120));
+        Assert.Equal(TestState.Passed, Method(window, "Two_and_two_make_four")!.State);
+        window.Close();
+    }
+}
+
+/// <summary>The Unit Tests window as thousands of results come in: taken in batches, and what the person closed or chose
+/// kept so.</summary>
+public sealed class UnitTestsResponsivenessTests : UnitTestsFolders
+{
+    public UnitTestsResponsivenessTests()
+        : base(null)
+    {
+    }
+
+    /// <summary>Thousands of results come in without holding the window, what was closed or chosen staying so, and an
+    /// Enter above a file's tests in a solution of thousands costs what it does among a few.</summary>
+    [AvaloniaFact]
+    public void The_tests_tree_keeps_up_with_thousands_of_results_and_typing_without_holding_the_window()
+    {
+        Flow.StepApart<UnitTestsResponsivenessTests>("thousands of results come in without holding up the window and what was closed or chosen stays so", t =>
+        {
+            t.Thousands_of_results_come_in_without_holding_up_the_window_and_what_was_closed_or_chosen_stays_so();
+            OpenWindows.CloseAll();
+        });
+        Flow.StepApart<UnitTestsResponsivenessTests>("an enter above the tests of a file in a solution of thousands moves their rows and costs what it does among a few", t =>
+        {
+            t.An_enter_above_the_tests_of_a_file_in_a_solution_of_thousands_moves_their_rows_and_costs_what_it_does_among_a_few();
+            OpenWindows.CloseAll();
+        });
+    }
+
+    private void Thousands_of_results_come_in_without_holding_up_the_window_and_what_was_closed_or_chosen_stays_so()
+    {
+        // Many.Tests: 3,000 tests in 30 classes, one in ten failing; Few.Tests: two that pass.
+        string solution = NewFolder();
+        StringBuilder many = new("using Xunit;\n\nnamespace Many.Tests;\n");
+        for (int batch = 0; batch < 30; batch++)
+        {
+            many.Append(System.Globalization.CultureInfo.InvariantCulture, $"\npublic class Batch{batch:00}\n{{\n");
+            for (int test = 0; test < 100; test++)
+            {
+                int n = batch * 100 + test;
+                string body = n % 10 == 7 ? $"Assert.True(false, \"case {n} failed\")" : "Assert.True(true)";
+                many.Append(System.Globalization.CultureInfo.InvariantCulture, $"    [Fact]\n    public void Case_{n:0000}() => {body};\n");
+            }
+            many.Append("}\n");
+        }
+        Write(solution, "Many.Tests/Many.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "Many.Tests/ManyTests.cs", many.ToString());
+        Write(solution, "Few.Tests/Few.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(solution, "Few.Tests/FewTests.cs", "using Xunit;\n\nnamespace Few.Tests;\n\npublic class FewTests\n{\n    [Fact]\n    public void One() { }\n\n    [Fact]\n    public void Two() { }\n}\n");
+        Write(solution, "Tests.slnx", "<Solution>\n  <Project Path=\"Many.Tests/Many.Tests.csproj\" />\n  <Project Path=\"Few.Tests/Few.Tests.csproj\" />\n</Solution>\n");
+        Restore.Run(Path.Combine(solution, "Tests.slnx"));
+
+        MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Case_2999")?.State == TestState.Passed, "the first run of every test", TimeSpan.FromSeconds(180));
+        Assert.Equal(3002, window.Tests.Tree.Roots.SelectMany(r => r.Methods).Count(m => m.State is TestState.Passed or TestState.Failed));
+        ListBox tree = Tree(window);
+        CodeEditor details = Details(window);
+
+        window.Tests.Tree.Toggle(window.Tests.Tree.Roots.Single(r => r.Name == "Few.Tests"));
+        Assert.DoesNotContain(window.Tests.Tree.Rows, r => r.Name == "FewTests");
+        TestNode project = window.Tests.Tree.Roots.Single(r => r.Name == "Many.Tests");
+        tree.SelectedItem = project;
+        Ui.Settle();
+        Assert.Contains("case 7 failed", Text(details), StringComparison.Ordinal);
+        int rewrites = 0;
+        details.Document.Changed += (_, _) => rewrites++;
+        // The results taken in batches: the chosen project's details are written again once a batch, not once a result.
+        Ui.ChooseFromMenu(tree, "Run");
+        Ui.PumpUntil(() => !window.Tests.IsBusy, "the run of 3,000 tests to end", TimeSpan.FromMinutes(3));
+        Ui.Settle();
+        Assert.Equal(3000, project.Methods.Count(m => m.Results.Count > 0));
+        TestContext.Current.TestOutputHelper?.WriteLine($"While 3,000 results came in the chosen project's details were written {rewrites} times");
+        Assert.True(rewrites is > 0 and <= 300, $"The chosen project's details were written {rewrites} times while 3,000 results came in");
+
+        TestNode failing = Method(window, "Case_0107")!;
+        tree.SelectedItem = failing;
+        Ui.Settle();
+        Assert.Contains("case 107 failed", Text(details), StringComparison.Ordinal);
+        TestNode above = window.Tests.Tree.Rows.Single(r => r.Name == "Batch00");
+        foreach (bool open in new[] { false, true })
+        {
+            window.Tests.Tree.Toggle(above);
+            Ui.Settle();
+            Assert.Equal(open, window.Tests.Tree.Rows.Any(r => r.Name == "Case_0000"));
+            Assert.Same(failing, tree.SelectedItem);
+            Assert.Contains("case 107 failed", Text(details), StringComparison.Ordinal);
+        }
+
+        TestItem found = failing.Items[0];
+        TestOutcome last = failing.Results[0];
+        Assert.True(window.Perform(AppActions.RunAllTests));
+        Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Case_0107")?.Results.FirstOrDefault() is { } fresh && fresh != last, "Run All again", TimeSpan.FromSeconds(180));
+        Assert.False(window.Tests.Tree.Roots.Single(r => r.Name == "Few.Tests").IsExpanded, "Run All opened the project that was closed");
+        Assert.DoesNotContain(window.Tests.Tree.Rows, r => r.Name == "FewTests");
+        Assert.Equal("Case_0107", (tree.SelectedItem as TestNode)?.Name);
+        Assert.Contains("case 107 failed", Text(details), StringComparison.Ordinal);
+        Assert.Same(found, Method(window, "Case_0107")!.Items[0]);
+        window.Close();
+    }
+
+    /// <summary>An Enter typed above the tests of an open test file moves their rows to their new lines, nothing made again:
+    /// in a solution of 3,000 tests it allocates on the UI thread about what it does in one of three. The rows, and Go to
+    /// Source from them, are then at the tests' new lines.</summary>
+    private void An_enter_above_the_tests_of_a_file_in_a_solution_of_thousands_moves_their_rows_and_costs_what_it_does_among_a_few()
+    {
+        const string Few = "using Xunit;\n\nnamespace Few.Tests;\n\npublic class FewTests\n{\n    [Fact]\n    public void One() { }\n\n    [Fact]\n    public void Two() { }\n\n    [Fact]\n    public void Three() { }\n}\n";
+        StringBuilder many = new("using Xunit;\n\nnamespace Few.Tests;\n");
+        for (int batch = 0; batch < 30; batch++)
+        {
+            many.Append(System.Globalization.CultureInfo.InvariantCulture, $"\npublic class Batch{batch:00}\n{{\n");
+            for (int test = 0; test < 100; test++)
+            {
+                many.Append(System.Globalization.CultureInfo.InvariantCulture, $"    [Fact]\n    public void Case_{(batch * 100) + test:0000}() {{ }}\n");
+            }
+            many.Append("}\n");
+        }
+        string small = NewFolder();
+        Write(small, "Few.Tests/Few.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(small, "Few.Tests/FewTests.cs", Few);
+        string large = NewFolder();
+        Write(large, "Few.Tests/Few.Tests.csproj", TestProject(TestProjects.Framework));
+        Write(large, "Few.Tests/FewTests.cs", Few);
+        Write(large, "Few.Tests/ManyTests.cs", many.ToString());
+
+        (long among, bool keptAmong) = Enters(small, 3);
+        (long amid, bool keptAmid) = Enters(large, 3003);
+        TestContext.Current.TestOutputHelper?.WriteLine($"An Enter above the tests allocated {among / 1024} KB on the UI thread among 3 tests, {amid / 1024} KB among 3,003");
+        Assert.True(amid <= among + (64 * 1024),
+            $"An Enter above the tests of a file allocated {amid / 1024} KB on the UI thread in a solution of 3,003 tests, against {among / 1024} KB in one of 3: the tree was made again");
+        Assert.True(keptAmong && keptAmid, "Lines put in above a file's tests made the Unit Tests window's tree again");
+
+        // The least an Enter above the tests allocated on the UI thread, and whether the tree's methods stayed.
+        (long Least, bool Kept) Enters(string solution, int tests)
+        {
+            MainWindow window = Ui.OpenFolder(solution, languageServer: false);
+            Tree(window);
+            Ui.WaitFor(() => window.Tests.Tree.Roots.Sum(r => r.Methods.Count()) == tests, $"the tree's {tests} tests");
+            window.OpenFile(Path.Combine(solution, "Few.Tests", "FewTests.cs"));
+            Ui.Settle();
+            CodeEditor editor = window.EditorArea.CodeEditor;
+            Pitstop.App.Workspace.OpenDocument file = window.EditorArea.Active!;
+            Ui.WaitFor(() => file.TestMarks.Count == 4, "the file's run icons");
+            IReadOnlyList<TestNode> methods = window.Tests.Tree.Methods;
+            editor.Selections = SelectionSet.Single(Few.IndexOf("public class", StringComparison.Ordinal));
+            editor.Focus();
+            Ui.Settle();
+            long least = long.MaxValue;
+            const int Keys = 5;
+            for (int i = 0; i < Keys; i++)
+            {
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                window.KeyPress(Avalonia.Input.Key.Enter, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Enter, null);
+                window.KeyRelease(Avalonia.Input.Key.Enter, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Enter, null);
+                Ui.Settle();
+                least = Math.Min(least, GC.GetAllocatedBytesForCurrentThread() - before);
+            }
+            TextSnapshot text = editor.Document.Snapshot;
+            int two = text.GetLineFromOffset(text.ToString().IndexOf("void Two", StringComparison.Ordinal));
+            Ui.WaitFor(() => file.TestMarks.Contains(new TestMark(two, TestMarkKind.NotRun)), "Two's run icon at its new line");
+            bool kept = ReferenceEquals(methods, window.Tests.Tree.Methods);
+            TestNode moved = Method(window, "Two")!;
+            Assert.Equal(two + 1, moved.Line);
+            ListBox tree = Tree(window);
+            tree.SelectedItem = moved;
+            editor.Selections = SelectionSet.Single(0);
+            Ui.ChooseFromMenu(tree, "Go to Source");
+            Assert.Equal(two, editor.Document.Snapshot.GetLineFromOffset(editor.Selections.Primary.Caret));
+            window.Close();
+            return (least, kept);
+        }
+    }
+}
+
+/// <summary>The Sums.Tests project a unit testing test takes, restored, the folders it writes for solutions of its own, and
+/// the helpers that open the window on them and read the Unit Tests window.</summary>
+public abstract class UnitTestsFolders : IDisposable
+{
+    /// <summary>Where a class takes Sums.Tests from: none for a class whose tests write solutions of their own.</summary>
+    private readonly RestoredFolders? restored;
+
+    /// <summary>The test's own Sums.Tests project, once it has taken one.</summary>
+    private string? taken;
+
+    protected UnitTestsFolders(RestoredFolders? restored) => this.restored = restored;
+
+    /// <summary>The test's own Sums.Tests, restored: taken the first time it is asked for, so a test with a solution of its
+    /// own restores none.</summary>
+    protected string Folder => taken ??= (restored ?? throw new InvalidOperationException("This class takes no Sums.Tests")).Take("tests-", made =>
+    {
+        File.WriteAllText(Path.Combine(made, "Sums.Tests.csproj"),
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n" +
+            $"  <ItemGroup>\n    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"xunit\" Version=\"{TestPackages.XunitTwo}\" />\n" +
+            $"    <PackageReference Include=\"xunit.runner.visualstudio\" Version=\"{TestPackages.XunitTwoRunner}\" />\n  </ItemGroup>\n</Project>\n");
+        File.WriteAllText(Path.Combine(made, "SumTests.cs"),
+            "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class SumTests\n{\n    [Fact]\n    public void Two_and_two_make_four()\n    {\n        int sum = 2 + 2;\n        Assert.Equal(4, sum);\n    }\n\n" +
+            "    [Fact]\n    public void Two_and_two_make_five()\n    {\n        Assert.Equal(5, 2 + 2);\n    }\n\n    [Theory]\n    [InlineData(1, 2)]\n    [InlineData(2, 4)]\n    public void Doubles(int value, int twice) => Assert.Equal(twice, value * 2);\n\n" +
+            "    [Fact(Skip = \"later\")]\n    public void Not_yet() { }\n}\n");
+        return made;
+    });
+
+    protected string Source => Path.Combine(PathNames.Canonical(Folder), "SumTests.cs");
+
+    private readonly List<string> folders = [];
+
+    public void Dispose()
+    {
+        if (taken is not null)
+        {
+            TestFolders.Delete(taken);
+        }
+        foreach (string made in folders)
+        {
+            TestFolders.Delete(made);
+        }
+    }
+
+    /// <summary>The window a person uses, as the app makes it: one that keeps its state, here in the test's own folder; with
+    /// no C# language server, as <see cref="Open"/>.</summary>
+    protected static MainWindow Keeping(string settings, string open)
+    {
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings, StartsLanguageServer = false };
+        window.Show();
+        window.KeepLayout();
+        window.OpenFolder(open);
+        Ui.Settle();
+        Tree(window);
+        return window;
+    }
+
+    /// <summary>A control of the Unit Tests window's toolbar, by the tip it shows.</summary>
+    protected static T ToolbarControl<T>(MainWindow window, string tip) where T : Control =>
+        window.BottomPanel.Tests.GetVisualDescendants().OfType<T>().FirstOrDefault(c => ToolTip.GetTip(c) is string text && text.StartsWith(tip, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"The Unit Tests window's toolbar has no {tip}");
+
+    protected static ToggleButton Filter(MainWindow window, string tests) => ToolbarControl<ToggleButton>(window, $"Filter {tests}");
+
+    /// <summary>How many tests an outcome's filter says have it.</summary>
+    protected static string Count(MainWindow window, string tests) => Filter(window, tests).GetVisualDescendants().OfType<TextBlock>().Single().Text!;
+
+    /// <summary>The tests the tree shows: data rows, and methods without them.</summary>
+    protected static int ShownTests(MainWindow window) =>
+        window.Tests.Tree.Rows.Count(r => r.Kind == TestNodeKind.Row || r is { Kind: TestNodeKind.Method, HasChildren: false });
+
+    /// <summary>Chooses an item of the toolbar's Group By menu.</summary>
+    protected static void GroupBy(MainWindow window, string item)
+    {
+        Ui.Click(ToolbarControl<Button>(window, "Group By"));
+        Ui.Choose(window.BottomPanel.Tests.OpenMenu, item);
+    }
+
+    protected string NewFolder()
+    {
+        string made = PathNames.Canonical(TestFolders.Create("tests-"));
+        folders.Add(made);
+        return made;
+    }
+
+    protected static string TestProject(string frameworks) =>
+        "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n" +
+        (frameworks.Contains(';', StringComparison.Ordinal)
+            ? $"    <TestFrameworks>{frameworks}</TestFrameworks>\n    <TargetFrameworks>$(TestFrameworks)</TargetFrameworks>\n"
+            : $"    <TargetFramework>{frameworks}</TargetFramework>\n") +
+        "    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n" +
+        $"  <ItemGroup>\n    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"xunit\" Version=\"{TestPackages.XunitTwo}\" />\n" +
+        $"    <PackageReference Include=\"xunit.runner.visualstudio\" Version=\"{TestPackages.XunitTwoRunner}\" />\n  </ItemGroup>\n</Project>\n";
+
+    /// <summary>Writes a folder of two solutions apart, One and Two, each a library and a test project referencing it: One's
+    /// Lib.Tests has DoublerTests.Doubles_two, Two's Other.Tests has HalverTests.Halves_two. The test projects, to restore.</summary>
+    public static string[] WriteTwoSolutions(string folder) =>
+        [WriteSolution(folder, "One", "Lib", "Doubler", "Twice(int value) => value * 2", "Doubles_two", "Assert.Equal(4, Doubler.Twice(2))"),
+            WriteSolution(folder, "Two", "Other", "Halver", "Half(int value) => value / 2", "Halves_two", "Assert.Equal(1, Halver.Half(2))")];
+
+    private static string WriteSolution(string folder, string solution, string library, string type, string member, string test, string check)
+    {
+        Write(folder, $"{solution}/{library}/{library}.csproj", TestProjects.Library());
+        Write(folder, $"{solution}/{library}/{type}.cs", $"namespace {library};\n\npublic static class {type}\n{{\n    public static int {member};\n}}\n");
+        Write(folder, $"{solution}/{library}.Tests/{type}Tests.cs",
+            $"using Xunit;\n\nnamespace {library}.Tests;\n\npublic class {type}Tests\n{{\n    [Fact]\n    public void {test}() => {check};\n}}\n");
+        Write(folder, $"{solution}/{solution}.slnx", $"<Solution>\n  <Project Path=\"{library}/{library}.csproj\" />\n  <Project Path=\"{library}.Tests/{library}.Tests.csproj\" />\n</Solution>\n");
+        return Write(folder, $"{solution}/{library}.Tests/{library}.Tests.csproj",
+            TestProject(TestProjects.Framework).With($"  <ItemGroup>\n    <ProjectReference Include=\"../{library}/{library}.csproj\" />\n  </ItemGroup>\n"));
+    }
+
+    /// <summary>Holds a run of One's test in <see cref="WriteTwoSolutions"/>'s folder to have built One's projects and none of Two's.</summary>
+    public static void BuiltOneAlone(string folder, string run)
+    {
+        string[] unbuilt = [.. new[] { "One/Lib", "One/Lib.Tests" }.Where(p => !Directory.Exists(Path.Combine(folder, p, "bin")))];
+        Assert.True(unbuilt.Length == 0, $"{run} did not build {string.Join(", ", unbuilt)}, which its test needs");
+        string[] built = [.. new[] { "Two/Other", "Two/Other.Tests" }.Where(p => Directory.Exists(Path.Combine(folder, p, "bin")))];
+        Assert.True(built.Length == 0,
+            $"{run} built {string.Join(", ", built)} of the other solution, which its test does not reference: in a folder of many solutions a run of one test waits for every project's build");
+    }
+
+    /// <summary>A test project of another framework's packages, never restored here.</summary>
+    protected static string PackagesProject(params string[] packages) =>
+        $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n" +
+        $"    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n" +
+        string.Concat(packages.Select(p => $"    <PackageReference Include=\"{p}\" Version=\"*\" />\n")) + "  </ItemGroup>\n</Project>\n";
+
+    /// <summary>The Unit Tests window's rows as a person reads them, indented by depth.</summary>
+    protected static List<string> Shown(MainWindow window) => [.. window.Tests.Tree.Rows.Select(r => new string(' ', r.Depth * 2) + r.Name)];
+
+    /// <summary>The words the Unit Tests window shows.</summary>
+    protected static List<string?> ShownTexts(MainWindow window) =>
+        [.. window.BottomPanel.Tests.GetVisualDescendants().OfType<TextBlock>().Where(t => t.IsEffectivelyVisible).Select(t => t.Text)];
+
+    protected static string Text(CodeEditor editor) => editor.Document.Snapshot.ToString();
+
+    protected static string Write(string root, string relative, string text) => TestFolders.Write(root, relative, text);
+
+    protected static ListBox Tree(MainWindow window)
+    {
+        window.Perform(AppActions.ShowTests);
+        Ui.Settle();
+        return window.BottomPanel.Tests.GetVisualDescendants().OfType<ListBox>().First(l => ReferenceEquals(l.ItemsSource, window.Tests.Tree.Rows));
+    }
+
+    /// <summary>The Unit Tests window's details of the chosen row, beside the tree.</summary>
+    protected static CodeEditor Details(MainWindow window) =>
+        window.BottomPanel.Tests.GetVisualDescendants().OfType<CodeEditor>().First(e => e.IsReadOnly);
+
+    protected static TestNode? Method(MainWindow window, string name) =>
+        window.Tests.Tree.Roots.SelectMany(r => r.Methods).FirstOrDefault(m => m.Name == name);
+
+    /// <summary>The editor's menu at the caret: its items that run a test.</summary>
+    protected static List<string> TestItems(MainWindow window)
+    {
+        window.EditorArea.CodeEditor.RequestContextMenu();
+        Ui.Settle();
+        Avalonia.Controls.ContextMenu menu = window.OpenContextMenu ?? throw new InvalidOperationException("The editor's menu did not open");
+        List<string> items = [.. menu.Items.OfType<Avalonia.Controls.MenuItem>().Select(i => i.Header as string ?? string.Empty)
+            .Where(h => h.StartsWith("Run '", StringComparison.Ordinal) || h.StartsWith("Debug '", StringComparison.Ordinal))];
+        menu.Close();
+        Ui.Settle();
+        return items;
+    }
+
+    /// <summary>The menu a click on the run icon beside a line of a file opens, the file opened first.</summary>
+    protected static MenuItem[] TestMarkMenu(MainWindow window, string path, string line)
+    {
+        window.OpenFile(path);
+        Ui.Settle();
+        Pitstop.App.Workspace.OpenDocument document = window.EditorArea.Active!;
+        int at = Array.IndexOf(document.Text.Snapshot.ToString().Split('\n'), line);
+        Assert.True(at >= 0, $"{Path.GetFileName(path)} has no line '{line}'");
+        Ui.WaitFor(() => document.TestMarks.Any(m => m.Line == at),
+            () => $"the run icon beside {line.Trim()} in {Path.GetFileName(path)}; it has icons on lines [{string.Join(", ", document.TestMarks.Select(m => m.Line))}]");
+        CodeEditor shown = window.EditorArea.CodeEditor;
+        double x = Enumerable.Range(0, 400).First(x => shown.IsOnGutterColumn(shown.Gutter!.Marks, new Point(x, 0))) + 3;
+        Ui.Click(shown, new Point(x, shown.PointOf(document.Text.Snapshot.GetLineStart(at)).Y + (shown.LineHeight / 2)));
+        return [.. Assert.IsType<MenuFlyout>(window.TestMarkMenu).Items.OfType<MenuItem>()];
+    }
+
+    /// <summary>The Unit Tests window's Stop, on its toolbar.</summary>
+    protected static Button StopButton(MainWindow window) =>
+        window.BottomPanel.Tests.GetVisualDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Stop", StringComparison.Ordinal));
+
+    /// <summary>A window on the test's Sums.Tests with its tests' file open, with no C# language server, which finding,
+    /// running and debugging tests ask nothing of.</summary>
+    /// <summary>A window on the folder, the C# language server started only where a test asks it something (Hot Reload).</summary>
+    protected MainWindow Open(bool languageServer = false)
+    {
+        MainWindow window = Ui.OpenFolder(Folder, languageServer: languageServer);
+        window.OpenFile(Source);
+        Ui.Settle();
+        return window;
+    }
+
+    protected string Write(string relative, string text) => TestFolders.Write(PathNames.Canonical(Folder), relative, text);
+}

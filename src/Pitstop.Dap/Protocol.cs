@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
-using Passenger;
-using Passenger.Core;
+using Pitstop;
+using Pitstop.Core;
 
 namespace Pitstop.Dap;
 

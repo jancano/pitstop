@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Passenger.Core;
+using Pitstop.Core;
 using Pitstop.ProjectSystem;
 
 namespace Pitstop.Modules;

@@ -1,0 +1,59 @@
+using System.Globalization;
+using Pitstop.Roslyn.Extension;
+
+namespace Pitstop.UnitTests.Lsp;
+
+/// <summary>A whole C# list's sort texts as Passenger's extension sends them: in a list of more than 10,000 items each
+/// place is widened so the sort texts keep the server's order, each still ending as the server wrote it, and a list's
+/// later part sorts after its first.</summary>
+public class CompletionOrderTests
+{
+    [Fact]
+    public void A_lists_sort_texts_keep_the_servers_order_each_ending_as_the_server_wrote_it() => Cases.All(
+        ("a list of more than ten thousand sorts in the servers order once widened each ending as the server wrote it", A_list_of_more_than_ten_thousand_sorts_in_the_servers_order_once_widened_each_ending_as_the_server_wrote_it),
+        ("a later parts sort texts sort after any first parts and before the postfix templates each ending as the server wrote it", A_later_parts_sort_texts_sort_after_any_first_parts_and_before_the_postfix_templates_each_ending_as_the_server_wrote_it));
+
+    private void A_list_of_more_than_ten_thousand_sorts_in_the_servers_order_once_widened_each_ending_as_the_server_wrote_it()
+    {
+        string[] written = ServersSortTexts(12_345);
+        Assert.NotEqual(Enumerable.Range(0, written.Length), SortedPlaces(written));
+
+        string[] widened = CompletionOrder.Widened(written)!;
+        Assert.Equal(Enumerable.Range(0, written.Length), SortedPlaces(widened));
+        for (int i = 0; i < written.Length; i++)
+        {
+            Assert.True(widened[i].Length == 5 + Own(i).Length && widened[i].EndsWith(Own(i), StringComparison.Ordinal),
+                $"Item {i}'s sort text widened to {widened[i]} from the server's {written[i]}: resolving it reads the server's own at its end");
+        }
+    }
+
+    private void A_later_parts_sort_texts_sort_after_any_first_parts_and_before_the_postfix_templates_each_ending_as_the_server_wrote_it()
+    {
+        foreach ((int inScope, int notImported) in new[] { (77, 8_577), (12_345, 321), (2_038, 12_448), (0, 5) })
+        {
+            string[] first = CompletionOrder.Widened(ServersSortTexts(inScope)) ?? ServersSortTexts(inScope);
+            string[] written = ServersSortTexts(notImported);
+            string[] later = CompletionOrder.Widened(written, later: true)!;
+            string[] all = [.. first, .. later];
+            Assert.True(Enumerable.Range(0, all.Length).SequenceEqual(SortedPlaces(all)),
+                $"A list of {inScope} items in scope and {notImported} added later sorts out of its order: the items added would sit among the first");
+            for (int i = 0; i < later.Length; i++)
+            {
+                Assert.True(later[i].EndsWith(Own(i), StringComparison.Ordinal) && string.CompareOrdinal(later[i], "~") < 0 && string.CompareOrdinal(later[i], "!") > 0,
+                    $"Later item {i}'s sort text {later[i]} from the server's {written[i]}: it must end as the server wrote it and sort between the templates' '!' and '~'");
+            }
+        }
+    }
+
+    /// <summary>The sort texts the server writes for a list of <paramref name="count"/>: each item's place in at least four
+    /// digits, then its own.</summary>
+    private static string[] ServersSortTexts(int count) =>
+        [.. Enumerable.Range(0, count).Select(i => i.ToString("D4", CultureInfo.InvariantCulture) + Own(i))];
+
+    /// <summary>An item's own sort text, of a length that varies with its place.</summary>
+    private static string Own(int place) => place % 3 == 0 ? string.Empty : "Name" + new string('z', place % 7);
+
+    /// <summary>The places of sort texts, ordered as their sort texts compare.</summary>
+    private static IEnumerable<int> SortedPlaces(string[] sortTexts) =>
+        Enumerable.Range(0, sortTexts.Length).OrderBy(i => sortTexts[i], StringComparer.Ordinal);
+}

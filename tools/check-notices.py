@@ -28,7 +28,7 @@ NOT_SHIPPED = {
 }
 
 # The container tools' project and the systems they are published for.
-CONTAINER_TOOLS = os.path.join("src", "Passenger.ContainerTools", "Passenger.ContainerTools.csproj")
+CONTAINER_TOOLS = os.path.join("src", "Pitstop.ContainerTools", "Pitstop.ContainerTools.csproj")
 CONTAINER_TOOLS_RIDS = ["linux-x64", "linux-arm64", "linux-musl-x64", "linux-musl-arm64"]
 
 
@@ -55,7 +55,7 @@ def solution_packages():
 
 def roslyn_packages():
     """Each package id the restored Roslyn language server's .deps.json files name."""
-    properties = json.loads(dotnet("msbuild", "src/Passenger.Lsp/Passenger.Lsp.csproj", "-getProperty:RoslynServerRid",
+    properties = json.loads(dotnet("msbuild", "src/Pitstop.Lsp/Pitstop.Lsp.csproj", "-getProperty:RoslynServerRid",
                                    "-getProperty:RoslynServerVersion", "-getProperty:NuGetPackageRoot"))["Properties"]
     rid, version, packages = properties["RoslynServerRid"], properties["RoslynServerVersion"], properties["NuGetPackageRoot"]
     folder = os.path.join(packages, f"roslyn-language-server.{rid.lower()}", version.lower())
@@ -100,7 +100,7 @@ def web_packages():
     """Each npm package the web language servers' lock file pins, carried under web/, and each the tests' own lock file
     pins (their project's own ESLint and Prettier)."""
     used = {}
-    for lock, user in [(("src", "Passenger.Lsp", "WebServers"), "web/"), (("tests", "Passenger.Tests", "NodePackages"), "the tests' node_modules")]:
+    for lock, user in [(("src", "Pitstop.Lsp", "WebServers"), "web/"), (("tests", "Pitstop.Tests", "NodePackages"), "the tests' node_modules")]:
         with open(os.path.join(ROOT, *lock, "package-lock.json"), encoding="utf-8") as f:
             packages = json.load(f).get("packages", {})
         for place, package in packages.items():

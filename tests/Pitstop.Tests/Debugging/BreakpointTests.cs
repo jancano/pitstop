@@ -1,0 +1,315 @@
+using System.Diagnostics;
+using Pitstop.Dap;
+using Pitstop.Tests.Debugging.Helpers;
+
+namespace Pitstop.Tests.Debugging;
+
+[Collection(DebugSession.Collection)]
+public class BreakpointTests(ITestOutputHelper testOutputHelper)
+{
+    private static readonly int MyIntSet = Debuggees.Line("DebuggableConsoleApp", "MyClass.cs", "int myInt = 4;");
+
+    /// <summary>The gate's breakpoints as one flow: one set before its module loads told pending then bound, one
+    /// answered with where it bound once its symbols are in, one stopping at the statement of its column, at a line's
+    /// first statement and at a statement's start, and one in a file of the program's name in another folder binding to
+    /// none of it.</summary>
+    [Gate]
+    [Fact]
+    public async Task The_gates_breakpoints_hold_as_one_flow()
+    {
+        await Flow.StepApartAsync("a breakpoint set before its module loads is told pending then bound at its statement", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_set_before_its_module_loads_is_told_pending_then_bound_at_its_statement());
+        await Flow.StepApartAsync("a breakpoint given a column stops at the statement at that column", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_given_a_column_stops_at_the_statement_at_that_column());
+        await Flow.StepApartAsync("a breakpoint on a line of several statements stops at the first", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_on_a_line_of_several_statements_stops_at_the_first());
+        await Flow.StepApartAsync("a breakpoint inside a statement of several lines stops at its start", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_inside_a_statement_of_several_lines_stops_at_its_start());
+        await Flow.StepApartAsync("a breakpoint set once its symbols have loaded is answered with where it bound", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_set_once_its_symbols_have_loaded_is_answered_with_where_it_bound());
+        await Flow.StepApartAsync("a breakpoint in a file named as the programs in another folder binds to none of it", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_in_a_file_named_as_the_programs_in_another_folder_binds_to_none_of_it());
+    }
+
+    private async Task A_breakpoint_set_before_its_module_loads_is_told_pending_then_bound_at_its_statement()
+    {
+        bool startSuspended = true;
+        await using DebugSession debugProtocolHost = DebugSession.ForAttach(testOutputHelper, startSuspended, out Process p2);
+
+        await debugProtocolHost
+            .InitializeAsync()
+            .AttachAsync(p2.Id)
+            .WaitForInitializedEvent();
+        string breakpointedFilePath = Debuggees.Source("DebuggableConsoleApp", "MyClass.cs");
+        await debugProtocolHost
+            .BreakpointsAsync([MyIntSet], breakpointedFilePath)
+            .ConfigurationDoneAsync()
+            .ResumeRuntimeAsync(p2.Id, startSuspended);
+
+        BreakpointEvent expectedBreakpointEvent1 = new BreakpointEvent
+        {
+            Reason = EventReasons.Changed,
+            Breakpoint = new DapBreakpoint
+            {
+                Id = 1,
+                Message = "Breakpoint has not been processed by the debugger.",
+                Verified = false,
+                Reason = BreakpointReasons.Pending,
+                Line = MyIntSet
+            }
+        };
+        BreakpointEvent breakpointEvent = await debugProtocolHost.WaitForEvent<BreakpointEvent>();
+        Assert.Equivalent(expectedBreakpointEvent1, breakpointEvent, strict: true);
+
+        BreakpointEvent expectedBreakpointEvent2 = new BreakpointEvent
+        {
+            Reason = EventReasons.Changed,
+            Breakpoint = new DapBreakpoint
+            {
+                Id = 1,
+                Verified = true,
+                Line = MyIntSet,
+                Column = 3,
+                EndLine = MyIntSet,
+                EndColumn = 17,
+                Offset = 0,
+                Source = new DapSource { Path = breakpointedFilePath, Name = "MyClass.cs", SourceReference = 0 }
+            }
+        };
+
+        BreakpointEvent breakpointEvent2 = await debugProtocolHost.WaitForEvent<BreakpointEvent>();
+        Assert.Equivalent(expectedBreakpointEvent2, breakpointEvent2, strict: true);
+
+        StoppedEvent stoppedEvent = await debugProtocolHost.WaitForStoppedEvent();
+        (string filePath, int line, int column) stopInfo = stoppedEvent.ReadStopInfo();
+        Assert.EndsWith("MyClass.cs", stopInfo.filePath);
+        Assert.Equal(MyIntSet, stopInfo.line);
+    }
+
+    private async Task A_breakpoint_given_a_column_stops_at_the_statement_at_that_column()
+    {
+        bool startSuspended = true;
+        await using DebugSession debugProtocolHost = DebugSession.ForAttach(testOutputHelper, startSuspended, out Process p2);
+
+        await debugProtocolHost
+            .InitializeAsync()
+            .AttachAsync(p2.Id)
+            .WaitForInitializedEvent();
+
+        string breakpointedFilePath = Debuggees.Source("DebuggableConsoleApp", "ColumnBreakpointClass.cs");
+        int line = Debuggees.Line("DebuggableConsoleApp", "ColumnBreakpointClass.cs", "column-breakpoint-line");
+        int column = GetColumnNumber(breakpointedFilePath, line, "int third");
+        int endColumn = column + "int third = second + 1;".Length;
+
+        await debugProtocolHost
+            .BreakpointsAsync(breakpointedFilePath, [new DapSourceBreakpoint(line, Column: column)])
+            .ConfigurationDoneAsync()
+            .ResumeRuntimeAsync(p2.Id, startSuspended);
+
+        BreakpointEvent breakpointEvent = await debugProtocolHost.WaitForEvent<BreakpointEvent>(s => s.Breakpoint.Verified);
+        Assert.Equal(line, breakpointEvent.Breakpoint.Line);
+        Assert.Equal(column, breakpointEvent.Breakpoint.Column);
+        Assert.Equal(endColumn, breakpointEvent.Breakpoint.EndColumn);
+
+        StoppedEvent stoppedEvent = await debugProtocolHost.WaitForStoppedEvent();
+        StackTraceResponse? stackTraceResponse = await debugProtocolHost.StackTraceAsync(stoppedEvent.ThreadId!.Value);
+        DapStackFrame topFrame = stackTraceResponse.StackFrames.Single();
+
+        Assert.EndsWith("ColumnBreakpointClass.cs", topFrame.Source?.Path);
+        Assert.Equal(line, topFrame.Line);
+        Assert.Equal(column, topFrame.Column);
+        Assert.Equal(endColumn, topFrame.EndColumn);
+    }
+
+    private async Task A_breakpoint_on_a_line_of_several_statements_stops_at_the_first()
+    {
+        bool startSuspended = true;
+        await using DebugSession debugProtocolHost = DebugSession.ForAttach(testOutputHelper, startSuspended, out Process p2);
+
+        await debugProtocolHost
+            .InitializeAsync()
+            .AttachAsync(p2.Id)
+            .WaitForInitializedEvent();
+
+        string breakpointedFilePath = Debuggees.Source("DebuggableConsoleApp", "ColumnBreakpointClass.cs");
+        int line = Debuggees.Line("DebuggableConsoleApp", "ColumnBreakpointClass.cs", "column-breakpoint-line");
+        int expectedColumn = GetColumnNumber(breakpointedFilePath, line, "int first");
+
+        await debugProtocolHost
+            .BreakpointsAsync(breakpointedFilePath, [new DapSourceBreakpoint(line)])
+            .ConfigurationDoneAsync()
+            .ResumeRuntimeAsync(p2.Id, startSuspended);
+
+        StoppedEvent stoppedEvent = await debugProtocolHost.WaitForStoppedEvent();
+        StackTraceResponse? stackTraceResponse = await debugProtocolHost.StackTraceAsync(stoppedEvent.ThreadId!.Value);
+        DapStackFrame topFrame = stackTraceResponse.StackFrames.Single();
+
+        Assert.EndsWith("ColumnBreakpointClass.cs", topFrame.Source?.Path);
+        Assert.Equal(line, topFrame.Line);
+        Assert.Equal(expectedColumn, topFrame.Column);
+    }
+
+    private async Task A_breakpoint_inside_a_statement_of_several_lines_stops_at_its_start()
+    {
+        bool startSuspended = true;
+        await using DebugSession debugProtocolHost = DebugSession.ForAttach(testOutputHelper, startSuspended, out Process p2);
+
+        await debugProtocolHost
+            .InitializeAsync()
+            .AttachAsync(p2.Id)
+            .WaitForInitializedEvent();
+
+        string breakpointedFilePath = Debuggees.Source("DebuggableConsoleApp", "ColumnBreakpointClass.cs");
+        int statementStartLine = Debuggees.Line("DebuggableConsoleApp", "ColumnBreakpointClass.cs", "int multi =");
+        int requestedLine = statementStartLine + 1;
+        int requestedColumn = GetColumnNumber(breakpointedFilePath, requestedLine, "1 + 25");
+        int expectedColumn = GetColumnNumber(breakpointedFilePath, statementStartLine, "int multi");
+
+        await debugProtocolHost
+            .BreakpointsAsync(breakpointedFilePath, [new DapSourceBreakpoint(requestedLine, Column: requestedColumn)])
+            .ConfigurationDoneAsync()
+            .ResumeRuntimeAsync(p2.Id, startSuspended);
+
+        BreakpointEvent breakpointEvent = await debugProtocolHost.WaitForEvent<BreakpointEvent>(s => s.Breakpoint.Verified);
+        Assert.Equal(statementStartLine, breakpointEvent.Breakpoint.Line);
+        Assert.Equal(expectedColumn, breakpointEvent.Breakpoint.Column);
+
+        StoppedEvent stoppedEvent = await debugProtocolHost.WaitForStoppedEvent();
+        StackTraceResponse? stackTraceResponse = await debugProtocolHost.StackTraceAsync(stoppedEvent.ThreadId!.Value);
+        DapStackFrame topFrame = stackTraceResponse.StackFrames.Single();
+
+        Assert.EndsWith("ColumnBreakpointClass.cs", topFrame.Source?.Path);
+        Assert.Equal(statementStartLine, topFrame.Line);
+        Assert.Equal(expectedColumn, topFrame.Column);
+    }
+
+    private async Task A_breakpoint_set_once_its_symbols_have_loaded_is_answered_with_where_it_bound()
+    {
+        bool startSuspended = true;
+        await using DebugSession debugProtocolHost = DebugSession.ForAttach(testOutputHelper, startSuspended, out Process p2);
+
+        await debugProtocolHost
+            .InitializeAsync()
+            .AttachAsync(p2.Id)
+            .WaitForInitializedEvent();
+
+        string breakpointedFilePath = Debuggees.Source("DebuggableConsoleApp", "ColumnBreakpointClass.cs");
+        int line = Debuggees.Line("DebuggableConsoleApp", "ColumnBreakpointClass.cs", "column-breakpoint-line");
+
+        await debugProtocolHost
+            .BreakpointsAsync(breakpointedFilePath, [new DapSourceBreakpoint(line)])
+            .ConfigurationDoneAsync()
+            .ResumeRuntimeAsync(p2.Id, startSuspended);
+
+        await debugProtocolHost.WaitForStoppedEvent();
+
+        int column = GetColumnNumber(breakpointedFilePath, line, "int second");
+        int endColumn = column + "int second = first + 1;".Length;
+
+        SetBreakpointsResponse? response = await debugProtocolHost.SetBreakpointsAsync(breakpointedFilePath, [new DapSourceBreakpoint(line, Column: column)]);
+
+        DapBreakpoint breakpoint = response.Breakpoints.Single();
+
+        Assert.True(breakpoint.Verified);
+        Assert.Equal(line, breakpoint.Line);
+        Assert.Equal(column, breakpoint.Column);
+        Assert.Equal(line, breakpoint.EndLine);
+        Assert.Equal(endColumn, breakpoint.EndColumn);
+    }
+
+    private async Task A_breakpoint_in_a_file_named_as_the_programs_in_another_folder_binds_to_none_of_it()
+    {
+        bool startSuspended = true;
+        await using DebugSession debugProtocolHost = DebugSession.ForAttach(testOutputHelper, startSuspended, out Process p2);
+
+        await debugProtocolHost
+            .InitializeAsync()
+            .AttachAsync(p2.Id)
+            .WaitForInitializedEvent();
+        // MyClass.cs is in the project's root; SomeFolder holds other files, none of them this one.
+        string wrongFolder = Debuggees.Source("DebuggableConsoleApp", "SomeFolder", "MyClass.cs");
+        SetBreakpointsResponse wrong = await debugProtocolHost.RequestAsync<SetBreakpointsResponse>(DapCommands.SetBreakpoints,
+            new SetBreakpointsArguments(new DapSource { Path = wrongFolder }, [new DapSourceBreakpoint(Debuggees.MyMethodEnd)]));
+        string dotted = Debuggees.Source("DebuggableConsoleApp", "Namespace1", "..", "MyClass.cs");
+        SetBreakpointsResponse right = await debugProtocolHost.SetBreakpointsAsync(dotted, [new DapSourceBreakpoint(Debuggees.MyMethodEnd)]);
+        await debugProtocolHost
+            .ConfigurationDoneAsync()
+            .ResumeRuntimeAsync(p2.Id, startSuspended);
+
+        StoppedEvent stoppedEvent = await debugProtocolHost.WaitForStoppedEvent();
+        Assert.Equal(Debuggees.Source("DebuggableConsoleApp", "MyClass.cs"), Path.GetFullPath(stoppedEvent.ReadStopInfo().filePath));
+        Assert.Equal(Debuggees.MyMethodEnd, stoppedEvent.ReadStopInfo().line);
+        Assert.Equal([right.Breakpoints.Single().Id!.Value], stoppedEvent.HitBreakpointIds);
+        Assert.False(wrong.Breakpoints.Single().Verified);
+
+        // With the program's symbols loaded, the other folder's name still binds to nothing.
+        SetBreakpointsResponse again = await debugProtocolHost.RequestAsync<SetBreakpointsResponse>(DapCommands.SetBreakpoints,
+            new SetBreakpointsArguments(new DapSource { Path = wrongFolder }, [new DapSourceBreakpoint(Debuggees.MyMethodEnd)]));
+        Assert.False(again.Breakpoints.Single().Verified);
+    }
+
+    /// <summary>A breakpoint given a lambda's column stops inside the lambda each time it runs, and one in a file
+    /// compiled into two assemblies stops in each.</summary>
+    [Fact]
+    public async Task A_breakpoint_given_a_lambdas_column_or_in_a_file_of_two_assemblies_stops_in_each()
+    {
+        await Flow.StepApartAsync<BreakpointTests>("a breakpoint given a lambda's column stops inside the lambda each time it runs", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_given_a_lambdas_column_stops_inside_the_lambda_each_time_it_runs());
+        await Flow.StepApartAsync<BreakpointTests>("a breakpoint in a file compiled into two assemblies stops in each", () => new BreakpointTests(testOutputHelper), t => t.A_breakpoint_in_a_file_compiled_into_two_assemblies_stops_in_each());
+    }
+
+    private async Task A_breakpoint_given_a_lambdas_column_stops_inside_the_lambda_each_time_it_runs()
+    {
+        string source = Debuggees.Source(Stepping, "Program.cs");
+        int line = Debuggees.Line(Stepping, Counted);
+        int column = GetColumnNumber(source, line, "n > 2");
+        await using DebugSession host = DebugSession.ForLaunch(testOutputHelper);
+        await host.InitializeAsync().LaunchAsync(Debuggees.Program(Stepping), stopAtEntry: false, justMyCode: true).WaitForInitializedEvent();
+        await host.BreakpointsAsync(source, [new DapSourceBreakpoint(line, column)]).ConfigurationDoneAsync();
+
+        foreach (string n in new[] { "1", "2" })
+        {
+            StoppedEvent stop = await host.WaitForStoppedEvent();
+            Assert.Equal((line, column), (stop.ReadStopInfo().line, stop.ReadStopInfo().column));
+            Assert.EndsWith("!Queries.Run.lambda(int n)", (await host.TopFrameAsync(stop.ThreadId!.Value)).Name, StringComparison.Ordinal);
+            Assert.Equal(n, Assert.Single(await host.LocalsAsync(stop), v => v.Name == "n").Value);
+            await host.ContinueAsync();
+        }
+    }
+
+    /// <summary>One file compiled into two assemblies, the program and a library it calls, is code in each: a breakpoint in
+    /// it stops in the program's copy, then in the library's, which loads after the breakpoint was bound in the program.</summary>
+    private async Task A_breakpoint_in_a_file_compiled_into_two_assemblies_stops_in_each()
+    {
+        string source = Debuggees.Source("LinkedLibrary", "Linked.cs");
+        int line = Debuggees.Line("LinkedLibrary", "Linked.cs", "return value * 2;");
+        await using DebugSession host = DebugSession.ForLaunch(testOutputHelper);
+        await host.InitializeAsync().LaunchAsync(Debuggees.Program("PassengerCases"), stopAtEntry: false, justMyCode: true, arguments: ["linked"]).WaitForInitializedEvent();
+        await host.BreakpointsAsync(line, source).ConfigurationDoneAsync();
+
+        StoppedEvent stop = await host.WaitForStoppedEvent();
+        foreach ((string assembly, string value) in new[] { ("PassengerCases", "2"), ("LinkedLibrary", "3") })
+        {
+            if (assembly is "LinkedLibrary")
+            {
+                stop = await host.ContinueAsync().WaitForStoppedEvent();
+            }
+            string frame = (await host.TopFrameAsync(stop.ThreadId!.Value)).Name;
+            Assert.True(stop.ReadStopInfo().line == line && frame.StartsWith($"{assembly}.dll!", StringComparison.Ordinal),
+                $"The breakpoint in Linked.cs was to stop in {assembly}'s copy, but stopped at line {stop.ReadStopInfo().line} in {frame}");
+            Assert.Equal(value, Assert.Single(await host.LocalsAsync(stop), v => v.Name == "value").Value);
+        }
+        Assert.Contains("linked 4 6", (await host.ContinueAsync().WaitForEnd()).Output, StringComparison.Ordinal);
+    }
+
+    private const string Stepping = "SteppingConsoleApp";
+
+    private const string Counted = "int counted = numbers.Count(n => n > 2);";
+
+    private const string Unread = "IEnumerable<int> unread = numbers.Where(n => n > 3);";
+
+    private static int GetColumnNumber(string filePath, int lineNumber, string marker)
+    {
+        string line = File.ReadLines(filePath).ElementAt(lineNumber - 1);
+        int index = line.IndexOf(marker, StringComparison.Ordinal);
+        if (index < 0)
+        {
+            throw new InvalidOperationException($"Marker '{marker}' not found on line {lineNumber} in {filePath}");
+        }
+
+        return index + 1;
+    }
+}

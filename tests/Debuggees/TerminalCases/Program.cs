@@ -232,7 +232,7 @@ switch (args)
         StringBuilder log = new();
         for (int i = 1, n = int.Parse(count); i <= n; i++)
         {
-            log.Append($"line {i:D7} of the build: Compiling Passenger.Terminal/TerminalScreen.cs, 0 warnings\n");
+            log.Append($"line {i:D7} of the build: Compiling Pitstop.Terminal/TerminalScreen.cs, 0 warnings\n");
             if (log.Length > 16 * 1024 || i == n)
             {
                 Write(log.ToString());

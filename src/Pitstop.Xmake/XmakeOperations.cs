@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Passenger.Core;
+using Pitstop.Core;
 
 namespace Pitstop.Xmake;
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes src/Passenger.Workspace/GDScript/GodotRenames.json, the names Godot 4 renamed from Godot 3's that its GDScript
+"""Writes src/Pitstop.Workspace/GDScript/GodotRenames.json, the names Godot 4 renamed from Godot 3's that its GDScript
 analyzer hints at ("Did you mean to use ...?"), from Godot's own editor/project_upgrade/renames_map_3_to_4.cpp at one
 commit (MIT, named in THIRD_PARTY_NOTICES.md): the maps check_for_renamed_identifier reads, in the order it reads them,
 each the old name and the new, the first of a name kept as get_rename_from_map takes it. Commented-out entries are left
@@ -17,7 +17,7 @@ _spec.loader.exec_module(fetched)
 
 SOURCE = "editor/project_upgrade/renames_map_3_to_4.cpp"
 ROOT = fetched.ROOT
-OUT = os.path.join(ROOT, "src", "Passenger.Workspace", "GDScript", "GodotRenames.json")
+OUT = os.path.join(ROOT, "src", "Pitstop.Workspace", "GDScript", "GodotRenames.json")
 
 # What an identifier's hint reads, then what a call's does (gdscript_analyzer.cpp's check_for_renamed_identifier).
 IDENTIFIER = ["gdscript_properties_renames", "enum_renames", "color_renames", "class_renames", "builtin_types_renames"]

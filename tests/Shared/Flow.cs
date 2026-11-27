@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Xunit.Sdk;
 
-namespace Passenger.TestTables;
+namespace Pitstop.TestTables;
 
 /// <summary>A test told as named steps in turn, each the check a test of its own once made, sharing what the steps before
 /// it made: a window test's one window, project and server load. A step's name says what holds, so a failure names the
@@ -195,7 +195,7 @@ public static class Flow
         {
             Passed.GetOrCreateValue(test).Add(name);
         }
-        TestContext.Current.TestOutputHelper?.WriteLine($"Step passed in {Passenger.Core.Durations.Said(Stopwatch.GetElapsedTime(began))}: {name}");
+        TestContext.Current.TestOutputHelper?.WriteLine($"Step passed in {Pitstop.Core.Durations.Said(Stopwatch.GetElapsedTime(began))}: {name}");
     }
 
     private static StepFailed Failed(string name, Exception failure)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes src/Passenger.Text/WideCharacters.cs from the Unicode Character Database.
+"""Writes src/Pitstop.Text/WideCharacters.cs from the Unicode Character Database.
 
 A character is two columns wide when its East_Asian_Width is Wide or Fullwidth, or when it is presented as an emoji
 (Emoji_Presentation). The files are fetched once into artifacts/unicode/<version>/. VERSION is the Unicode version
@@ -44,7 +44,7 @@ def main():
     lines = [
         f"// Written by tools/unicode-widths.py from the Unicode Character Database {VERSION} (EastAsianWidth.txt and",
         "// emoji-data.txt, under the Unicode License v3; see THIRD_PARTY_NOTICES.md). Run it again rather than edit this.",
-        "namespace Passenger.Text;",
+        "namespace Pitstop.Text;",
         "",
         "/// <summary>The characters drawn two columns wide: East Asian Wide and Fullwidth, and those presented as",
         "/// emoji (the regional indicators besides).</summary>",

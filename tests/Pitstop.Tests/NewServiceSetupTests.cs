@@ -1,0 +1,857 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Pitstop.App;
+using Pitstop.App.Containers;
+using Pitstop.App.Editors;
+using Pitstop.App.Explorer;
+using Pitstop.App.Run;
+using Pitstop.App.Templates;
+using Pitstop.App.Workspace;
+using Pitstop.Core;
+using Pitstop.Editor;
+
+namespace Pitstop.Tests;
+
+/// <summary>New Solution and New Project set a service up to run as chosen with it, by Add's own actions: a Dockerfile with
+/// a Docker launch profile beside the template's own, its container configuration chosen; compose.yaml with it as a
+/// service, its Compose configuration chosen and brought up by the first Run; a class library offered none, saying why;
+/// the choice kept for the next service; and one Undo taking the whole creation back.</summary>
+[AboutMacOS]
+public sealed class NewServiceSetupTests : IDisposable
+{
+    private readonly string settings = TestFolders.Create("settings-");
+    private readonly string place = TestFolders.Create("svc-");
+
+    public void Dispose()
+    {
+        NewProjectDialog.Remembered = ProjectSetup.None;
+        TestFolders.Delete(settings);
+        TestFolders.Delete(place);
+    }
+
+    /// <summary>Skips a test of a Docker or Compose set-up where no docker command is installed, which New Project needs to
+    /// offer one; the command is looked for off the window's thread.</summary>
+    private static void SkipWithoutDockerCommand()
+    {
+        string? why = Ui.AwaitPumped(Waiting.Apart(() => ContainerEngine.Shared.Cli is null
+            ? "No docker command is installed here, so New Project offers no Docker or Compose set-up" : null),
+            "the docker command to be looked for", TimeSpan.FromMinutes(1));
+        Assert.SkipWhen(why is not null, why ?? string.Empty);
+    }
+
+    /// <summary>New Project offers a service's set-ups where it has some, and one Undo takes its creation back without
+    /// its bytes, a global.json its template wrote too, or refuses where a file changed or its folder cannot be set
+    /// aside, as one flow, each step the check one test made in an instance of its own.</summary>
+    [AvaloniaFact]
+    public void Undo_of_New_Project_takes_its_creation_back_whole_or_refuses_saying_why()
+    {
+        Flow.StepApart<NewServiceSetupTests>("New Project offers a service defaults library no set up and a web API its set ups", t => t.New_Project_offers_a_service_defaults_library_no_set_up_and_a_web_API_its_set_ups());
+        Flow.StepApart<NewServiceSetupTests>("New Project of an MVC app keeps its folder for Undo without its bytes", t => t.New_Project_of_an_MVC_app_keeps_its_folder_for_Undo_without_its_bytes());
+        Flow.StepApart<NewServiceSetupTests>("New Project of MSTest names the global json its template writes and Undo or a stopped Create takes it away", t => t.New_Project_of_MSTest_names_the_global_json_its_template_writes_and_Undo_or_a_stopped_Create_takes_it_away());
+        Flow.StepApart<NewServiceSetupTests>("Undo of New Project refuses once a file in its folder has changed naming it", t => t.Undo_of_New_Project_refuses_once_a_file_in_its_folder_has_changed_naming_it());
+        Flow.StepApart<NewServiceSetupTests>("Undo of New Project whose folder cannot be set aside says so leaves the folder whole and can be asked again", t => t.Undo_of_New_Project_whose_folder_cannot_be_set_aside_says_so_leaves_the_folder_whole_and_can_be_asked_again());
+    }
+
+    /// <summary>New Project with a Dockerfile or Docker Compose is chosen to run in its container or with Compose,
+    /// joins the solution's compose file, and keeps what the person types or renames meanwhile out of its Undo, as one
+    /// flow, each step in an instance of its own.</summary>
+    [AvaloniaFact]
+    public void New_Project_sets_a_service_up_to_run_in_its_container_or_with_Compose_the_persons_edits_out_of_its_Undo()
+    {
+        Flow.StepApart<NewServiceSetupTests>("New Project with a Dockerfile is chosen to run in its container and one Undo takes the whole creation back", t => t.New_Project_with_a_Dockerfile_is_chosen_to_run_in_its_container_and_one_Undo_takes_the_whole_creation_back());
+        Flow.StepApart<NewServiceSetupTests>("typing in another file while New Project sets its service up stays out of its Undo", t => t.Typing_in_another_file_while_New_Project_sets_its_service_up_stays_out_of_its_Undo());
+        Flow.StepApart<NewServiceSetupTests>("renaming a file while New Project sets its service up stays out of its Undo", t => t.Renaming_a_file_while_New_Project_sets_its_service_up_stays_out_of_its_Undo());
+        Flow.StepApart<NewServiceSetupTests>("New Project with Docker Compose joins the solutions compose file beside its services", t => t.New_Project_with_Docker_Compose_joins_the_solutions_compose_file_beside_its_services());
+        Flow.StepApart<NewServiceSetupTests>("New Solution of a web API with Docker Compose is chosen to run with Compose and the first Run brings it up", t => t.New_Solution_of_a_web_API_with_Docker_Compose_is_chosen_to_run_with_Compose_and_the_first_Run_brings_it_up());
+    }
+
+    /// <summary>New Project into a solution, with a Dockerfile: the project, its Dockerfile and a Docker launch profile beside
+    /// the template's own are made, its container configuration chosen; a class library is offered no set-up, saying why,
+    /// and the choice comes back with the next service; one Undo in the Solution view takes the project, its files and its
+    /// line in the solution back, and Redo makes them again.</summary>
+    private void New_Project_with_a_Dockerfile_is_chosen_to_run_in_its_container_and_one_Undo_takes_the_whole_creation_back()
+    {
+        SkipWithoutDockerCommand();
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        string solution = Path.Combine(PathNames.Canonical(place), "Shop.slnx");
+        byte[] before = File.ReadAllBytes(solution);
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        try
+        {
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "web");
+            dialog.ProjectName = "Api";
+            dialog.Framework = TestProjects.Framework;
+            Assert.True(dialog.Offers(ProjectSetup.Dockerfile), $"A web project was offered no Dockerfile: {dialog.SetupNote}");
+            dialog.SetupChooser.SelectedIndex = (int)ProjectSetup.Dockerfile;
+            Ui.Settle();
+            Assert.Contains("Docker launch profile", dialog.SetupNote, StringComparison.Ordinal);
+
+            Choose(dialog, "classlib");
+            Assert.False(dialog.SetupChooser.IsEnabled, "A class library was offered a container or Aspire set-up");
+            Assert.EndsWith("is not a service: containers and Aspire are set up for web, API, worker, Blazor and gRPC projects", dialog.SetupNote, StringComparison.Ordinal);
+            Assert.Equal(ProjectSetup.None, dialog.Setup);
+            Choose(dialog, "web");
+            Assert.Equal(ProjectSetup.Dockerfile, dialog.Setup);
+            dialog.ProjectName = "Api";
+            dialog.Framework = TestProjects.Framework;
+            Created(dialog, "the web project");
+
+            Assert.Null(SetUp(window));
+            string api = Path.Combine(PathNames.Canonical(place), "Api");
+            Assert.True(File.Exists(Path.Combine(api, "Dockerfile")), $"The new project has no Dockerfile: {window.Status}");
+            string settingsFile = File.ReadAllText(Path.Combine(api, "Properties", "launchSettings.json"));
+            Assert.Contains("\"Container (Dockerfile)\": {", settingsFile, StringComparison.Ordinal);
+            Assert.Contains("\"commandName\": \"Docker\"", settingsFile, StringComparison.Ordinal);
+            Assert.Contains("\"http\": {", settingsFile, StringComparison.Ordinal);
+            Assert.True(window.Configuration is { Name: "Api: Container (Dockerfile)", Kind: RunKind.Dockerfile },
+                $"The configuration chosen is {window.Configuration?.Name} ({window.Configuration?.Kind}), not the new project's container: [{string.Join(", ", window.Configurations.Select(c => c.Name))}]");
+            Assert.Contains("Api", window.WorkspaceModel!.Projects.Select(p => p.Name));
+
+            List<string> asked = Answer(window);
+            Ui.ClickRow(window, Row(window, NodeKind.Solution, "Shop"));
+            Ui.Run(window, EditorActions.Undo);
+            Ended(window, redo: false, "New Project Api");
+            Assert.Equal(["Undo"], asked);
+            Assert.False(Directory.Exists(api), $"Undo left the new project's folder: {window.Status}");
+            Assert.True(before.AsSpan().SequenceEqual(File.ReadAllBytes(solution)), $"Undo left the solution file as {File.ReadAllText(solution)}");
+            Ui.WaitFor(() => !window.WorkspaceModel!.Projects.Any(p => p.Name == "Api"), "the solution to be read without Api");
+
+            Ui.ClickRow(window, Row(window, NodeKind.Solution, "Shop"));
+            Ui.Run(window, EditorActions.Redo);
+            Ended(window, redo: true, "New Project Api");
+            Assert.True(File.Exists(Path.Combine(api, "Dockerfile")) && File.ReadAllText(Path.Combine(api, "Properties", "launchSettings.json")) == settingsFile,
+                $"Redo did not make the project and its set-up again: {window.Status}");
+            Assert.Contains("Api/Api.csproj", File.ReadAllText(solution), StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>New Project of Aspire's or MAUI's service defaults, class libraries both though tagged Web API and Service
+    /// (stand-ins with their templates' tags and project files, in a template home of the test's own, and MAUI's own where
+    /// its workload brings it), offers no set-up, saying why; a web API, chosen next, is offered its set-ups.</summary>
+    private void New_Project_offers_a_service_defaults_library_no_set_up_and_a_web_API_its_set_ups()
+    {
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        // Outside the folder opened, whose projects the templates' own would join.
+        string templates = TestFolders.Create("svc-templates-");
+        string? hive = ProjectTemplates.Hive;
+        ProjectTemplates.Hive = Directory.CreateDirectory(Path.Combine(templates, "hive")).FullName;
+        ProjectTemplates.Forget();
+        MainWindow? window = null;
+        try
+        {
+            string[] aspire = ["Common", "Aspire", "Cloud", "Web", "Web API", "API", "Service"];
+            DotnetNew(templates, ["install", WriteServiceDefaults(templates, "probe-aspire-servicedefaults", "Aspire Service Defaults", aspire, "Aspire.ServiceDefaults1")]);
+            DotnetNew(templates, ["install", WriteServiceDefaults(templates, "probe-maui-aspire-servicedefaults", ".NET MAUI for Aspire Service Defaults",
+                ["MAUI", .. aspire[1..]], "MauiAspire.1.ServiceDefaults")]);
+            window = Ui.OpenFolder(place, languageServer: false);
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            string[] libraries = [.. dialog.Templates.Where(t => t.Pack is null && t.ShortNames.Any(n => n.EndsWith("aspire-servicedefaults", StringComparison.Ordinal)))
+                .Select(t => t.ShortName)];
+            Assert.Contains("probe-aspire-servicedefaults", libraries);
+            Assert.Contains("probe-maui-aspire-servicedefaults", libraries);
+            foreach (string library in libraries)
+            {
+                Choose(dialog, library);
+                string name = dialog.Chosen!.Name;
+                Assert.False(dialog.SetupChooser.IsEnabled, $"{name}, a class library, was offered a container or Aspire set-up: {dialog.SetupNote}");
+                Assert.Equal($"{name} is not a service: its project is a class library, which makes no program to run in a container or under Aspire", dialog.SetupNote);
+                Assert.Equal(ProjectSetup.None, dialog.Setup);
+            }
+
+            Choose(dialog, "webapi");
+            Assert.True(dialog.SetupChooser.IsEnabled, $"A web API was offered no set-up: {dialog.SetupNote}");
+            Assert.DoesNotContain("is not a service", dialog.SetupNote, StringComparison.Ordinal);
+            dialog.Cancel();
+        }
+        finally
+        {
+            window?.Close();
+            ProjectTemplates.Hive = hive;
+            ProjectTemplates.Forget();
+            TestFolders.Delete(templates);
+        }
+    }
+
+    /// <summary>A stand-in of a service defaults template, in a folder of its own: the short name, name and tags given, and
+    /// a project as the template's own, which names the .NET SDK and no output type, as its primary output.</summary>
+    private static string WriteServiceDefaults(string templates, string shortName, string name, string[] classifications, string sourceName)
+    {
+        string folder = Directory.CreateDirectory(Path.Combine(templates, shortName, ".template.config")).Parent!.FullName;
+        File.WriteAllText(Path.Combine(folder, ".template.config", "template.json"), $$"""
+            {
+              "$schema": "http://json.schemastore.org/template",
+              "author": "Pitstop's tests",
+              "classifications": [ {{string.Join(", ", classifications.Select(c => $"\"{c}\""))}} ],
+              "identity": "Pitstop.Tests.{{shortName}}",
+              "groupIdentity": "Pitstop.Tests.{{shortName}}.Group",
+              "name": "{{name}}",
+              "shortName": "{{shortName}}",
+              "sourceName": "{{sourceName}}",
+              "preferNameDirectory": true,
+              "tags": { "language": "C#", "type": "project" },
+              "primaryOutputs": [ { "path": "{{sourceName}}.csproj" } ]
+            }
+            """);
+        File.WriteAllText(Path.Combine(folder, $"{sourceName}.csproj"), TestProjects.Library("<IsAspireSharedProject>true</IsAspireSharedProject>"));
+        return PathNames.Canonical(folder);
+    }
+
+    /// <summary>dotnet new with these arguments in the template home in force, as a terminal runs it.</summary>
+    private static void DotnetNew(string folder, string[] arguments)
+    {
+        ChildResult ran = Ui.Await(Waiting.Apart(() => ChildProcesses.RunAsync(ProjectTemplates.NewCommand(arguments, folder), limit: TimeSpan.FromMinutes(2))),
+            $"dotnet new {string.Join(' ', arguments)}", TimeSpan.FromMinutes(2) + TestFolders.Spare);
+        Assert.True(ran.Succeeded, $"dotnet new {string.Join(' ', arguments)} failed:\n{ran.Output}{ran.Error}");
+    }
+
+    /// <summary>New Project with a Dockerfile while the person types in another open file as its set-up waits for the new
+    /// project's evaluation: Undo in that file takes back only the typing, the new project staying, and New Project's own
+    /// Undo names no such file, the typing kept.</summary>
+    private void Typing_in_another_file_while_New_Project_sets_its_service_up_stays_out_of_its_Undo()
+    {
+        SkipWithoutDockerCommand();
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        const string Had = "static class Greeting\n{\n}\n";
+        TestFolders.Write(place, "Tool/Greeting.cs", Had);
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        string greeting = Path.Combine(PathNames.Canonical(place), "Tool", "Greeting.cs");
+        string api = Path.Combine(PathNames.Canonical(place), "Api");
+        TaskCompletionSource evaluated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        try
+        {
+            window.OpenFile(greeting);
+            Ui.Settle();
+            Task held = window.Session.Models.HoldEvaluation(Path.Combine(api, "Api.csproj"), evaluated.Task);
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "web");
+            dialog.ProjectName = "Api";
+            dialog.Framework = TestProjects.Framework;
+            dialog.SetupChooser.SelectedIndex = (int)ProjectSetup.Dockerfile;
+            Ui.Settle();
+            // Pumped, not settled: the set-up holds the window's background work while it waits for the evaluation held.
+            Ui.Click(dialog.CreateButton, settle: false);
+            Ui.PumpUntil(() => held.IsCompleted || dialog.Problem is not null, "the new project's evaluation to be held", TimeSpan.FromMinutes(5));
+            Assert.True(dialog.Problem is null, $"The web project was not made: {dialog.Problem}");
+            Assert.True(window.ServiceSetUp is { IsCompleted: false }, $"The set-up did not wait for the project's evaluation: {window.Status}");
+
+            window.EditorArea.CodeEditor.Focus();
+            Assert.Equal(greeting, window.EditorArea.Active?.Path);
+            window.KeyTextInput("Typed");
+            Assert.Equal("Typed" + Had, window.EditorArea.CodeEditor.Document.Snapshot.ToString());
+            evaluated.SetResult();
+            Assert.Null(SetUp(window));
+            Assert.True(File.Exists(Path.Combine(api, "Dockerfile")), $"The new project has no Dockerfile: {window.Status}");
+
+            List<(string Title, string Message)> asked = [];
+            window.Confirm = (title, message, _) =>
+            {
+                asked.Add((title, message));
+                return Task.FromResult(true);
+            };
+            window.OpenFile(greeting);
+            Ui.Settle();
+            Ui.Run(window, EditorActions.Undo);
+            Assert.True(asked.Count == 0, $"Undo in Greeting.cs asked {string.Join("; ", asked.Select(a => a.Message))}, as though the typing were New Project's");
+            Assert.Equal(Had, window.EditorArea.CodeEditor.Document.Snapshot.ToString());
+            Assert.True(Directory.Exists(api), $"Undo of the typing took the new project away: {window.Status}");
+
+            Ui.Run(window, EditorActions.Redo);
+            Assert.Equal("Typed" + Had, window.EditorArea.CodeEditor.Document.Snapshot.ToString());
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            Ended(window, redo: false, "New Project Api");
+            (string title, string message) = Assert.Single(asked);
+            Assert.Equal("Undo", title);
+            Assert.DoesNotContain("Greeting.cs", message, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(api), $"Undo left the new project's folder: {window.Status}");
+            Assert.Equal("Typed" + Had, window.EditorArea.Find(greeting)?.Text.Snapshot.ToString());
+        }
+        finally
+        {
+            evaluated.TrySetResult();
+            window.Close();
+        }
+    }
+
+    /// <summary>New Project with a Dockerfile while the person renames a file of their own as its set-up waits for the new
+    /// project's evaluation: New Project's Undo neither names nor moves that file, and the rename's own Undo then names it
+    /// back, where New Project's took the rename as its own and moved the file back, its own Undo then refused.</summary>
+    private void Renaming_a_file_while_New_Project_sets_its_service_up_stays_out_of_its_Undo()
+    {
+        SkipWithoutDockerCommand();
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        TestFolders.Write(place, "notes.md", "# Notes\n");
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        string notes = Path.Combine(PathNames.Canonical(place), "notes.md");
+        string guide = Path.Combine(PathNames.Canonical(place), "guide.md");
+        string api = Path.Combine(PathNames.Canonical(place), "Api");
+        TaskCompletionSource evaluated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        try
+        {
+            Task held = window.Session.Models.HoldEvaluation(Path.Combine(api, "Api.csproj"), evaluated.Task);
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "web");
+            dialog.ProjectName = "Api";
+            dialog.Framework = TestProjects.Framework;
+            dialog.SetupChooser.SelectedIndex = (int)ProjectSetup.Dockerfile;
+            Ui.Settle();
+            // Pumped, not settled: the set-up holds the window's background work while it waits for the evaluation held.
+            Ui.Click(dialog.CreateButton, settle: false);
+            Ui.PumpUntil(() => held.IsCompleted || dialog.Problem is not null, "the new project's evaluation to be held", TimeSpan.FromMinutes(5));
+            Assert.True(dialog.Problem is null, $"The web project was not made: {dialog.Problem}");
+            Assert.True(window.ServiceSetUp is { IsCompleted: false }, $"The set-up did not wait for the project's evaluation: {window.Status}");
+
+            Assert.Null(Ui.AwaitPumped(window.RenameAsync(notes, "guide.md"), "the rename of notes.md as the set-up waits"));
+            Assert.True(File.Exists(guide), $"notes.md was not renamed: {window.Status}");
+            evaluated.SetResult();
+            Assert.Null(SetUp(window));
+            Assert.True(File.Exists(Path.Combine(api, "Dockerfile")), $"The new project has no Dockerfile: {window.Status}");
+
+            List<(string Title, string Message)> asked = [];
+            window.Confirm = (title, message, _) =>
+            {
+                asked.Add((title, message));
+                return Task.FromResult(true);
+            };
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            Ended(window, redo: false, "New Project Api");
+            (string title, string message) = Assert.Single(asked);
+            Assert.Equal("Undo", title);
+            Assert.StartsWith("Undo New Project Api?", message, StringComparison.Ordinal);
+            Assert.DoesNotContain("guide.md", message, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(api), $"Undo left the new project's folder: {window.Status}");
+            Assert.True(File.Exists(guide) && !File.Exists(notes), $"New Project's Undo moved guide.md, renamed meanwhile, back to notes.md: {window.Status}");
+
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            Assert.Equal(2, asked.Count);
+            Assert.Equal("Undo Rename notes.md to guide.md? It renames guide.md back to notes.md.", asked[1].Message);
+            Assert.True(File.Exists(notes) && !File.Exists(guide), $"The rename's own Undo did not name guide.md back: {window.Status}");
+        }
+        finally
+        {
+            evaluated.TrySetResult();
+            window.Close();
+        }
+    }
+
+    /// <summary>New Project of an MVC app, a folder of megabytes (its scripts and styles): its Undo keeps the folder as each
+    /// file's length and time, not its bytes, so its command holds a small part of the folder; Undo takes the folder away
+    /// and Redo puts every file back as it was.</summary>
+    private void New_Project_of_an_MVC_app_keeps_its_folder_for_Undo_without_its_bytes()
+    {
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        string site = Path.Combine(PathNames.Canonical(place), "Site");
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        try
+        {
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "mvc");
+            dialog.ProjectName = "Site";
+            dialog.Framework = TestProjects.Framework;
+            dialog.SetupChooser.SelectedIndex = (int)ProjectSetup.None;
+            Ui.Settle();
+            Created(dialog, "the MVC app");
+            Assert.Null(SetUp(window));
+            Dictionary<string, byte[]> made = Made(site);
+            long bytes = made.Values.Sum(b => (long)b.Length);
+            Assert.True(bytes > 1_000_000, $"The MVC app's folder holds only {bytes} bytes in {made.Count} files, too few to tell its bytes from its list");
+
+            List<string> asked = Answer(window);
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            Ended(window, redo: false, "New Project Site");
+            Assert.Equal(["Undo"], asked);
+            Assert.False(Directory.Exists(site), $"Undo left the new project's folder: {window.Status}");
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Redo);
+            Ended(window, redo: true, "New Project Site");
+            Assert.True(Directory.Exists(site), $"Redo did not put the new project's folder back: {window.Status}");
+            Dictionary<string, byte[]> back = Made(site);
+            Assert.True(back.Count == made.Count && made.All(f => back.TryGetValue(f.Key, out byte[]? now) && now.AsSpan().SequenceEqual(f.Value)),
+                $"Redo did not put the folder back as it was: {window.Status}");
+
+            Ui.Settle();
+            CommandHistory.Command? command = window.EditorArea.Commands.ToUndo(null);
+            Assert.True(command is not null, "New Project left no command for Undo to take back");
+            (long held, string most) = HeldBytes.Of(command, o => o is AvaloniaObject || (o is OpenDocument open && window.EditorArea.Documents.Contains(open)));
+            Assert.True(held < bytes / 10, $"New Project's Undo held {held} bytes for a folder of {bytes} bytes in {made.Count} files, the most in {most}");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>New Project of an MSTest project on the Testing Platform, whose template writes its runner into a global.json
+    /// at the solution's folder: a Create stopped once dotnet new has made it takes global.json away with the project; one
+    /// that ends names global.json, and one Undo takes it away with the project, the solution's folder left as it was.</summary>
+    private void New_Project_of_MSTest_names_the_global_json_its_template_writes_and_Undo_or_a_stopped_Create_takes_it_away()
+    {
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        // Restores take the run's own feed alone, so the project made never reaches nuget.org for its packages.
+        AvaloniaApp.UseFeed(place);
+        string root = PathNames.Canonical(place);
+        string global = Path.Combine(root, "global.json");
+        string checks = Path.Combine(root, "Checks");
+        Dictionary<string, byte[]> before = Top(root);
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            NewProjectDialog dialog = MSTest(window);
+            Task held = dialog.HoldNextMade(release.Task);
+            Ui.Click(dialog.CreateButton, settle: false);
+            Ui.PumpUntil(() => held.IsCompleted || dialog.Problem is not null, "dotnet new to make Checks", TimeSpan.FromMinutes(5));
+            Assert.True(dialog.Problem is null, $"Checks was not made: {dialog.Problem}");
+            Assert.True(File.Exists(global), "The MSTest template on the Testing Platform wrote no global.json at the solution's folder");
+            dialog.Cancel();
+            Ui.Settle();
+            Assert.False(File.Exists(global) || Directory.Exists(checks), $"New Project stopped left {(File.Exists(global) ? "the global.json its template wrote" : "the project's folder")}");
+            Same(before, Top(root), "New Project stopped");
+
+            Created(MSTest(window), "the MSTest project");
+            SetUp(window);
+            Assert.True(File.Exists(global) && File.ReadAllText(global).Contains("Microsoft.Testing.Platform", StringComparison.Ordinal),
+                "The MSTest template on the Testing Platform wrote no runner into global.json at the solution's folder");
+            Assert.Contains("its template made global.json", window.Status, StringComparison.Ordinal);
+
+            List<string> asked = Answer(window);
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            Ended(window, redo: false, "New Project Checks");
+            Assert.Equal(["Undo"], asked);
+            Assert.False(Directory.Exists(checks), $"Undo left the new project's folder: {window.Status}");
+            Assert.False(File.Exists(global), $"Undo of New Project left the global.json its template wrote: {window.Status}");
+            Same(before, Top(root), "Undo of New Project");
+        }
+        finally
+        {
+            release.TrySetResult();
+            window.Close();
+        }
+
+        static Dictionary<string, byte[]> Top(string folder) => Directory.EnumerateFiles(folder).Where(f => !PathNames.IsSystemFile(Path.GetFileName(f)))
+            .ToDictionary(f => Path.GetFileName(f), File.ReadAllBytes, StringComparer.Ordinal);
+
+        static void Same(Dictionary<string, byte[]> was, Dictionary<string, byte[]> now, string what) =>
+            Assert.True(was.Count == now.Count && was.All(f => now.TryGetValue(f.Key, out byte[]? bytes) && bytes.AsSpan().SequenceEqual(f.Value)),
+                $"{what} left the solution's folder holding [{string.Join(", ", now.Keys.Order(StringComparer.Ordinal))}], where it held [{string.Join(", ", was.Keys.Order(StringComparer.Ordinal))}], or changed one");
+    }
+
+    /// <summary>New Project's dialog on MSTest, named Checks, on the Testing Platform.</summary>
+    private static NewProjectDialog MSTest(MainWindow window)
+    {
+        Ui.Run(window, AppActions.NewProject);
+        NewProjectDialog dialog = Opened(window);
+        Choose(dialog, "mstest");
+        dialog.ProjectName = "Checks";
+        dialog.Framework = TestProjects.Framework;
+        ComboBox runner = dialog.OptionEditor("Test runner") as ComboBox ?? throw new InvalidOperationException($"MSTest shows no Test runner: [{string.Join(", ", dialog.OptionLabels)}]");
+        runner.SelectedItem = "Microsoft.Testing.Platform";
+        Ui.Settle();
+        Assert.Contains("--test-runner Microsoft.Testing.Platform", dialog.Command, StringComparison.Ordinal);
+        return dialog;
+    }
+
+    /// <summary>Undo of New Project refused once a file of the folder it made has changed, naming that file, the folder kept.</summary>
+    private void Undo_of_New_Project_refuses_once_a_file_in_its_folder_has_changed_naming_it()
+    {
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        string lib = Path.Combine(PathNames.Canonical(place), "Lib");
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        try
+        {
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "classlib");
+            dialog.ProjectName = "Lib";
+            dialog.Framework = TestProjects.Framework;
+            Created(dialog, "the class library");
+            Assert.Null(SetUp(window));
+            TestFolders.Write(place, "Lib/Class1.cs", "namespace Lib;\n\npublic class Changed;\n");
+
+            List<string> asked = Answer(window);
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            Assert.Empty(asked);
+            Assert.Equal($"Cannot undo New Project Lib: {Path.Join("Lib", "Class1.cs")} has been changed since", window.Status);
+            Assert.True(File.Exists(Path.Combine(lib, "Class1.cs")), "Undo refused took the folder away all the same");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>Undo of New Project whose folder the disk will not let it set aside (a file in it held open on Windows, the
+    /// folder read-only elsewhere) says it could not, leaves the folder whole and the solution as New Project left it, and
+    /// keeps the command for Undo: asked again once the folder can move, it takes the project away.</summary>
+    private void Undo_of_New_Project_whose_folder_cannot_be_set_aside_says_so_leaves_the_folder_whole_and_can_be_asked_again()
+    {
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        string solution = Path.Combine(PathNames.Canonical(place), "Shop.slnx");
+        byte[] before = File.ReadAllBytes(solution);
+        string lib = Path.Combine(PathNames.Canonical(place), "Lib");
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        IDisposable? held = null;
+        try
+        {
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "classlib");
+            dialog.ProjectName = "Lib";
+            dialog.Framework = TestProjects.Framework;
+            Created(dialog, "the class library");
+            Assert.Null(SetUp(window));
+            byte[] added = File.ReadAllBytes(solution);
+            Dictionary<string, byte[]> made = Made(lib);
+
+            held = Unmovable(lib);
+            List<string> asked = Answer(window);
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            string refused = Ended(window, redo: false, "New Project Lib");
+            Assert.Equal(["Undo"], asked);
+            Assert.True(refused.StartsWith("Cannot undo New Project Lib: Lib could not be set aside: ", StringComparison.Ordinal),
+                $"Undo of New Project whose folder could not be set aside said '{refused}'");
+            Dictionary<string, byte[]> left = Made(lib);
+            Assert.True(left.Count == made.Count && made.All(f => left.TryGetValue(f.Key, out byte[]? now) && now.AsSpan().SequenceEqual(f.Value)),
+                $"Undo refused left the new project's folder with [{string.Join(", ", left.Keys)}] of [{string.Join(", ", made.Keys)}]");
+            Assert.True(added.AsSpan().SequenceEqual(File.ReadAllBytes(solution)), $"Undo refused changed the solution file to {File.ReadAllText(solution)}");
+            Assert.True(Undoes(window), "Undo refused left New Project out of the history, so it cannot be asked again");
+
+            held.Dispose();
+            held = null;
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo);
+            Assert.Equal("Undone: New Project Lib", Ended(window, redo: false, "New Project Lib"));
+            Assert.False(Directory.Exists(lib), $"Undo asked again left the new project's folder: {window.Status}");
+            Assert.True(before.AsSpan().SequenceEqual(File.ReadAllBytes(solution)), $"Undo asked again left the solution file as {File.ReadAllText(solution)}");
+        }
+        finally
+        {
+            held?.Dispose();
+            window.Close();
+        }
+    }
+
+    /// <summary>Undo and Redo of New Project whose folder lies on another volume than the IDE's state (a disk image of the
+    /// test's own, as an external drive is) carry the folder off the window's thread, the window's work saying so: keys
+    /// typed while a carry is held reach the editor, and Redo brings the folder back whole, what builds wrote in it too.</summary>
+    [AvaloniaFact]
+    public void Undo_and_Redo_of_New_Project_on_another_volume_carry_its_folder_while_the_window_answers_keys()
+    {
+        Assert.SkipUnless(OperatingSystem.IsMacOS(), "A volume of the test's own is a disk image hdiutil makes, on macOS alone");
+        string volume = Directory.CreateDirectory(Path.Combine(place, "volume")).FullName;
+        string disk = Path.Combine(place, "volume.dmg");
+        ChildResult image = Ran("/usr/bin/hdiutil", "create", "-size", "64m", "-fs", "HFS+", "-volname", "Pitstop Undo Tests", "-ov", disk, "-quiet");
+        Assert.SkipUnless(image.Succeeded, $"hdiutil made no disk image (exit code {image.ExitCode}): {image.Error}{image.Output}");
+        ChildResult attached = Ran("/usr/bin/hdiutil", "attach", disk, "-nobrowse", "-noautoopen", "-mountpoint", volume, "-quiet");
+        Assert.SkipUnless(attached.Succeeded, $"hdiutil attached no disk image (exit code {attached.ExitCode}): {attached.Error}{attached.Output}");
+        MainWindow? window = null;
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            // Spotlight indexes a volume wherever it is mounted, unless it holds this marker.
+            File.WriteAllText(Path.Combine(volume, ".metadata_never_index"), string.Empty);
+            TestFolders.Write(volume, "Tool/Tool.csproj", TestProjects.Console());
+            const string Program = "System.Console.WriteLine(\"tool\");\n";
+            TestFolders.Write(volume, "Tool/Program.cs", Program);
+            TestFolders.Write(volume, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+            string root = PathNames.Canonical(volume);
+            string lib = Path.Combine(root, "Lib");
+            window = Ui.OpenFolder(root, languageServer: false);
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "classlib");
+            dialog.ProjectName = "Lib";
+            dialog.Framework = TestProjects.Framework;
+            Created(dialog, "the class library");
+            Assert.Null(SetUp(window));
+            string built = TestFolders.Write(lib, "bin/Debug/built.txt", "built\n");
+            Dictionary<string, byte[]> made = Made(lib);
+            window.OpenFile(Path.Combine(root, "Tool", "Program.cs"));
+            Ui.Settle();
+            List<string> asked = Answer(window);
+
+            Task held = MadeFolders.HoldNextCarry(release.Task);
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Undo, settle: false);
+            Ui.PumpUntil(() => held.IsCompleted || window.Status?.StartsWith("Cannot undo", StringComparison.Ordinal) == true,
+                "Undo's carry of the folder to the state's volume to be held");
+            Assert.True(held.IsCompleted, $"Undo of New Project on another volume carried nothing: {window.Status}");
+            Assert.Equal("Setting Lib aside: copying it to another disk…", window.Status);
+            Assert.True(window.Actions.WhyNot(EditorActions.Undo, window.Actions.Context()) is null,
+                $"Undo is greyed while the folder is carried, so the typing's own Undo cannot be asked: {window.Actions.WhyNot(EditorActions.Undo, window.Actions.Context())}");
+            Typed(window, "a", "a" + Program);
+            release.SetResult();
+            Ui.WaitFor(() => window.Status == "Undone: New Project Lib", () => $"Undo of New Project once its folder is carried; the status says '{window.Status}'");
+            Assert.Equal(["Undo"], asked);
+            Assert.False(Directory.Exists(lib), $"Undo left the new project's folder: {window.Status}");
+
+            release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            held = MadeFolders.HoldNextCarry(release.Task);
+            Ui.Run(window, AppActions.FocusExplorer);
+            Ui.Run(window, EditorActions.Redo, settle: false);
+            Ui.PumpUntil(() => held.IsCompleted || window.Status?.StartsWith("Cannot redo", StringComparison.Ordinal) == true,
+                "Redo's carry of the folder back to the test's volume to be held");
+            Assert.True(held.IsCompleted, $"Redo of New Project on another volume carried nothing: {window.Status}");
+            Assert.Equal("Putting Lib back: copying it from another disk…", window.Status);
+            Typed(window, "b", "ba" + Program);
+            release.SetResult();
+            Ui.WaitFor(() => window.Status == "Redone: New Project Lib", () => $"Redo of New Project once its folder is carried back; the status says '{window.Status}'");
+            Dictionary<string, byte[]> back = Made(lib);
+            Assert.True(back.Count == made.Count && made.All(f => back.TryGetValue(f.Key, out byte[]? now) && now.AsSpan().SequenceEqual(f.Value)),
+                $"Redo did not put the folder back as it was: [{string.Join(", ", back.Keys)}] of [{string.Join(", ", made.Keys)}]");
+            Assert.True(File.Exists(built) && File.ReadAllText(built) == "built\n", "Redo put the folder back without what builds wrote in its bin");
+        }
+        finally
+        {
+            release.TrySetResult();
+            if (window is not null)
+            {
+                window.Close();
+                Ui.AwaitPumped(window.Ended ?? Task.CompletedTask, "what the closed window started to end", MainWindow.EndLimit + TimeSpan.FromSeconds(5));
+            }
+            TestVolumes.Detach(volume, disk);
+        }
+    }
+
+    /// <summary>A key typed into the open file while the window's thread is free, read back from the editor at once.</summary>
+    private static void Typed(MainWindow window, string key, string text)
+    {
+        window.EditorArea.CodeEditor.Focus();
+        window.EditorArea.CodeEditor.Selections = Pitstop.Text.SelectionSet.Single(0);
+        window.KeyTextInput(key);
+        Assert.True(window.EditorArea.CodeEditor.Document.Snapshot.ToString() == text,
+            $"A key typed while the folder was carried did not reach the editor, so the window was not answering: '{window.EditorArea.CodeEditor.Document.Snapshot}'");
+    }
+
+    /// <summary>A system tool run on the thread pool and waited for with the window's loop running.</summary>
+    private static ChildResult Ran(string tool, params string[] arguments)
+    {
+        TimeSpan limit = TimeSpan.FromMinutes(1);
+        return Ui.AwaitPumped(Waiting.Apart(() => ChildProcesses.RunAsync(ChildProcesses.Command(tool, arguments), limit: limit.Scaled())),
+            $"{tool} {string.Join(' ', arguments)}", limit.Scaled() + TestFolders.Spare);
+    }
+
+    /// <summary>New Solution of a web API with Docker Compose: the solution's compose.yaml has it as a service built from its
+    /// Dockerfile, the Compose configuration is chosen, and the first Run brings it up in its container (where a Linux
+    /// container engine runs).</summary>
+    private void New_Solution_of_a_web_API_with_Docker_Compose_is_chosen_to_run_with_Compose_and_the_first_Run_brings_it_up()
+    {
+        SkipWithoutDockerCommand();
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings, StartsLanguageServer = false };
+        window.Show();
+        window.KeepLayout();
+        try
+        {
+            Assert.True(window.Perform(AppActions.NewSolution));
+            NewProjectDialog dialog = Opened(window);
+            dialog.Folder = place;
+            Choose(dialog, "webapi");
+            dialog.SolutionName = "Shop";
+            dialog.ProjectName = "Api";
+            dialog.Framework = TestProjects.Framework;
+            // Its OpenAPI package would come from nuget.org, which the tests never reach.
+            if (dialog.OptionLabels.FirstOrDefault(l => l.Contains("OpenAPI", StringComparison.Ordinal)) is { } openApi && dialog.OptionEditor(openApi) is CheckBox { IsChecked: true } box)
+            {
+                Ui.Click(box);
+            }
+            dialog.SetupChooser.SelectedIndex = (int)ProjectSetup.Compose;
+            Ui.Settle();
+            Created(dialog, "the web API");
+
+            Assert.Null(SetUp(window));
+            string folder = PathNames.Canonical(Path.Combine(place, "Shop"));
+            string compose = File.ReadAllText(Path.Combine(folder, "compose.yaml"));
+            Assert.Contains("services:\n  api:\n    build:\n      context: .\n      dockerfile: Api/Dockerfile\n", compose, StringComparison.Ordinal);
+            Assert.True(File.Exists(Path.Combine(folder, "Api", "Dockerfile")), "The web API has no Dockerfile for its service");
+            Assert.True(window.Configuration is { Name: "Compose: compose.yaml", Kind: RunKind.Compose, Mode: ContainerMode.Fast },
+                $"The configuration chosen is {window.Configuration?.Name}, not the solution's compose.yaml in fast mode: [{string.Join(", ", window.Configurations.Select(c => c.Name))}]");
+
+            Assert.SkipWhen(Docker.WhyNot is not null, Docker.WhyNot ?? string.Empty);
+            Ui.WaitFor(() => !window.IsBuilding, "the new solution's build", TimeSpan.FromMinutes(3));
+            string? refused = Ui.Await(window.RunAsync(), "the first Run to bring the web API up", TimeSpan.FromMinutes(5));
+            Assert.True(refused is null, $"{refused}{Ui.BuildErrors(window)}\n{ContainerRunsTests.Run(window)}");
+            Assert.True(window.IsRunning, $"The first Run did not bring the service up: {window.Status}");
+            Assert.StartsWith("Running Compose: compose.yaml", window.Status, StringComparison.Ordinal);
+            string project = window.Builds.Containers?.Plan.ProjectName ?? throw new InvalidOperationException($"The first Run made no container run: {window.Status}");
+            Assert.True(ContainerRunsTests.Container(project, "api").Length > 0, $"The first Run left api with no container running: {ContainerRunsTests.Run(window)}");
+            Docker.Stopped(window, project, "Stop to take api down", "com.docker.compose.service=api");
+            Ui.WaitFor(() => !window.IsRunning, "the log to stop being followed");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>New Project with Docker Compose into a solution whose compose.yaml has services already: the new project
+    /// joins it after them, indented as they are, every line of theirs kept, with a Dockerfile of its own, and the Compose
+    /// configuration is chosen.</summary>
+    private void New_Project_with_Docker_Compose_joins_the_solutions_compose_file_beside_its_services()
+    {
+        SkipWithoutDockerCommand();
+        TestFolders.Write(place, "Tool/Tool.csproj", TestProjects.Console());
+        TestFolders.Write(place, "Tool/Program.cs", "System.Console.WriteLine(\"tool\");\n");
+        TestFolders.Write(place, "Shop.slnx", "<Solution>\n  <Project Path=\"Tool/Tool.csproj\" />\n</Solution>\n");
+        const string Had = "services:\n    cache:\n        image: redis:8\n        # kept as written\n\nvolumes:\n    data:\n";
+        TestFolders.Write(place, "compose.yaml", Had);
+        MainWindow window = Ui.OpenFolder(place, languageServer: false);
+        try
+        {
+            Ui.Run(window, AppActions.NewProject);
+            NewProjectDialog dialog = Opened(window);
+            Choose(dialog, "web");
+            dialog.ProjectName = "Api";
+            dialog.Framework = TestProjects.Framework;
+            dialog.SetupChooser.SelectedIndex = (int)ProjectSetup.Compose;
+            Ui.Settle();
+            Created(dialog, "the web project");
+
+            Assert.Null(SetUp(window));
+            string compose = File.ReadAllText(Path.Combine(place, "compose.yaml"));
+            Assert.StartsWith("services:\n    cache:\n        image: redis:8\n        # kept as written\n    api:\n      build:\n        context: .\n        dockerfile: Api/Dockerfile\n", compose, StringComparison.Ordinal);
+            Assert.EndsWith("\nvolumes:\n    data:\n", compose, StringComparison.Ordinal);
+            Assert.True(File.Exists(Path.Combine(place, "Api", "Dockerfile")), "The new project has no Dockerfile for its service");
+            Assert.True(window.Configuration is { Name: "Compose: compose.yaml", Kind: RunKind.Compose },
+                $"The configuration chosen is {window.Configuration?.Name}, not the solution's compose.yaml: [{string.Join(", ", window.Configurations.Select(c => c.Name))}]");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>The set-up the dialog's Create asked for, once it is done: null when made and chosen, else why not.</summary>
+    internal static string? SetUp(MainWindow window)
+    {
+        Ui.WaitFor(() => window.ServiceSetUp is { IsCompleted: true }, $"the new service's set-up: {window.Status}", TimeSpan.FromMinutes(3));
+        return Ui.Await(window.ServiceSetUp!, "the new service's set-up");
+    }
+
+    /// <summary>The template of a short name chosen, its family's row clicked and its Type chosen.</summary>
+    internal static void Choose(NewProjectDialog dialog, string shortName)
+    {
+        ProjectTemplate wanted = dialog.Templates.FirstOrDefault(t => t.Pack is null && t.ShortNames.Contains(shortName))
+            ?? throw new InvalidOperationException($"dotnet new has no {shortName} here: [{string.Join(", ", dialog.Templates.Select(t => t.ShortName))}]");
+        Ui.Click(dialog.FamilyRow(wanted.Family) ?? throw new InvalidOperationException($"New Project lists no {wanted.Family}"));
+        if (dialog.Chosen?.ShortName != wanted.ShortName)
+        {
+            dialog.TypeChooser.SelectedItem = dialog.Family!.Types.First(t => t.ShortName == wanted.ShortName);
+            Ui.Settle();
+        }
+        Assert.Equal(wanted.ShortName, dialog.Chosen?.ShortName);
+    }
+
+    /// <summary>Create, as its button does, failing with why when it made nothing.</summary>
+    internal static void Created(NewProjectDialog dialog, string what)
+    {
+        Ui.Click(dialog.CreateButton);
+        Ui.WaitFor(() => !dialog.IsVisible || dialog.Problem is not null, $"dotnet new to make {what}", TimeSpan.FromMinutes(5));
+        Assert.True(dialog.Problem is null, $"{what} was not made: {dialog.Problem}");
+    }
+
+    /// <summary>The dialog an action opened, once its folder's templates are read.</summary>
+    internal static NewProjectDialog Opened(MainWindow window)
+    {
+        Ui.Settle();
+        NewProjectDialog dialog = Assert.Single(window.OwnedWindows.OfType<NewProjectDialog>(), d => d.IsVisible);
+        Ui.WaitFor(() => dialog.TemplatesRead.IsCompleted, "dotnet new's templates to be read", TimeSpan.FromMinutes(3));
+        Assert.True(dialog.Families.Count > 0, $"The dialog lists no templates: {dialog.Problem}");
+        return dialog;
+    }
+
+    /// <summary>What the status says once an Undo or Redo of a command has ended, done or refused: letting go of a folder it
+    /// moves may wait on work under it that the window's settle does not wait for.</summary>
+    private static string Ended(MainWindow window, bool redo, string command)
+    {
+        string done = $"{(redo ? "Redone" : "Undone")}: {command}";
+        string refused = $"Cannot {(redo ? "redo" : "undo")} {command}: ";
+        Ui.WaitFor(() => window.Status == done || window.Status?.StartsWith(refused, StringComparison.Ordinal) == true,
+            () => $"{(redo ? "Redo" : "Undo")} of {command} to end; the status says '{window.Status}'");
+        return window.Status!;
+    }
+
+    /// <summary>Whether Undo in the Solution view has a command to take back.</summary>
+    private static bool Undoes(MainWindow window) => window.EditorArea.Commands.ToUndo(null) is not null;
+
+    /// <summary>Every file the template and set-up made in a project's folder, but what builds write, with its bytes.</summary>
+    private static Dictionary<string, byte[]> Made(string folder) =>
+        Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories)
+            .Where(f => !Path.GetRelativePath(folder, f).Split(Path.DirectorySeparatorChar).Any(part => part is "bin" or "obj" || PathNames.IsSystemFile(part)))
+            .ToDictionary(f => Path.GetRelativePath(folder, f), File.ReadAllBytes, StringComparer.Ordinal);
+
+    /// <summary>A folder the disk will not move to another folder until disposed: on Windows a file in it held open, as a
+    /// program working there holds one; elsewhere the folder read-only, as a move to another folder writes in it.</summary>
+    private static IDisposable Unmovable(string folder)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new FileStream(Directory.EnumerateFiles(folder, "*.csproj").First(), FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+        return new ReadOnlyFolder(folder);
+    }
+
+    /// <summary>A folder made read-only, its own mode given back once disposed.</summary>
+    [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
+    private sealed class ReadOnlyFolder : IDisposable
+    {
+        private readonly string folder;
+        private readonly UnixFileMode was;
+
+        public ReadOnlyFolder(string folder)
+        {
+            this.folder = folder;
+            was = File.GetUnixFileMode(folder);
+            File.SetUnixFileMode(folder, UnixFileMode.UserRead | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupExecute);
+        }
+
+        public void Dispose() => File.SetUnixFileMode(folder, was);
+    }
+
+    private static List<string> Answer(MainWindow window)
+    {
+        List<string> asked = [];
+        window.Confirm = (title, _, _) =>
+        {
+            asked.Add(title);
+            return Task.FromResult(true);
+        };
+        return asked;
+    }
+
+    private static ExplorerNode Row(MainWindow window, NodeKind kind, string name) =>
+        window.ExplorerView.Tree.Rows.FirstOrDefault(r => r.Kind == kind && r.Name == name)
+        ?? throw new InvalidOperationException($"The Explorer shows no {kind} {name}: [{string.Join(", ", window.ExplorerView.Tree.Rows.Select(r => r.Name))}]");
+}

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Passenger's container tools for one Linux system (src/Passenger.ContainerTools), self-contained, into
+# Passenger's container tools for one Linux system (src/Pitstop.ContainerTools), self-contained, into
 # artifacts/container-tools/<rid>/, where a dev build of the IDE finds them; --archive also packs the release's
 # artifacts/container-tools/Pitstop-container-tools-<rid>.tar.gz (the folder's files at its root). With no RID, the
 # glibc one for the container engine's processor, else this machine's.
@@ -42,7 +42,7 @@ version=$(release_version .)
 out=artifacts/container-tools/$rid
 rm -rf "$out"
 # An artifacts root of its own: a RID's publish restores what it references for that RID, which a build restores back.
-publish_project . Passenger.ContainerTools "$rid" "$version" --artifacts-path artifacts/container-tools/build -o "$out" -nologo -v:q
+publish_project . Pitstop.ContainerTools "$rid" "$version" --artifacts-path artifacts/container-tools/build -o "$out" -nologo -v:q
 test -x "$out/pitstop-tools"
 # Its licence and notices, which must name the runtime and the dbgshim it carries for its system (musl's on a musl one).
 test -s "$out/LICENSE.txt"

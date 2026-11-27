@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
-using Passenger.Core;
-using Passenger.Lsp;
+using Pitstop.Core;
+using Pitstop.Lsp;
 
 namespace Pitstop.CppProbe;
 

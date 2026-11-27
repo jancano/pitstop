@@ -1,0 +1,112 @@
+using Avalonia;
+using Avalonia.Controls;
+using Pitstop.Core;
+using Pitstop.Editor;
+using static Pitstop.App.MainWindow;
+
+namespace Pitstop.App.Welcome;
+
+/// <summary>The system's lists of Passenger outside its windows, kept in step with the recent folders and solutions of the
+/// window that last changed them: the Windows taskbar's jump list (<see cref="WindowsJumpList"/>), whose entries start
+/// Passenger as a second start does, the macOS Dock's menu, whose items open one as File, Recent Solutions does, and on
+/// Linux freedesktop's recently used list (<see cref="LinuxRecentlyUsed"/>), which KDE shows as the Recent Files of
+/// Passenger's icon. Only a Passenger a person sees sets them; a UI-thread object.</summary>
+public static class RecentShortcuts
+{
+    /// <summary>How many recent ones the Dock's menu lists; the jump list lists as many as the taskbar says it shows.</summary>
+    public const int DockShows = 10;
+
+    /// <summary>How long the recent list rests before the system's lists follow it, so the windows a start reopens set them once.</summary>
+    private static readonly TimeSpan Settle = TimeSpan.FromSeconds(1);
+
+    private static Debounce? following;
+
+    /// <summary>The task starting a window with nothing open, from the Passenger running or a new one.</summary>
+    public static RecentShortcut NewWindow { get; } = new(OpenProjectDialog.NewWindow, "A Pitstop window with nothing open", [LaunchOptions.NewWindowFlag]);
+
+    /// <summary>The window whose recent list the system's lists follow next.</summary>
+    private static MainWindow? from;
+
+    /// <summary>Whether the Dock's menu follows in a Passenger nobody sees too: a test's on macOS, which brings in Avalonia's
+    /// exporter of the Dock's menu to stand in for the person's Dock.</summary>
+    public static bool DockFollowsUnseen { get; set; }
+
+    /// <summary>The window's recent list changed, or it opened on it: the system's lists follow once it rests, in a
+    /// Passenger a person sees, or where a test's recently used list or Dock stands in. A portable copy writes no list the
+    /// system keeps (<see cref="ThisCopy.Data"/>): only the Dock's menu, held by its process alone, follows.</summary>
+    public static void Follow(MainWindow window)
+    {
+        UiThread.Check();
+        bool registers = ThisCopy.Data is null;
+        bool recentlyUsed = LinuxRecentlyUsed.StandIn is not null || OperatingSystem.IsLinux() && !PitstopApp.ShowsNoWindow && registers;
+        bool jumpList = OperatingSystem.IsWindows() && !PitstopApp.ShowsNoWindow && registers;
+        bool dock = OperatingSystem.IsMacOS() && (!PitstopApp.ShowsNoWindow || DockFollowsUnseen);
+        if (!recentlyUsed && !jumpList && !dock)
+        {
+            return;
+        }
+        if (recentlyUsed && window.RecentKept is { } kept)
+        {
+            LinuxRecentlyUsed.Begin(kept);
+        }
+        from = window;
+        following ??= new Debounce(Settle, () =>
+        {
+            if (from is { } asked && PitstopApp.Windows.Contains(asked))
+            {
+                Set(asked);
+            }
+            return Task.CompletedTask;
+        });
+        following.Restart();
+    }
+
+    private static void Set(MainWindow window)
+    {
+        if (LinuxRecentlyUsed.StandIn is not null || OperatingSystem.IsLinux())
+        {
+            if (window.RecentKept is { } kept)
+            {
+                LinuxRecentlyUsed.Follow(kept);
+            }
+        }
+        else if (OperatingSystem.IsWindows())
+        {
+            if (WindowsJumpList.Set(window.Shortcuts, [NewWindow], window.ForgetRemoved) is { } refused)
+            {
+                IdeErrors.Write(refused);
+            }
+        }
+        else if (OperatingSystem.IsMacOS() && Application.Current is { } app)
+        {
+            NativeMenus.Fill(app, NativeDock.MenuProperty, DockItems([.. window.Shortcuts.Take(DockShows)]));
+        }
+    }
+
+    /// <summary>The Dock's menu's items, in the one menu the application keeps for it (<see cref="NativeMenus"/>): the
+    /// recent ones titled apart, each opened from the window in front as File, Recent Solutions opens it, then New Window.</summary>
+    private static List<NativeMenuItemBase> DockItems(IReadOnlyList<(string Path, RecentShortcut Shortcut)> recent)
+    {
+        List<NativeMenuItemBase> items = [];
+        foreach (((string path, _), RecentShortcut shortcut) in recent.Zip(RecentShortcut.ToldApart(recent, RecentRow.Home)))
+        {
+            NativeMenuItem item = new(NativeWords(shortcut.Title)) { ToolTip = shortcut.Tip };
+            item.Click += (_, _) => PitstopApp.Front?.OpenRecent(path);
+            items.Add(item);
+        }
+        if (items.Count > 0)
+        {
+            items.Add(new NativeMenuItemSeparator());
+        }
+        NativeMenuItem newWindow = new(NativeWords(NewWindow.Title));
+        newWindow.Click += (_, _) =>
+        {
+            if (PitstopApp.Front is { } front)
+            {
+                PitstopApp.BringForward(PitstopApp.NewWindow(front));
+            }
+        };
+        items.Add(newWindow);
+        return items;
+    }
+}

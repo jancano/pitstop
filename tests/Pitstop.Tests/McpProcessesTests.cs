@@ -1,0 +1,305 @@
+using System.Diagnostics;
+using System.Text.Json;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
+using Pitstop.App;
+using Pitstop.App.Mcp;
+using Pitstop.App.Settings;
+using Pitstop.Core;
+using Pitstop.Editor;
+
+namespace Pitstop.Tests;
+
+/// <summary>An agent's own Passenger beside the person's window, beside another agent's and on its own: one Local History
+/// kept in their one state, and what it started gone with it when it is killed. What its builds leave for the machine's
+/// next build is <see cref="McpBuildNodesTests"/>'.</summary>
+public sealed class McpProcessesTests : McpRig, IClassFixture<RestoredFolders>
+{
+    /// <summary>The fixture each step of a flow takes for an instance of its own.</summary>
+    private readonly RestoredFolders restored;
+
+    public McpProcessesTests(RestoredFolders folders)
+        : base(folders) => restored = folders;
+
+    /// <summary>Passengers on one state as one flow, each step one test's check in an instance of its own: a change one
+    /// makes one change set named for it in another and in one started after, and a Passenger killed while it loads,
+    /// runs, profiles, debugs and builds leaving none of it running.</summary>
+    [Fact]
+    public async Task A_change_one_Passenger_makes_is_one_named_change_set_in_another_and_a_killed_one_leaves_nothing_running()
+    {
+        await Flow.StepApartAsync("a change one pitstop makes is one change set named for it in another on the same state and in one started after", () => new McpProcessesTests(restored), t => t.A_change_one_passenger_makes_is_one_change_set_named_for_it_in_another_on_the_same_state_and_in_one_started_after());
+        await Flow.StepApartAsync("a Pitstop killed while it loads runs profiles debugs and builds a project leaves none of it running", () => new McpProcessesTests(restored), t => t.A_Passenger_killed_while_it_loads_runs_profiles_debugs_and_builds_a_project_leaves_none_of_it_running());
+    }
+
+    /// <summary>Local History shared with the person's window as one flow, each step one test's check in an instance of
+    /// its own: what an agent's own Passenger keeps outlasting the person's window pruning it, and labels it puts
+    /// meanwhile all kept.</summary>
+    [AvaloniaFact]
+    public void An_agents_Local_History_and_labels_outlast_the_persons_window_pruning_the_shared_history()
+    {
+        Flow.StepApart("what an agents own pitstop keeps in local history outlasts the persons window pruning the history", () => new McpProcessesTests(restored), t => t.What_an_agents_own_passenger_keeps_in_local_history_outlasts_the_persons_window_pruning_the_history());
+        Flow.StepApart("labels an agents pitstop puts as the persons window prunes the shared history are all kept", () => new McpProcessesTests(restored), t => t.Labels_an_agents_passenger_puts_as_the_persons_window_prunes_the_shared_history_are_all_kept());
+    }
+
+    /// <summary>An agent's windowless Passenger over the person's folder keeps its Local History in the person's store: what
+    /// it kept (a file as it was before the agent changed it) outlasts the person's window pruning the history at a day's
+    /// turn.</summary>
+    private void What_an_agents_own_passenger_keeps_in_local_history_outlasts_the_persons_window_pruning_the_history()
+    {
+        string notes = Path.Combine(Folder, "Notes.txt");
+        File.WriteAllText(notes, "first draft\n");
+        long[] clock = [new DateTimeOffset(2026, 3, 2, 9, 0, 0, TimeSpan.Zero).UtcTicks];
+        DateTimeOffset Now() => new(Interlocked.Read(ref clock[0]), TimeSpan.Zero);
+        void Later(TimeSpan by) => Interlocked.Add(ref clock[0], by.Ticks);
+        global::Pitstop.App.History.HistoryKeeping day = new(Days: 1) { Clock = Now };
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = OwnState, HistoryKeeping = day, StartsLanguageServer = false };
+        window.Show();
+        window.OpenFolder(Folder);
+        window.OpenFile(Path.Combine(Folder, "Helper.cs"));
+        Ui.Settle();
+        void SaveEdit(string comment)
+        {
+            window.EditorArea.CodeEditor.Focus();
+            window.EditorArea.CodeEditor.ApplyEdits([new global::Pitstop.Text.TextEdit(0, 0, $"// {comment}\n")]);
+            Ui.Settle();
+            Ui.Run(window, AppActions.Save);
+        }
+        // A day and a half of the person's saves.
+        for (int save = 1; save <= 6; save++)
+        {
+            Later(TimeSpan.FromHours(6));
+            SaveEdit($"save {save}");
+        }
+
+        // Taken here, on the UI thread, where the folder is restored.
+        string taken = Folder;
+        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], languageServer: false)), "the agent's Pitstop starting");
+        try
+        {
+            Await(Waiting.Apart(() => Call(client, McpTools.Open, new() { ["path"] = "Notes.txt" })), "the agent opening Notes.txt");
+            Await(Waiting.Apart(() => Call(client, McpTools.AppType, new() { ["app"] = "ide", ["text"] = "second " })), "the agent typing");
+            Await(Waiting.Apart(() => Call(client, McpTools.SaveAll)), "the agent saving");
+        }
+        finally
+        {
+            Gone(client);
+        }
+        Process agents = LastPassenger();
+        WaitFor(() => !DotnetProcesses.Runs(agents), "the agent's Pitstop to end");
+        Ui.WaitFor(() => File.ReadAllText(notes) == "second first draft\n", "the person's window to see the agent's change");
+
+        // The next day's save, at which the window prunes the oldest of its history.
+        Later(TimeSpan.FromHours(25));
+        SaveEdit("the next day");
+        Ui.Settle();
+        window.Close();
+
+        MainWindow again = new() { Width = 1200, Height = 800, StateFolder = OwnState, HistoryKeeping = day, StartsLanguageServer = false };
+        again.Show();
+        again.OpenFolder(Folder);
+        Ui.Settle();
+        try
+        {
+            global::Pitstop.App.History.LocalHistory history = again.LocalHistory!;
+            string kept = PathNames.Canonical(notes);
+            bool Drafted() => history.Snapshot().Events.Any(e => PathNames.Same(e.Path ?? string.Empty, kept)
+                && new[] { e.Before, e.After }.OfType<string>().Any(hash => history.Content(hash) is { } bytes && System.Text.Encoding.UTF8.GetString(bytes) == "first draft\n"));
+            Ui.WaitFor(Drafted, "Local History to have Notes.txt as it was before the agent changed it: the person's window pruning its history erased what the agent's Pitstop kept",
+                TimeSpan.FromSeconds(20));
+        }
+        finally
+        {
+            again.Close();
+        }
+    }
+
+    /// <summary>The person's window and an agent's windowless Passenger keep one Local History in one state at the same
+    /// time: every label the agent's Passenger puts is in it after the window has pruned the history again and again
+    /// meanwhile, each prune of a long history holding the agent's lines back until it is done.</summary>
+    private void Labels_an_agents_passenger_puts_as_the_persons_window_prunes_the_shared_history_are_all_kept()
+    {
+        // Hours of earlier labels, which both keep, so each prune reads and writes the log at length.
+        string log = Path.Combine(global::Pitstop.App.State.ProjectState.FolderOf(OwnState, PathNames.Canonical(Folder)), "localHistory", "changes.log");
+        Directory.CreateDirectory(Path.GetDirectoryName(log)!);
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        const int Earlier = 40_000;
+        File.WriteAllText(log, string.Concat(Enumerable.Range(0, Earlier).Select(i =>
+            $"{{\"s\":{(now - 100_000_000) * 1000 + i},\"t\":{now - ((Earlier - i) * 200L)},\"k\":\"label\",\"n\":\"earlier {i}\"}}\n")));
+        // Taken here, on the UI thread, where the folder is restored.
+        string taken = Folder;
+        McpClient client = Await(Waiting.Apart(() => Start(["--mcp", taken], languageServer: false)), "the agent's Pitstop starting");
+        long[] clock = [new DateTimeOffset(2026, 3, 2, 9, 0, 0, TimeSpan.Zero).UtcTicks];
+        global::Pitstop.App.History.HistoryKeeping day = new(Days: 1) { Clock = () => new(Interlocked.Read(ref clock[0]), TimeSpan.Zero) };
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = OwnState, HistoryKeeping = day, StartsLanguageServer = false };
+        window.Show();
+        window.OpenFolder(Folder);
+        window.OpenFile(Path.Combine(Folder, "Helper.cs"));
+        Ui.Settle();
+        try
+        {
+            Assert.Equal(PathNames.Canonical(Path.GetDirectoryName(log)!), PathNames.Canonical(window.LocalHistory!.Root));
+            Await(Waiting.Apart(() => Call(client, McpTools.Workspace)), "the agent's Pitstop to have the folder open");
+            bool saving = true;
+            Task<int> labelling = Waiting.Apart(async () =>
+            {
+                int put = 0;
+                while (Volatile.Read(ref saving) && put < 500)
+                {
+                    put++;
+                    await Call(client, McpTools.LocalHistoryLabel, new() { ["name"] = $"agent {put}" });
+                }
+                return put;
+            });
+            // The person's saves six hours apart on the window's clock: as each day turns the window prunes, dropping its oldest.
+            for (int save = 1; save <= 32; save++)
+            {
+                Interlocked.Add(ref clock[0], TimeSpan.FromHours(6).Ticks);
+                window.EditorArea.CodeEditor.Focus();
+                window.EditorArea.CodeEditor.ApplyEdits([new global::Pitstop.Text.TextEdit(0, 0, $"// save {save}\n")]);
+                Ui.Settle();
+                Ui.Run(window, AppActions.Save);
+            }
+            Volatile.Write(ref saving, false);
+            int labels = Await(labelling, "the agent's labels");
+            // A label waits for the history however long the window holds it, so the last may land after its call answered.
+            List<string> lost = [];
+            Ui.WaitFor(() =>
+            {
+                string written = File.ReadAllText(log);
+                HashSet<string> kept = [.. written[..(written.LastIndexOf('\n') + 1)].Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(line => System.Text.Json.Nodes.JsonNode.Parse(line)?["n"]?.GetValue<string>()).OfType<string>()
+                    .Where(name => name.StartsWith("agent ", StringComparison.Ordinal))];
+                lost = [.. Enumerable.Range(1, labels).Select(n => $"agent {n}").Where(label => !kept.Contains(label))];
+                return lost.Count == 0;
+            }, () => $"the {labels} labels the agent's Pitstop put, of which the person's window pruning the shared history lost {lost.Count}: {string.Join(", ", lost.Take(20))}",
+                TimeSpan.FromSeconds(30));
+            Assert.True(File.ReadAllLines(log).Count(line => line.Contains("\"earlier ", StringComparison.Ordinal)) == Earlier, "The earlier labels, which both keep, were not all kept");
+        }
+        finally
+        {
+            window.Close();
+            Gone(client);
+        }
+    }
+
+    /// <summary>Two agents' own Passengers on one folder and one state keep one Local History: a change one makes is listed by
+    /// the other, which heard it on disk, and by a Passenger started after both have gone, as the one change set of the edit
+    /// that made it, never a second one called an external change.</summary>
+    private async Task A_change_one_passenger_makes_is_one_change_set_named_for_it_in_another_on_the_same_state_and_in_one_started_after()
+    {
+        string folder = Plain("mcp-history-");
+        McpClient watching = await Start(["--mcp", folder], languageServer: false);
+        await using (watching)
+        {
+            await Call(watching, McpTools.Open, new() { ["path"] = "Notes.txt" });
+            await using (McpClient editing = await Start(["--mcp", folder], languageServer: false))
+            {
+                await Call(editing, McpTools.Edit, new() { ["path"] = "Notes.txt", ["oldText"] = "notes", ["newText"] = "notes kept" });
+                string[] made = await Titles(editing);
+                Assert.True(made is ["Change"], $"The Pitstop that made the change lists [{string.Join(", ", made)}]");
+            }
+            // A file made after the change is heard after it: kept in the folder's history, the change has been heard too.
+            File.WriteAllText(Path.Combine(folder, "Heard.txt"), "heard\n");
+            await Until(async () => (await Call(watching, McpTools.LocalHistory)).GetProperty("rows").EnumerateArray()
+                .Any(r => r.GetProperty("files").EnumerateArray().Any(f => f.GetString() == "Heard.txt")), "the other Pitstop to hear the changes on disk");
+            string[] heard = await Titles(watching);
+            Assert.True(heard is ["Change"], $"The Pitstop that heard the change lists [{string.Join(", ", heard)}], not the one change set of the edit");
+        }
+        await using McpClient after = await Start(["--mcp", folder], languageServer: false);
+        string[] read = await Titles(after);
+        Assert.True(read is ["Change"], $"A Pitstop started after both lists [{string.Join(", ", read)}], not the one change set of the edit");
+
+        async Task<string[]> Titles(McpClient client) =>
+            [.. (await Call(client, McpTools.LocalHistory, new() { ["path"] = "Notes.txt" })).GetProperty("rows").EnumerateArray().Select(r => r.GetProperty("title").GetString()!)];
+    }
+
+    /// <summary>Passenger killed outright (SIGKILL, TerminateProcess), as a crash ends it, while it runs (and has profiled)
+    /// a program, debugs another and builds the project and its language server loads it. Each program writes its id to a
+    /// file named for how it was started; the load and, once the folder has a linger file, the build run a step that would
+    /// take ten minutes. The programs are two launch profiles', as Debug of the one Run runs would end that run.</summary>
+    private async Task A_Passenger_killed_while_it_loads_runs_profiles_debugs_and_builds_a_project_leaves_none_of_it_running()
+    {
+        await TakeFolderAsync();
+        Write("Program.cs", $"File.WriteAllText(Path.Combine(@\"{Folder}\", args[0] + \".pid\"), Environment.ProcessId.ToString());\nThread.Sleep(Timeout.Infinite);\n");
+        Directory.CreateDirectory(Path.Combine(Folder, "Properties"));
+        Write("Properties/launchSettings.json", "{\n  \"profiles\": {\n    \"Ran\": { \"commandName\": \"Project\" },\n    \"Debugged\": { \"commandName\": \"Project\" }\n  }\n}\n");
+        Write("Sum.csproj", $"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <OutputType>Exe</OutputType>
+                <TargetFramework>{TestProjects.Framework}</TargetFramework>
+                <ImplicitUsings>enable</ImplicitUsings>
+              </PropertyGroup>
+              <Target Name="Linger" BeforeTargets="Build" Condition="'$(DesignTimeBuild)' != 'true' And Exists('linger')">
+                <Exec Condition="'$(OS)' != 'Windows_NT'" Command="echo $$ &gt; build.pid; exec sleep 600" />
+                <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -Command &quot;Set-Content -Path build.pid -Value $PID; Start-Sleep -Seconds 600&quot;" />
+              </Target>
+              <Target Name="Load" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' == 'true'">
+                <Exec Condition="'$(OS)' != 'Windows_NT'" Command="echo $$ &gt; load.pid; exec sleep 600" />
+                <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -Command &quot;Set-Content -Path load.pid -Value $PID; Start-Sleep -Seconds 600&quot;" />
+              </Target>
+            </Project>
+            """);
+        // No compiler server left for others' builds to use, which the kill would end under them.
+        Process passenger = StartPassenger(["--mcp", Folder], environment: new() { ["UseSharedCompilation"] = "false" });
+        List<int> started = [];
+        List<OwnProcess> own = [];
+        Task<CallToolResult>? building = null;
+        using CancellationTokenSource giveUp = CancellationTokenSource.CreateLinkedTokenSource(Cancel);
+        McpClient? client = null;
+        try
+        {
+            client = await Connect(passenger, ["--mcp", Folder]);
+            int load = await WrittenId("load.pid", "the language server's load of the project");
+            await Call(client, McpTools.Run, new() { ["configuration"] = "Sum: Ran", ["arguments"] = "run", ["waitSeconds"] = 1 });
+            int run = await WrittenId("run.pid", "the program Run started");
+            // The Run console is Run's program's, so the profiler attaches to it rather than start another there.
+            await Call(client, McpTools.Profile, new() { ["attach"] = true, ["seconds"] = 1 });
+            await Call(client, McpTools.DebugStart, new() { ["configuration"] = "Sum: Debugged", ["arguments"] = "debug", ["waitSeconds"] = 1 });
+            int debugged = await WrittenId("debug.pid", "the program debugged");
+            File.WriteAllText(Path.Combine(Folder, "linger"), string.Empty);
+            // The build never ends: the test gives its call up once it has seen the step start.
+            building = Result(client, McpTools.Build, giveUp: giveUp);
+            int build = await WrittenId("build.pid", "the build's step");
+            await Call(client, McpTools.TerminalRun, new()
+            {
+                ["command"] = OperatingSystem.IsWindows() ? "Set-Content -Path shell.pid -Value $PID" : "echo $$ > shell.pid; sleep 600 &",
+                ["waitSeconds"] = 2,
+            });
+            int shell = await WrittenId("shell.pid", "the terminal's shell");
+
+            started.AddRange(Processes.Descendants(passenger.Id));
+            own.AddRange(started.Select(OwnProcess.Of));
+            Assert.Subset(started.ToHashSet(), new HashSet<int> { load, run, debugged, build, shell });
+            giveUp.Cancel();
+            OwnProcess.Of(passenger).Kill(alone: true);
+            string[] left = [.. started.Where(id => !Processes.Gone(id)).Select(Processes.Describe)];
+            Assert.True(left.Length == 0, $"Pitstop, killed, left running {left.Length} of the {started.Count} processes it had started:\n{string.Join('\n', left)}");
+        }
+        finally
+        {
+            // Given up before the kill, so the client's word of it reaches a Passenger still there.
+            giveUp.Cancel();
+            ChildProcesses.Kill(passenger);
+            foreach (OwnProcess process in own)
+            {
+                process.Kill();
+            }
+            // The build's call ends with the server; its failure is nobody's to report.
+            _ = building?.ContinueWith(call => call.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+            if (client is not null)
+            {
+                try
+                {
+                    await client.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+                }
+                catch (Exception gone) when (gone is IOException or TimeoutException or ObjectDisposedException or OperationCanceledException or InvalidOperationException)
+                {
+                    // The server is gone, as the test made it.
+                }
+            }
+        }
+    }
+}

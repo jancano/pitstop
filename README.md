@@ -53,7 +53,7 @@ just test [FILTER]          # Run the test suite or matching tests
 just screenshot pitstop.png # Render the window off-screen
 ```
 
-The app is built under `artifacts/bin/Passenger.App/debug/`. Run `Pitstop.exe` on Windows or `Pitstop` on macOS and Linux. Use `AVALONIA_TELEMETRY_OPTOUT=1` for builds outside `just`, including IDE builds.
+The app is built under `artifacts/bin/Pitstop.App/debug/`. Run `Pitstop.exe` on Windows or `Pitstop` on macOS and Linux. Use `AVALONIA_TELEMETRY_OPTOUT=1` for builds outside `just`, including IDE builds.
 
 To build the Windows candidate packages without a tag, run `just package-win win-x64` with `PITSTOP_RELEASE_VERSION=0.3.0-alpha.1` in the environment. The two packages are written to `artifacts/package/`. Set `PITSTOP_PACKAGE_DIRECTORY` to use a different directory under `artifacts/`. See the [alpha release notes](docs/release-notes/0.3.0-alpha.1.md) for verification and checksums.
 

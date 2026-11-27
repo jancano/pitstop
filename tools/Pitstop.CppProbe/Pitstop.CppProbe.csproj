@@ -4,7 +4,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Passenger.Core/Passenger.Core.csproj" />
-    <ProjectReference Include="../../src/Passenger.Lsp/Passenger.Lsp.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Core/Pitstop.Core.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Lsp/Pitstop.Lsp.csproj" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes src/Passenger.Workspace/GodotDefaultTheme.json, the table of Godot's default theme Passenger carries, from Godot's
+"""Writes src/Pitstop.Workspace/GodotDefaultTheme.json, the table of Godot's default theme Passenger carries, from Godot's
 own sources at one commit (MIT, named in THIRD_PARTY_NOTICES.md), fetched once into artifacts/godot-source/<commit>/:
 - scene/theme/default_theme.cpp: each theme type's items by kind (colors, constants, fonts, font_sizes, icons, styles)
   and the type variations it makes (HeaderSmall of Label);
@@ -23,7 +23,7 @@ _spec.loader.exec_module(fetched)
 COMMIT = fetched.GODOT_COMMIT
 RELEASES = {"4.2": "4.2.2-stable", "4.3": "4.3-stable", "4.4": "4.4.1-stable", "4.5": "4.5.2-stable", "4.6": "4.6.3-stable", "4.7": "4.7.2-stable", "4.8": COMMIT}
 ROOT = fetched.ROOT
-OUT = os.path.join(ROOT, "src", "Passenger.Workspace", "GodotDefaultTheme.json")
+OUT = os.path.join(ROOT, "src", "Pitstop.Workspace", "GodotDefaultTheme.json")
 CACHE = os.path.join(ROOT, "artifacts", "godot-theme")
 
 KINDS = {"color": "colors", "constant": "constants", "font": "fonts", "font_size": "font_sizes", "icon": "icons", "stylebox": "styles"}

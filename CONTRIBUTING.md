@@ -61,7 +61,7 @@ work on Pitstop. Pitstop can't tell you how those terms apply to you, so if you'
 - **Branch from `main`** and open your pull request against it.
 - **Test it the way a person uses it.** The tests drive the whole IDE, headless: a window, real key presses, clicks and
   files on disk. A test says what a person sees or gets ("an edit saved keeps the file's line endings"); pure
-  logic alone is unit tested in `tests/Passenger.UnitTests`. It waits for what it checks (`Ui.WaitFor`, `Ui.Settle`); fixed sleeps are build
+  logic alone is unit tested in `tests/Pitstop.UnitTests`. It waits for what it checks (`Ui.WaitFor`, `Ui.Settle`); fixed sleeps are build
   errors in the tests. A bug fix comes with a test that fails without it.
 - **Look at what you changed.** After changing anything visible, take a screenshot (`--scale 2`, in the dark and light
   themes) and look at it.

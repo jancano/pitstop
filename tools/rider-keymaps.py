@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes tests/Passenger.Tests/RiderKeymaps.json from an installed Rider: the keys, double taps and mouse shortcuts each
+"""Writes tests/Pitstop.Tests/RiderKeymaps.json from an installed Rider: the keys, double taps and mouse shortcuts each
 action RiderKeymaps.cs names has in the six keymaps Passenger's presets follow ($default, Mac OS X 10.5+, Visual Studio,
 Visual Studio OSX, VSCode, VSCode OSX), resolved as IntelliJ resolves them: the keymap's own list, else the list of the
 action it takes its shortcuts from (use-shortcut-of), else its parent's, Mac OS X 10.5+ taking $default's with Ctrl and
@@ -18,8 +18,8 @@ KEYMAPS = ["$default", "Mac OS X 10.5+", "Visual Studio", "Visual Studio OSX", "
 MODIFIERS = {"control": "control", "ctrl": "control", "meta": "meta", "alt": "alt", "shift": "shift"}
 ORDER = ["meta", "control", "alt", "shift"]
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TABLE = os.path.join(ROOT, "tests", "Passenger.Tests", "RiderKeymaps.cs")
-OUT = os.path.join(ROOT, "tests", "Passenger.Tests", "RiderKeymaps.json")
+TABLE = os.path.join(ROOT, "tests", "Pitstop.Tests", "RiderKeymaps.cs")
+OUT = os.path.join(ROOT, "tests", "Pitstop.Tests", "RiderKeymaps.json")
 
 
 def ordered(modifiers, rest):

@@ -1,0 +1,2065 @@
+using System.Diagnostics;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
+using Pitstop.App;
+using Pitstop.App.Explorer;
+using Pitstop.App.Run;
+using Pitstop.App.ToolWindows;
+using Pitstop.Core;
+using Pitstop.Editor;
+using Pitstop.Text;
+
+namespace Pitstop.Tests;
+
+/// <summary>Building and running a solution from the window, with the platform's own shortcuts: the
+/// build's errors arrive in Problems where they point, and a run's output in the Run window.</summary>
+public sealed class BuildRunTests : IClassFixture<RestoredFolders>, IDisposable
+{
+    private readonly RestoredFolders folders;
+
+    /// <summary>The test's own solution, once it has taken one.</summary>
+    private string? taken;
+
+    public BuildRunTests(RestoredFolders folders) => this.folders = folders;
+
+    public void Dispose()
+    {
+        if (taken is not null)
+        {
+            TestFolders.Delete(taken);
+        }
+    }
+
+    /// <summary>The test's own solution of one console project, Hello, restored: taken the first time it is asked for, so a
+    /// test that needs none (one of its own, or an empty folder) restores none.</summary>
+    private string Folder => taken ??= folders.Take("build-", made =>
+    {
+        TestFolders.Write(made, "Sample.slnx", "<Solution>\n  <Folder Name=\"/src/\">\n    <Project Path=\"src/Hello/Hello.csproj\" />\n  </Folder>\n</Solution>\n");
+        TestFolders.Write(made, "src/Hello/Hello.csproj", TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>"));
+        TestFolders.Write(made, "src/Hello/Program.cs", "Console.WriteLine(\"Hello from the run\");\n");
+        return Path.Combine(made, "Sample.slnx");
+    });
+
+    /// <summary>The gate's seventeen checks of Build and Run, as one flow: a solution opened by name, build errors
+    /// listed and linked, Hot Reload reaching the program, the run console's input and colours, the projects chosen
+    /// built alone, a build stopped or waiting for design-time builds, links in a program's output, the Build window, a
+    /// browser opened once listening, and a build or program ended with the window.</summary>
+    [Gate]
+    [AvaloniaFact]
+    public void The_gates_builds_and_runs_hold_as_one_flow()
+    {
+        Flow.StepApart("a solution opened by name opens that one shows its projects framework unloads it and its design time build leaves the apphost", () => new BuildRunTests(folders), t => t.A_solution_opened_by_name_opens_that_one_shows_its_projects_framework_unloads_it_and_its_design_time_build_leaves_the_apphost());
+        Flow.StepApart("a build error is listed in problems and a link from the build window and a run whose build fails runs nothing", () => new BuildRunTests(folders), t => t.A_build_error_is_listed_in_problems_and_a_link_from_the_build_window_and_a_run_whose_build_fails_runs_nothing());
+        Flow.StepApart("a build error whose message runs over several lines is one problem showing its first line", () => new BuildRunTests(folders), t => t.A_build_error_whose_message_runs_over_several_lines_is_one_problem_showing_its_first_line());
+        Flow.StepApart("with hot reload edits reach the running program a signature change restarts it and it ends with the window", () => new BuildRunTests(folders), t => t.With_hot_reload_edits_reach_the_running_program_a_signature_change_restarts_it_and_it_ends_with_the_window());
+        Flow.StepApart("the run console takes typed input never shows a split colour code colours standard error clears from its menu and keeps riders buffer", () => new BuildRunTests(folders), t => t.The_run_console_takes_typed_input_never_shows_a_split_colour_code_colours_standard_error_clears_from_its_menu_and_keeps_riders_buffer());
+        Flow.StepApart("the projects chosen in the explorer build rebuild and clean on their own", () => new BuildRunTests(folders), t => t.The_projects_chosen_in_the_explorer_build_rebuild_and_clean_on_their_own());
+        Flow.StepApart("a build under dotnet tests environment ends and stopping a build ends its steps wherever msbuild ran them and nothing more is written after", () => new BuildRunTests(folders), t => t.A_build_under_dotnet_tests_environment_ends_and_stopping_a_build_ends_its_steps_wherever_msbuild_ran_them_and_nothing_more_is_written_after());
+        Flow.StepApart("a build begun while a wpf apps design time build writes its generated code waits for it and succeeds", () => new BuildRunTests(folders), t => t.A_build_begun_while_a_wpf_apps_design_time_build_writes_its_generated_code_waits_for_it_and_succeeds());
+        Flow.StepApart("a build begun while an avalonia apps design time build writes its resources waits for it and succeeds", () => new BuildRunTests(folders), t => t.A_build_begun_while_an_avalonia_apps_design_time_build_writes_its_resources_waits_for_it_and_succeeds());
+        Flow.StepApart("an address a message naming a file and a stack trace a program writes are links where they point", () => new BuildRunTests(folders), t => t.An_address_a_message_naming_a_file_and_a_stack_trace_a_program_writes_are_links_where_they_point());
+        Flow.StepApart("a console as output streams copies no line it has linked", () => new BuildRunTests(folders), t => t.A_console_as_output_streams_copies_no_line_it_has_linked());
+        Flow.StepApart("Build opens the build window as it starts and its end brings it forward as settings say", () => new BuildRunTests(folders), t => t.Build_opens_the_build_window_as_it_starts_and_its_end_brings_it_forward_as_settings_say());
+        Flow.StepApart("a web project whose profile launches the browser opens its launch url once it listens and not before", () => new BuildRunTests(folders), t => t.A_web_project_whose_profile_launches_the_browser_opens_its_launch_url_once_it_listens_and_not_before());
+        Flow.StepApart("a build that cannot start says why and leaves nothing waiting", () => new BuildRunTests(folders), t => t.A_build_that_cannot_start_says_why_and_leaves_nothing_waiting());
+        Flow.StepApart("the run windows rerun while the program runs stops it and runs it again and a program still running ends with the window", () => new BuildRunTests(folders), t => t.The_run_windows_rerun_while_the_program_runs_stops_it_and_runs_it_again_and_a_program_still_running_ends_with_the_window());
+        Flow.StepApart("a program run built and built again in the terminal starts with no build before it", () => new BuildRunTests(folders), t => t.A_program_run_built_and_built_again_in_the_terminal_starts_with_no_build_before_it());
+        Flow.StepApart("a build still running when the window closes ends with it", () => new BuildRunTests(folders), t => t.A_build_still_running_when_the_window_closes_ends_with_it());
+    }
+
+    /// <summary>Rerun asks first and Stop ends the program, each stream's lines heard and shown whole however the other
+    /// writes into them, characters outside the system's code page reaching both ways, the apphost started on
+    /// Passenger's dotnet, and a message naming a file linked, as one flow, each step the check one test made in an
+    /// instance of its own.</summary>
+    [AvaloniaFact]
+    public void The_run_window_shows_a_programs_output_whole_and_reruns_or_stops_as_asked()
+    {
+        Flow.StepApart("asked before a rerun cancel leaves the program running stop ends it and stop and rerun starts it again", () => new BuildRunTests(folders), t => t.Asked_before_a_rerun_cancel_leaves_the_program_running_stop_ends_it_and_stop_and_rerun_starts_it_again());
+        Flow.StepApart("a programs output and errors written into each others lines are heard a whole line of each stream at a time", () => new BuildRunTests(folders), t => t.A_programs_output_and_errors_written_into_each_others_lines_are_heard_a_whole_line_of_each_stream_at_a_time());
+        Flow.StepApart("the run window shows each streams line whole whatever the other writes into it and a prompt as written", () => new BuildRunTests(folders), t => t.The_run_window_shows_each_streams_line_whole_whatever_the_other_writes_into_it_and_a_prompt_as_written());
+        Flow.StepApart("a programs characters outside the systems code page reach the run window as written and the program as typed", () => new BuildRunTests(folders), t => t.A_programs_characters_outside_the_systems_code_page_reach_the_run_window_as_written_and_the_program_as_typed());
+        Flow.StepApart("Run starts the projects apphost on the dotnet pitstop builds with", () => new BuildRunTests(folders), t => t.Run_starts_the_projects_apphost_on_the_dotnet_passenger_builds_with());
+        Flow.StepApart("a build message naming a file but no place in it links the file and opens it", () => new BuildRunTests(folders), t => t.A_build_message_naming_a_file_but_no_place_in_it_links_the_file_and_opens_it());
+    }
+
+    /// <summary>Under dotnet watch a program that ends or whose build fails is said to wait for a change that builds,
+    /// each save reaches the program alone however long it takes, and a web project's browser opens once through the
+    /// window, as one flow, each step in an instance of its own.</summary>
+    [AvaloniaFact]
+    public void Hot_Reload_and_dotnet_watch_follow_each_save_and_wait_for_a_change_that_builds()
+    {
+        Flow.StepApart("a program under dotnet watch that ends on a deleted method is said to wait for a change and a save or rerun starts it again", () => new BuildRunTests(folders), t => t.A_program_under_dotnet_watch_that_ends_on_a_deleted_method_is_said_to_wait_for_a_change_and_a_save_or_rerun_starts_it_again());
+        Flow.StepApart("a program under dotnet watch whose build fails is said to wait for a change naming the error and a change that builds runs it", () => new BuildRunTests(folders), t => t.A_program_under_dotnet_watch_whose_build_fails_is_said_to_wait_for_a_change_naming_the_error_and_a_change_that_builds_runs_it());
+        Flow.StepApart("with hot reload edits saved one after another each reach the program heard as their files change alone however long a save takes", () => new BuildRunTests(folders), t => t.With_hot_reload_edits_saved_one_after_another_each_reach_the_program_heard_as_their_files_change_alone_however_long_a_save_takes());
+        Flow.StepApart("Under hot reload a web project whose profile launches the browser opens it once through the window and never through dotnet watch", () => new BuildRunTests(folders), t => t.Under_hot_reload_a_web_project_whose_profile_launches_the_browser_opens_it_once_through_the_window_and_never_through_dotnet_watch());
+    }
+
+    /// <summary>A build waits for a held file's save to land, goes on through the language server starting again and
+    /// ends its nodes with it, each on the systems it holds on, as one step whose rows pass over the others, each in an
+    /// instance of its own.</summary>
+    [AvaloniaFact]
+    public void A_build_waits_for_a_held_save_and_outlasts_the_language_server_starting_again()
+    {
+        Flow.Step("a build waits for a held save and outlasts the language server's start and its nodes", () => Cases.All(
+            ("a build pressed while a held files save lands waits for it and compiles the saved text", () => Flow.StepApart("a build pressed while a held files save lands waits for it and compiles the saved text", () => new BuildRunTests(folders), t => t.A_build_pressed_while_a_held_files_save_lands_waits_for_it_and_compiles_the_saved_text())),
+            ("a build goes on through the language server starting again while it runs", () => Flow.StepApart("a build goes on through the language server starting again while it runs", () => new BuildRunTests(folders), t => t.A_build_goes_on_through_the_language_server_starting_again_while_it_runs())),
+            ("the language servers msbuild nodes end with it on windows too", () => Flow.StepApart("the language servers msbuild nodes end with it on windows too", () => new BuildRunTests(folders), t => t.The_language_servers_msbuild_nodes_end_with_it_on_windows_too()))));
+    }
+
+    /// <summary>A solution opened by name among the folder's several, its project's framework set by the repository,
+    /// built before: the window opens that solution and keeps it as it reads it again; the project shows its framework,
+    /// unloaded is dimmed and leaves the run configurations until reloaded; and the project host's design-time build of
+    /// it writes no apphost, which the SDK makes (and on macOS signs) in Compile's dependencies once the assembly is
+    /// there, so a build begun beside it could have both make and sign that one file at once.</summary>
+    private void A_solution_opened_by_name_opens_that_one_shows_its_projects_framework_unloads_it_and_its_design_time_build_leaves_the_apphost()
+    {
+        Write("Zebra.slnx", "<Solution>\n  <Folder Name=\"/src/\">\n    <Project Path=\"src/Hello/Hello.csproj\" />\n  </Folder>\n</Solution>\n");
+        Write("Directory.Build.props", $"<Project>\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
+        Write("src/Hello/Hello.csproj",
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n</Project>\n");
+        string project = Path.Combine(Folder, "src", "Hello");
+        Pitstop.Core.ChildResult built = Ui.Await(Waiting.Apart(() => Pitstop.Core.ChildProcesses.RunAsync(
+            Pitstop.Core.ChildProcesses.DotnetCommand(["build", Path.Combine(project, "Hello.csproj"), "-nologo"]), limit: Restore.Limit)), "the program's build before the test", Restore.Limit + TestFolders.Spare);
+        Assert.True(built.Succeeded, $"The program did not build before the test:\n{built.Output}{built.Error}");
+        string apphost = Path.Combine(project, "obj", "Debug", TestProjects.Framework, OperatingSystem.IsWindows() ? "apphost.exe" : "apphost");
+        Assert.True(File.Exists(apphost), $"The build made no apphost at {apphost}");
+        File.Delete(apphost);
+
+        MainWindow window = Ui.OpenFolder(Path.Combine(Folder, "Zebra.slnx"));
+        try
+        {
+            Assert.Equal("Zebra", window.Solution?.Name);
+            Assert.Equal(PathNames.Canonical(Path.Combine(Folder, "Zebra.slnx")), window.CSharpService?.Session?.Solution);
+            Ui.WaitFor(() => window.CSharpService?.Session is { IsLoaded: true }, "the language server to load the program's design-time build", TimeSpan.FromMinutes(2));
+            Assert.False(File.Exists(apphost), "The design-time build made the program's apphost, which the build makes (and on macOS signs) beside it");
+            window.ReloadSolution();
+            Assert.Equal("Zebra", window.Solution?.Name);
+
+            ExplorerTree tree = window.ExplorerView.Tree;
+            tree.Expand(Assert.Single(tree.Rows, r => r.Kind == NodeKind.SolutionFolder && r.Name == "src"));
+            ExplorerNode loaded = Assert.Single(tree.Rows, r => r.Kind == NodeKind.Project && r.Name == "Hello");
+            Assert.Equal(TestProjects.Framework, loaded.Detail);
+            string hello = loaded.Path!;
+            Assert.Equal(["Hello"], window.Configurations.Select(c => c.Name));
+
+            window.SetUnloaded(hello, unloaded: true);
+            ExplorerNode unloaded = Assert.Single(tree.Rows, r => r.Kind == NodeKind.Project && r.Name == "Hello");
+            Assert.Equal("(unloaded)", unloaded.Detail);
+            Assert.True(unloaded.IsDimmed);
+            Assert.False(unloaded.HasChildren);
+            Assert.Empty(window.Configurations);
+            window.Perform(AppActions.Build);
+            Assert.Equal("Nothing to build: every project is unloaded", window.Status);
+
+            window.SetUnloaded(hello, unloaded: false);
+            Assert.Equal(["Hello"], window.Configurations.Select(c => c.Name));
+            Assert.Equal(TestProjects.Framework, Assert.Single(tree.Rows, r => r.Kind == NodeKind.Project && r.Name == "Hello").Detail);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>With Ask before stopping a running configuration to start it again on, Run of the program that runs asks
+    /// first: Cancel leaves it running, Stop ends it and starts nothing, a Run with nothing running asks nothing, and Stop and
+    /// Rerun with Don't ask again ticked runs it again and turns the question off.</summary>
+    private void Asked_before_a_rerun_cancel_leaves_the_program_running_stop_ends_it_and_stop_and_rerun_starts_it_again()
+    {
+        string started = Path.Combine(Folder, "program.pid");
+        Write("src/Hello/Program.cs", $$"""
+            File.WriteAllText(@"{{started}}", Environment.ProcessId.ToString());
+            while (true)
+            {
+                Console.WriteLine("running");
+                Thread.Sleep(200);
+            }
+
+            """);
+        // Seen, as only a window the person sees asks them.
+        MainWindow window = new() { Width = 1200, Height = 800, Unseen = false };
+        window.Show();
+        window.OpenFolder(Folder);
+        Ui.Settle();
+        window.ApplySettings(window.Settings with { AskBeforeRerun = true });
+        try
+        {
+            Assert.True(window.Perform(AppActions.RunProgram), $"Run could not run: {window.Status}");
+            Ui.WaitFor(() => window.Runner.IsRunning && Processes.ReadId(started) > 0, "the program to run", TimeSpan.FromMinutes(2));
+            int first = Processes.ReadId(started);
+
+            ChoiceDialog cancelled = RunAgainAsked(window);
+            Ui.ClickButton(cancelled, "Cancel");
+            Ui.WaitFor(() => window.Actions.Work.Of(AppActions.RunProgram) is null, "the start the person cancelled to end");
+            Assert.True(window.Runner.IsRunning && Processes.ReadId(started) == first && Processes.IsRunning(first),
+                $"Cancel did not leave the program running as it was: the status bar says \"{window.Status}\"");
+
+            Ui.ClickButton(RunAgainAsked(window), "Stop");
+            Ui.WaitFor(() => !window.Runner.IsRunning && window.Actions.Work.Of(AppActions.RunProgram) is null, "the program to stop, nothing started");
+            Assert.True(Processes.ReadId(started) == first && !Processes.IsRunning(first), $"Stop started the program again or left it running: \"{window.Status}\"");
+
+            Assert.True(window.Perform(AppActions.RunProgram), $"Run could not run: {window.Status}");
+            Assert.Null(window.RunAgainQuestion);
+            Ui.WaitFor(() => window.Runner.IsRunning && Processes.ReadId(started) is int again && again > 0 && again != first, "the program to run again, asked nothing", TimeSpan.FromMinutes(2));
+            int second = Processes.ReadId(started);
+
+            ChoiceDialog rerun = RunAgainAsked(window);
+            rerun.GetVisualDescendants().OfType<CheckBox>().Single(c => (string?)c.Content == "Don't ask again").IsChecked = true;
+            Ui.ClickButton(rerun, "Stop and Rerun");
+            Ui.WaitFor(() => window.Runner.IsRunning && Processes.ReadId(started) is int third && third > 0 && third != second, "the program to run again", TimeSpan.FromMinutes(2));
+            Assert.False(Processes.IsRunning(second), "Stop and Rerun left the program it stopped running beside the new one");
+            Assert.False(window.Settings.AskBeforeRerun, "Don't ask again left the question on");
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the program to stop");
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+            window.Close();
+        }
+
+        static ChoiceDialog RunAgainAsked(MainWindow window)
+        {
+            Assert.True(window.Perform(AppActions.RunProgram), $"Run could not run: {window.Status}");
+            Ui.PumpUntil(() => window.RunAgainQuestion is not null, "Run to ask about the program that runs", TimeSpan.FromMinutes(1));
+            return DialogButtonsTests.Check(window.RunAgainQuestion!);
+        }
+    }
+
+    /// <summary>Windows refuses a save while another program holds the file sharing neither writes nor its deletion, and
+    /// Build is pressed at once: the build waits for the save to land, saying so, and compiles the saved text (an error
+    /// typed into it), never the file as it was.</summary>
+    private void A_build_pressed_while_a_held_files_save_lands_waits_for_it_and_compiles_the_saved_text()
+    {
+        Assert.SkipUnless(OperatingSystem.IsWindows(), "Only Windows refuses to replace or write a file another program holds");
+        string shop = TestFolders.Create("build-held-");
+        TestFolders.Write(shop, "Shop.csproj", TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>"));
+        string program = TestFolders.Write(shop, "Program.cs", "Console.WriteLine(\"Hello\");\n");
+        MainWindow window = Ui.OpenFolder(shop, languageServer: false);
+        window.OpenFile(program);
+        Ui.Settle();
+        window.EditorArea.CodeEditor.Selections = SelectionSet.Single(window.EditorArea.Active!.Text.Snapshot.Length);
+        window.KeyTextInput("int count = true;");
+        Ui.Settle();
+        using (new FileStream(program, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Ui.Press(window, Ui.Shortcut(AppActions.Save), settle: false);
+            Ui.PumpUntil(() => !window.EditorArea.Active!.IsModified, "the window to take the held file's save", TimeSpan.FromSeconds(10));
+            Ui.Press(window, Ui.Shortcut(AppActions.Build), settle: false);
+            Ui.PumpUntil(() => window.Actions.Work.Of(AppActions.Build)?.Stage == "Waiting for Program.cs to be saved…",
+                "the build to wait for Program.cs's save", TimeSpan.FromSeconds(10));
+        }
+        Ui.WaitFor(() => !window.IsBuilding, () => $"the build to end once Program.cs was saved: {window.Status}", TimeSpan.FromMinutes(2));
+        Assert.True(window.BottomPanel.Problems.Problems.Any(p => p.Code == "CS0029"),
+            $"The build compiled Program.cs as it was before the save, not the error saved into it: {window.Status}");
+        Assert.StartsWith("Build failed: 1 error", window.Status, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>One program with a compiler's error, in a folder named as Finder and Explorer name a copy, built once: its error
+    /// listed in Problems at its file and line, the status bar's word a link there, the Build window's line of it a link to
+    /// its file, line and column; and Run, whose build fails on it too, brings the Build window forward with it and runs
+    /// nothing.</summary>
+    private void A_build_error_is_listed_in_problems_and_a_link_from_the_build_window_and_a_run_whose_build_fails_runs_nothing()
+    {
+        string shop = Path.Combine(TestFolders.Create("build-error-"), "Shop (copy)");
+        TestFolders.Write(shop, "Shop.csproj", TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>"));
+        TestFolders.Write(shop, "Program.cs", "Console.WriteLine(\"Hello\");\nint count = \"three\";\n");
+        string program = PathNames.Canonical(Path.Combine(shop, "Program.cs"));
+        MainWindow window = Ui.OpenFolder(shop);
+        Ui.Press(window, Ui.Shortcut(AppActions.Build));
+        Ui.Settle();
+        Assert.False(window.IsBuilding);
+        Problem? problem = window.BottomPanel.Problems.Problems.SingleOrDefault(p => p.Code == "CS0029");
+        Assert.True(problem is not null, $"The build failed but Problems has nothing for its error, listing [{string.Join(", ", window.BottomPanel.Problems.Problems.Select(p => $"{p.Code} {p.Path}"))}]");
+        Assert.Equal(ProblemSeverity.Error, problem.Severity);
+        Assert.Equal(program, problem.Path);
+        Assert.Equal(new TextPosition(1, 12), problem.Position);
+
+        Assert.StartsWith("Build failed: 1 error", window.Status, StringComparison.Ordinal);
+        ProblemsModel problems = window.BottomPanel.Problems;
+        window.ShowToolWindow(ToolWindowIds.Build);
+        problems.Shown = ProblemsTab.File;
+        Button said = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "StatusMessage");
+        Ui.Click(said);
+        Assert.True(window.DockHost.IsShown(ToolWindowIds.Problems) && problems.Shown == ProblemsTab.Build && problems.Selected == problem,
+            $"A click on \"{window.Status}\" in the status bar showed {(window.DockHost.IsShown(ToolWindowIds.Problems) ? $"Problems' {problems.Shown} tab, {problems.Selected?.Code ?? "nothing"} chosen" : "nothing")}, "
+            + "not the build's error in Problems' Build");
+
+        window.ShowToolWindow(ToolWindowIds.Build);
+        Ui.Settle();
+        OutputView build = window.BottomPanel.Build;
+        string output = build.Document.Snapshot.ToString();
+        int error = output.IndexOf("Program.cs(2,13): error CS0029", StringComparison.Ordinal);
+        Assert.True(error >= 0, $"The build window has no error at its place:\n{output}");
+        Click(window, build.Editor, error);
+        Assert.Equal(program, window.EditorArea.Active?.Path);
+        Assert.Equal(new TextPosition(1, 12), window.EditorArea.CodeEditor.CaretPosition);
+
+        window.ShowToolWindow(ToolWindowIds.Problems);
+        string? refused = Ui.Await(window.RunAsync(), "the run's build", TimeSpan.FromMinutes(2));
+        Assert.StartsWith("Build failed: 1 error", refused, StringComparison.Ordinal);
+        Assert.True(window.DockHost.IsShown(ToolWindowIds.Build), "The build before the run failed, but the Build window did not come forward with its error as Rider's does");
+        Assert.Contains("Program.cs(2,13): error CS0029", window.BottomPanel.Build.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        Assert.False(window.Runner.IsRunning);
+        Assert.Equal(string.Empty, Output(window));
+        window.Close();
+    }
+
+    private void A_build_error_whose_message_runs_over_several_lines_is_one_problem_showing_its_first_line()
+    {
+        // A message of many lines, as XAML compilers' and NuGet's are: MSBuild writes each line as its own.
+        Write("src/Hello/Hello.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n" +
+            "  <Target Name=\"Unreadable\" BeforeTargets=\"Build\">\n" +
+            "    <Warning File=\"Program.cs\" Code=\"NU1608\" Text=\"Detected package version outside of dependency constraint.%0A Hello -&gt; A -&gt; X (&gt;= 2.0)%0A Hello -&gt; X (&gt;= 1.0)\" />\n" +
+            "    <Error File=\"Views/Main.axaml\" Code=\"AVLN1001\" Text=\"File doesn't contain valid XAML: 'Hello' is an unexpected token.%0A   at System.Xml.XmlTextReaderImpl.Throw(Exception e)%0A   at System.Xml.XmlTextReaderImpl.ParseAttributes()\" />\n" +
+            "  </Target>\n</Project>\n");
+        MainWindow window = Open();
+        Ui.Press(window, Ui.Shortcut(AppActions.Build));
+        Ui.Settle();
+        IReadOnlyList<Problem> problems = window.BottomPanel.Problems.Problems;
+        Assert.True(problems.Count(p => p.Severity == ProblemSeverity.Error) == 1,
+            $"The compiler's one error should be one problem with its stack trace, not a problem a line; Problems lists [{string.Join(" | ", problems.Select(p => p.Message))}]");
+        Problem error = Assert.Single(problems, p => p.Severity == ProblemSeverity.Error);
+        Assert.Equal("File doesn't contain valid XAML: 'Hello' is an unexpected token.\n   at System.Xml.XmlTextReaderImpl.Throw(Exception e)\n   at System.Xml.XmlTextReaderImpl.ParseAttributes()", error.Message);
+        Problem warning = Assert.Single(problems, p => p.Severity == ProblemSeverity.Warning);
+        Assert.Equal("Detected package version outside of dependency constraint.\n Hello -> A -> X (>= 2.0)\n Hello -> X (>= 1.0)", warning.Message);
+        Assert.StartsWith("Build failed: 1 error, 1 warning", window.Status, StringComparison.Ordinal);
+
+        // MSBuild writes them to standard output, where the Build window draws each of their lines in its severity's colour.
+        OutputView build = window.BottomPanel.Build;
+        TextSnapshot text = build.Document.Snapshot;
+        IReadOnlyList<SyntaxSpan> colours = build.Editor.Highlighter!.GetSpans(text, 0, text.Length);
+        SyntaxSpan[] On(int line) =>
+            [.. colours.Where(s => s.Start < text.GetLine(line).Start + text.GetLine(line).Length && s.End > text.GetLine(line).Start && s.Kind != TokenKind.Link)];
+        string Drawn() => string.Join("\n", Enumerable.Range(0, text.LineCount).Select(l => $"[{string.Join(",", On(l).Select(s => s.Kind))}] {text.GetLineText(l)}"));
+        int[] coloured = [0, 0];
+        for (int line = 0; line < text.LineCount; line++)
+        {
+            string said = text.GetLineText(line);
+            TokenKind? severity = said.Contains(": error AVLN1001", StringComparison.Ordinal) ? TokenKind.BuildError
+                : said.Contains(": warning NU1608", StringComparison.Ordinal) ? TokenKind.BuildWarning : null;
+            SyntaxSpan[] on = On(line);
+            bool drawn = severity is { } kind
+                ? on.Length > 0 && on.All(s => s.Kind == kind) && on[^1].End == text.GetLine(line).Start + text.GetLine(line).Length
+                : on.All(s => s.Kind is not (TokenKind.BuildError or TokenKind.BuildWarning));
+            Assert.True(drawn, $"Line {line + 1} of the Build window is drawn in the wrong colours, each line's here:\n{Drawn()}");
+            if (severity is { } counted)
+            {
+                coloured[counted == TokenKind.BuildError ? 0 : 1]++;
+            }
+        }
+        Assert.True(coloured[0] > 0 && coloured[1] > 0, $"The Build window shows no line of the error or the warning:\n{Drawn()}");
+        window.Perform(AppActions.ShowProblems);
+        window.BottomPanel.Problems.Shown = ProblemsTab.Build;
+        Ui.Settle();
+        TextBlock[] shown = [.. window.ProblemsWindow.GetVisualDescendants().OfType<TextBlock>()];
+        Assert.Contains(shown, t => t.Text == "File doesn't contain valid XAML: 'Hello' is an unexpected token.");
+        Assert.DoesNotContain(shown, t => t.Text?.Contains("ParseAttributes", StringComparison.Ordinal) == true);
+        window.Close();
+    }
+
+    /// <summary>A compiler's message about a file as a whole, which names no place in it (MSBuild's "file : warning
+    /// AVLN3001: ...", as Avalonia's XAML compiler writes one), links its file in the Build window, a path with a space in it
+    /// whole, and the link opens it.</summary>
+    private void A_build_message_naming_a_file_but_no_place_in_it_links_the_file_and_opens_it()
+    {
+        Write("src/Hello/Hello.csproj",
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n" +
+            "  <Target Name=\"Placeless\" BeforeTargets=\"Build\">\n" +
+            "    <Warning File=\"Views/Tools Window.axaml\" Code=\"AVLN3001\" Text=\"XAML resource won't be reachable via runtime loader\" />\n" +
+            "  </Target>\n</Project>\n");
+        Write("src/Hello/Views/Tools Window.axaml", "<UserControl xmlns=\"https://github.com/avaloniaui\" />\n");
+        string axaml = PathNames.Canonical(Path.Combine(Folder, "src", "Hello", "Views", "Tools Window.axaml"));
+        MainWindow window = Open();
+        Ui.Press(window, Ui.Shortcut(AppActions.Build));
+        Ui.Settle();
+
+        OutputView build = window.BottomPanel.Build;
+        TextSnapshot text = build.Document.Snapshot;
+        int line = Enumerable.Range(0, text.LineCount).FirstOrDefault(l => text.GetLineText(l).Contains(" : warning AVLN3001", StringComparison.Ordinal), -1);
+        Assert.True(line >= 0, $"The Build window shows no warning about the file as a whole:\n{text}");
+        string said = text.GetLineText(line);
+        FoundLink link = Assert.Single(Ui.LinksIn(build.Links, said), l => l.Target is FileLink);
+        Assert.True(link.Target is FileLink { Path: var linked, Position: var at } && PathNames.Same(linked, axaml) && at == default
+            && said.Substring(link.Start, link.Length).EndsWith("Tools Window.axaml", StringComparison.Ordinal),
+            $"The warning's file is linked as {said.Substring(link.Start, link.Length)} to {link.Target}, not as the file {axaml} as a whole, in: {said}");
+
+        Click(window, build.Editor, text.GetLine(line).Start + link.Start + 1);
+        Assert.True(window.EditorArea.Active?.Path is { } opened && PathNames.Same(opened, axaml),
+            $"A click on the warning's file opened {window.EditorArea.Active?.Path ?? "nothing"}, not {axaml}");
+        window.Close();
+    }
+
+    /// <summary>One program under dotnet watch, never built before: a saved edit changes what it does with no restart; Apply
+    /// Hot Reload Changes in the Run window saves and says what dotnet watch made of it; a parameter added with a default,
+    /// which leaves the callers calling the method the update deletes, is said as the restart dotnet watch makes, however
+    /// long after the Apply the program calls it and however far the window fell behind; and the program dotnet watch
+    /// started again, and dotnet watch, end with the window.</summary>
+    private void With_hot_reload_edits_reach_the_running_program_a_signature_change_restarts_it_and_it_ends_with_the_window()
+    {
+        string started = Path.Combine(Folder, "program.pid");
+        string asked = Path.Combine(Folder, "asked");
+        // Later, once asked, only after dotnet watch hooks its deleted body: called before, it ends the program instead.
+        Write("src/Hello/Program.cs", $$"""
+            File.WriteAllText(@"{{started}}", Environment.ProcessId.ToString());
+            while (true)
+            {
+                Console.WriteLine(Talk.Say());
+                if (File.Exists(@"{{asked}}") && Talk.Hooked())
+                {
+                    Console.WriteLine(Talk.Later());
+                }
+                Thread.Sleep(200);
+            }
+
+            static class Talk
+            {
+                public static string Say() => "before the edit";
+
+                public static string Later() => "asked later";
+
+                public static bool Hooked() => {{DeletedBodyHooks}}.Any(hook => hook.GetValue(null) is not null);
+            }
+
+            """);
+        MainWindow window = Open();
+        window.ApplySettings(window.Settings with { HotReload = true });
+        bool ending = false;
+        try
+        {
+            window.OpenFile(Path.Combine(Folder, "src", "Hello", "Program.cs"));
+            Ui.Settle();
+            // Never built: the output folder, the program's working folder, is left for dotnet watch's first build to make.
+            TestFolders.Delete(Path.Combine(Folder, "src", "Hello", "bin"));
+            window.Perform(AppActions.RunProgram);
+            // dotnet watch watches once it has loaded the project, which is after the program has started.
+            WaitWatched(window, () => Output(window).Contains("before the edit", StringComparison.Ordinal) && Output(window).Contains("Waiting for changes", StringComparison.Ordinal),
+                "the program to run under dotnet watch", TimeSpan.FromMinutes(2));
+
+            Pitstop.App.Workspace.OpenDocument program = window.EditorArea.Active!;
+            int at = program.Text.Snapshot.ToString().IndexOf("before the edit", StringComparison.Ordinal);
+            window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(at, "before the edit".Length, "after the edit")]);
+            window.Perform(AppActions.Save);
+            Ui.WaitFor(() => Output(window).Contains("after the edit", StringComparison.Ordinal), "the edit to reach the program", TimeSpan.FromMinutes(1));
+            Assert.True(window.Runner.IsRunning);
+
+            Assert.True(window.BottomPanel.Run.ShowsHotReload, "The Run window should offer Apply Hot Reload Changes under dotnet watch");
+            at = program.Text.Snapshot.ToString().IndexOf("after the edit", StringComparison.Ordinal);
+            window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(at, "after the edit".Length, "applied again")]);
+            window.Perform(AppActions.ApplyHotReloadChanges);
+            Ui.WaitFor(() => Output(window).Contains("applied again", StringComparison.Ordinal), "the applied edit to reach the program", TimeSpan.FromMinutes(1));
+            WaitWatched(window, () => window.Status?.Contains("dotnet watch applied the changes", StringComparison.Ordinal) == true, "the status bar to say the changes applied");
+
+            // The status bar says the restart however late: here once the Apply has ended.
+            WaitWatched(window, () => window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null, "the Apply before to end");
+            int first = Processes.ReadId(started);
+            // A start again writes the id file again, told by its write rather than by an id the system may give twice.
+            DateTime firstWritten = FileStamp.WrittenAt(started);
+            at = program.Text.Snapshot.ToString().IndexOf("Later() =>", StringComparison.Ordinal);
+            window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(at, "Later() =>".Length, "Later(int times = 1) =>")]);
+            Assert.True(window.Perform(AppActions.ApplyHotReloadChanges), $"Apply Hot Reload Changes could not run: {window.Status}");
+            WaitWatched(window, () => window.Status?.Contains("dotnet watch applied the changes", StringComparison.Ordinal) == true
+                && window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null, "the Apply of a changed signature to end with the changes applied");
+            Write("asked", "");
+            WaitWatched(window, () => window.Status?.Contains("dotnet watch is restarting the application", StringComparison.Ordinal) == true,
+                "the status bar to say dotnet watch restarts the program, which called the method as it was after the Apply had ended", TimeSpan.FromMinutes(1));
+            // An edit before dotnet watch loads the project again is in what it loads, never applied.
+            WaitWatched(window, () => FileStamp.WrittenAt(started) > firstWritten && Processes.ReadId(started) > 0
+                && Output(window) is { } output && output.LastIndexOf("Waiting for changes", StringComparison.Ordinal) > output.LastIndexOf("Restarting application", StringComparison.Ordinal),
+                () => $"dotnet watch to start the program again and watch it (its id file {IdSaid(started)}, process {first} before{(Processes.IsRunning(first) ? ", still running" : string.Empty)})", TimeSpan.FromMinutes(1));
+
+            // The window kept from drawing from the Apply to the restart, as a slow machine's falls behind: both words come at once.
+            int second = Processes.ReadId(started);
+            DateTime secondWritten = FileStamp.WrittenAt(started);
+            at = program.Text.Snapshot.ToString().IndexOf("Later(int times = 1) =>", StringComparison.Ordinal);
+            window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(at, "Later(int times = 1) =>".Length, "Later(int times = 1, bool again = true) =>")]);
+            Assert.True(window.Perform(AppActions.ApplyHotReloadChanges), $"Apply Hot Reload Changes could not run: {window.Status}");
+            Assert.Equal("Hot Reload: saved for dotnet watch to apply", window.Status);
+            if (!Waiting.Until(() => FileStamp.WrittenAt(started) > secondWritten && Processes.ReadId(started) > 0, TimeSpan.FromMinutes(1)))
+            {
+                // What dotnet watch said meanwhile reaches the Run window only once the window runs again.
+                Ui.Settle();
+                Assert.Fail($"dotnet watch did not start the program again, for the signature changed while the window was held (its id file {IdSaid(started)}, "
+                    + $"process {second} before{(Processes.IsRunning(second) ? ", still running" : string.Empty)}); the Run window:\n{Output(window)}");
+            }
+            WaitWatched(window, () => window.Status?.Contains("dotnet watch is restarting the application", StringComparison.Ordinal) == true,
+                "the status bar to say dotnet watch restarted the program while the window was held", TimeSpan.FromMinutes(1));
+
+            ending = true;
+            AssertEndsWithTheWindow(window, started, "the program dotnet watch started");
+        }
+        finally
+        {
+            if (!ending)
+            {
+                window.Perform(AppActions.Stop);
+                Ui.WaitFor(() => !window.Runner.IsRunning, "the program to stop");
+                window.Close();
+            }
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+        }
+    }
+
+    /// <summary>Edits saved one after another into a program under dotnet watch, each save's temporary file kept a second
+    /// before it takes the file's place, as a loaded machine's disk keeps it, longer than dotnet watch gathers what changed
+    /// before it acts: each edit reaches the program, saved by Save or by Apply Hot Reload Changes, which the status bar
+    /// says applied, and dotnet watch hears each save as its file's change alone, never as a file added to the project,
+    /// which would have it load the projects again and say an edit saved meanwhile had no changes to apply.</summary>
+    private void With_hot_reload_edits_saved_one_after_another_each_reach_the_program_heard_as_their_files_change_alone_however_long_a_save_takes()
+    {
+        Write("src/Hello/Program.cs", """
+            while (true)
+            {
+                Console.WriteLine(Talk.Say());
+                Thread.Sleep(200);
+            }
+
+            static class Talk
+            {
+                public static string Say() => "said 0";
+            }
+
+            """);
+        string folder = PathNames.Canonical(Folder);
+        System.Collections.Concurrent.ConcurrentQueue<string> held = new();
+        void Slow(string temporary)
+        {
+            if (PathNames.IsUnder(temporary, folder))
+            {
+                held.Enqueue(Path.GetFileName(temporary));
+                Ui.Stall(TimeSpan.FromSeconds(1), "a save's temporary file kept as a loaded machine's disk keeps it, past the 200 ms dotnet watch gathers changes in");
+            }
+        }
+        MainWindow window = Open();
+        window.ApplySettings(window.Settings with { HotReload = true });
+        // dotnet watch's words as the runner hears them, each stream's lines whole, where the program's line may split one in the Run window.
+        List<string> lines = [];
+        void OnLine(object? sender, string line) => lines.Add(line);
+        FileText.Placing += Slow;
+        window.Runner.Line += OnLine;
+        try
+        {
+            window.OpenFile(Path.Combine(Folder, "src", "Hello", "Program.cs"));
+            Ui.Settle();
+            window.Perform(AppActions.RunProgram);
+            WaitWatched(window, () => Output(window).Contains("said 0", StringComparison.Ordinal) && Output(window).Contains("Waiting for changes", StringComparison.Ordinal),
+                "the program to run under dotnet watch", TimeSpan.FromMinutes(2));
+            int watching = lines.FindIndex(line => line.StartsWith("dotnet watch", StringComparison.Ordinal) && line.Contains("Waiting for changes", StringComparison.Ordinal));
+            Assert.True(watching >= 0, $"dotnet watch's word that it waits for changes was never heard whole: [{string.Join(" | ", lines)}]");
+            Pitstop.App.Workspace.OpenDocument program = window.EditorArea.Active!;
+
+            for (int edit = 1; edit <= 4; edit++)
+            {
+                string before = $"said {edit - 1}";
+                string after = $"said {edit}";
+                int at = program.Text.Snapshot.ToString().IndexOf(before, StringComparison.Ordinal);
+                window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(at, before.Length, after)]);
+                if (edit < 4)
+                {
+                    window.Perform(AppActions.Save);
+                    WaitWatched(window, () => Output(window).Contains(after, StringComparison.Ordinal), $"edit {edit}, saved, to reach the program", TimeSpan.FromMinutes(1));
+                }
+                else
+                {
+                    Assert.True(window.Perform(AppActions.ApplyHotReloadChanges), $"Apply Hot Reload Changes could not run: {window.Status}");
+                    WaitWatched(window, () => Output(window).Contains(after, StringComparison.Ordinal) && window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null
+                        && window.Status?.Contains("dotnet watch applied the changes", StringComparison.Ordinal) == true,
+                        "the edit Apply Hot Reload Changes saved to reach the program and the status bar to say dotnet watch applied it", TimeSpan.FromMinutes(1));
+                }
+            }
+
+            Assert.True(held.Count >= 4, $"{held.Count} saves held their temporary file, of the 4 made");
+            string[] heard = [.. lines.Skip(watching).Where(line => line.StartsWith("dotnet watch", StringComparison.Ordinal))];
+            string[] more = [.. heard.Where(line => held.Any(name => line.Contains(name, StringComparison.Ordinal))
+                || line.Contains(" added: ", StringComparison.Ordinal) || line.Contains(" deleted: ", StringComparison.Ordinal)
+                || line.Contains("Loading projects", StringComparison.Ordinal) || line.Contains("No managed code changes", StringComparison.Ordinal))];
+            Assert.True(more.Length == 0, "dotnet watch heard a save as more than its file's change, a file added loading the projects again, so an edit saved "
+                + $"meanwhile is said to have no changes to apply:\n{string.Join("\n", heard)}");
+            Assert.True(heard.Count(line => line.Contains("changes applied", StringComparison.Ordinal)) == 4,
+                $"dotnet watch should have applied each of the 4 edits once:\n{string.Join("\n", heard)}");
+        }
+        finally
+        {
+            FileText.Placing -= Slow;
+            window.Runner.Line -= OnLine;
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the program to stop");
+            window.Close();
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+        }
+    }
+
+    /// <summary>A program under dotnet watch that ends on calling a method whose signature an applied edit changed, as one
+    /// does that calls it before dotnet watch has hooked the deleted body: the Apply ends, and the status bar and the Run
+    /// window say the program ended and dotnet watch starts it again when a change is saved, the Run window offering Rerun
+    /// and Stop; a change Apply Hot Reload Changes saves starts it again, which the status bar says, the Apply ending and the
+    /// offer gone; and after a second such end, the Run window's Rerun starts it again.</summary>
+    private void A_program_under_dotnet_watch_that_ends_on_a_deleted_method_is_said_to_wait_for_a_change_and_a_save_or_rerun_starts_it_again()
+    {
+        string started = Path.Combine(Folder, "program.pid");
+        string asked = Path.Combine(Folder, "asked");
+        // Unhooked, the call of the deleted body ends the program, as a call before dotnet watch's hook does.
+        Write("src/Hello/Program.cs", $$"""
+            File.WriteAllText(@"{{started}}", Environment.ProcessId.ToString());
+            while (true)
+            {
+                if (File.Exists(@"{{asked}}"))
+                {
+                    foreach (System.Reflection.FieldInfo hook in {{DeletedBodyHooks}})
+                    {
+                        hook.SetValue(null, null);
+                    }
+                    Console.WriteLine(Talk.Later());
+                }
+                Thread.Sleep(200);
+            }
+
+            static class Talk
+            {
+                public static string Later() => "asked later";
+            }
+
+            """);
+        MainWindow window = Open();
+        window.ApplySettings(window.Settings with { HotReload = true });
+        bool ending = false;
+        try
+        {
+            window.OpenFile(Path.Combine(Folder, "src", "Hello", "Program.cs"));
+            Ui.Settle();
+            window.Perform(AppActions.RunProgram);
+            WaitWatched(window, () => Processes.ReadId(started) > 0 && Output(window).Contains("Waiting for changes", StringComparison.Ordinal),
+                "the program to run under dotnet watch", TimeSpan.FromMinutes(2));
+            Pitstop.App.Workspace.OpenDocument program = window.EditorArea.Active!;
+
+            int first = EndOnDeletedMethod("Later() =>", "Later(int times = 1) =>");
+            Assert.True(window.Runner.IsRunning, "dotnet watch ended with the program, where it waits for a change");
+            Assert.Equal("open the Run window", window.StatusPlace?.Name);
+            Assert.Null(window.Actions.Work.Of(AppActions.ApplyHotReloadChanges));
+
+            // A change saved by the Apply: dotnet watch builds and starts the program again, and the window says so.
+            File.Delete(asked);
+            int at = program.Text.Snapshot.ToString().IndexOf("\"asked later\"", StringComparison.Ordinal);
+            window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(at, "\"asked later\"".Length, "\"saved again\"")]);
+            Assert.True(window.Perform(AppActions.ApplyHotReloadChanges), $"Apply Hot Reload Changes could not run: {window.Status}");
+            WaitWatched(window, () => window.Status == "Running Hello again with Hot Reload: a save applies its changes"
+                && Processes.ReadId(started) is int again && again > 0 && again != first,
+                "dotnet watch to start the program again once a change was saved, and the status bar to say so", TimeSpan.FromMinutes(1));
+            Ui.Settle();
+            Assert.True(window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null, "Apply Hot Reload Changes went on working after dotnet watch had started the program again");
+            Assert.Null(window.BottomPanel.Run.Waiting);
+            Assert.DoesNotContain(window.BottomPanel.Run.GetVisualDescendants().OfType<Button>(), b => b.IsEffectivelyVisible && b.Content as string == "Rerun");
+
+            // The Run window's Rerun: dotnet watch ended and run again, which starts the program.
+            int second = EndOnDeletedMethod("Later(int times = 1) =>", "Later(int times = 1, bool again = true) =>");
+            Ui.ClickButton(window.BottomPanel.Run, "Rerun");
+            WaitWatched(window, () => window.Runner.IsRunning && Processes.ReadId(started) is int again && again > 0 && again != second
+                && Output(window).Contains("Waiting for changes", StringComparison.Ordinal) && window.BottomPanel.Run.Waiting is null,
+                "the Run window's Rerun to run the program under dotnet watch again", TimeSpan.FromMinutes(2));
+            Assert.Equal("Running Hello with Hot Reload: a save applies its changes", window.Status);
+
+            ending = true;
+            AssertEndsWithTheWindow(window, started, "the program dotnet watch started");
+
+            // Changes the method's signature, applies it, and has the program call it: the window says it ended, offering the way on.
+            int EndOnDeletedMethod(string before, string after)
+            {
+                int running = Processes.ReadId(started);
+                int place = program.Text.Snapshot.ToString().IndexOf(before, StringComparison.Ordinal);
+                window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(place, before.Length, after)]);
+                Assert.True(window.Perform(AppActions.ApplyHotReloadChanges), $"Apply Hot Reload Changes could not run: {window.Status}");
+                WaitWatched(window, () => window.Status?.Contains("dotnet watch applied the changes", StringComparison.Ordinal) == true
+                    && window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null, "the Apply of a changed signature to end with the changes applied");
+                Write("asked", "");
+                WaitWatched(window, () => window.Status is { } said && said.StartsWith("Hot Reload: Hello ended with exit code ", StringComparison.Ordinal)
+                    && said.EndsWith("; dotnet watch starts it again when a change is saved, or Rerun starts it now", StringComparison.Ordinal),
+                    "the status bar to say the program ended on the deleted method and dotnet watch waits for a change", TimeSpan.FromMinutes(1));
+                Assert.True(Processes.Gone(running), "The program dotnet watch said had ended still runs");
+                string? waiting = window.BottomPanel.Run.Waiting;
+                Assert.True(waiting is not null && waiting.StartsWith("Hello ended with exit code ", StringComparison.Ordinal)
+                    && waiting.EndsWith(": dotnet watch starts it again when a change is saved", StringComparison.Ordinal),
+                    $"The Run window should say the program ended and dotnet watch waits for a change; it says \"{waiting}\"");
+                string[] offered = [.. window.BottomPanel.Run.GetVisualDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible).Select(b => b.Content).OfType<string>()];
+                Assert.True(offered.Contains("Rerun") && offered.Contains("Stop"), $"The Run window should offer Rerun and Stop; it offers [{string.Join(", ", offered)}]");
+                return running;
+            }
+        }
+        finally
+        {
+            if (!ending)
+            {
+                window.Perform(AppActions.Stop);
+                Ui.WaitFor(() => !window.Runner.IsRunning, "the program to stop");
+                window.Close();
+            }
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+        }
+    }
+
+    /// <summary>A program under dotnet watch whose build fails, as it first starts and once it has ended and a change that does
+    /// not compile is saved: the status bar names the build's first error, a click choosing it in Problems' Build, and the
+    /// Run window says dotnet watch builds it again when a change is saved, offering Stop, the Apply that saved the change
+    /// ending on it; a change that builds, saved, has the program run, which the status bar says, the bar and the error
+    /// gone.</summary>
+    private void A_program_under_dotnet_watch_whose_build_fails_is_said_to_wait_for_a_change_naming_the_error_and_a_change_that_builds_runs_it()
+    {
+        string started = Path.Combine(Folder, "program.pid");
+        string asked = Path.Combine(Folder, "asked");
+        // Its second line fails its first build; once it runs, it ends when asked.
+        Write("src/Hello/Program.cs", $$"""
+            File.WriteAllText(@"{{started}}", Environment.ProcessId.ToString());
+            int broken = "not a number";
+            while (!File.Exists(@"{{asked}}"))
+            {
+                Thread.Sleep(200);
+            }
+
+            """);
+        MainWindow window = Open();
+        window.ApplySettings(window.Settings with { HotReload = true });
+        bool ending = false;
+        try
+        {
+            window.OpenFile(Path.Combine(Folder, "src", "Hello", "Program.cs"));
+            Ui.Settle();
+            window.Perform(AppActions.RunProgram);
+            Pitstop.App.Workspace.OpenDocument program = window.EditorArea.Active!;
+            Problem converted = FailsToBuild("CS0029", "Program.cs:2:14", TimeSpan.FromMinutes(2));
+            Assert.Equal(0, Processes.ReadId(started));
+
+            // The status bar's words are a link to the error in Problems' Build.
+            ProblemsModel problems = window.BottomPanel.Problems;
+            problems.Shown = ProblemsTab.File;
+            Ui.Click(window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "StatusMessage"));
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Problems) && problems.Shown == ProblemsTab.Build && problems.Selected == converted,
+                $"A click on \"{window.Status}\" in the status bar showed {(window.DockHost.IsShown(ToolWindowIds.Problems) ? $"Problems' {problems.Shown} tab, {problems.Selected?.Code ?? "nothing"} chosen" : "nothing")}, "
+                + "not dotnet watch's build error in Problems' Build");
+
+            // A change that builds, saved by the Apply: dotnet watch builds and starts the program.
+            Mend("int broken = \"not a number\";", "Console.WriteLine(\"mended\");");
+            WaitWatched(window, () => window.Status == "Running Hello with Hot Reload: a save applies its changes" && Processes.ReadId(started) > 0,
+                "dotnet watch to build and start the program once a change that builds was saved, and the status bar to say so", TimeSpan.FromMinutes(1));
+            int first = Processes.ReadId(started);
+            Mended("CS0029");
+
+            // Ended, it waits for a change; one that does not compile fails the build that would start it again.
+            Write("asked", "");
+            WaitWatched(window, () => window.Status == "Hot Reload: Hello ended with exit code 0; dotnet watch starts it again when a change is saved, or Rerun starts it now",
+                "the status bar to say the program ended and dotnet watch waits for a change", TimeSpan.FromMinutes(1));
+            File.Delete(asked);
+            Mend("Console.WriteLine(\"mended\");", "Console.WriteLine(Missing);");
+            FailsToBuild("CS0103", "Program.cs:2:19", TimeSpan.FromMinutes(1));
+            Assert.True(Processes.Gone(first), "The program that ended still runs");
+            Assert.True(window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null, "Apply Hot Reload Changes went on working after dotnet watch's build of the change had failed");
+
+            Mend("Console.WriteLine(Missing);", "Console.WriteLine(\"mended again\");");
+            WaitWatched(window, () => window.Status == "Running Hello again with Hot Reload: a save applies its changes" && Processes.ReadId(started) is int again && again > 0 && again != first,
+                "dotnet watch to build and start the program again once a change that builds was saved, and the status bar to say so", TimeSpan.FromMinutes(1));
+            Mended("CS0103");
+
+            ending = true;
+            AssertEndsWithTheWindow(window, started, "the program dotnet watch started");
+
+            // Waits for dotnet watch's build to fail on the error with this code at this place, and checks what the window says of it.
+            Problem FailsToBuild(string code, string where, TimeSpan limit)
+            {
+                const string later = "dotnet watch builds it again when a change is saved";
+                WaitWatched(window, () => window.Status is { } said && said.StartsWith("Hot Reload: Hello's build failed: ", StringComparison.Ordinal)
+                    && said.EndsWith($" ({where}); {later}", StringComparison.Ordinal), $"the status bar to name the build's error at {where}", limit);
+                Assert.True(window.Runner.IsRunning, "dotnet watch ended with its build, where it waits for a change");
+                Problem? error = window.BottomPanel.Problems.Problems.SingleOrDefault(p => p.Code == code);
+                Assert.True(error is not null, $"dotnet watch's build failed on {code}, but Problems' Build lists [{string.Join(", ", window.BottomPanel.Problems.Problems.Select(p => $"{p.Code} {p.Where}"))}]");
+                Assert.Equal($"Hot Reload: Hello's build failed: {error.Message} ({where}); {later}", window.Status);
+                Assert.Equal("see it in Problems, Build", window.StatusPlace?.Name);
+                window.ShowToolWindow(ToolWindowIds.Run);
+                Ui.Settle();
+                Assert.Equal($"Hello's build failed with 1 error: {later}", window.BottomPanel.Run.Waiting);
+                string[] offered = [.. window.BottomPanel.Run.GetVisualDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible).Select(b => b.Content).OfType<string>()];
+                Assert.True(offered.Contains("Stop") && !offered.Contains("Rerun"), $"The Run window should offer Stop alone, a start building as it failed; it offers [{string.Join(", ", offered)}]");
+                return error;
+            }
+
+            // Has Apply Hot Reload Changes save a change of one line.
+            void Mend(string before, string after)
+            {
+                int at = program.Text.Snapshot.ToString().IndexOf(before, StringComparison.Ordinal);
+                window.EditorArea.CodeEditor.ApplyEdits([new TextEdit(at, before.Length, after)]);
+                Assert.True(window.Perform(AppActions.ApplyHotReloadChanges), $"Apply Hot Reload Changes could not run: {window.Status}");
+            }
+
+            // Checks that what the build that failed said is gone once a change built.
+            void Mended(string code)
+            {
+                Ui.Settle();
+                Assert.True(window.Actions.Work.Of(AppActions.ApplyHotReloadChanges) is null, "Apply Hot Reload Changes went on working after dotnet watch had started the program");
+                Assert.Null(window.BottomPanel.Run.Waiting);
+                Assert.DoesNotContain(window.BottomPanel.Problems.Problems, p => p.Code == code);
+            }
+        }
+        finally
+        {
+            if (!ending)
+            {
+                window.Perform(AppActions.Stop);
+                Ui.WaitFor(() => !window.Runner.IsRunning, "the program to stop");
+                window.Close();
+            }
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+        }
+    }
+
+    /// <summary>A program whose errors begin a line its output writes a whole line into before they end it, and whose output
+    /// begins a line its errors write a whole line into: each stream's lines are heard whole, as dotnet watch's words are
+    /// read whatever the program it runs writes between a word's start and its end.</summary>
+    private void A_programs_output_and_errors_written_into_each_others_lines_are_heard_a_whole_line_of_each_stream_at_a_time()
+    {
+        Write("src/Hello/Program.cs", """
+            Console.Error.Write("dotnet watch : ");
+            Thread.Sleep(300);
+            Console.Out.WriteLine("the program's own line");
+            Thread.Sleep(300);
+            Console.Error.WriteLine("Waiting for changes");
+            Console.Out.Write("output begun, ");
+            Thread.Sleep(300);
+            Console.Error.WriteLine("an error between");
+            Thread.Sleep(300);
+            Console.Out.WriteLine("output ended");
+
+            """);
+        MainWindow window = Open();
+        List<string> heard = [];
+        void OnLine(object? sender, string line) => heard.Add(line);
+        window.Runner.Line += OnLine;
+        try
+        {
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to end", TimeSpan.FromMinutes(2));
+            string[] written = ["dotnet watch", "the program's own line", "Waiting for changes", "output begun", "an error between", "output ended"];
+            string[] lines = [.. heard.Where(line => written.Any(part => line.Contains(part, StringComparison.Ordinal)))];
+            Assert.True(lines.SequenceEqual(["the program's own line", "dotnet watch : Waiting for changes", "an error between", "output begun, output ended"]),
+                $"The lines heard are not each stream's own, so dotnet watch's word that it watches the program it started is missed when the program writes "
+                + $"between its start and its end: [{string.Join(" | ", lines)}]");
+        }
+        finally
+        {
+            window.Runner.Line -= OnLine;
+            window.Close();
+        }
+    }
+
+    /// <summary>A program whose errors begin a line its output writes a whole line into a moment before they end it, and
+    /// whose output begins a line its errors write a whole line into, shows each line whole in the Run window; and its
+    /// prompt, which ends with no line break, shows as written while it waits for its input (#2048).</summary>
+    private void The_run_window_shows_each_streams_line_whole_whatever_the_other_writes_into_it_and_a_prompt_as_written()
+    {
+        Write("src/Hello/Program.cs", """
+            Console.Error.Write("dotnet watch : ");
+            Console.Out.WriteLine("the program's own line");
+            Thread.Sleep(20);
+            Console.Error.WriteLine("Waiting for changes");
+            Console.Out.Write("output begun, ");
+            Console.Error.WriteLine("an error between");
+            Thread.Sleep(20);
+            Console.Out.WriteLine("output ended");
+            Console.Out.Write("Name? ");
+            string? name = Console.ReadLine();
+            Console.Out.WriteLine($"Hello, {name}");
+
+            """);
+        MainWindow window = Open();
+        OutputView run = window.BottomPanel.Run;
+        try
+        {
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Output(window).EndsWith("Name? ", StringComparison.Ordinal), () => $"the program's prompt, with no line break after it, where the Run window shows:\n{Output(window)}",
+                TimeSpan.FromMinutes(2));
+            Assert.True(window.Runner.IsRunning, "The program ended before its prompt showed, where it waits for its input");
+            string[] written = ["dotnet watch", "the program's own line", "Waiting for changes", "output begun", "an error between", "output ended", "Name?"];
+            string[] lines = [.. Output(window).Split('\n').Where(line => written.Any(part => line.Contains(part, StringComparison.Ordinal)))];
+            // Read apart, one stream's line may come before or after the other's written first; each stream's own order holds.
+            string[] output = ["the program's own line", "output begun, output ended", "Name? "];
+            string[] errors = ["dotnet watch : Waiting for changes", "an error between"];
+            Assert.True(lines.Where(output.Contains).SequenceEqual(output) && lines.Where(errors.Contains).SequenceEqual(errors) && lines.Length == output.Length + errors.Length,
+                $"The Run window shows a line of one stream inside the other's, as written between its two writes: [{string.Join(" | ", lines)}]");
+
+            Ui.Click(run.Editor, settle: false);
+            window.KeyTextInput("Ada");
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to read the line typed and end");
+            Assert.Contains("Name? Ada\nHello, Ada\n", Output(window), StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the run to end");
+            window.Close();
+        }
+    }
+
+    /// <summary>Run starts a project's apphost, as dotnet run does, so what only it carries (a Windows app's manifest, its
+    /// icon, its name) reaches the program, which runs on the .NET Passenger builds with, never one the apphost finds
+    /// itself (#1416).</summary>
+    private void Run_starts_the_projects_apphost_on_the_dotnet_passenger_builds_with()
+    {
+        Write("src/Hello/Program.cs", $$"""
+            Console.WriteLine($"started as {Path.GetFileNameWithoutExtension(Environment.ProcessPath)}");
+            Console.WriteLine($"runtime from {Environment.GetEnvironmentVariable("{{RuntimeVariables.Root}}_" + System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToUpperInvariant())}");
+
+            """);
+        MainWindow window = Open();
+        try
+        {
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to end", TimeSpan.FromMinutes(2));
+            string output = Output(window);
+            Assert.True(output.Contains("started as Hello", StringComparison.Ordinal) && output.Contains($"runtime from {Dotnet.Root()}", StringComparison.Ordinal),
+                $"Run started the program other than through its apphost on Pitstop's .NET ({Dotnet.Root()}), so an app's manifest is lost or it runs on "
+                + $"another runtime: {output}");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private static string Output(MainWindow window) => window.BottomPanel.Run.Document.Snapshot.ToString();
+
+    /// <summary>A test program's expression of the static delegates of the exception a body an update deleted throws (none
+    /// before an update deletes one), one of which dotnet watch sets to hear of the call and restart the program.</summary>
+    private const string DeletedBodyHooks = "(typeof(Talk).Assembly.GetType(\"System.Runtime.CompilerServices.HotReloadException\")"
+        + "?.GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic) ?? [])"
+        + ".Where(field => typeof(Delegate).IsAssignableFrom(field.FieldType))";
+
+    /// <summary>Waits as <see cref="Ui.WaitFor"/> does for what the window says of a program under dotnet watch; one that
+    /// never comes says what the status bar and the Run window said by the end of the wait, not as it began.</summary>
+    private static void WaitWatched(MainWindow window, Func<bool> condition, string what, TimeSpan? limit = null) => WaitWatched(window, condition, () => what, limit);
+
+    /// <inheritdoc cref="WaitWatched(MainWindow, Func{bool}, string, TimeSpan?)"/>
+    private static void WaitWatched(MainWindow window, Func<bool> condition, Func<string> what, TimeSpan? limit = null)
+    {
+        try
+        {
+            Ui.WaitFor(condition, what, limit);
+        }
+        catch (TimeoutException waited)
+        {
+            throw new TimeoutException($"{waited.Message}; the status bar says \"{window.Status}\" and the Run window:\n{Output(window)}", waited);
+        }
+    }
+
+    /// <summary>The Run console over three programs run one after another in one window: what is typed into it is the
+    /// first one's input, Ctrl+D ending it; what the second writes to standard error alone is drawn in the error
+    /// colour, whatever colour codes it writes, none of which shows even split between two reads, and the console's
+    /// menu clears it with its colours; and the third's three megabytes keep to the console's buffer, its oldest lines
+    /// dropped.</summary>
+    private void The_run_console_takes_typed_input_never_shows_a_split_colour_code_colours_standard_error_clears_from_its_menu_and_keeps_riders_buffer()
+    {
+        Write("src/Hello/Program.cs",
+            "Console.Write(\"Name? \");\nstring? name = Console.ReadLine();\nConsole.WriteLine($\"Hello, {name}\");\n"
+            + "string rest = Console.In.ReadToEnd();\nConsole.WriteLine($\"then {rest.Length} more, and the end of its input\");\n");
+        MainWindow window = Open();
+        OutputView run = window.BottomPanel.Run;
+        try
+        {
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Output(window).Contains("Name? ", StringComparison.Ordinal), "the program to ask", TimeSpan.FromMinutes(2));
+            Ui.Click(run.Editor, settle: false);
+            window.KeyTextInput("Adx");
+            Ui.Press(window, "BACK_SPACE");
+            window.KeyTextInput("a");
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => Output(window).Contains("Hello, Ada\n", StringComparison.Ordinal), "the program to read the line typed");
+            Assert.Contains("Name? Ada\nHello, Ada\n", Output(window), StringComparison.Ordinal);
+            TextSnapshot text = run.Document.Snapshot;
+            Pitstop.Editor.SyntaxSpan typed = Assert.Single(run.Editor.Highlighter!.GetSpans(text, 0, text.Length), s => s.Kind == Pitstop.Editor.TokenKind.UserInput);
+            Assert.Equal("Ada", text.GetText(typed.Start, typed.Length));
+
+            // Ctrl+D, Rider's Send EOF on every platform, sends what was typed and ends the input, which ends the program.
+            window.KeyTextInput("ok");
+            Ui.Press(window, "control D");
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to end at the end of its input");
+            Assert.Contains("ok^D\nthen 2 more, and the end of its input\n", Output(window), StringComparison.Ordinal);
+            Assert.Contains("exit code 0", Output(window), StringComparison.Ordinal);
+
+            // The first sequence straddles a read's end at 8,192 characters; the rest are cut by pauses in the writing.
+            Write("src/Hello/Program.cs",
+                "Console.Out.Write(new string('x', 8190) + \"\\u001b[32mgreen\\u001b[0m\\n\");\nConsole.Out.Flush();\n"
+                + "Console.Out.Write(\"before \\u001b[3\");\nConsole.Out.Flush();\nThread.Sleep(500);\n"
+                + "Console.Out.Write(\"1mred\\u001b[0m after\\r\");\nConsole.Out.Flush();\nThread.Sleep(300);\nConsole.Out.Write(\"\\n\");\nConsole.Out.Flush();\nThread.Sleep(300);\n"
+                + "Console.Error.Write(\"\\u001b]0;a title\\u0007error \\u001b[1;3\");\nConsole.Error.Flush();\nThread.Sleep(300);\n"
+                + "Console.Error.Write(\"1mbold\\u001b[0m\\n\");\nConsole.Error.Flush();\n");
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program writing colour codes to finish", TimeSpan.FromMinutes(2));
+            string output = Output(window);
+            Assert.DoesNotContain("Name?", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("\u001b", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("[3", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("1m", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("\r", output, StringComparison.Ordinal);
+            Assert.Contains(new string('x', 8190) + "green\n", output, StringComparison.Ordinal);
+            Assert.Contains("\nbefore red after\n", output, StringComparison.Ordinal);
+            text = run.Document.Snapshot;
+            Pitstop.Editor.IHighlighter colours = run.Editor.Highlighter!;
+            // Each sequence read whole however it was split: green, red, and standard error's bold red in the error colour.
+            IReadOnlyList<Pitstop.Editor.SyntaxSpan> coloured = colours.GetSpans(text, 0, text.Length);
+            Assert.Equal(["green", "red", "error ", "bold", "\n"], coloured.Select(s => text.GetText(s.Start, s.Length)));
+            Assert.Equal(Pitstop.Editor.TokenKind.ErrorOutput, coloured[2].Kind);
+            Assert.Equal(Pitstop.Editor.TokenKind.ErrorOutput, coloured[4].Kind);
+            Assert.True(Pitstop.Editor.TextLooks.TryGet(coloured[3].Kind, out Pitstop.Editor.TextLook bold), $"The bold red is drawn as {coloured[3].Kind}");
+            Assert.Equal(new Pitstop.Editor.TextLook(Pitstop.Editor.LookColour.Of(TokenKeys.Terminal_Ansi1), default, Pitstop.Editor.LookStyle.Bold), bold);
+
+            // Below the first line's top, which is the splitter's to grab.
+            Ui.RightClick(run.Editor, run.Editor.PointOf(14) + new Avalonia.Vector(1, run.Editor.LineHeight / 2));
+            ContextMenu menu = Assert.IsType<ContextMenu>(run.Menu);
+            Assert.Equal(["Copy", "Select All", "Clear All"], menu.Items.OfType<MenuItem>().Select(i => (string?)i.Header));
+            Assert.False(menu.Items.OfType<MenuItem>().First().IsEnabled, "Copy is offered with nothing chosen");
+            Ui.Choose(menu, "Clear All");
+            menu.Close();
+            text = run.Document.Snapshot;
+            Assert.Equal(string.Empty, text.ToString());
+            Assert.Empty(colours.GetSpans(text, 0, text.Length));
+
+            // Three megabytes, two lines of it on standard error, each between pauses since the two streams' reads may cross.
+            Write("src/Hello/Program.cs",
+                "for (int i = 0; i < 50_000; i++)\n{\n    Console.WriteLine($\"line {i:D6} \" + new string('x', 52));\n"
+                + "    if (i is 38_000 or 49_999)\n    {\n        Thread.Sleep(300);\n"
+                + "        Console.Error.WriteLine($\"error {i:D6} \" + new string('e', 51));\n        Thread.Sleep(300);\n    }\n}\n");
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program writing three megabytes to finish", TimeSpan.FromMinutes(2));
+            text = run.Document.Snapshot;
+            Assert.InRange(text.Length, 900 * 1024, OutputView.DefaultLimitKb * 1024);
+            Assert.Matches(@"^line \d{6} x{52}$", text.GetLineText(0));
+            Assert.DoesNotContain("line 000000 ", text.ToString(), StringComparison.Ordinal);
+            Assert.Contains($"line 049999 {new string('x', 52)}\n", text.ToString(), StringComparison.Ordinal);
+            IReadOnlyList<Pitstop.Editor.SyntaxSpan> errors = colours.GetSpans(text, 0, text.Length);
+            Assert.Equal([$"error 038000 {new string('e', 51)}\n", $"error 049999 {new string('e', 51)}\n"], errors.Select(e => text.GetText(e.Start, e.Length)));
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the run to end");
+            window.Close();
+        }
+    }
+
+    /// <summary>A program run writes characters outside an English Windows' code page (an é, the narrow no-break space
+    /// French groups digits with, a CJK letter) and reads a line typed with them: the Run window shows each as the program
+    /// wrote it, and the program reads each as it was typed, on every system.</summary>
+    private void A_programs_characters_outside_the_systems_code_page_reach_the_run_window_as_written_and_the_program_as_typed()
+    {
+        Write("src/Hello/Program.cs",
+            "Console.WriteLine(\"caf\\u00e9 1\\u202f234,5 \\u6f22\");\nstring typed = Console.ReadLine() ?? string.Empty;\n"
+            + "Console.WriteLine($\"read {typed} as {string.Join(' ', typed.Select(c => ((int)c).ToString(\"x4\")))}\");\n");
+        MainWindow window = Open();
+        try
+        {
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Output(window).Contains("234,5", StringComparison.Ordinal), "the program to write its line", TimeSpan.FromMinutes(2));
+            Assert.True(Output(window).Contains("caf\u00e9 1\u202f234,5 \u6f22\n", StringComparison.Ordinal),
+                $"The program wrote caf\u00e9 1\u202f234,5 \u6f22 but the Run window shows something else:\n{Output(window)}");
+            Ui.Click(window.BottomPanel.Run.Editor, settle: false);
+            window.KeyTextInput("na\u00efve \u6f22");
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to read the line typed and end");
+            Assert.True(Output(window).Contains("read na\u00efve \u6f22 as 006e 0061 00ef 0076 0065 0020 6f22\n", StringComparison.Ordinal),
+                $"na\u00efve \u6f22 was typed but the program read something else:\n{Output(window)}");
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the run to end");
+            window.Close();
+        }
+    }
+
+    private void The_projects_chosen_in_the_explorer_build_rebuild_and_clean_on_their_own()
+    {
+        Write("Sample.slnx", "<Solution>\n  <Folder Name=\"/src/\">\n    <Project Path=\"src/Hello/Hello.csproj\" />\n    <Project Path=\"src/Tools/Tools.csproj\" />\n  </Folder>\n</Solution>\n");
+        Write("src/Tools/Tools.csproj", TestProjects.Library());
+        Write("src/Tools/Tool.cs", "public static class Tool\n{\n    public static int Count => \"none\";\n}\n");
+        string hello = Path.Combine(Folder, "src", "Hello", "bin", "Debug", TestProjects.Framework, "Hello.dll");
+        string tools = Path.Combine(Folder, "src", "Tools", "bin", "Debug", TestProjects.Framework, "Tools.dll");
+        Restore.Run(Path.Combine(Folder, "Sample.slnx"));
+        MainWindow window = Open();
+        ExplorerTree tree = window.ExplorerView.Tree;
+        tree.Expand(Assert.Single(tree.Rows, r => r.Kind == NodeKind.SolutionFolder && r.Name == "src"));
+        window.ExplorerView.Choose(Assert.Single(tree.Rows, r => r.Kind == NodeKind.Project && r.Name == "Hello"));
+
+        window.Perform(AppActions.BuildSelected);
+        Ui.WaitFor(() => !window.IsBuilding, "the build", TimeSpan.FromMinutes(2));
+        Assert.True(window.Status == "Build succeeded", $"The build did not succeed: {Ui.Said(window)}");
+        Assert.True(File.Exists(hello), "Build Selected Projects did not build the chosen project");
+        Assert.False(File.Exists(tools), "Build Selected Projects built a project that was not chosen");
+
+        window.Perform(AppActions.CleanSelected);
+        Ui.WaitFor(() => !window.IsBuilding, "the clean", TimeSpan.FromMinutes(2));
+        Assert.Equal("Clean succeeded", window.Status);
+        Assert.False(File.Exists(hello), "Clean Selected Projects left the project's output");
+
+        window.ExplorerView.Choose([.. tree.Rows.Where(r => r.Kind == NodeKind.Project)]);
+        window.Perform(AppActions.RebuildSelected);
+        Ui.WaitFor(() => !window.IsBuilding, "the rebuild", TimeSpan.FromMinutes(2));
+        Assert.StartsWith("Rebuild failed: 1 error", window.Status, StringComparison.Ordinal);
+        Problem problem = Assert.Single(window.BottomPanel.Problems.Problems, p => p.Code == "CS0029");
+        Assert.EndsWith("Tool.cs", problem.Path, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>A build under dotnet test's environment, which sets MSBUILDENSURESTDOUTFORTASKPROCESSES, ends though a node
+    /// MSBuild started waits on to be reused (the test's own MSBuild, <see cref="OwnMSBuild"/>, has none idle). Then, in a
+    /// person's IDE's environment, after a build that left its nodes for the next, Stop pressed while each project's build
+    /// runs a step writing to its output folder until ended (as a code generator, a bundler or tests in the build would)
+    /// ends every step, and nothing more is written; each line names its step's shell, for a failure to say who wrote.</summary>
+    private void A_build_under_dotnet_tests_environment_ends_and_stopping_a_build_ends_its_steps_wherever_msbuild_ran_them_and_nothing_more_is_written_after()
+    {
+        WriteTwoProjects();
+        using OwnMSBuild tested = new(("MSBUILDENSURESTDOUTFORTASKPROCESSES", "1"));
+        // Settling waits for Roslyn to say the projects loaded, which it says once its restore's output has ended.
+        MainWindow window = Open();
+        Assert.True(window.CSharpService?.IsReady, window.CSharpService?.State);
+        List<OwnProcess> steps = [];
+        try
+        {
+            window.Perform(AppActions.Build);
+            int command = BuildCommand(window, null);
+            Assert.True(Processes.Gone(command, TimeSpan.FromMinutes(2)), "The build's dotnet command never ended");
+            Ui.PumpUntil(() => !window.IsBuilding,
+                "the Build window to stop saying it is building once the build's dotnet command ended (a node MSBuild started holding its output open keeps it building)",
+                TimeSpan.FromSeconds(10));
+            Assert.True(window.Status == "Build succeeded", $"The build did not succeed: {Ui.Said(window)}");
+            Assert.EndsWith("Process finished with exit code 0.\n", window.BottomPanel.Build.Document.Snapshot.ToString(), StringComparison.Ordinal);
+
+            using OwnMSBuild person = new(("MSBUILDENSURESTDOUTFORTASKPROCESSES", null));
+            window.Perform(AppActions.Build);
+            Ui.WaitFor(() => !window.IsBuilding, "the first build in a person's environment", TimeSpan.FromMinutes(2));
+            Assert.True(window.Status == "Build succeeded", $"The build did not succeed: {Ui.Said(window)}");
+
+            Write("Directory.Build.targets", """
+                <Project>
+                  <Target Name="Write" BeforeTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+                    <Exec Condition="'$(OS)' != 'Windows_NT'" Command="echo $$ &gt; step.pid; while true; do date +&quot;$$ %T&quot; &gt;&gt; '$(OutDir)written.txt'; sleep 0.2; done" />
+                    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -Command &quot;Set-Content -Path step.pid -Value $PID; while ($true) { Add-Content -Path '$(OutDir)written.txt' -Value ([string]$PID + ' ' + (Get-Date -Format o)); Start-Sleep -Milliseconds 200 }&quot;" />
+                  </Target>
+                </Project>
+                """);
+            string[] projects = ["Hello", "Tools"];
+            int? first = window.Builder.ProcessId;
+            window.Perform(AppActions.Build);
+            command = BuildCommand(window, first);
+            // Both projects build at once; one that waits for the other would never start, its step never ending.
+            _ = Processes.WrittenId([.. projects.Select(p => Path.Combine(Folder, "src", p, "step.pid"))], "a project's step to start");
+            // Pumped, not settled: the build holds background work until it ends.
+            Ui.PumpUntil(() => projects.Any(p => File.Exists(Path.Combine(Folder, "src", p, "bin", "Debug", TestProjects.Framework, "written.txt"))),
+                "a project's step to write into its output folder", TimeSpan.FromSeconds(60));
+            steps.AddRange(projects.Select(p => Processes.ReadId(Path.Combine(Folder, "src", p, "step.pid"))).Where(id => id > 0).Select(OwnProcess.Of));
+            HashSet<int> groups = [];
+            string before = StepTree(command, groups);
+            DateTime stopped = DateTime.Now;
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.IsBuilding, "the build to stop");
+            DateTime ended = DateTime.Now;
+            Assert.Equal("Build stopped", window.Status);
+
+            foreach (OwnProcess step in steps)
+            {
+                Assert.True(Processes.Gone(step.Id), $"After Stop, the build's step {Processes.Describe(step.Id)} went on running: MSBuild ran it in a process that Stop did not end");
+            }
+            Assert.True(Processes.Gone(command), "After Stop, the build's dotnet command went on running");
+            string[] written = [.. projects.Select(p => Path.Combine(Folder, "src", p, "bin", "Debug", TestProjects.Framework, "written.txt")).Where(File.Exists)];
+            Assert.NotEmpty(written);
+            long[] lengths = [.. written.Select(f => new FileInfo(f).Length)];
+            DateTime looked = DateTime.Now;
+            Ui.Hold(TimeSpan.FromSeconds(2), "long enough for a build still running to write to its output folder again");
+            if (!lengths.SequenceEqual(written.Select(f => new FileInfo(f).Length)))
+            {
+                string after = StepTree(command, groups);
+                List<string> said = [];
+                foreach ((string file, long length) in written.Zip(lengths))
+                {
+                    string[] lines = File.ReadAllText(file)[(int)length..].Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                    if (lines.Length == 0)
+                    {
+                        continue;
+                    }
+                    foreach (int writer in lines.Select(l => int.TryParse(l.Split(' ')[0], out int id) ? id : 0).Where(id => id > 0).Distinct())
+                    {
+                        string known = steps.Any(s => s.Id == writer) ? "a step the test knew" : "a step the test never knew";
+                        said.Add($"{Path.GetRelativePath(Folder, file)}: {lines.Count(l => l.StartsWith($"{writer} ", StringComparison.Ordinal))} lines from the shell of "
+                            + $"{known}, {Processes.Describe(writer)} (a shell gone, what it had forked)");
+                        if (!steps.Any(s => s.Id == writer))
+                        {
+                            steps.Add(OwnProcess.Of(writer));
+                        }
+                    }
+                    said.Add($"  its lines after the look: {string.Join(" | ", lines)}");
+                }
+                Assert.Fail($"After Stop, the build went on writing to its output folder:\n{string.Join('\n', said)}\n"
+                    + $"Stop pressed at {stopped:HH:mm:ss.fff}, the build stopped at {ended:HH:mm:ss.fff}, its output looked at {looked:HH:mm:ss.fff}, now {DateTime.Now:HH:mm:ss.fff}; "
+                    + $"the steps the test knew: {string.Join(", ", steps.Select(s => s.Id))}; the build's command {command}.\nBefore Stop:\n{before}\nNow:\n{after}");
+            }
+        }
+        finally
+        {
+            steps.ForEach(step => step.Kill());
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.IsBuilding, "the build to stop");
+            window.Close();
+        }
+    }
+
+    /// <summary>Roslyn restores a project never restored itself, and its restore leaves an MSBuild node waiting to be reused,
+    /// in the language server's process group, which ends when the server is started again (after it crashed or hung). A
+    /// build the IDE starts never takes that node up, so the server started again while the build runs ends nothing of
+    /// the build's. On Windows the restore's node is no part of the server's tree once the restore has gone. Where MSBuild
+    /// keeps no node of the restore (other builds' nodes filling its count), there is none to see, and the test skips.</summary>
+    private void A_build_goes_on_through_the_language_server_starting_again_while_it_runs()
+    {
+        Nice.SkipUnlessMSBuildKeepsNodes();
+        WriteTwoProjects();
+        Write("Directory.Build.targets", """
+            <Project>
+              <Target Name="Wait" BeforeTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+                <Exec Condition="'$(OS)' != 'Windows_NT'" Command="echo $$ &gt; step.pid; sleep 4" />
+                <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -Command &quot;Set-Content -Path step.pid -Value $PID; Start-Sleep -Seconds 4&quot;" />
+              </Target>
+            </Project>
+            """);
+        using OwnMSBuild msbuild = new(("MSBUILDENSURESTDOUTFORTASKPROCESSES", null));
+        Ui.Await(Waiting.Apart(Processes.UntilMSBuildKeepsNodesAsync), "MSBuild to count no more nodes than it keeps, for the restore to keep its own",
+            TimeSpan.FromMinutes(3));
+        // Settling waits for the projects to load, which Roslyn says once its restore of Tools has ended.
+        MainWindow window = Open();
+        int server = window.CSharpService!.Session!.Server.ProcessId;
+        if (!OperatingSystem.IsWindows() && ServerNodes(server).Length == 0)
+        {
+            (int counted, int most) = Processes.MSBuildNodesCounted();
+            string nodes = string.Join('\n', Processes.MSBuildNodes().Select(n => $"{Processes.Describe(n.Key)} {n.Value}"));
+            window.Close();
+            Assert.Skip($"The language server's restore left no MSBuild node in its process group, so there is none for a build to take up: MSBuild keeps none of a build's nodes while it counts more than {most} as the build ends, other builds' among them ({counted} now). MSBuild nodes now:\n{nodes}");
+        }
+        try
+        {
+            window.Perform(AppActions.Build);
+            string[] projects = ["Hello", "Tools"];
+            foreach (string project in projects)
+            {
+                Processes.WrittenId(Path.Combine(Folder, "src", project, "step.pid"), $"{project}'s step to start");
+            }
+            OwnProcess.Of(server).Kill(alone: true);
+            Ui.WaitFor(() => !window.IsBuilding, "the build", TimeSpan.FromMinutes(2));
+            Assert.True(window.Status == "Build succeeded",
+                $"The build failed once the language server was started again under it ({window.Status}):\n{window.BottomPanel.Build.Document.Snapshot}");
+            Ui.WaitFor(() => window.CSharpService.Session is { IsLoaded: true } session && session.Server.ProcessId != server, "the language server to be started again");
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.IsBuilding, "the build to stop");
+            window.Close();
+        }
+    }
+
+    /// <summary>On Windows the MSBuild nodes the language server's restore leaves to be reused are no part of the server's
+    /// tree once the restore has gone, and one no build ever took up keeps the folder it was started in, the solution's,
+    /// which Windows then lets nobody delete. They end with the server, as its process group ends them elsewhere: none is
+    /// left once the window closes.</summary>
+    private void The_language_servers_msbuild_nodes_end_with_it_on_windows_too()
+    {
+        Assert.SkipUnless(OperatingSystem.IsWindows(), "Elsewhere the server's process group holds its nodes, which A_build_goes_on_through_the_language_server_starting_again_while_it_runs checks");
+        WriteTwoProjects();
+        using OwnMSBuild msbuild = new();
+        // Settling waits for the projects to load, which Roslyn says once its restore of Tools has ended.
+        MainWindow window = Open();
+        string server = $"pitstop-{Environment.ProcessId}-server-";
+        int[] restored = [.. Processes.WindowsMSBuildNodes().Where(node => node.Value.Contains(server, StringComparison.Ordinal)).Select(node => node.Key)];
+        window.Close();
+        Assert.True(restored.Length > 0, "The language server's restore left no MSBuild node, so none could outlive it");
+        Ui.WaitFor(() => !restored.Any(Processes.IsRunning),
+            () => $"the language server's MSBuild nodes to end with it as its window closed; still running: {string.Join(", ", restored.Where(Processes.IsRunning).Select(Processes.Describe))}",
+            TimeSpan.FromSeconds(30));
+    }
+
+    /// <summary>A WPF app built the moment it opens, while the project host's design-time build of it (the language
+    /// server's) is writing its generated code: both write obj/…/App.g.cs, which Windows lets one writer have. The
+    /// build waits for the design-time build, the Build window saying so, and runs alone. Here the design-time build
+    /// holds App.g.cs as MarkupCompile does while it writes it, until the test lets it go; a build's MarkupCompile
+    /// begun meanwhile says so. A design-time build after the build finds its output up to date and deletes none of it.</summary>
+    private void A_build_begun_while_a_wpf_apps_design_time_build_writes_its_generated_code_waits_for_it_and_succeeds()
+    {
+        string app = PathNames.Canonical(TestFolders.Create("wpf-build-"));
+        string release = Path.Combine(app, "release");
+        try
+        {
+            TestFolders.Prepare(() =>
+            {
+                WpfApp.Create(app, "Overlap");
+                File.WriteAllText(Path.Combine(app, "Directory.Build.targets"), """
+                    <Project>
+                      <Target Name="Hold" BeforeTargets="MarkupCompilePass1" Condition="'$(DesignTimeBuild)' == 'true' And !Exists('release')">
+                        <MakeDir Directories="$(IntermediateOutputPath)" />
+                        <Exec Condition="'$(OS)' == 'Windows_NT'" Timeout="120000" Command="powershell -NoProfile -Command &quot;$held = [IO.File]::Open('$(IntermediateOutputPath)App.g.cs', 'OpenOrCreate', 'Write', 'Read'); Set-Content -Path held -Value held; while (-not (Test-Path release)) { Start-Sleep -Milliseconds 100 }; $held.Dispose()&quot;" />
+                        <Exec Condition="'$(OS)' != 'Windows_NT'" Timeout="120000" Command="echo held &gt; held; while [ ! -f release ]; do sleep 0.1; done" />
+                      </Target>
+                      <Target Name="Overlap" BeforeTargets="MarkupCompilePass1" Condition="'$(DesignTimeBuild)' != 'true' And Exists('held') And !Exists('release')">
+                        <WriteLinesToFile File="overlapped" Lines="begun" />
+                      </Target>
+                    </Project>
+                    """);
+                Restore.Run(Path.Combine(app, "Overlap.csproj"));
+            }, app);
+            MainWindow window = new() { Width = 1200, Height = 800 };
+            window.Show();
+            window.OpenFolder(app);
+            try
+            {
+                // Pumped, not settled: the language server's load waits for the design-time build.
+                Ui.PumpUntil(() => File.Exists(Path.Combine(app, "held")), "the design-time build to hold App.g.cs", TimeSpan.FromMinutes(2));
+                Assert.True(window.Perform(AppActions.Build));
+                const string waiting = "Waiting for the design-time build of Overlap to end";
+                Ui.PumpUntil(() => !window.IsBuilding || window.BottomPanel.Build.Document.Snapshot.ToString().Contains(waiting, StringComparison.Ordinal),
+                    "the build to wait for the design-time build or end", TimeSpan.FromMinutes(2));
+                File.WriteAllText(release, "go");
+                Ui.PumpUntil(() => !window.IsBuilding, "the build", TimeSpan.FromMinutes(3));
+                string built = window.BottomPanel.Build.Document.Snapshot.ToString();
+                Assert.False(File.Exists(Path.Combine(app, "overlapped")), $"The build's MarkupCompile ran while the design-time build had App.g.cs open ({window.Status}):\n{built}");
+                Assert.True(window.Status == "Build succeeded", $"The WPF app did not build once its design-time build had ended ({window.Status}):\n{built}");
+                Assert.Contains(waiting, built, StringComparison.Ordinal);
+                string baml = Path.Combine(app, "obj", "Debug", $"{WpfApp.Framework}-windows", "MainWindow.baml");
+                Assert.True(File.Exists(baml), $"The build compiled no {baml}:\n{built}");
+                int designed = window.Session.DesignTimeBuilds.Builds;
+                File.AppendAllText(Path.Combine(app, "Overlap.csproj"), Environment.NewLine);
+                Ui.PumpUntil(() => window.Session.DesignTimeBuilds.Builds > designed, "a design-time build of Overlap once its project file was written", TimeSpan.FromMinutes(2));
+                Assert.True(File.Exists(baml), "A design-time build after the build deleted the MainWindow.baml the build compiled, which a build of the app beside it then finds missing (BG1002)");
+            }
+            finally
+            {
+                File.WriteAllText(release, "go");
+                window.Close();
+            }
+        }
+        finally
+        {
+            TestFolders.Delete(app);
+        }
+    }
+
+    /// <summary>An Avalonia app built as it opens, while the host's design-time build of it writes its resources
+    /// (GenerateAvaloniaResources runs before CoreCompile, so in a design-time build too), which Windows lets one
+    /// writer have: the build waits. Here the design-time build holds the resources open until the test lets it go,
+    /// then deletes the empty file it held (taken as up to date, it would be embedded: AVLN9999) for the task to write;
+    /// a build begun meanwhile says so.</summary>
+    private void A_build_begun_while_an_avalonia_apps_design_time_build_writes_its_resources_waits_for_it_and_succeeds()
+    {
+        string app = PathNames.Canonical(TestFolders.Create("avalonia-build-"));
+        string release = Path.Combine(app, "release");
+        try
+        {
+            TestFolders.Prepare(() =>
+            {
+                File.WriteAllText(Path.Combine(app, "Overlap.csproj"), $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n"
+                    + $"  </PropertyGroup>\n  <ItemGroup>\n    <PackageReference Include=\"Avalonia\" Version=\"{AvaloniaApp.Version}\" />\n"
+                    + "    <AvaloniaResource Include=\"Assets/**\" />\n  </ItemGroup>\n</Project>\n");
+                Directory.CreateDirectory(Path.Combine(app, "Assets"));
+                File.WriteAllText(Path.Combine(app, "Assets", "note.txt"), "a resource\n");
+                File.WriteAllText(Path.Combine(app, "Shapes.cs"), "namespace Overlap;\n\npublic sealed class Circle\n{\n}\n");
+                File.WriteAllText(Path.Combine(app, "Directory.Build.targets"), """
+                    <Project>
+                      <Target Name="Hold" BeforeTargets="GenerateAvaloniaResources" Condition="'$(DesignTimeBuild)' == 'true' And !Exists('release')">
+                        <MakeDir Directories="$(IntermediateOutputPath)Avalonia" />
+                        <Exec Condition="'$(OS)' == 'Windows_NT'" Timeout="120000" Command="powershell -NoProfile -Command &quot;$held = [IO.File]::Open('$(IntermediateOutputPath)Avalonia\resources', 'OpenOrCreate', 'Write', 'Read'); Set-Content -Path held -Value held; while (-not (Test-Path release)) { Start-Sleep -Milliseconds 100 }; $held.Dispose(); Remove-Item '$(IntermediateOutputPath)Avalonia\resources'&quot;" />
+                        <Exec Condition="'$(OS)' != 'Windows_NT'" Timeout="120000" Command="echo held &gt; held; while [ ! -f release ]; do sleep 0.1; done" />
+                      </Target>
+                      <Target Name="Overlap" BeforeTargets="GenerateAvaloniaResources" Condition="'$(DesignTimeBuild)' != 'true' And Exists('held') And !Exists('release')">
+                        <WriteLinesToFile File="overlapped" Lines="begun" />
+                      </Target>
+                    </Project>
+                    """);
+                Restore.Run(Path.Combine(app, "Overlap.csproj"));
+            }, app);
+            MainWindow window = new() { Width = 1200, Height = 800 };
+            window.Show();
+            window.OpenFolder(app);
+            try
+            {
+                // Pumped, not settled: the language server's load waits for the design-time build.
+                Ui.PumpUntil(() => File.Exists(Path.Combine(app, "held")), "the design-time build to hold the Avalonia resources", TimeSpan.FromMinutes(2));
+                Assert.True(window.Perform(AppActions.Build));
+                const string waiting = "Waiting for the design-time build of Overlap to end";
+                Ui.PumpUntil(() => !window.IsBuilding || window.BottomPanel.Build.Document.Snapshot.ToString().Contains(waiting, StringComparison.Ordinal),
+                    "the build to wait for the design-time build or end", TimeSpan.FromMinutes(2));
+                File.WriteAllText(release, "go");
+                Ui.PumpUntil(() => !window.IsBuilding, "the build", TimeSpan.FromMinutes(3));
+                string built = window.BottomPanel.Build.Document.Snapshot.ToString();
+                Assert.False(File.Exists(Path.Combine(app, "overlapped")), $"The build wrote the Avalonia resources while the design-time build had them open ({window.Status}):\n{built}");
+                Assert.True(window.Status == "Build succeeded", $"The Avalonia app did not build once its design-time build had ended ({Ui.Said(window)}):\n{built}");
+                Assert.Contains(waiting, built, StringComparison.Ordinal);
+            }
+            finally
+            {
+                File.WriteAllText(release, "go");
+                window.Close();
+            }
+        }
+        finally
+        {
+            TestFolders.Delete(app);
+        }
+    }
+
+    /// <summary>A build's processes as ps lists them (id, parent, group, start and command line): its command's group, the
+    /// groups of the IDE's MSBuild worker nodes and those named before, and everything those started; none on Windows.</summary>
+    private static string StepTree(int command, HashSet<int> groups)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return "";
+        }
+        List<(int Pid, int Parent, int Group, string Line)> all = [];
+        foreach (string line in Processes.Ps("-A", "-o", "pid=,ppid=,pgid=,lstart=,command="))
+        {
+            string[] words = line.Split(' ', 4, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 4 && int.TryParse(words[0], out int pid) && int.TryParse(words[1], out int parent) && int.TryParse(words[2], out int group))
+            {
+                all.Add((pid, parent, group, line));
+            }
+        }
+        string salt = $"pitstop-{Environment.ProcessId}";
+        HashSet<int> nodes = [.. Processes.MSBuildNodes().Where(n => n.Value.Contains(salt, StringComparison.Ordinal)).Select(n => n.Key)];
+        groups.Add(command);
+        groups.UnionWith(all.Where(p => nodes.Contains(p.Pid)).Select(p => p.Group));
+        HashSet<int> shown = [.. all.Where(p => groups.Contains(p.Group) || nodes.Contains(p.Pid)).Select(p => p.Pid)];
+        for (int added = 1; added > 0;)
+        {
+            int[] more = [.. all.Where(p => !shown.Contains(p.Pid) && shown.Contains(p.Parent)).Select(p => p.Pid)];
+            shown.UnionWith(more);
+            added = more.Length;
+        }
+        return string.Join('\n', all.Where(p => shown.Contains(p.Pid)).Select(p => $"  {p.Line}"));
+    }
+
+    /// <summary>The dotnet command of the build just begun, once it has started: a build starts it once the project host
+    /// has held its design-time builds off. Pumped, not settled, as the build holds background work until it ends.</summary>
+    private static int BuildCommand(MainWindow window, int? before)
+    {
+        Ui.PumpUntil(() => window.Builder.ProcessId is { } started && started != before, "the build's dotnet command to start");
+        return window.Builder.ProcessId!.Value;
+    }
+
+    /// <summary>The MSBuild worker nodes in a process group (the language server's), by the group ps lists for each process;
+    /// none on Windows, which has no ps.</summary>
+    private static int[] ServerNodes(int group)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return [];
+        }
+        return [.. Processes.Ps("-A", "-o", "pid=,pgid=,command=")
+            .Select(line => line.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries))
+            .Where(words => words.Length == 3 && words[2].Contains("/nodemode:1", StringComparison.Ordinal)
+                && int.TryParse(words[1], System.Globalization.CultureInfo.InvariantCulture, out int pgid) && pgid == group)
+            .Select(words => int.Parse(words[0], System.Globalization.CultureInfo.InvariantCulture))];
+    }
+
+    /// <summary>What a program writes in the Run window links where it points: an address opens in the browser, a message
+    /// naming a file of its project in a compiler's shape opens that file (a relative path the project's, though the run's
+    /// working folder is its output folder), and the stack trace of what it threw has each frame's file and line a link.</summary>
+    private void An_address_a_message_naming_a_file_and_a_stack_trace_a_program_writes_are_links_where_they_point()
+    {
+        Write("src/Hello/Program.cs", "Console.WriteLine(\"The orders are documented at https://example.com/orders/help?topic=load.\");\n"
+            + "Console.WriteLine(\"Program.cs(2,9): warning ORD001: the orders were checked by the program\");\nOrders.Load(\"orders.json\");\n\nstatic class Orders\n{\n"
+            + "    public static void Load(string file)\n    {\n        Parse(file);\n    }\n\n"
+            + "    private static void Parse(string file) =>\n        throw new InvalidOperationException($\"No orders in {file}\");\n}\n");
+        // No solution at the top, as in many repositories: Run runs src/Hello/Hello.csproj.
+        File.Delete(Path.Combine(Folder, "Sample.slnx"));
+        MainWindow window = Open();
+        Assert.Equal(["Hello"], window.Configurations.Select(c => c.Name));
+        string output = RunToEnd(window);
+        Assert.Contains("The orders are documented", output, StringComparison.Ordinal);
+        OutputView run = window.BottomPanel.Run;
+        Click(window, run.Editor, output.IndexOf("example.com", StringComparison.Ordinal));
+        Assert.Equal(["https://example.com/orders/help?topic=load"], window.Browsed.Select(u => u.AbsoluteUri));
+        Assert.Null(window.EditorArea.Active);
+        Click(window, run.Editor, output.IndexOf("Program.cs(2,9)", StringComparison.Ordinal) + 2);
+        Assert.Equal(PathNames.Canonical(Path.Combine(Folder, "src", "Hello", "Program.cs")), window.EditorArea.Active?.Path);
+        Assert.Equal(new TextPosition(1, 8), window.EditorArea.CodeEditor.CaretPosition);
+        Assert.Single(window.Browsed);
+
+        string frame = output.Split('\n').FirstOrDefault(l => l.Contains("at Orders.Load(", StringComparison.Ordinal)) ?? string.Empty;
+        Assert.True(frame.EndsWith("Program.cs:line 9", StringComparison.Ordinal), $"The run's output has no frame of Load at its line:\n{output}");
+        int start = output.IndexOf(frame, StringComparison.Ordinal);
+        string place = frame[(frame.IndexOf(" in ", StringComparison.Ordinal) + 4)..];
+        int link = start + frame.Length - place.Length;
+
+        Rest(window, run.Editor, start + frame.IndexOf("Orders.Load", StringComparison.Ordinal));
+        Assert.Null(run.Editor.HoveredLink);
+        Rest(window, run.Editor, link + 3);
+        TextLink hovered = run.Editor.HoveredLink ?? throw new Xunit.Sdk.XunitException($"The pointer rests on the frame's file but nothing is underlined:\n{frame}");
+        Assert.Equal(place, run.Document.Snapshot.GetText(hovered.Range.Start, hovered.Range.Length));
+        Assert.Contains(run.Editor.Highlighter!.GetSpans(run.Document.Snapshot, start, frame.Length), span => span.Kind == TokenKind.Link && span.Start == link && span.Length == place.Length);
+
+        Click(window, run.Editor, link + 3);
+        Assert.Equal(PathNames.Canonical(Path.Combine(Folder, "src", "Hello", "Program.cs")), window.EditorArea.Active?.Path);
+        Assert.Equal(new TextPosition(8, 0), window.EditorArea.CodeEditor.CaretPosition);
+        Assert.True(window.EditorArea.CodeEditor.IsFocused, "The frame's file opened, but the keys stayed in the Run window");
+        window.Close();
+    }
+
+    /// <summary>A console as output streams copies none of the lines on screen it has linked before, nor makes their links
+    /// again: six lines written, each drawn, and the pointer moved onto a linked row after each, copy only the lines written
+    /// to find their links, and a row on screen throughout has the same links at the end as at the start. Each row's text
+    /// was copied as its colours were compared and again as its links were drawn, at every line written and every pointer
+    /// move over it, its links made again each time.</summary>
+    private void A_console_as_output_streams_copies_no_line_it_has_linked()
+    {
+        string folder = TestFolders.Create("links-");
+        string source = TestFolders.Write(folder, "Orders.cs", "static class Orders\n{\n}\n");
+        MainWindow window = Ui.OpenFolder(folder, languageServer: false);
+        window.ShowToolWindow(ToolWindowIds.Run);
+        OutputView run = window.BottomPanel.Run;
+        for (int i = 0; i < 80; i++)
+        {
+            run.Append(Frame(i));
+        }
+        Ui.Settle();
+        CodeEditor editor = run.Editor;
+        int rows = editor.LinesShown.Last - editor.LinesShown.First + 1;
+        Assert.True(rows >= 10, $"The Run window showed {rows} rows");
+        int kept = editor.LinesShown.Last - 2;
+        IReadOnlyList<TextLink> first = editor.Links!(editor.Document.Snapshot, kept);
+        Assert.Single(first);
+        long copied = run.Links.LinesCopied;
+        for (int i = 0; i < 6; i++)
+        {
+            run.Append(Frame(100 + i));
+            Ui.Settle();
+            int line = editor.LinesShown.Last - 2;
+            TextLink link = Assert.Single(editor.Links!(editor.Document.Snapshot, line));
+            Point on = editor.TranslatePoint(editor.PointOf(link.Range.Start + 2 + i) + new Point(1, editor.LineHeight / 2), window)!.Value;
+            window.MouseMove(on, Avalonia.Input.RawInputModifiers.None);
+            Ui.Settle();
+            Assert.Equal(link.Range, editor.HoveredLink?.Range);
+        }
+        Assert.True(run.Links.LinesCopied - copied <= 6,
+            $"Six lines written to a console showing {rows} rows of linked stack frames, and the pointer moved onto one after each, copied {run.Links.LinesCopied - copied} lines to find their links: lines it had linked were copied again");
+        Assert.InRange(kept, editor.LinesShown.First, editor.LinesShown.Last);
+        Assert.Same(first, editor.Links!(editor.Document.Snapshot, kept));
+        window.Close();
+        TestFolders.Delete(folder);
+
+        string Frame(int i) => $"   at Orders.Load{i}(String file) in {source}:line {(i % 3) + 1}\n";
+    }
+
+    /// <summary>Settings' Toolset and Build, Presentation: Build opens the Build window as it starts, unless "when
+    /// build is explicitly invoked" is off, and a build's end brings it forward as "Showing build results after build
+    /// completed" says, by default only when errors were received; Run's build, an implicit one, opens it only with
+    /// "even when the build is invoked implicitly".</summary>
+    private void Build_opens_the_build_window_as_it_starts_and_its_end_brings_it_forward_as_settings_say()
+    {
+        MainWindow window = Open();
+        try
+        {
+            window.ShowToolWindow(ToolWindowIds.Problems);
+            window.Perform(AppActions.Build);
+            Assert.True(window.IsBuilding && window.DockHost.IsShown(ToolWindowIds.Build), "Build Solution started without opening the Build window, which Rider's opens by default");
+            BuildToEnd(window, "Build succeeded");
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Build), "The Build window Build Solution opened went away as the build ended");
+
+            window.ApplySettings(window.Settings with { OpenBuildWindowOnBuild = false });
+            window.ShowToolWindow(ToolWindowIds.Problems);
+            window.Perform(AppActions.Build);
+            Assert.True(window.IsBuilding && window.DockHost.IsShown(ToolWindowIds.Problems), "With Rider's \"when build is explicitly invoked\" off, Build Solution still opened the Build window");
+            BuildToEnd(window, "Build succeeded");
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Problems), "A build that succeeded brought the Build window forward, which Rider does only for errors by default");
+            Write("src/Hello/Program.cs", "Console.WriteLine(\"Hello\");\nint count = \"three\";\n");
+            window.Perform(AppActions.Build);
+            BuildToEnd(window, "Build failed");
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Build), "A build that failed left the Build window behind the Problems window, where Rider brings it forward with its errors");
+
+            window.ApplySettings(window.Settings with { ShowBuildResults = Pitstop.App.Settings.BuildResultsMode.Never });
+            window.ShowToolWindow(ToolWindowIds.Problems);
+            window.Perform(AppActions.Build);
+            BuildToEnd(window, "Build failed");
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Problems), "With build results shown never, a failed build still brought the Build window forward");
+
+            Write("src/Hello/Program.cs", "Console.WriteLine(\"Hello\");\n");
+            window.ApplySettings(window.Settings with { ShowBuildResults = Pitstop.App.Settings.BuildResultsMode.Always });
+            window.ShowToolWindow(ToolWindowIds.Problems);
+            window.Perform(AppActions.Build);
+            BuildToEnd(window, "Build succeeded");
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Build), "With build results shown always, a build that succeeded did not bring the Build window forward");
+
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+            window.ShowToolWindow(ToolWindowIds.Problems);
+            // A change for it to build, a run right after the Build that succeeded starting with none.
+            Write("src/Hello/Program.cs", "Console.WriteLine(\"Hello, run\");\n");
+            window.Perform(AppActions.RunProgram);
+            Ui.PumpUntil(() => window.IsBuilding, "the run's build to start", TimeSpan.FromMinutes(1));
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Problems), "Run's build took the bottom panel, which Rider leaves as it was for a build before a run");
+            Assert.StartsWith("Building Hello", window.Status, StringComparison.Ordinal);
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to finish", TimeSpan.FromMinutes(2));
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Run), "The program ran, but its Run window is not in front");
+
+            window.ApplySettings(window.Settings with { OpenBuildWindowOnImplicitBuild = true });
+            window.ShowToolWindow(ToolWindowIds.Problems);
+            // A change for it to build, a run of what its last build left starting with none.
+            Write("src/Hello/Program.cs", "Console.WriteLine(\"Hello again\");\n");
+            window.Perform(AppActions.RunProgram);
+            Ui.PumpUntil(() => window.IsBuilding, "the second run's build to start", TimeSpan.FromMinutes(1));
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Build), "With Rider's \"even when the build is invoked implicitly\" on, Run's build did not open the Build window");
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the second program to finish", TimeSpan.FromMinutes(2));
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Run), "The program ran after a build in the Build window, but its Run window is not in front");
+        }
+        finally
+        {
+            window.ApplySettings(new Pitstop.App.Settings.AppSettings());
+            window.Close();
+        }
+    }
+
+    /// <summary>Waits for the build under way to end, and checks what the status bar says of it.</summary>
+    private static void BuildToEnd(MainWindow window, string said)
+    {
+        Ui.WaitFor(() => !window.IsBuilding, "the build", TimeSpan.FromMinutes(2));
+        Assert.True(window.Status?.StartsWith(said, StringComparison.Ordinal) == true, $"The build did not end saying \"{said}\": {Ui.Said(window)}");
+    }
+
+    private void A_web_project_whose_profile_launches_the_browser_opens_its_launch_url_once_it_listens_and_not_before()
+    {
+        // Each profile's port held from now until its site is about to listen there.
+        using HeldPort browse = new();
+        using HeldPort quiet = new();
+        Write("Sample.slnx", "<Solution>\n  <Project Path=\"src/Hello/Hello.csproj\" />\n  <Project Path=\"src/Site/Site.csproj\" />\n</Solution>\n");
+        Write("src/Site/Site.csproj", TestProjects.Web("<ImplicitUsings>enable</ImplicitUsings>"));
+        // Started, it listens only once the test lets it, to tell opening once it listens from opening once it started.
+        string listen = Path.Combine(Folder, "listen");
+        Write("src/Site/Program.cs", $"Console.WriteLine(\"Warming up\");\nwhile (!File.Exists(@\"{listen}\"))\n{{\n    Thread.Sleep(20);\n}}\n"
+            + "WebApplication app = WebApplication.Create(args);\napp.MapGet(\"/orders\", () => \"Orders\");\napp.Run();\n");
+        Write("src/Site/Properties/launchSettings.json", "{\n  \"profiles\": {\n"
+            + $"    \"Browse\": {{ \"commandName\": \"Project\", \"launchBrowser\": true, \"launchUrl\": \"orders\", \"applicationUrl\": \"http://127.0.0.1:{browse.Port}\" }},\n"
+            + $"    \"Quiet\": {{ \"commandName\": \"Project\", \"applicationUrl\": \"http://127.0.0.1:{quiet.Port}\" }}\n  }}\n}}\n");
+        Restore.Run(Path.Combine(Folder, "src", "Site"));
+        MainWindow window = Open();
+        try
+        {
+            // As dotnet new web writes it, the project file names no output type: the Web SDK makes it an executable.
+            Assert.Equal(["Hello", "Site: Browse", "Site: Quiet"], window.Configurations.Select(c => c.Name));
+            Assert.True(window.SelectConfiguration("Site: Browse"));
+            Ui.Launched(window, window.RunAsync(), "the site to start", TimeSpan.FromMinutes(2));
+            Ui.WaitFor(() => Output(window).Contains("Warming up", StringComparison.Ordinal), "the site to start", TimeSpan.FromMinutes(2));
+            Ui.Hold(TimeSpan.FromSeconds(2), "the site warming up, its port refusing every connection: no browser is to open meanwhile");
+            Assert.True(window.Browsed.Count == 0, $"The browser opened {window.Browsed.FirstOrDefault()} before the site listened");
+
+            browse.LetGo(listen);
+            Ui.WaitFor(() => window.Browsed.Count > 0, "the browser to open once the site listens", TimeSpan.FromSeconds(60));
+            Uri opened = Assert.Single(window.Browsed);
+            Assert.Equal($"http://127.0.0.1:{browse.Port}/orders", opened.AbsoluteUri);
+            using (System.Net.Http.HttpClient client = new())
+            {
+                Assert.Equal("Orders", Ui.Await(Waiting.Apart(() => client.GetStringAsync(opened)), "the site's answer at its launch URL"));
+            }
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the site to stop");
+
+            File.Delete(listen);
+            Assert.True(window.SelectConfiguration("Site: Quiet"));
+            Ui.Launched(window, window.RunAsync(), "the quiet site to start", TimeSpan.FromMinutes(2));
+            quiet.LetGo(listen);
+            Ui.WaitFor(() => Output(window).Contains("Now listening on:", StringComparison.Ordinal), "the quiet site to listen", TimeSpan.FromMinutes(2));
+            Ui.Hold(TimeSpan.FromSeconds(1.5), "the quiet site running a while, listening: no browser is to open meanwhile");
+            Assert.Single(window.Browsed);
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the site to stop");
+            window.Close();
+        }
+    }
+
+    /// <summary>Under Run with Hot Reload, a web project whose profile launches the browser opens its launch URL once,
+    /// through the window, once it listens; dotnet watch opens none of its own, which would run the program its
+    /// DOTNET_WATCH_BROWSER_PATH names: a stand-in here, writing where it was sent.</summary>
+    private void Under_hot_reload_a_web_project_whose_profile_launches_the_browser_opens_it_once_through_the_window_and_never_through_dotnet_watch()
+    {
+        // The port held until the site, started, waits at its gate, outside its project where dotnet watch hears no change.
+        using HeldPort held = new();
+        int port = held.Port;
+        string gate = HeldPort.GateIn(Folder);
+        Write("Sample.slnx", "<Solution>\n  <Project Path=\"src/Hello/Hello.csproj\" />\n  <Project Path=\"src/Site/Site.csproj\" />\n</Solution>\n");
+        Write("src/Site/Site.csproj", TestProjects.Web("<ImplicitUsings>enable</ImplicitUsings>"));
+        Write("src/Site/Program.cs", HeldPort.Gated("WebApplication app = WebApplication.Create(args);\napp.MapGet(\"/orders\", () => \"Orders\");\napp.Run();\n"));
+        string sent = Path.Combine(Folder, "dotnet-watch-browsed");
+        string browser;
+        if (OperatingSystem.IsWindows())
+        {
+            browser = Path.Combine(Folder, "browser.cmd");
+            File.WriteAllText(browser, $"@echo off\r\necho %* >> \"{sent}\"\r\n");
+        }
+        else
+        {
+            browser = Path.Combine(Folder, "browser");
+            File.WriteAllText(browser, $"#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{sent}'\n");
+            File.SetUnixFileMode(browser, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+        System.Text.Json.Nodes.JsonObject profiles = new()
+        {
+            ["Browse"] = new System.Text.Json.Nodes.JsonObject
+            {
+                ["commandName"] = "Project", ["launchBrowser"] = true, ["launchUrl"] = "orders", ["applicationUrl"] = $"http://127.0.0.1:{port}",
+                ["environmentVariables"] = new System.Text.Json.Nodes.JsonObject { ["DOTNET_WATCH_BROWSER_PATH"] = browser, [HeldPort.GateVariable] = gate },
+            },
+        };
+        Write("src/Site/Properties/launchSettings.json", new System.Text.Json.Nodes.JsonObject { ["profiles"] = profiles }.ToJsonString());
+        Restore.Run(Path.Combine(Folder, "src", "Site"));
+        MainWindow window = Open();
+        window.ApplySettings(window.Settings with { HotReload = true });
+        try
+        {
+            Assert.True(window.SelectConfiguration("Site: Browse"));
+            window.Perform(AppActions.RunProgram);
+            WaitWatched(window, () => Output(window).Contains(HeldPort.AtGate, StringComparison.Ordinal), "the site to start under dotnet watch", TimeSpan.FromMinutes(3));
+            held.LetGo(gate);
+            WaitWatched(window, () => window.Browsed.Count > 0, "the browser to open once the site listens under dotnet watch", TimeSpan.FromMinutes(1));
+            Uri opened = Assert.Single(window.Browsed);
+            Assert.Equal($"http://127.0.0.1:{port}/orders", opened.AbsoluteUri);
+            WaitWatched(window, () => Output(window).Contains("Now listening on:", StringComparison.Ordinal) && Output(window).Contains("Waiting for changes", StringComparison.Ordinal),
+                "dotnet watch to watch the listening site", TimeSpan.FromMinutes(1));
+            Ui.Hold(TimeSpan.FromSeconds(2), "the site listening under dotnet watch, which launches its own browser as the site says it listens");
+            Assert.False(File.Exists(sent), $"dotnet watch opened a browser of its own at {(File.Exists(sent) ? File.ReadAllText(sent).Trim() : null)}, beside the window's");
+            Assert.Single(window.Browsed);
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning, "the site to stop");
+            window.Close();
+        }
+    }
+
+    /// <summary>The pointer brought to rest on a character of a console.</summary>
+    private static void Rest(MainWindow window, CodeEditor editor, int offset)
+    {
+        window.MouseMove(At(window, editor, offset));
+        Ui.Settle();
+    }
+
+    /// <summary>A click on a character of a console, as a person clicks a link there.</summary>
+    private static void Click(MainWindow window, CodeEditor editor, int offset)
+    {
+        Point at = At(window, editor, offset);
+        window.MouseMove(at);
+        window.MouseDown(at, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(at, Avalonia.Input.MouseButton.Left);
+        Ui.Settle();
+    }
+
+    /// <summary>Over a character's left half, in the window, its line scrolled into view first.</summary>
+    private static Point At(MainWindow window, CodeEditor editor, int offset)
+    {
+        int line = editor.Document.Snapshot.GetLineFromOffset(offset);
+        Point top = editor.PointOf(offset);
+        if (top.Y < 0 || top.Y + editor.LineHeight > editor.Bounds.Height - 20)
+        {
+            editor.ScrollTo(new Vector(0, Math.Max(0, (line * editor.LineHeight) - (editor.Bounds.Height / 3))));
+            Ui.Settle();
+            top = editor.PointOf(offset);
+        }
+        return editor.TranslatePoint(top + new Vector(2, editor.LineHeight / 2), window)!.Value;
+    }
+
+    private void A_build_that_cannot_start_says_why_and_leaves_nothing_waiting()
+    {
+        MainWindow window = Open();
+        TestFolders.Delete(Folder);
+        try
+        {
+            // Read before Build is pressed: the watcher's notice of its root going is not always given.
+            window.ReloadSolution();
+            Assert.Empty(window.Configurations);
+            Task<BuildOutcome> built = window.BuildAsync();
+            // Landing fails if the build left background work held.
+            Assert.Equal(BuildStatus.NotStarted, Ui.Landed(built, "the build's outcome, told to its caller").Status);
+            Assert.False(window.IsBuilding);
+            Assert.Contains("is gone", window.Status, StringComparison.Ordinal);
+            Assert.Contains("is gone", window.BottomPanel.Build.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.CreateDirectory(Folder);
+            window.Close();
+        }
+    }
+
+    /// <summary>An edit whose save is refused (its file read-only, as one not checked out is) stays unsaved in the editor, and
+    /// Build and Commit, which would take the disk's older text, are refused naming the file, nothing built or committed.</summary>
+    [AvaloniaFact]
+    public void Build_and_commit_are_refused_naming_a_file_whose_save_was_refused()
+    {
+        const string Refused = "Program.cs could not be saved: Program.cs is read-only";
+        string program = Path.Combine(Folder, "src", "Hello", "Program.cs");
+        TestGit.Init(Folder);
+        File.WriteAllText(program, "Console.WriteLine(\"Changed on disk\");\n");
+        File.SetAttributes(program, FileAttributes.ReadOnly);
+        MainWindow window = Open();
+        try
+        {
+            window.Confirm = (_, _, _) => Task.FromResult(false);
+            window.OpenFile(program);
+            Ui.Settle();
+            window.EditorArea.CodeEditor.Selections = SelectionSet.Single(0);
+            window.KeyTextInput("// Unsaved ");
+            Ui.Settle();
+            Assert.True(window.EditorArea.Active is { Name: "Program.cs", IsModified: true }, "The edit of the read-only Program.cs was not kept unsaved");
+
+            BuildOutcome built = Ui.Landed(window.BuildAsync(), "the build's outcome");
+            Assert.True(built.Status == BuildStatus.NotStarted && built.Message == Refused,
+                $"A build with Program.cs's edit unsaved ended {built.Status}, saying \"{built.Message}\": it built the disk's older text");
+            Assert.Equal(Refused, window.Status);
+
+            window.Perform(AppActions.Commit);
+            CommitView commit = window.CommitView;
+            Ui.Landed(() => commit.Chosen.Any(c => c.Name == "Program.cs"), "Program.cs listed as modified");
+            commit.Message = "The disk's text";
+            Assert.False(Ui.Landed(commit.CommitAsync(push: false), "the commit's answer"), "The commit was made of Program.cs's older text on disk");
+            Assert.Equal(Refused, window.Status);
+            Assert.Equal("First", TestGit.Run(Folder, "log", "-1", "--format=%s").Trim());
+            Assert.True(window.EditorArea.Active!.IsModified, "Program.cs's edit was taken for saved");
+        }
+        finally
+        {
+            File.SetAttributes(program, FileAttributes.Normal);
+            Ui.Press(window, Ui.Shortcut(AppActions.Save));
+            window.Close();
+        }
+    }
+
+    /// <summary>A program that runs until it is ended: the Run window's Rerun while it runs stops it and runs it again, and the
+    /// one run again, still running when the window closes, ends with it.</summary>
+    private void The_run_windows_rerun_while_the_program_runs_stops_it_and_runs_it_again_and_a_program_still_running_ends_with_the_window()
+    {
+        string runs = Path.Combine(Folder, "program.pids");
+        string started = Path.Combine(Folder, "program.pid");
+        Write("src/Hello/Program.cs", $"File.WriteAllText(@\"{started}\", Environment.ProcessId.ToString());\n"
+            + $"File.AppendAllText(@\"{runs}\", Environment.ProcessId + \"\\n\");\nThread.Sleep(Timeout.Infinite);\n");
+        MainWindow window = Open();
+        bool ending = false;
+        try
+        {
+            window.Perform(AppActions.RunProgram);
+            Ui.WaitFor(() => Runs(runs).Length == 1, "the program to start", TimeSpan.FromMinutes(2));
+            int first = Runs(runs)[0];
+
+            Button rerun = window.BottomPanel.Run.GetVisualDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Rerun", StringComparison.Ordinal));
+            Assert.True(rerun.IsEffectivelyEnabled, "The Run window's Rerun is greyed while its program runs");
+            Ui.Click(rerun, settle: false);
+            Ui.WaitFor(() => Runs(runs).Length == 2, "the program to run again", TimeSpan.FromMinutes(2));
+            Assert.True(Processes.Gone(first), $"Rerun left the first run going: {Processes.Describe(first)}");
+            Assert.True(window.IsRunning, "The program Rerun started again is not running");
+
+            ending = true;
+            AssertEndsWithTheWindow(window, started, "the program Run started again");
+        }
+        finally
+        {
+            if (!ending)
+            {
+                window.Close();
+            }
+        }
+
+        static int[] Runs(string file) => File.Exists(file)
+            ? [.. Ui.Shared(file).Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse)]
+            : [];
+    }
+
+    /// <summary>A program Run built, built again by a dotnet build typed in the Terminal window, still starts with no
+    /// build before it, though Passenger was started from a shell whose PWD names the folder through a link: the
+    /// terminal's shell is told its folder by its real path, as the IDE's builds name it, since a build through another
+    /// spelling of a project's path deletes what the IDE's build wrote and it did not (IncrementalClean),
+    /// runtimeconfig.json and deps.json among them.</summary>
+    private void A_program_run_built_and_built_again_in_the_terminal_starts_with_no_build_before_it()
+    {
+        string folder = Folder;
+        // Windows' shells read no PWD.
+        string? linked = OperatingSystem.IsWindows() ? null : Path.Combine(TestFolders.Create("build-link-"), "Sample");
+        if (linked is not null)
+        {
+            TestFolders.LinkFolder(linked, PathNames.Canonical(folder));
+        }
+        MainWindow window = Open();
+        try
+        {
+            Ui.Launched(window, window.RunAsync(), "the run built before it", TimeSpan.FromMinutes(2));
+            Assert.Contains("Hello from the run", Ended(window), StringComparison.Ordinal);
+
+            window.TerminalPanel.Shell = OperatingSystem.IsWindows() ? ("cmd.exe", []) : ("/bin/sh", []);
+            string? pwd = Environment.GetEnvironmentVariable("PWD");
+            Environment.SetEnvironmentVariable("PWD", linked ?? pwd);
+            try
+            {
+                Ui.Run(window, AppActions.ShowTerminal);
+                Ui.WaitFor(() => window.TerminalPanel.Active is { IsRunning: true }, "the shell to start");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("PWD", pwd);
+            }
+            Pitstop.Terminal.TerminalSession shell = window.TerminalPanel.Active!;
+            Ui.WaitFor(() => window.TerminalPanel.View.IsFocused, "the keys to go to the terminal");
+            // Its nodes end with it: what it writes is the same, and nothing of it outlives the test.
+            window.KeyTextInput($"\"{Dotnet.Host()}\" build -nodeReuse:false && echo built-0 || echo built-1");
+            Ui.Press(window, "ENTER");
+            try
+            {
+                Ui.WaitFor(() => Said(shell) is not null, "the terminal's build to end", TimeSpan.FromMinutes(3));
+            }
+            catch (TimeoutException waited)
+            {
+                throw new TimeoutException($"{waited.Message}. The terminal shows:\n{TerminalTests.Screen(shell)}", waited);
+            }
+            Assert.True(Said(shell) == "built-0", $"The build typed in the terminal failed:\n{TerminalTests.Screen(shell)}");
+
+            RunConfigurationsDialog dialog = DialogButtonsTests.Check(window.ShowRunConfigurations());
+            dialog.BuildBox.IsChecked = false;
+            Ui.Settle();
+            Ui.Click(dialog.OkButton);
+            Assert.False(window.Configuration?.BuildBeforeLaunch, "Edit Configurations kept Hello's build before launch");
+            Ui.Launched(window, window.RunAsync(), "the run with no build before it");
+            string output = Ended(window);
+            Assert.True(output.Contains("Hello from the run", StringComparison.Ordinal) && output.Contains("Process finished with exit code 0.", StringComparison.Ordinal),
+                $"After a build in the terminal, Hello did not start as the IDE's build left it:\n{output}");
+        }
+        finally
+        {
+            window.Close();
+        }
+
+        static string? Said(Pitstop.Terminal.TerminalSession shell) =>
+            TerminalTests.Screen(shell).Split('\n').Select(line => line.Trim()).LastOrDefault(line => line is "built-0" or "built-1");
+    }
+
+    private void A_build_still_running_when_the_window_closes_ends_with_it()
+    {
+        // A step of the build that would run for ten minutes, as a slow tool or a hung test would: its process names itself.
+        Write("src/Hello/Hello.csproj", $"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <OutputType>Exe</OutputType>
+                <TargetFramework>{TestProjects.Framework}</TargetFramework>
+                <ImplicitUsings>enable</ImplicitUsings>
+              </PropertyGroup>
+              <Target Name="Linger" BeforeTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+                <Exec Condition="'$(OS)' != 'Windows_NT'" Command="echo $$ &gt; build.pid; exec sleep 600" />
+                <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -Command &quot;Set-Content -Path build.pid -Value $PID; Start-Sleep -Seconds 600&quot;" />
+              </Target>
+            </Project>
+            """);
+        MainWindow window = Open();
+        window.Perform(AppActions.Build);
+        AssertEndsWithTheWindow(window, Path.Combine(Folder, "src", "Hello", "build.pid"), "the build's step");
+    }
+
+    /// <summary>Waits for a process the window started to write its id to a file, closes the window, and checks that the
+    /// process, and so whatever it holds (a port, its files, a watch on the sources), is gone, and that the IDE's process
+    /// may end: the window's end finishes within its limit. Whatever a failure leaves running is ended.</summary>
+    private static void AssertEndsWithTheWindow(MainWindow window, string idFile, string what)
+    {
+        OwnProcess process = default;
+        try
+        {
+            process = OwnProcess.Of(Processes.WrittenId(idFile, $"{what} to start"));
+            int command = window.Runner.IsRunning ? window.Runner.ProcessId ?? 0 : 0;
+            window.Close();
+            Assert.True(Ui.Ended(window), "The window closed without ending what it started within its limit, so the IDE's process would not end");
+            Assert.True(Processes.Gone(process.Id), $"After the window closed, {what} went on running, holding what it held for the next run");
+            Assert.True(Processes.Gone(command), $"After the window closed, the dotnet command that started {what} went on running (dotnet watch would start it again on a save)");
+        }
+        finally
+        {
+            process.Kill();
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning && !window.IsBuilding, "the window to hear the run and the build end");
+        }
+    }
+
+    private static string RunToEnd(MainWindow window)
+    {
+        if (!window.Runner.IsRunning)
+        {
+            Ui.Press(window, Ui.Shortcut(AppActions.RunProgram));
+        }
+        return Ended(window);
+    }
+
+    /// <summary>The Run console once the run already started has ended; never a run of its own, since a short program can end
+    /// before a test looks, and a Run pressed then would run the configuration again without what the test gave it.</summary>
+    private static string Ended(MainWindow window)
+    {
+        Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the run to end");
+        return Output(window);
+    }
+
+    private MainWindow Open() => Ui.OpenFolder(Folder);
+
+    /// <summary>The solution with a second project, a library, which builds at the same time as the first.</summary>
+    private void WriteTwoProjects()
+    {
+        Write("Sample.slnx", "<Solution>\n  <Folder Name=\"/src/\">\n    <Project Path=\"src/Hello/Hello.csproj\" />\n    <Project Path=\"src/Tools/Tools.csproj\" />\n  </Folder>\n</Solution>\n");
+        Write("src/Tools/Tools.csproj", TestProjects.Library());
+        Write("src/Tools/Tool.cs", "public static class Tool\n{\n    public static int Count => 3;\n}\n");
+    }
+
+    private void Write(string relative, string text) => TestFolders.Write(Folder, relative, text);
+
+    /// <summary>What a program's id file says and when it was last written, for a wait on a program's start to say.</summary>
+    private static string IdSaid(string file)
+    {
+        try
+        {
+            return File.Exists(file) ? $"says \"{File.ReadAllText(file)}\", written {FileStamp.WrittenAt(file):HH:mm:ss.fff}" : "is not there";
+        }
+        catch (IOException error)
+        {
+            return $"could not be read: {error.Message}";
+        }
+    }
+
+    /// <summary>MSBuild of a test's own, for what the IDE starts while it lasts (the IDE passes its environment on): a handshake
+    /// salt no other build has, so no server or node another left is used and the test's builds start their own, as on a
+    /// machine with none idle; and variables set as the test needs, put back at its end. What its builds leave ends with the
+    /// tests' process, as with the IDE's.</summary>
+    private sealed class OwnMSBuild : IDisposable
+    {
+        private readonly Dictionary<string, string?> before = [];
+
+        public OwnMSBuild(params (string Name, string? Value)[] variables)
+        {
+            Set("MSBUILDNODEHANDSHAKESALT", Guid.NewGuid().ToString("N"));
+            // A node it leaves waits two minutes to be reused, not fifteen.
+            Set("MSBUILDNODECONNECTIONTIMEOUT", "120000");
+            foreach ((string name, string? value) in variables)
+            {
+                Set(name, value);
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach ((string name, string? value) in before)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
+        }
+
+        private void Set(string name, string? value)
+        {
+            before.TryAdd(name, Environment.GetEnvironmentVariable(name));
+            Environment.SetEnvironmentVariable(name, value);
+        }
+    }
+}

@@ -1,0 +1,238 @@
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using Pitstop.App;
+using Pitstop.Core;
+
+namespace Pitstop.Tests;
+
+/// <summary>What Passenger looks for above a folder it opens (an .editorconfig, a project's own TypeScript in a
+/// node_modules) is read from the person's own parent folders, whatever their mode, every one from their home to its disk's
+/// root among them, and passed over in a parent another user owns, or where another user put it in the person's own: the
+/// log says where and why; an exFAT volume's folders are the person's; and a XAML file of the open folder's own project is
+/// read as that project's whoever owns its folder. Another user's folder or file is the walk's stand-in for one (<see
+/// cref="FoldersUp.HeldByAnother"/>), as a test makes none of its own.</summary>
+[AboutMacOS]
+public sealed class ParentFoldersTests : IDisposable
+{
+    private const UnixFileMode Shown = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead
+        | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute;
+
+    private const UnixFileMode Everyones = Shown | UnixFileMode.GroupWrite | UnixFileMode.OtherWrite;
+
+    private readonly string parent = PathNames.Canonical(TestFolders.Create("parent-"));
+
+    public void Dispose()
+    {
+        Mode(Shown);
+        TestFolders.Delete(parent);
+    }
+
+    /// <summary>What a folder's parents decide (an .editorconfig, a TypeScript) is taken from the person's own parents
+    /// alone: a walk up from home reads every folder to the root of its disk, an .editorconfig in the person's own
+    /// parent decides the indent whatever the folder's trust, one in a parent another user owns or put in the person's
+    /// own is passed over with the log saying where the walk ended, the open folder's own project gets its XAML in a folder
+    /// another user owns, and a TypeScript in another user's parent never runs (Node.js's step, last).</summary>
+    [AvaloniaFact]
+    public void What_a_parent_folder_decides_is_taken_only_from_the_persons_own()
+    {
+        Flow.StepApart<ParentFoldersTests>("a walk up from the person's home reads every folder to the root of its disk", t => t.A_walk_up_from_the_persons_home_reads_every_folder_to_the_root_of_its_disk());
+        Flow.StepApart<ParentFoldersTests>("an editorconfig in the person's own parent folder decides the indent whatever the folder's mode", t => t.An_editorconfig_in_the_persons_own_parent_folder_decides_the_indent_whatever_the_folders_mode());
+        Flow.StepApart<ParentFoldersTests>("an editorconfig in a parent folder another user owns is passed over and the log says where the walk ended", t => t.An_editorconfig_in_a_parent_folder_another_user_owns_is_passed_over_and_the_log_says_where_the_walk_ended());
+        Flow.StepApart<ParentFoldersTests>("an editorconfig another user put in the person's own parent is passed over", t => t.An_editorconfig_another_user_put_in_the_persons_own_parent_is_passed_over());
+        Flow.StepApart<ParentFoldersTests>("a XAML file of the open folder's project another user owns is read as that project's, one made after the file opened too", t => t.A_xaml_file_of_the_open_folders_project_another_user_owns_is_read_as_that_projects());
+        Flow.StepApart<ParentFoldersTests>("a TypeScript in a parent another user owns never runs and one in the person's own parent serves the folder", t => t.A_TypeScript_in_a_parent_another_user_owns_never_runs_and_one_in_the_persons_own_parent_serves_the_folder());
+    }
+
+    private void A_walk_up_from_the_persons_home_reads_every_folder_to_the_root_of_its_disk()
+    {
+        string home = PathNames.Canonical(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        string[] walked = [.. FoldersUp.From(home)];
+        Assert.True(walked.Length > 0 && walked[^1] == Path.GetPathRoot(home),
+            $"The walk up from {home} read {string.Join(", ", walked)} and no further, so a global.json or .editorconfig the person keeps above their projects there goes unread");
+    }
+
+    private void An_editorconfig_in_the_persons_own_parent_folder_decides_the_indent_whatever_the_folders_mode()
+    {
+        string app = App();
+        Mode(Everyones);
+        MainWindow window = Open(app, "Spaced.cs");
+        try
+        {
+            Assert.Equal("Tab, from .editorconfig", IndentShown(window));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private void An_editorconfig_in_a_parent_folder_another_user_owns_is_passed_over_and_the_log_says_where_the_walk_ended()
+    {
+        string app = App();
+        using IDisposable another = FoldersUp.HeldByAnother(parent);
+        MainWindow window = Open(app, "Spaced.cs");
+        try
+        {
+            Assert.True(IndentShown(window) == "4 spaces, detected",
+                $"The file indents as {IndentShown(window)}, so the .editorconfig in {parent}, which another user owns, decided it");
+            string said = $"stop below {parent}: another ";
+            Ui.WaitFor(() => Ui.Shared(IdeErrors.LogPath).Contains(said, StringComparison.Ordinal), $"the log to say the walk up ended below {parent}");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private void An_editorconfig_another_user_put_in_the_persons_own_parent_is_passed_over()
+    {
+        string app = App();
+        string planted = Path.Combine(parent, ".editorconfig");
+        using IDisposable another = FoldersUp.HeldByAnother(planted);
+        MainWindow window = Open(app, "Spaced.cs");
+        try
+        {
+            Assert.True(IndentShown(window) == "4 spaces, detected",
+                $"The file indents as {IndentShown(window)}, so {planted}, which another user put there, decided it");
+            Ui.WaitFor(() => Ui.Shared(IdeErrors.LogPath).Contains($"passes over {planted}", StringComparison.Ordinal), $"the log to say {planted} was passed over");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private void A_TypeScript_in_a_parent_another_user_owns_never_runs_and_one_in_the_persons_own_parent_serves_the_folder()
+    {
+        WebLanguagesTests.SkipWithoutNode(typescript: true);
+        string ran = Path.Combine(parent, "tsserver.marker");
+        string typescript = Path.Combine(parent, "node_modules", "typescript");
+        WebLanguagesTests.CopyFolder(Path.Combine(Pitstop.App.Web.WebLanguages.Modules, "typescript"), typescript);
+        string server = Path.Combine(typescript, "lib", "tsserver.js");
+        File.WriteAllText(server, $"require('fs').writeFileSync({System.Text.Json.JsonSerializer.Serialize(ran)}, 'ran');\n" + File.ReadAllText(server));
+        string app = Path.Combine(parent, "app");
+        TestFolders.Write(app, "tsconfig.json", "{ \"compilerOptions\": { \"strict\": true } }\n");
+        TestFolders.Write(app, "main.ts", "const n: number = 1;\n");
+
+        MainWindow window;
+        using (FoldersUp.HeldByAnother(parent))
+        {
+            window = Open(app, "main.ts");
+            try
+            {
+                Ui.WaitFor(() => window.LanguageShown?.Contains("(Pitstop's)", StringComparison.Ordinal) == true,
+                    () => $"the status bar to name Pitstop's TypeScript under the parent another user owns ({window.LanguageShown})");
+                Assert.False(File.Exists(ran), $"The TypeScript in {parent}, which another user owns, ran for the folder below it");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+
+        window = Open(app, "main.ts");
+        try
+        {
+            Ui.WaitFor(() => File.Exists(ran), () => $"the TypeScript in the person's own parent folder to run ({window.LanguageShown})");
+            Ui.WaitFor(() => window.LanguageShown?.Contains("TypeScript", StringComparison.Ordinal) == true
+                && !window.LanguageShown.Contains("(Pitstop's)", StringComparison.Ordinal),
+                () => $"the status bar to name the project's own TypeScript ({window.LanguageShown})");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void An_editorconfig_at_the_top_of_an_exFAT_volume_decides_the_indent_of_a_project_below_it()
+    {
+        Assert.SkipUnless(OperatingSystem.IsMacOS(), "A test's exFAT volume is a disk image, on macOS alone");
+        string volume = Directory.CreateDirectory(Path.Combine(parent, "volume")).FullName;
+        string image = Path.Combine(parent, "volume.dmg");
+        ChildResult made = Ran("/usr/bin/hdiutil", "create", "-size", "20m", "-fs", "ExFAT", "-volname", "PASSENGER", "-ov", image, "-quiet");
+        Assert.SkipUnless(made.Succeeded, $"hdiutil made no exFAT disk image (exit code {made.ExitCode}): {made.Error}{made.Output}");
+        ChildResult attached = Ran("/usr/bin/hdiutil", "attach", image, "-nobrowse", "-noautoopen", "-mountpoint", volume, "-quiet");
+        Assert.SkipUnless(attached.Succeeded, $"hdiutil attached no exFAT disk image (exit code {attached.ExitCode}): {attached.Error}{attached.Output}");
+        try
+        {
+            File.WriteAllText(Path.Combine(volume, ".metadata_never_index"), string.Empty);
+            TestFolders.Write(volume, ".editorconfig", "root = true\n\n[*]\nindent_style = tab\n");
+            string app = Path.Combine(PathNames.Canonical(volume), "repo", "app");
+            TestFolders.Write(app, "Spaced.cs", "class Spaced\n{\n    void Run()\n    {\n        int a = 1;\n    }\n}\n");
+            MainWindow window = Open(app, "Spaced.cs");
+            try
+            {
+                Assert.True(IndentShown(window) == "Tab, from .editorconfig",
+                    $"The file indents as {IndentShown(window)}, so the .editorconfig at the top of the exFAT volume, the person's, was passed over");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            TestVolumes.Detach(volume, image);
+        }
+    }
+
+    /// <summary>A system tool run on the thread pool and waited for with the window's loop running.</summary>
+    private static ChildResult Ran(string tool, params string[] arguments)
+    {
+        TimeSpan limit = TimeSpan.FromMinutes(1);
+        return Ui.AwaitPumped(Waiting.Apart(() => ChildProcesses.RunAsync(ChildProcesses.Command(tool, arguments), limit: limit.Scaled())),
+            $"{tool} {string.Join(' ', arguments)}", limit.Scaled() + TestFolders.Spare);
+    }
+
+    private void A_xaml_file_of_the_open_folders_project_another_user_owns_is_read_as_that_projects()
+    {
+        string app = Path.Combine(parent, "xaml-app");
+        TestFolders.Write(app, Path.Combine("Views", "Card.axaml"), "<UserControl xmlns=\"https://github.com/avaloniaui\">\n    <Grid />\n</UserControl>\n");
+        using IDisposable another = FoldersUp.HeldByAnother(app);
+        MainWindow window = Open(app, Path.Combine("Views", "Card.axaml"));
+        try
+        {
+            Assert.NotNull(window.Actions.WhyNot(AppActions.XamlPreview, window.Actions.Context()));
+            // The project comes after its file is open, as a person makes one beside the XAML they have.
+            TestFolders.Write(app, "App.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net8.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
+            Ui.WaitFor(() => window.Session.Projects.Any(p => Path.GetFileName(p.Path) == "App.csproj"), "the window to list App.csproj once it was written");
+            Ui.WaitFor(() => window.Actions.WhyNot(AppActions.XamlPreview, window.Actions.Context()) is null,
+                () => $"XAML Preview to be offered for Card.axaml of App.csproj, which the window lists in a folder another user owns, so the person's own "
+                    + $"project gets its XAML read and previewed; it says {window.Actions.WhyNot(AppActions.XamlPreview, window.Actions.Context())}");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>A folder in the parent, its file indented by four spaces, under the parent's .editorconfig of tabs.</summary>
+    private string App()
+    {
+        TestFolders.Write(parent, ".editorconfig", "root = true\n\n[*]\nindent_style = tab\n");
+        string app = Path.Combine(parent, "app");
+        TestFolders.Write(app, "Spaced.cs", "class Spaced\n{\n    void Run()\n    {\n        int a = 1;\n    }\n}\n");
+        return app;
+    }
+
+    /// <summary>The parent's mode, where folders have one.</summary>
+    private void Mode(UnixFileMode mode)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(parent, mode);
+        }
+    }
+
+    private static MainWindow Open(string folder, string file)
+    {
+        MainWindow window = Ui.OpenFolder(folder, languageServer: false, autosaves: false);
+        window.OpenFile(Path.Combine(folder, file));
+        Ui.Settle();
+        window.EditorArea.CodeEditor.Focus();
+        return window;
+    }
+
+    private static string? IndentShown(MainWindow window) => window.FindControl<TextBlock>("IndentText")!.Text;
+}

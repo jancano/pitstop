@@ -1,0 +1,290 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Pitstop.Editor;
+
+namespace Pitstop.App.Xaml;
+
+/// <summary>The design view beside a XAML file: a header naming it and what it is doing, the previewer's error over the
+/// last frame when the XAML did not load, and the frame at its own size on the editor's background. One larger than the
+/// pane is drawn smaller by the previewer itself, never shrunk as a picture, so its text stays as sharp as the IDE's own at
+/// any scale; the frame lands pixel for pixel on the screen. Where the previewer says which element is where, a click on the frame chooses
+/// the element under it and the element at the editor's caret is outlined; under the frame, what an element sets itself, as
+/// its XAML says it (<see cref="ShowProperties"/>).</summary>
+public sealed class XamlPreviewPane : DockPanel
+{
+    private readonly XamlPreview preview;
+    private readonly TextBlock status;
+    private readonly Banner errorBar = Banner.Wrapping(error: true);
+    private readonly Image image;
+    private readonly Canvas marks;
+    private readonly Border outline;
+    private readonly Border edge;
+    private readonly ToolWindows.EmptyState waiting;
+    private readonly Panel view;
+
+    /// <summary>The size the root is drawn at: its design's, a phone's or a tablet's, shown while the previewer takes one.</summary>
+    private readonly ComboBox sizes;
+
+    /// <summary>The chosen element's own values, under the frame, while it shows them.</summary>
+    private readonly Border properties;
+    private readonly TextBlock propertiesTitle;
+    private readonly StackPanel propertyRows;
+
+    /// <summary>The frame in its design's units, scaled to the size it is shown at.</summary>
+    private readonly LayoutTransformControl scaled;
+
+    /// <summary>Asks the previewer for the scale the pane's size calls for once a resize pauses, so a splitter's drag
+    /// draws no frame per step.</summary>
+    private readonly Debounce redraw;
+    private TopLevel? shownOn;
+
+    /// <summary>The scale the pane's window draws at.</summary>
+    private double windowScale = 1;
+
+    /// <summary>How much of its design's size the frame is shown at: 1 where the pane holds it, less where it does not.</summary>
+    private double fit = 1;
+    private Rect? outlined;
+
+    /// <summary>The title of an action the pane's words offer (<see cref="XamlPreview.Offers"/>), by its id.</summary>
+    private readonly Func<string, string> titleOf;
+
+    public XamlPreviewPane(XamlPreview preview, Func<string, string> titleOf)
+    {
+        this.preview = preview;
+        this.titleOf = titleOf;
+        status = new TextBlock { Classes = { StyleClasses.Muted, StyleClasses.Caption }, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        sizes = new ToolDropDown
+        {
+            [DockProperty] = Dock.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(Gaps.Wide, 0, 0, 0),
+            IsVisible = false,
+            ItemsSource = (string[])[DesignSize, .. Pitstop.Xaml.Features.PreviewSize.Offered.Select(s => s.Shown)],
+            SelectedIndex = 0,
+        };
+        ToolTip.SetTip(sizes, "The size the preview draws its root at");
+        sizes.SelectionChanged += (_, _) => preview.Size = sizes.SelectedIndex > 0 ? Pitstop.Xaml.Features.PreviewSize.Offered[sizes.SelectedIndex - 1] : null;
+        Border header = ToolWindows.ToolBars.OverEditor(new DockPanel
+        {
+            Margin = new Thickness(ListRow.TextStart, 0),
+            Children =
+            {
+                new TextBlock { Classes = { StyleClasses.PaneTitle }, Text = "Preview", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, Gaps.Normal, 0) },
+                sizes,
+                status,
+            },
+        });
+        image = new Image { Stretch = Stretch.Fill };
+        // The element at the caret, drawn over the frame in the frame's own units, so it shrinks with it.
+        outline = new Border { BorderThickness = new Thickness(OutlineWidth), IsVisible = false, IsHitTestVisible = false };
+        outline.Bind(Border.BorderBrushProperty, outline.GetResourceObservable(TokenKeys.Accent));
+        marks = new Canvas { IsHitTestVisible = false, Children = { outline } };
+        Panel framed = new() { Children = { image, marks } };
+        framed.PointerPressed += OnFramePressed;
+        // An edge, so a frame of the editor's own colour still shows where the design ends.
+        scaled = new LayoutTransformControl { Child = framed };
+        edge = new Border { Child = scaled, BorderThickness = Hairlines.Round, Margin = new Thickness(Gaps.Group), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        edge.Bind(Border.BorderBrushProperty, edge.GetResourceObservable(TokenKeys.Divider));
+        waiting = new ToolWindows.EmptyState { MaxWidth = 320, HorizontalAlignment = HorizontalAlignment.Center };
+        waiting.ActionRequested += (_, action) => ActionRequested?.Invoke(this, action);
+        view = new Panel { ClipToBounds = true, Children = { edge, waiting } };
+        view.SizeChanged += (_, _) => Fit();
+        redraw = new Debounce(TimeSpan.FromMilliseconds(150), () =>
+        {
+            preview.Scaling = windowScale * fit;
+            return Task.CompletedTask;
+        });
+        propertiesTitle = new TextBlock { Classes = { StyleClasses.PaneTitle } };
+        propertyRows = new StackPanel();
+        TextBlock unknown = new()
+        {
+            Text = "What a style, theme or template gives it, what it inherits and its defaults show in the Live Visual Tree once its app runs.",
+            Classes = { StyleClasses.Muted, StyleClasses.Caption },
+            TextWrapping = TextWrapping.Wrap,
+        };
+        properties = new Border
+        {
+            [DockProperty] = Dock.Bottom,
+            BorderThickness = Hairlines.Above,
+            Padding = new Thickness(Gaps.Wide, Gaps.Small),
+            // One height for every element, so the frame above stays where it is as the caret moves.
+            Height = 200,
+            IsVisible = false,
+            Child = new ScrollViewer { Content = new StackPanel { Spacing = Gaps.Tight, Children = { propertiesTitle, propertyRows, unknown } } },
+        };
+        properties.Bind(Border.BorderBrushProperty, properties.GetResourceObservable(TokenKeys.Divider));
+        Children.Add(header);
+        Children.Add(errorBar);
+        Children.Add(properties);
+        Children.Add(view);
+        this.Bind(BackgroundProperty, this.GetResourceObservable(TokenKeys.Editor_Background));
+        preview.Changed += (_, _) => Show();
+        AttachedToVisualTree += (_, _) =>
+        {
+            shownOn = TopLevel.GetTopLevel(this);
+            if (shownOn is not null)
+            {
+                windowScale = shownOn.RenderScaling;
+                preview.Scaling = windowScale * fit;
+                shownOn.ScalingChanged += Rescaled;
+            }
+        };
+        DetachedFromVisualTree += (_, _) =>
+        {
+            shownOn?.ScalingChanged -= Rescaled;
+            shownOn = null;
+            redraw.Stop();
+        };
+        Show();
+    }
+
+    /// <summary>The action the pane's words offer was asked for (Build for XAML Preview, Rebuild Solution), by its id.</summary>
+    public event EventHandler<string>? ActionRequested;
+
+    /// <summary>An element of the file was clicked in the frame; raised on the UI thread.</summary>
+    public event EventHandler<PreviewElement>? ElementChosen;
+
+    /// <summary>The frame shown.</summary>
+    public Image Frame => image;
+
+    /// <summary>The outline of the element at the caret.</summary>
+    public Control Outline => outline;
+
+    /// <summary>The element's box outlined, in the frame's units; null while none is.</summary>
+    public Rect? Outlined => outline.IsVisible ? outlined : null;
+
+    /// <summary>The chooser of the size the root is drawn at.</summary>
+    public ComboBox Sizes => sizes;
+
+    /// <summary>The chooser's first item: the root at the size its XAML designs it at.</summary>
+    public const string DesignSize = "Design size";
+
+    /// <summary>Build for XAML Preview's title, which the pane's link shows.</summary>
+    public const string BuildForPreviewTitle = "Build for XAML Preview";
+
+    /// <summary>How far the outline stands outside the box it outlines.</summary>
+    public const double OutlineWidth = 2;
+
+    /// <summary>The error shown over the frame; null while there is none.</summary>
+    public string? ErrorShown => errorBar.Said;
+
+    /// <summary>The element whose own values show under the frame, and each value as its row shows it (property, value,
+    /// where it comes from); none while they are hidden.</summary>
+    public (string? Element, IReadOnlyList<(string Property, string Value, string From)> Values) PropertiesShown { get; private set; } = (null, []);
+
+    /// <summary>Shows what an element of the file sets itself under the frame, as its XAML says it, or hides them (null).</summary>
+    public void ShowProperties(string? element, IReadOnlyList<(string Property, string Value, string From)> values)
+    {
+        if (PropertiesShown.Element == element && PropertiesShown.Values.SequenceEqual(values))
+        {
+            return;
+        }
+        PropertiesShown = (element, values);
+        properties.IsVisible = element is not null;
+        propertiesTitle.Text = element;
+        propertyRows.Children.Clear();
+        foreach ((string property, string value, string from) in values)
+        {
+            propertyRows.Children.Add(new DockPanel
+            {
+                Height = ListRow.Height,
+                Children =
+                {
+                    new TextBlock { [DockProperty] = Dock.Right, Text = from, Classes = { StyleClasses.Muted, StyleClasses.Caption }, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(Gaps.Normal, 0, 0, 0) },
+                    new TextBlock { Classes = { StyleClasses.Caption }, [DockProperty] = Dock.Left, Text = property, Width = 130, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis },
+                    new TextBlock { Classes = { StyleClasses.Code }, Text = value, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis },
+                },
+            });
+        }
+        if (values.Count == 0)
+        {
+            propertyRows.Children.Add(new TextBlock { Text = "Its XAML sets nothing itself.", Classes = { StyleClasses.Muted, StyleClasses.Caption } });
+        }
+    }
+
+    /// <summary>Outlines an element's box in the frame, or none.</summary>
+    public void ShowOutline(PreviewElement? element)
+    {
+        if (element is null || preview.Frame is null)
+        {
+            outline.IsVisible = false;
+            return;
+        }
+        // Around the box rather than on its edge, so it shows on an element drawn in the accent's own colour.
+        Rect box = element.Box;
+        outlined = box;
+        Canvas.SetLeft(outline, box.X - OutlineWidth);
+        Canvas.SetTop(outline, box.Y - OutlineWidth);
+        outline.Width = box.Width + (2 * OutlineWidth);
+        outline.Height = box.Height + (2 * OutlineWidth);
+        outline.IsVisible = true;
+    }
+
+    private void OnFramePressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(image).Properties.IsLeftButtonPressed || preview.ElementAt(e.GetPosition(image)) is not { } chosen)
+        {
+            return;
+        }
+        e.Handled = true;
+        ElementChosen?.Invoke(this, chosen);
+    }
+
+    /// <summary>The window moved to a screen of another scale: the previewer draws at that one.</summary>
+    private void Rescaled(object? sender, EventArgs e)
+    {
+        windowScale = ((TopLevel)sender!).RenderScaling;
+        Fit();
+    }
+
+    /// <summary>Works out how much of its design's size the frame fits in the pane at, asks the previewer to draw it so once
+    /// the pane's size settles, and shows the frame it has meanwhile.</summary>
+    private void Fit()
+    {
+        Size design = preview.FrameSize;
+        // The edge's margin and border stand outside the frame at every scale.
+        double room = 2 * (edge.Margin.Left + edge.BorderThickness.Left);
+        fit = design.Width > 0 && design.Height > 0 && view.Bounds.Width > room && view.Bounds.Height > room
+            ? Math.Min(1, Math.Min((view.Bounds.Width - room) / design.Width, (view.Bounds.Height - room) / design.Height))
+            : 1;
+        if (Math.Abs(preview.Scaling - (windowScale * fit)) >= 0.01)
+        {
+            redraw.Restart();
+        }
+        double shown = fit;
+        if (preview.Frame is { } frame && design.Width > 0)
+        {
+            // Drawn at the scale shown its pixels land one for one; one drawn larger shrinks until the next frame.
+            double drawn = frame.PixelSize.Width / design.Width / windowScale;
+            shown = drawn <= fit + 0.01 ? drawn : fit;
+        }
+        if (scaled.LayoutTransform is not ScaleTransform { ScaleX: double was } || Math.Abs(was - shown) > 1e-9)
+        {
+            scaled.LayoutTransform = new ScaleTransform(shown, shown);
+        }
+    }
+
+    private void Show()
+    {
+        status.Text = preview.Status;
+        sizes.IsVisible = preview.TakesSizes;
+        image.Source = preview.Frame;
+        image.Width = preview.FrameSize.Width;
+        image.Height = preview.FrameSize.Height;
+        marks.Width = preview.FrameSize.Width;
+        marks.Height = preview.FrameSize.Height;
+        edge.IsVisible = preview.Frame is not null;
+        waiting.Text = preview.Status;
+        waiting.Offer(preview.Offers, preview.Offers is { } offered ? titleOf(offered) : null);
+        waiting.IsVisible = preview.Frame is null;
+        errorBar.Say(preview.Error);
+        if (preview.Frame is null)
+        {
+            outline.IsVisible = false;
+        }
+        Fit();
+    }
+}

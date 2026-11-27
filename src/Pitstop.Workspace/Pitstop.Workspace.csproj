@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The folder's projects with no UI: the solution and project models, their files changed as text (SolutionEdits,
+       ProjectEdits), the project host that evaluates them, and the folder's walk. No Avalonia, so the boundary is the
+       project's own. -->
+  <PropertyGroup>
+    <RootNamespace>Pitstop.Workspace</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- What the app's part of the folder and nuget.config's editing read as they did inside one assembly (JsonText's
+         layout, XmlText). -->
+    <InternalsVisibleTo Include="Pitstop" />
+    <InternalsVisibleTo Include="Pitstop.Packages" />
+    <!-- How a program's includes match its files, unit tested in folders that tell letter case apart and that ignore it. -->
+    <InternalsVisibleTo Include="Pitstop.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Godot's shading language as its sources say it, written by just godot-shader-types (GodotShaderTable). -->
+    <EmbeddedResource Include="GodotShaderTypes.json" LogicalName="Pitstop.Workspace.GodotShaderTypes.json" />
+    <EmbeddedResource Include="GDScript/GodotRenames.json" LogicalName="Pitstop.Workspace.GodotRenames.json" />
+    <!-- Godot's default theme as its sources say it, written by just godot-theme (GodotThemeTable). -->
+    <EmbeddedResource Include="GodotDefaultTheme.json" LogicalName="Pitstop.Workspace.GodotDefaultTheme.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- A .feature file read and its steps matched (Gherkin/). -->
+    <PackageReference Include="Gherkin" />
+    <PackageReference Include="Cucumber.CucumberExpressions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Pitstop.Core/Pitstop.Core.csproj" />
+    <ProjectReference Include="../Pitstop.Text/Pitstop.Text.csproj" />
+    <!-- The host's messages, one definition for both ends. -->
+    <Compile Include="../Pitstop.Host/Protocol.cs" Link="HostProtocol.cs" />
+    <Compile Include="../Pitstop.Host/Stamps.cs" Link="HostStamps.cs" />
+    <Compile Include="../Pitstop.Host/ProgramFiles.cs" Link="HostProgramFiles.cs" />
+    <Compile Include="../Pitstop.Host/AspireHosts.cs" Link="HostAspireHosts.cs" />
+  </ItemGroup>
+</Project>

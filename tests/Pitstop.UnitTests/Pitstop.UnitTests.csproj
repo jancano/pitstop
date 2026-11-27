@@ -1,0 +1,627 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pure logic tested alone, fast and the same on every run and system: no window, no Avalonia, no process, no network,
+       no clock, and no file system but a temporary folder where the logic is about paths. What a person does is tested
+       whole in Pitstop.Tests. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Pitstop.UnitTests</RootNamespace>
+    <!-- dotnet test's results under artifacts/ with the builds, as Pitstop.Tests' are. -->
+    <VSTestResultsDirectory>$([MSBuild]::NormalizeDirectory('$(ArtifactsPath)', 'test-results'))</VSTestResultsDirectory>
+    <!-- Every collection blocking, none in the background: the tests that hold code to what it allocates read
+         GC.GetAllocatedBytesForCurrentThread, which a background collection's mark raises on every thread by the unused rest
+         of its allocation context, up to 8 KB never allocated (#1355). A blocking one counts exactly. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <!-- The JSON-RPC conversations Pitstop.Lsp's formatter is held to, played in memory. -->
+    <PackageReference Include="StreamJsonRpc" />
+    <!-- Reqnroll's argument converter, run in-process as the reference StepConversions is held to. -->
+    <PackageReference Include="Reqnroll" />
+    <ProjectReference Include="../../src/Pitstop.Core/Pitstop.Core.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Dap/Pitstop.Dap.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Debugger/Pitstop.Debugger.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Packages/Pitstop.Packages.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Profiler/Pitstop.Profiler.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Terminal/Pitstop.Terminal.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Text/Pitstop.Text.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Vcs/Pitstop.Vcs.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Workspace/Pitstop.Workspace.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Xaml/Pitstop.Xaml.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Xmake/Pitstop.Xmake.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Modules/Pitstop.Modules.csproj" />
+    <ProjectReference Include="../../src/Pitstop.Templates/Pitstop.Templates.csproj" />
+    <!-- Under an alias, since the tool compiles in Core's JsonMembers, which the tests take from Core. -->
+    <ProjectReference Include="../../tools/Pitstop.NodePackages/Pitstop.NodePackages.csproj" Aliases="NodePackages" />
+    <!-- Passenger's own rules, referenced as well as run over these tests (Directory.Build.props), so each is held to what
+         it flags in code compiled in memory; under an alias, since the analyzer compiles in Core's Plural. -->
+    <ProjectReference Update="$(MSBuildThisFileDirectory)../../src/Pitstop.Analyzers/Pitstop.Analyzers.csproj" ReferenceOutputAssembly="true" Aliases="Analyzers" />
+  </ItemGroup>
+
+  <!-- What the container runs read of Compose's and Docker's files, as text and paths alone, compiled in since their
+       project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Containers/ComposeFiles.cs" Link="App/ComposeFiles.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/ComposeProjectFile.cs" Link="App/ComposeProjectFile.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/ServiceUrls.cs" Link="App/ServiceUrls.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/ContainerPaths.cs" Link="App/ContainerPaths.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/DockerRunWords.cs" Link="App/DockerRunWords.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/EngineVariables.cs" Link="App/EngineVariables.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/RegistryLogins.cs" Link="App/RegistryLogins.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/DockerfileImages.cs" Link="App/DockerfileImages.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/DockerfileStages.cs" Link="App/DockerfileStages.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/ImageReference.cs" Link="App/ImageReference.cs" />
+    <Compile Include="../../src/Pitstop.App/Containers/EngineEmulation.cs" Link="App/EngineEmulation.cs" />
+  </ItemGroup>
+
+  <!-- The order a program's update handlers run in, compiled in since its project is a hook carried beside the app. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.UpdateHandlers/ChangedTypes.cs" Link="App/ChangedTypes.cs" />
+    <Compile Include="../../src/Pitstop.UpdateHandlers/Wire.cs" Link="App/UpdateHandlersWire.cs" />
+    <Compile Include="../../src/Pitstop.UpdateHandlers/Handlers.cs" Link="App/UpdateHandlers.cs" />
+  </ItemGroup>
+
+  <!-- Where a carried folder is found, beside the app or in a macOS bundle's Resources, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/CarriedFiles.cs" Link="App/CarriedFiles.cs" />
+  </ItemGroup>
+
+  <!-- Which of the sounds asked for in turn runs, by the order of its asks alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/OnePlaying.cs" Link="App/OnePlaying.cs" />
+  </ItemGroup>
+
+  <!-- The order the Switcher lists tabs in, from what came forward and went alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Editors/UsedOrder.cs" Link="App/UsedOrder.cs" />
+  </ItemGroup>
+
+  <!-- How a tool window shares out its room, from widths alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/ToolWindows/ToolLayout.cs" Link="App/ToolLayout.cs" />
+  </ItemGroup>
+
+  <!-- Which rows a tree a list draws shows, from its rows alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/TreeRows.cs" Link="App/TreeRows.cs" />
+  </ItemGroup>
+
+  <!-- Which files made elsewhere Local History reads, by how many come together, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/History/BulkArrivals.cs" Link="App/BulkArrivals.cs" />
+  </ItemGroup>
+
+  <!-- Which files are a package's, by a package folder's layout, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Packages/PackageFolders.cs" Link="App/PackageFolders.cs" />
+  </ItemGroup>
+
+  <!-- What a theme file says, read from its JSON alone against a table of tokens, a theme source as its words name it, a
+       VS Code colour theme read and made a Passenger theme, Open VSX's answers and what a system says of high contrast,
+       compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Theme/ThemeFiles.cs" Link="App/ThemeFiles.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ThemeFiles.Beyond.cs" Link="App/ThemeFiles.Beyond.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ThemeFiles.Layout.cs" Link="App/ThemeFiles.Layout.cs" />
+    <Compile Include="../../src/Pitstop.App/Docking/ToolAnchor.cs" Link="App/ToolAnchor.cs" />
+    <Compile Include="../../src/Pitstop.App/Arrangement.cs" Link="App/Arrangement.cs" />
+    <Compile Include="../../src/Pitstop.App/ToolWindowIds.cs" Link="App/ToolWindowIds.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ThemeImages.cs" Link="App/ThemeImages.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ThemeJson.cs" Link="App/ThemeJson.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ThemeSources.cs" Link="App/ThemeSources.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ThemeColours.cs" Link="App/ThemeColours.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ContrastAsked.cs" Link="App/ContrastAsked.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/ThemePalettes.cs" Link="App/ThemePalettes.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/VsCodeThemes.cs" Link="App/VsCodeThemes.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/VsCodeScopes.cs" Link="App/VsCodeScopes.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/VsCodeColours.cs" Link="App/VsCodeColours.cs" />
+    <Compile Include="../../src/Pitstop.App/Theme/OpenVsx.cs" Link="App/OpenVsx.cs" />
+  </ItemGroup>
+
+  <!-- How many colours rainbow braces cycle through, and which a depth takes, from numbers alone, compiled in since its
+       project is the languages'. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Languages/CSharp/BraceLevels.cs" Link="Languages/BraceLevels.cs" />
+  </ItemGroup>
+
+  <!-- Which typeface a setting of the window's font names, read as words alone, compiled in since its project is the
+       app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Theme/WindowFontNames.cs" Link="App/WindowFontNames.cs" />
+  </ItemGroup>
+
+  <!-- What a launch handed to a running Passenger says, written and read as JSON alone, compiled in since its project is
+       the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/HandedLaunch.cs" Link="App/HandedLaunch.cs" />
+  </ItemGroup>
+
+  <!-- What a crash's file keeps and what the next start says of it, from its text alone, compiled in since its project is
+       the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/CrashText.cs" Link="App/CrashText.cs" />
+  </ItemGroup>
+
+  <!-- The recent ones as the taskbar's jump list and the Dock's menu list them, a mapping alone, and freedesktop's
+       recently used list as Passenger changes it, as XML. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Welcome/RecentShortcut.cs" Link="App/RecentShortcut.cs" />
+    <Compile Include="../../src/Pitstop.App/Welcome/RecentlyUsed.cs" Link="App/RecentlyUsed.cs" />
+  </ItemGroup>
+
+  <!-- Which run configuration a launch's run or debug starts, and why it would refuse, from the words and names alone,
+       compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/ConfigurationStart.cs" Link="App/ConfigurationStart.cs" />
+  </ItemGroup>
+
+  <!-- What .NET's browser debug proxy says of a stop and its values, read as JSON alone, compiled in since its project is
+       the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Debugging/WebAssemblyValues.cs" Link="App/WebAssemblyValues.cs" />
+  </ItemGroup>
+
+  <!-- What a web app's build says it serves while it is developed, read as JSON alone, which of its files its pages have
+       not been told of, read from a temporary folder, and which restored browser debug proxy goes with a launch, read from
+       an assets file there, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Debugging/DevelopmentAssets.cs" Link="App/DevelopmentAssets.cs" />
+    <Compile Include="../../src/Pitstop.App/Debugging/ToldFiles.cs" Link="App/ToldFiles.cs" />
+    <Compile Include="../../src/Pitstop.App/Debugging/BrowserProxy.cs" Link="App/BrowserProxy.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/LaunchedFrameworks.cs" Link="App/LaunchedFrameworks.cs" />
+  </ItemGroup>
+
+  <!-- How XAML Hot Reload compares two texts of a XAML file's root and says why one could not apply, and which file an app's
+       build recorded is the one asked of, compiled in since their project is the inspector, which an app loads. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Inspector/XamlRoot.cs" Link="Inspector/XamlRoot.cs" />
+    <Compile Include="../../src/Pitstop.Inspector/XamlReloading.cs" Link="Inspector/XamlReloading.cs" />
+    <Compile Include="../../src/Pitstop.Inspector/XamlPlaces.cs" Link="Inspector/XamlPlaces.cs" />
+  </ItemGroup>
+
+  <!-- An app's tree as the inspector makes it, as the wire carries it, and as an agent's tools and the Live Visual Tree
+       walk it, from the elements alone, and the words the inspector gives values, compiled in since their projects are the
+       inspector and the app. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Inspector/Serving.cs" Link="Inspector/Serving.cs" />
+    <Compile Include="../../src/Pitstop.Inspector/Connection.cs" Link="Inspector/Connection.cs" />
+    <Compile Include="../../src/Pitstop.Inspector/Protocol.cs" Link="Inspector/Protocol.cs" />
+    <Compile Include="../../src/Pitstop.Inspector/ElementTrees.cs" Link="Inspector/ElementTrees.cs" />
+    <Compile Include="../../src/Pitstop.App/LiveTree/AppQuery.cs" Link="App/AppQuery.cs" />
+  </ItemGroup>
+
+  <!-- Where a MAUI app's elements are in their window, from numbers alone, compiled in since its project is the MAUI
+       inspector, which an app loads. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Inspector.Maui/Placing.cs" Link="Inspector/MauiPlacing.cs" />
+  </ItemGroup>
+
+  <!-- What the WPF previewer and Passenger say to each other, compiled in since its project is the previewer. -->
+  <ItemGroup>
+  </ItemGroup>
+
+  <!-- Where an AppHost's dashboard is called from where it listens, its deploy steps and their logins, compiled in since
+       their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Aspire/DashboardAddress.cs" Link="App/DashboardAddress.cs" />
+    <Compile Include="../../src/Pitstop.App/Aspire/AppHostPipeline.cs" Link="App/AppHostPipeline.cs" />
+    <Compile Include="../../src/Pitstop.App/Aspire/DeployLogins.cs" Link="App/DeployLogins.cs" />
+    <Compile Include="../../src/Pitstop.App/Aspire/TakenPorts.cs" Link="App/TakenPorts.cs" />
+  </ItemGroup>
+
+  <!-- The input events and state macOS's embedded display takes, in Godot's codec's bytes, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotInputCodec.cs" Link="App/GodotInputCodec.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GameFit.cs" Link="App/GameFit.cs" />
+  </ItemGroup>
+
+  <!-- Which file a game's picture is read from, a path and a folder alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotPictures.cs" Link="App/GodotPictures.cs" />
+  </ItemGroup>
+
+  <!-- What godot_editor tells an agent of the scene Godot's editor edits, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Mcp/GodotEditedScenes.cs" Link="App/GodotEditedScenes.cs" />
+  </ItemGroup>
+
+  <!-- Files a command writes byte for byte, what its Undo puts back and asks first, compiled in since their project is the
+       app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Editors/LandedFiles.cs" Link="App/LandedFiles.cs" />
+    <Compile Include="../../src/Pitstop.App/Editors/UndoQuestion.cs" Link="App/UndoQuestion.cs" />
+  </ItemGroup>
+
+  <!-- What tells a program to send a dashboard its logs and traces over what it sets itself, compiled in since its project is
+       the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Telemetry/OtlpEnvironment.cs" Link="App/OtlpEnvironment.cs" />
+  </ItemGroup>
+
+  <!-- What Safe Delete takes out of a C# file, where code runs and the method a stop is in, read from Roslyn's syntax
+       alone, compiled in since its project's editor brings Avalonia. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Languages/CSharp/ParsedText.cs" Link="Languages/ParsedText.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/SafeDeletion.cs" Link="Languages/SafeDeletion.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/RunningLines.cs" Link="Languages/RunningLines.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/MethodBounds.cs" Link="Languages/MethodBounds.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/SelectionRanges.cs" Link="Languages/SelectionRanges.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/SurroundScopes.cs" Link="Languages/SurroundScopes.cs" />
+  </ItemGroup>
+
+  <!-- Where a live template may go, where completion opens on a space and which lines begin inside a string, read from
+       Roslyn's syntax alone, compiled in since their project's editor brings Avalonia. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Languages/CSharp/TemplateScope.cs" Link="Languages/TemplateScope.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/CompletionTriggers.cs" Link="Languages/CompletionTriggers.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/TypedFormatting.cs" Link="Languages/TypedFormatting.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/StringLines.cs" Link="Languages/StringLines.cs" />
+  </ItemGroup>
+
+  <!-- Where a type name hint shows, read from Roslyn's syntax alone, compiled in since its project's editor brings
+       Avalonia. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Languages/CSharp/TypeHints.cs" Link="Languages/TypeHints.cs" />
+  </ItemGroup>
+
+  <!-- A C# card's code from the server's parts and the editor's kinds for their token types, and a card's signature laid
+       out a parameter a line, compiled in since their project's editor brings Avalonia. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Languages/CSharp/ServerCode.cs" Link="Languages/ServerCode.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/SemanticKinds.cs" Link="Languages/SemanticKinds.cs" />
+    <Compile Include="../../src/Pitstop.Languages/SignatureLines.cs" Link="Languages/SignatureLines.cs" />
+  </ItemGroup>
+
+  <!-- What an MSBuild file's elements say, read from its markup alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/MSBuild/MSBuildSyntax.cs" Link="App/MSBuildSyntax.cs" />
+  </ItemGroup>
+
+  <!-- The bindings an .axaml file writes, read from its markup alone, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/LiveTree/XamlBindings.cs" Link="App/XamlBindings.cs" />
+  </ItemGroup>
+
+  <!-- What tells a breakpoint change worth sending to the debugger, read from its fields alone, compiled in since its
+       project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Debugging/Signatures.cs" Link="App/Signatures.cs" />
+  </ItemGroup>
+
+  <!-- How an in-process debug adapter's events reach its session over pipes in memory, and are let go once it ended,
+       compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Debugging/AdapterEnd.cs" Link="App/AdapterEnd.cs" />
+  </ItemGroup>
+
+  <!-- Where a breakpoint in Avalonia XAML stops, read from the file's markup alone, compiled in since its project is the
+       app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Debugging/XamlBreakpoints.cs" Link="App/XamlBreakpoints.cs" />
+  </ItemGroup>
+
+  <!-- How a CSV's records and a workbook's cells are read and sorted, from their text and zip alone, compiled in since
+       their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Tables/Table.cs" Link="App/Table.cs" />
+    <Compile Include="../../src/Pitstop.App/Tables/Workbook.cs" Link="App/Workbook.cs" />
+    <Compile Include="../../src/Pitstop.App/Tables/CellFormat.cs" Link="App/CellFormat.cs" />
+    <Compile Include="../../src/Pitstop.App/Tables/TableSort.cs" Link="App/TableSort.cs" />
+  </ItemGroup>
+
+  <!-- How the Endpoints window reads an .http file and an app's OpenAPI document, holds an answer to its criteria and its
+       schema and sends a request to a running app, from their text alone, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Endpoints/HttpFile.cs" Link="App/HttpFile.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/Expectation.cs" Link="App/Expectation.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/EndpointClient.cs" Link="App/EndpointClient.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/HttpVariables.cs" Link="App/HttpVariables.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/MultipartBody.cs" Link="App/MultipartBody.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/RouteRequests.cs" Link="App/RouteRequests.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/OpenApiAddresses.cs" Link="App/OpenApiAddresses.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/OpenApiDocument.cs" Link="App/OpenApiDocument.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/OpenApiSchemas.cs" Link="App/OpenApiSchemas.cs" />
+    <Compile Include="../../src/Pitstop.App/Endpoints/FreshReads.cs" Link="App/FreshReads.cs" />
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/Messages.cs" Link="App/RoslynMessages.cs" />
+  </ItemGroup>
+
+  <!-- How a Markdown file reads into blocks and words, GFM's emphasis and the HTML a README holds, from its text alone,
+       compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Editors/Markdown.cs" Link="App/Markdown.cs" />
+    <Compile Include="../../src/Pitstop.App/Editors/Markdown.Html.cs" Link="App/Markdown.Html.cs" />
+  </ItemGroup>
+
+  <!-- What a hover's Markdown says, as the card shows it and an agent reads it, from its text alone, compiled in since its
+       project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/CSharp/HoverMarkdown.cs" Link="App/HoverMarkdown.cs" />
+  </ItemGroup>
+
+  <!-- How a language server's messages are followed for the protocol trace, from their bytes alone, how a test host's
+       conversation is written, whether two of its URIs name one document, from their paths, what an HTML server is
+       sent of Razor's files, against a stand-in, how a completion answer is read, from its JSON alone, a text's lines as
+       the server counts them, against Roslyn's own, and what a server registered, by what it costs, compiled in since
+       their project carries the servers. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Lsp/TracedStream.cs" Link="Lsp/TracedStream.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/EnvelopeFormatter.cs" Link="Lsp/EnvelopeFormatter.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/ContiguousWriter.cs" Link="Lsp/ContiguousWriter.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/DocumentUris.cs" Link="Lsp/DocumentUris.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/LspLocation.cs" Link="Lsp/LspLocation.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/RazorHtmlCopies.cs" Link="Lsp/RazorHtmlCopies.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/LanguageServerFailed.cs" Link="Lsp/LanguageServerFailed.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/Protocol.cs" Link="Lsp/Protocol.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/ServerLines.cs" Link="Lsp/ServerLines.cs" />
+    <Compile Include="../../src/Pitstop.Lsp/Registrations.cs" Link="Lsp/Registrations.cs" />
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/CompletionPriorities.cs" Link="Lsp/CompletionPriorities.cs" />
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/CompletionKinds.cs" Link="Lsp/CompletionKinds.cs" />
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/CompletionOrder.cs" Link="Lsp/CompletionOrder.cs" />
+  </ItemGroup>
+
+  <!-- Which argument of a JS interop call names its module, by the overload a compilation of the call binds it to,
+       compiled in since their project is built against Roslyn's server. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/SyntaxReads.cs" Link="Roslyn/SyntaxReads.cs" />
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/JsInteropImport.cs" Link="Roslyn/JsInteropImport.cs" />
+  </ItemGroup>
+
+  <!-- Semantic tokens written again in the legend the server gave, a name it could not bind left out, compiled in since
+       their project is built against Roslyn's server. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/ColourTokens.cs" Link="Roslyn/ColourTokens.cs" />
+  </ItemGroup>
+
+  <!-- What the extension keeps by a solution's documents and projects, each workspace's apart, and each document's read
+       while what it was read from stands, over Roslyn's own workspaces, compiled in since its project is built against
+       Roslyn's server. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/SolutionKept.cs" Link="Roslyn/SolutionKept.cs" />
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/DocumentReadsKept.cs" Link="Roslyn/DocumentReadsKept.cs" />
+  </ItemGroup>
+
+  <!-- What C#'s refactorings refuse in the words they are asked, compiled in as Pitstop.Languages compiles it, reading
+       through the debugger's CodeBrackets. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/RefactoringChecks.cs" Link="Roslyn/RefactoringChecks.cs" />
+  </ItemGroup>
+
+  <!-- A documentation comment's escaped tags read as tags before Roslyn's formatting, as its server reads them. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/EscapedDocumentationTags.cs" Link="Roslyn/EscapedDocumentationTags.cs" />
+  </ItemGroup>
+
+  <!-- The services an Aspire AppHost names, read from its syntax as Pitstop.Languages compiles the reader. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.Roslyn.Extension/AspireServices.cs" Link="Roslyn/AspireServices.cs" />
+  </ItemGroup>
+
+  <!-- Where a launch profile's browser opens, read from its URLs alone, the Node.js versions a package.json's engines
+       range takes, read from its text alone, a game's copies' names and arguments, and whether a project's inputs changed
+       since a build began, read from a temporary folder, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Run/LaunchProfile.cs" Link="App/LaunchProfile.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/GameCopies.Names.cs" Link="App/GameCopies.Names.cs" />
+    <Compile Include="../../src/Pitstop.App/Web/NpmRange.cs" Link="App/NpmRange.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotServerWords.cs" Link="App/GodotServerWords.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotPorts.cs" Link="App/GodotPorts.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotIdeRetry.cs" Link="App/GodotIdeRetry.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/GutBases.cs" Link="App/GutBases.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/GutRuns.cs" Link="App/GutRuns.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/GutScripts.cs" Link="App/GutScripts.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/FileTests.cs" Link="App/FileTests.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/TestCode.cs" Link="App/TestCode.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/PlatformRunSettings.cs" Link="App/PlatformRunSettings.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/GoDotTests.cs" Link="App/GoDotTests.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/GdUnit4Settings.cs" Link="App/GdUnit4Settings.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/GdUnit4Log.cs" Link="App/GdUnit4Log.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/GodotStart.cs" Link="App/GodotStart.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/BuiltInputs.cs" Link="App/BuiltInputs.cs" />
+    <Compile Include="../../src/Pitstop.App/Debugging/HotReloadOutcome.cs" Link="App/HotReloadOutcome.cs" />
+  </ItemGroup>
+
+  <!-- What a runner's names for a test say of its method and its row, from the names alone, the stacks a failure shows,
+       from its text alone, and what a run broken off says, from VSTest's error and words alone, compiled in since their
+       project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Testing/TestModel.cs" Link="App/TestModel.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/FailureStacks.cs" Link="App/FailureStacks.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/BrokenRuns.cs" Link="App/BrokenRuns.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/InstrumentationLines.cs" Link="App/InstrumentationLines.cs" />
+    <Compile Include="../../src/Pitstop.App/Testing/TrxResults.cs" Link="App/TrxResults.cs" />
+  </ItemGroup>
+
+  <!-- What desktop app a program's start runs, from its command line and the files beside it in a temporary folder,
+       compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Run/DesktopPrograms.cs" Link="App/DesktopPrograms.cs" />
+  </ItemGroup>
+
+  <!-- Where an app of devices runs (the targets a workload lists, a choice kept and lost), its start's adb commands and its
+       Debug build's environment file, a Mac Catalyst app's opening, as text and bytes alone, and MSBuild's questions they and the mobile needs read the
+       answers of, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Workspace/MSBuildQuestions.cs" Link="App/MSBuildQuestions.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/Devices/DeviceTarget.cs" Link="App/DeviceTarget.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/Devices/AndroidApp.cs" Link="App/AndroidApp.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/Devices/SimulatorApp.cs" Link="App/SimulatorApp.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/Devices/AndroidEnvironment.cs" Link="App/AndroidEnvironment.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/Devices/MacCatalystApp.cs" Link="App/MacCatalystApp.cs" />
+  </ItemGroup>
+
+  <!-- What a mobile project needs, from its workloads' answers and what is on disk, the Android SDK's licences of what is
+       to be installed and the workloads New Project offers, as text alone, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Mobile/MobileNeeds.cs" Link="App/MobileNeeds.cs" />
+    <Compile Include="../../src/Pitstop.App/Mobile/MobileWant.cs" Link="App/MobileWant.cs" />
+    <Compile Include="../../src/Pitstop.App/Mobile/MobileHeads.cs" Link="App/MobileHeads.cs" />
+    <Compile Include="../../src/Pitstop.App/Mobile/AndroidLicences.cs" Link="App/AndroidLicences.cs" />
+    <Compile Include="../../src/Pitstop.App/Mobile/AndroidHosts.cs" Link="App/AndroidHosts.cs" />
+    <Compile Include="../../src/Pitstop.App/Mobile/WorkloadInstalls.cs" Link="App/WorkloadInstalls.cs" />
+    <Compile Include="../../src/Pitstop.App/Templates/TemplatePacks.cs" Link="App/TemplatePacks.cs" />
+  </ItemGroup>
+
+  <!-- Whether a plan starts a project's apphost and with which variable of its .NET, from an evaluation's properties alone,
+       and where an x86 program's .NET is and what it lacks, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Run/AppHosts.cs" Link="App/AppHosts.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/X86Programs.cs" Link="App/X86Programs.cs" />
+  </ItemGroup>
+
+  <!-- What a publish profile is written with for the Publish dialog's options, from their values alone, compiled in since
+       its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Run/PublishOptions.cs" Link="App/PublishOptions.cs" />
+  </ItemGroup>
+
+  <!-- Whether a new solution's or project's name can be one, from the name alone, compiled in since its project is the
+       app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Templates/ProjectNames.cs" Link="App/ProjectNames.cs" />
+    <Compile Include="../../src/Pitstop.App/Templates/TemplateConditions.cs" Link="App/TemplateConditions.cs" />
+    <Compile Include="../../src/Pitstop.App/Templates/SolutionFormatNote.cs" Link="App/SolutionFormatNote.cs" />
+  </ItemGroup>
+
+  <!-- What a template's project file builds, from its text alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Templates/TemplateProjects.cs" Link="App/TemplateProjects.cs" />
+  </ItemGroup>
+
+  <!-- Godot's remote debug protocol, its Variant encoding and messages, from their bytes alone, the names Passenger's
+       helper in a game is sent, and what a game's C# and its scenes say of each other, compiled in since their project is
+       the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotVariant.cs" Link="App/GodotVariant.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotMessages.cs" Link="App/GodotMessages.cs" />
+    <Compile Include="../../src/Pitstop.App/Profiling/FlameBars.cs" Link="App/FlameBars.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotScriptStops.cs" Link="App/GodotScriptStops.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotAgent.cs" Link="App/GodotAgent.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotEditorWire.cs" Link="App/GodotEditorWire.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotRelay.cs" Link="App/GodotRelay.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotChecks.cs" Link="App/GodotChecks.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotOffer.cs" Link="App/GodotOffer.cs" />
+  </ItemGroup>
+
+  <!-- The user folders a Godot's environment takes where it sets none, from the variables alone, compiled in since its
+       project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotUserFolders.cs" Link="App/GodotUserFolders.cs" />
+  </ItemGroup>
+
+  <!-- How the properties pane edits a running game's values and where Keep writes one, from a property's hint and the
+       scenes' and scripts' texts alone, and how a console folds Godot's errors, from their text alone, compiled in since
+       their project is the app's. CSharpParsing reads through the debugger's CodeBrackets, which it shows these tests:
+       a copy of their own would be a second type of the one name. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotHints.cs" Link="App/GodotHints.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotText.cs" Link="App/GodotText.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotKeep.cs" Link="App/GodotKeep.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotConsoleFold.cs" Link="App/GodotConsoleFold.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/CSharpParsing.cs" Link="Languages/CSharpParsing.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/SnapshotText.cs" Link="Languages/SnapshotText.cs" />
+    <Compile Include="../../src/Pitstop.Languages/CSharp/ParameterTypes.cs" Link="Languages/ParameterTypes.cs" />
+  </ItemGroup>
+
+  <!-- The files a Godot resource property's picker offers, by the class each loads as, from names and texts alone, compiled
+       in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotResources.Files.cs" Link="App/GodotResources.Files.cs" />
+  </ItemGroup>
+
+  <!-- A running game's values in the code: the members a script's file declares, the helper's answer, a value's words and
+       its last minute, from texts and values alone, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotMembers.cs" Link="App/GodotMembers.cs" />
+    <Compile Include="../../src/Pitstop.App/Godot/GodotLiveReads.cs" Link="App/GodotLiveReads.cs" />
+  </ItemGroup>
+
+  <!-- A Godot class's or member's place in Godot's class reference, and what a GDScript card names, from names and texts
+       alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Godot/GodotDocs.cs" Link="App/GodotDocs.cs" />
+  </ItemGroup>
+
+  <!-- What a program's output says of its serving and of its needing a terminal, from its lines alone, compiled in since
+       their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Run/ListeningLines.cs" Link="App/ListeningLines.cs" />
+    <Compile Include="../../src/Pitstop.App/Run/TerminalNeeds.cs" Link="App/TerminalNeeds.cs" />
+  </ItemGroup>
+
+  <!-- How a build's lines name its problems, from their text alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Run/Building.cs" Link="App/Building.cs" />
+  </ItemGroup>
+
+  <!-- How an agent's answer cuts what runs long, from the values and lists alone, compiled in since its project is the
+       app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Mcp/AgentAnswers.cs" Link="App/AgentAnswers.cs" />
+  </ItemGroup>
+
+  <!-- How the person's question shows an agent's call's arguments, from their text alone, compiled in since its project is
+       the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Mcp/AskedArguments.cs" Link="App/AskedArguments.cs" />
+  </ItemGroup>
+
+  <!-- The command lines Settings give an agent to add Passenger with, from the executable's path and the shell alone,
+       compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Mcp/AgentSetup.cs" Link="App/AgentSetup.cs" />
+  </ItemGroup>
+
+  <!-- Where a copy of a source generator's code goes and whose project it is, from their names alone, and what a C# file
+       declares, from its syntax alone, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/CSharp/GeneratedCopies.cs" Link="App/GeneratedCopies.cs" />
+    <Compile Include="../../src/Pitstop.App/CSharp/Declarations.cs" Link="App/Declarations.cs" />
+  </ItemGroup>
+
+  <!-- Which problems Problems' filter shows, from their fields alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/ToolWindows/ProblemFilter.cs" Link="App/ProblemFilter.cs" />
+  </ItemGroup>
+
+  <!-- Which files the Explorer's filter shows, from their paths alone, compiled in since its project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Explorer/ExplorerFilter.cs" Link="App/ExplorerFilter.cs" />
+  </ItemGroup>
+
+  <!-- Where an HTML preview's page is scrolled to, read from and put back by script, and what the page and its folder are
+       served as where the web view reads no folder, compiled in since their project is the app's. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Editors/PagePlace.cs" Link="App/PagePlace.cs" />
+    <Compile Include="../../src/Pitstop.App/Editors/ServedPage.cs" Link="App/ServedPage.cs" />
+  </ItemGroup>
+
+  <!-- The first start's pictures, the version they show and the themes Passenger carries, compiled in with the names the
+       app gives them, so the pictures are held to this build and to every theme it offers. -->
+  <ItemGroup>
+    <Compile Include="../../src/Pitstop.App/Welcome/FirstStartPictures.cs" Link="App/FirstStartPictures.cs" />
+    <EmbeddedResource Include="../../src/Pitstop.App/Assets/FirstStart/*" LogicalName="first-start/%(Filename)%(Extension)"
+                      Link="Theme/FirstStart/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../src/Pitstop.App/Theme/BuiltIn/*.json" LogicalName="built-in/%(Filename)%(Extension)"
+                      Link="Theme/BuiltIn/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- The JSON schemas the app carries under web/schemas, compiled in for the checks of what they offer and take. -->
+  <ItemGroup>
+    <EmbeddedResource Include="../../src/Pitstop.Lsp/WebServers/schemas/*.json" LogicalName="schemas/%(Filename)%(Extension)"
+                      Link="Schemas/Carried/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Pitstop.TestTables" />
+    <!-- The ways one test holds many checks, a table of rows and a flow of steps (tests/Shared), linked into both test
+         projects. -->
+    <Compile Include="../Shared/*.cs" LinkBase="Shared" />
+  </ItemGroup>
+</Project>

@@ -3,7 +3,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
-using Passenger.Core;
+using Pitstop.Core;
 
 namespace Pitstop.Dap;
 

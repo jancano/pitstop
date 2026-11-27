@@ -1,0 +1,268 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Pitstop.App;
+using Pitstop.App.Run;
+using Pitstop.App.Workspace;
+using Pitstop.App.Xaml;
+using Pitstop.Core;
+using Pitstop.Editor;
+using static Pitstop.Tests.XamlTests;
+
+namespace Pitstop.Tests;
+
+/// <summary>An app of two target frameworks, <see cref="TestProjects.Framework"/> and net11.0, whose window shows a marker
+/// that only the newer framework gives a property: its left half says which framework's build draws it, its right half which
+/// runtime runs that build. One choice of framework per project, the first by default, drives the XAML preview (that
+/// framework's build however the inner builds finished, on its own runtime), XAML's completion and checks (that framework's
+/// C#), and the language server's answers for the project's C# files, chosen in the status bar for a XAML file and a C# file alike, and
+/// is kept with the folder; the XAML file's problems from a build are its framework's.
+/// </summary>
+public sealed class MultiTargetedXamlTests : IClassFixture<MultiTargetedXamlTests.Pair>
+{
+    /// <summary>The newer framework, whose build the marker draws in <see cref="Newer"/>, and its symbol.</summary>
+    internal const string Second = "net11.0";
+
+    internal static readonly Color Older = Colors.Blue;
+    internal static readonly Color Newer = Colors.Red;
+
+    private readonly Pair app;
+
+    public MultiTargetedXamlTests(Pair app)
+    {
+        this.app = app;
+        app.Reset();
+    }
+
+    /// <summary>A multi-targeted project's one framework chosen drives its XAML's preview, completion, checks and C#,
+    /// and is kept; a XAML error of one framework's build is the file's only while that framework is chosen.</summary>
+    [AvaloniaFact]
+    public void One_framework_chosen_per_project_drives_its_xaml_and_an_error_of_another_frameworks_build_is_not_shown()
+    {
+        Flow.StepApart("one framework chosen per project drives the preview, completion, checks and C#, and is kept", () => new MultiTargetedXamlTests(app), t => t.One_framework_chosen_per_project_drives_the_preview_completion_checks_and_csharp_and_is_kept());
+        Flow.StepApart("a XAML error of one framework's build is the file's only while that framework is chosen", () => new MultiTargetedXamlTests(app), t => t.A_xaml_error_of_one_frameworks_build_is_the_files_only_while_that_framework_is_chosen());
+    }
+
+    private void One_framework_chosen_per_project_drives_the_preview_completion_checks_and_csharp_and_is_kept() =>
+        Check(app, "MainWindow.axaml", TestProjects.Framework, Second);
+
+    /// <summary>A XAML error only the first framework's build finds (the marker's Note, which the second's C# alone gives it)
+    /// is the XAML file's only while that framework is chosen: the build lists it as the first framework's, with the second
+    /// chosen the file is marked nowhere and Problems lists nothing of it, and with the first chosen again its line is marked
+    /// once more.</summary>
+    private void A_xaml_error_of_one_frameworks_build_is_the_files_only_while_that_framework_is_chosen()
+    {
+        app.Rewrite("MainWindow.axaml", AvaloniaWindow.Replace("<local:Marker />", "<local:Marker Note=\"x\" />", StringComparison.Ordinal));
+        MainWindow window = app.Open(app.PathOf("MainWindow.axaml"));
+        OpenDocument document = window.EditorArea.Active!;
+        Ui.WaitFor(() => window.TargetFrameworkShown == TestProjects.Framework,
+            () => $"the status bar showing {TestProjects.Framework}, the XAML file's first framework, chosen (it shows {window.TargetFrameworkShown ?? "nothing"})");
+
+        Ui.Run(window, AppActions.Build);
+        Ui.Settle();
+        Problem[] inFile = [.. window.BottomPanel.Problems.Problems.Where(p => p.Severity == ProblemSeverity.Error && p.Path is { } path && PathNames.Same(path, document.Path))];
+        Assert.True(inFile.Length > 0 && inFile.All(p => p.Framework == TestProjects.Framework && p.Project == "Pair"),
+            $"The build did not list the Note's error as {TestProjects.Framework}'s alone: {string.Join("; ", inFile.Select(p => $"{p.Project} {p.Framework}: {p.Message}"))}\n{window.Status}");
+        Ui.WaitFor(() => document.Markers.Any(m => m.Kind == MarkerKind.Error), $"the Note's line marked while {TestProjects.Framework}, whose build failed on it, is chosen");
+
+        Choose(window, $"Pair ({Second})");
+        Ui.WaitFor(() => document.Markers.Count == 0 && window.BottomPanel.Problems.FileProblems.Count == 0,
+            () => $"the file marked nowhere with {Second}, whose build found nothing in it, chosen: {string.Join("; ", document.Markers.Select(m => m.Message))}");
+
+        Choose(window, $"Pair ({TestProjects.Framework})");
+        Ui.WaitFor(() => document.Markers.Any(m => m.Kind == MarkerKind.Error) && window.BottomPanel.Problems.FileProblems.Count > 0,
+            $"the Note's line marked again with {TestProjects.Framework} chosen once more");
+        window.Close();
+    }
+
+    /// <summary>The one flow of both dialects, on an app of the frameworks <paramref name="first"/> and <paramref name="second"/>:
+    /// the app built, its first framework's output made the older of the two, then the preview, completion and checks seen
+    /// in the first framework, the second chosen in the status bar for the XAML file and all three seen to follow it, a C# file of the
+    /// project answered for in it, and the choice found in a new window.</summary>
+    internal static void Check(SharedProject app, string xaml, string first, string second)
+    {
+        const string marker = "<local:Marker";
+        const string unknown = "Cannot resolve property 'Note' on Marker";
+        string state = TestFolders.Create("frameworks-");
+        string name = Path.GetFileNameWithoutExtension(Directory.EnumerateFiles(app.Folder, "*.csproj").Single());
+        MainWindow window = Keeping(app, state, app.PathOf(xaml));
+        OpenDocument document = window.EditorArea.Active!;
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Ui.WaitFor(() => window.TargetFrameworkShown == first, () => $"the status bar showing {first}, the XAML file's first framework, chosen (it shows {window.TargetFrameworkShown ?? "nothing"})");
+        Assert.Equal([$"{name} ({first})", $"{name} ({second})"], document.ProjectContexts);
+
+        Ui.Run(window, AppActions.Build);
+        Ui.Settle();
+        string[] builds = [.. Directory.EnumerateFiles(Path.Combine(app.Folder, "bin"), name + ".dll", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}ref{Path.DirectorySeparatorChar}", StringComparison.Ordinal))];
+        Assert.True(builds.Length == 2, $"The build did not build both frameworks: {string.Join(", ", builds)}\n{window.Status}");
+        // However the inner builds finished, the first framework's is made the older.
+        foreach (string file in Directory.EnumerateFiles(Path.GetDirectoryName(builds.Single(b => InFolderOf(b, first)))!))
+        {
+            File.SetLastWriteTimeUtc(file, DateTime.UtcNow - TimeSpan.FromHours(1));
+        }
+
+        if (window.PreviewOf(document) is null)
+        {
+            Assert.True(window.Perform(AppActions.XamlPreview), $"XAML Preview could not run: {window.Status}");
+        }
+        XamlPreview preview = window.PreviewOf(document) ?? throw new InvalidOperationException("XAML Preview showed no preview beside the file");
+        Drawn(window, document, preview, Older, $"the first framework's build ({first}), though the other's was built last");
+
+        // Only the second framework's C# gives the marker its Note.
+        Ui.PlaceAfter(editor, marker);
+        window.KeyTextInput(" ");
+        window.KeyTextInput("N");
+        Ui.WaitFor(() => window.Assist.CompletionLabels.Contains("Name"), "the marker's properties offered after an 'N'");
+        Assert.DoesNotContain("Note", window.Assist.CompletionLabels);
+        Ui.Press(window, "ESCAPE");
+        window.KeyTextInput("ote=\"x\"");
+        Ui.WaitFor(() => document.Markers.Any(m => m.Message == unknown), $"\"{unknown}\" said of the Note {first}'s C# lacks");
+
+        Choose(window, $"{name} ({second})");
+        Assert.Equal(second, window.TargetFrameworkShown);
+        Ui.WaitFor(() => !document.Markers.Any(m => m.Message == unknown), $"the Note known once {second}, whose C# gives it, was chosen");
+        Drawn(window, document, preview, Newer, $"{second}'s build, chosen in the status bar for the XAML file");
+        Replace(editor, " Note=\"x\"", string.Empty);
+        Ui.PlaceAfter(editor, marker);
+        window.KeyTextInput(" ");
+        window.KeyTextInput("N");
+        Ui.WaitFor(() => window.Assist.CompletionLabels.Contains("Note"), $"the Note {second}'s C# gives the marker offered after an 'N'");
+        Ui.Press(window, "ESCAPE");
+
+        window.OpenFile(app.PathOf("Marker.cs"));
+        OpenDocument code = window.EditorArea.Active!;
+        Ui.WaitFor(() => window.CSharpService?.For(code) is not null && code.ProjectContexts.Count == 2 && code.ProjectContext == $"{name} ({second})",
+            () => $"the C# file answered for in {second}, the project's choice (it shows {code.ProjectContext ?? "nothing"} of {code.ProjectContexts.Count})", TimeSpan.FromMinutes(2));
+        Assert.Equal(second, window.TargetFrameworkShown);
+        window.Close();
+
+        MainWindow again = Keeping(app, state, app.PathOf(xaml));
+        OpenDocument reopened = again.EditorArea.Active!;
+        Ui.WaitFor(() => again.TargetFrameworkShown == second, $"the next window's status bar showing {second}, the choice kept");
+        if (again.PreviewOf(reopened) is null)
+        {
+            Assert.True(again.Perform(AppActions.XamlPreview), $"XAML Preview could not run: {again.Status}");
+        }
+        Drawn(again, reopened, again.PreviewOf(reopened)!, Newer, $"{second}'s build in the next window, the choice kept");
+        again.Close();
+    }
+
+    /// <summary>Whether a build lies in the folder of a framework's output.</summary>
+    private static bool InFolderOf(string build, string framework) =>
+        string.Equals(Path.GetFileName(Path.GetDirectoryName(build)), framework, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Waits for the preview to draw the marker in a framework's colour: its left half the build's, its right half
+    /// the runtime's, which is the build's own.</summary>
+    private static void Drawn(MainWindow window, OpenDocument document, XamlPreview preview, Color colour, string what)
+    {
+        Image frame = window.PreviewPaneOf(document)!.Frame;
+        Color At(double x) => Ui.Pixel(window, frame.TranslatePoint(new Point(frame.Bounds.Width * x, frame.Bounds.Height / 2), window)
+            ?? throw new InvalidOperationException("The preview's frame is not on the window"));
+        Ui.WaitFor(() => preview.Frame is not null && At(0.25) == colour && At(0.75) == colour,
+            () => $"the preview drawing {what} (it says: {preview.Status}{(preview.Error is { } error ? $"; {error}" : string.Empty)})", TimeSpan.FromSeconds(90));
+    }
+
+    /// <summary>A window keeping its state in <paramref name="state"/>, on the app's folder, with a file open and C# ready.</summary>
+    private static MainWindow Keeping(SharedProject app, string state, string file)
+    {
+        MainWindow window = new() { Width = 1400, Height = 800, Autosaves = false, WarmServer = app.Server, StateFolder = state };
+        window.Show();
+        window.KeepLayout();
+        window.OpenFolder(app.Folder);
+        window.OpenFile(file);
+        Ui.Settle();
+        Ui.WaitFor(() => window.CSharpService is { IsReady: true }, $"the language server to load the project ({window.CSharpService?.State})", TimeSpan.FromMinutes(3));
+        return window;
+    }
+
+    /// <summary>Clicks the status bar's context widget and the framework in the menu it opens.</summary>
+    private static void Choose(MainWindow window, string context)
+    {
+        Button widget = Avalonia.Controls.ControlExtensions.FindControl<Button>(window, "TargetFrameworkButton")!;
+        Assert.True(widget.IsEffectivelyVisible, "The status bar shows no target framework for a file of a project of two");
+        Ui.Click(widget);
+        Ui.Choose(Assert.IsType<ContextMenu>(window.OpenContextMenu), context);
+        Ui.Settle();
+    }
+
+    /// <summary>The marker's code: its left half coloured by the framework compiled, its right half by the runtime that runs
+    /// it, and a property only the newer framework compiles.</summary>
+    internal const string AvaloniaMarker = """
+        using System;
+        using Avalonia.Controls;
+        using Avalonia.Media;
+
+        namespace Pair;
+
+        public class Marker : Grid
+        {
+            public Marker()
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,*");
+        #if NET11_0_OR_GREATER
+                IBrush built = Brushes.Red;
+        #else
+                IBrush built = Brushes.Blue;
+        #endif
+                Children.Add(new Border { Background = built });
+                Border runs = new() { Background = Environment.Version.Major >= 11 ? Brushes.Red : Brushes.Blue };
+                SetColumn(runs, 1);
+                Children.Add(runs);
+            }
+
+        #if NET11_0_OR_GREATER
+            public string? Note { get; set; }
+        #endif
+        }
+
+        """;
+
+    internal const string AvaloniaWindow = """
+        <Window xmlns="https://github.com/avaloniaui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:local="using:Pair"
+                mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="200"
+                x:Class="Pair.MainWindow"
+                Title="Pair">
+            <local:Marker />
+        </Window>
+
+        """;
+
+    /// <summary>A project file's one framework (<paramref name="made"/>) made the two.</summary>
+    internal static void TargetBoth(string project, string made, string first, string second)
+    {
+        string text = File.ReadAllText(project);
+        string one = $"<TargetFramework>{made}</TargetFramework>";
+        Assert.Contains(one, text, StringComparison.Ordinal);
+        File.WriteAllText(project, text.Replace(one, $"<TargetFrameworks>{first};{second}</TargetFrameworks>", StringComparison.Ordinal));
+    }
+
+    /// <summary>An Avalonia app as dotnet new makes it, of both frameworks, its window the marker alone.</summary>
+    public sealed class Pair : SharedProject
+    {
+        public Pair()
+            : base("pair-")
+        {
+        }
+
+        public override async ValueTask InitializeAsync()
+        {
+            await TestFolders.PrepareAsync(async () =>
+            {
+                await AvaloniaApp.CreateAsync(Folder, "Pair");
+                TargetBoth(Path.Combine(Folder, "Pair.csproj"), TestProjects.Framework, TestProjects.Framework, Second);
+                File.WriteAllText(Path.Combine(Folder, "Marker.cs"), AvaloniaMarker);
+                File.WriteAllText(Path.Combine(Folder, "MainWindow.axaml"), AvaloniaWindow);
+                // The first build makes bin, which a reset would take for a file the test added: made now, the folder stays as reset.
+                Directory.CreateDirectory(Path.Combine(Folder, "bin"));
+            }, Folder);
+            await PrepareAsync();
+        }
+    }
+}

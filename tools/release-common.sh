@@ -46,7 +46,7 @@ publish_project() {
 publish_app() {
     publish_root=$1
     shift
-    publish_project "$publish_root" Passenger.App "$@" -p:PublishReadyToRun=true
+    publish_project "$publish_root" Pitstop.App "$@" -p:PublishReadyToRun=true
 }
 
 # A portable copy as a person makes one of a build unpacked: check_portable PROGRAM COPY runs the copy's PROGRAM as a

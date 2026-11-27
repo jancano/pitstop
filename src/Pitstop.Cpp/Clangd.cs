@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Passenger.Core;
-using Passenger.Lsp;
+using Pitstop.Core;
+using Pitstop.Lsp;
 
 namespace Pitstop.Cpp;
 

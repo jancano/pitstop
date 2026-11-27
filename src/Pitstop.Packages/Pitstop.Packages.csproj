@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- NuGet with no UI: the folder's package sources as NuGet reads them, their feeds over HTTP with credential providers,
+       the audit's known vulnerabilities and nuget.config's editing. No Avalonia, so the boundary is the project's own. -->
+  <PropertyGroup>
+    <RootNamespace>Pitstop.Packages</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The folder's nuget.config files as NuGet reads them: the NuGet window's feeds, credentials and source mapping. -->
+    <PackageReference Include="NuGet.Configuration" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- How nuget.config's names are matched, reading and editing it, unit tested on files of it. -->
+    <InternalsVisibleTo Include="Pitstop.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Pitstop.Core/Pitstop.Core.csproj" />
+    <ProjectReference Include="../Pitstop.Text/Pitstop.Text.csproj" />
+    <ProjectReference Include="../Pitstop.Workspace/Pitstop.Workspace.csproj" />
+  </ItemGroup>
+</Project>

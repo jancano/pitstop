@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Passenger.Core;
+using Pitstop.Core;
 using Pitstop.ProjectSystem;
 
 namespace Pitstop.Modules;

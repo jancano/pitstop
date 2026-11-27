@@ -1,0 +1,790 @@
+using System.IO.Compression;
+using System.Text.Json.Nodes;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Pitstop.App;
+using Pitstop.App.ToolWindows;
+using Pitstop.App.Workspace;
+using Pitstop.Core;
+using Pitstop.Editor;
+using Pitstop.Workspace;
+
+namespace Pitstop.Tests;
+
+/// <summary>The language server's projects. It loads them from what Passenger's project host built of them at design
+/// time, as its own build host would have built them, so it answers across a project reference; a folder opened again
+/// has them loaded from those builds as kept, none built again while nothing they read changed. A file of a
+/// multi-targeted project is answered for in the target framework chosen in the status bar's context widget.</summary>
+public sealed partial class LanguageServerProjectsTests : IClassFixture<RestoredFolders>, IDisposable
+{
+    private readonly RestoredFolders folders;
+
+    private readonly string folder;
+    private readonly string settings = TestFolders.Create("settings-");
+
+    public LanguageServerProjectsTests(RestoredFolders folders)
+    {
+        this.folders = folders;
+        string made = string.Empty;
+        TestFolders.Prepare(() => made = folders.Take("builds-", root =>
+        {
+            Write(root, "Shapes.slnx", "<Solution>\n  <Project Path=\"App/App.csproj\" />\n  <Project Path=\"Lib/Lib.csproj\" />\n</Solution>\n");
+            Write(root, "Lib/Lib.csproj",
+                $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFrameworks>{TestProjects.Framework};net11.0</TargetFrameworks>\n  </PropertyGroup>\n</Project>\n");
+            Write(root, "Lib/Greeter.cs", """
+                namespace Lib;
+
+                public static class Greeter
+                {
+                    public static string Hello() => "Hello";
+                #if NET11_0_OR_GREATER
+                    public static int Newer() => Missing;
+                #endif
+                }
+
+                """);
+            Write(root, "App/App.csproj",
+                "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>net11.0</TargetFramework>\n  </PropertyGroup>\n  <ItemGroup>\n    <ProjectReference Include=\"../Lib/Lib.csproj\" />\n  </ItemGroup>\n</Project>\n");
+            Write(root, "App/Program.cs", "System.Console.WriteLine(Lib.Greeter.Hello() + Lib.Greeter.Absent());\n");
+            // Restored at its real path: MSBuild resolves a reference from there, which would restore Lib twice at once.
+            return PathNames.Canonical(Path.Combine(root, "Shapes.slnx"));
+        }), settings);
+        folder = PathNames.Canonical(made);
+    }
+
+    public void Dispose()
+    {
+        TestFolders.Delete(folder);
+        TestFolders.Delete(settings);
+    }
+
+    /// <summary>The gate's design-time builds kept and projects reaching the language server, as one flow.</summary>
+    [Gate]
+    [AvaloniaFact]
+    public void The_gates_builds_kept_and_projects_reaching_the_server_hold_as_one_flow()
+    {
+        Flow.StepApart("a folder opened with builds kept before restore inputs were stamped is built again once", () => new LanguageServerProjectsTests(folders), t => t.A_folder_opened_with_builds_kept_before_restore_inputs_were_stamped_is_built_again_once());
+        Flow.StepApart("a folder opened again has the language server load its projects from the design-time builds kept", () => new LanguageServerProjectsTests(folders), t => t.A_folder_opened_again_has_the_language_server_load_its_projects_from_the_design_time_builds_kept());
+        Flow.StepApart("a directory build file made above the projects reaches the language server, made while the folder was closed or open", () => new LanguageServerProjectsTests(folders), t => t.A_directory_build_file_made_above_the_projects_reaches_the_language_server_made_while_the_folder_was_closed_or_open());
+        Flow.StepApart("files open as the server starts again, or as the solution gains a project, reach it once their projects have loaded", () => new LanguageServerProjectsTests(folders), t => t.Files_open_as_the_server_starts_again_or_the_solution_gains_a_project_reach_it_once_their_projects_have_loaded());
+        Flow.StepApart("a file of a multi-targeted project is answered for in the target framework chosen for it", () => new LanguageServerProjectsTests(folders), t => t.A_file_of_a_multi_targeted_project_is_answered_for_in_the_target_framework_chosen_for_it());
+        Flow.StepApart("leaving a folder whose projects are still being built lets the next folder's builds start at once", () => new LanguageServerProjectsTests(folders), t => t.Leaving_a_folder_whose_projects_are_still_being_built_lets_the_next_folders_builds_start_at_once());
+    }
+
+    /// <summary>Projects reach the language server as what they read arrives: packages landing during a first build, an
+    /// .editorconfig made or deleted above them, a file another project has yet to load; and a folder deleted under its
+    /// design-time build leaves another window's project built, never held.</summary>
+    [AvaloniaFact]
+    public void Projects_reach_the_server_as_their_packages_editorconfigs_and_loads_arrive_and_a_folder_gone_holds_no_other_window()
+    {
+        Flow.StepApart("a project whose packages arrive during its first build is built again as the server hears of them", () => new LanguageServerProjectsTests(folders), t => t.A_project_whose_packages_arrive_during_its_first_build_is_built_again_as_the_server_hears_of_them());
+        Flow.StepApart("an .editorconfig made or deleted above the projects reaches the language server's formatting, with the folder closed or open", () => new LanguageServerProjectsTests(folders), t => t.An_editorconfig_made_or_deleted_above_the_projects_reaches_the_language_servers_formatting_with_the_folder_closed_or_open());
+        Flow.StepApart("Find Usages answers at once without a file another project has yet to load, and a rename waits for it", () => new LanguageServerProjectsTests(folders), t => t.Find_usages_answers_at_once_without_a_file_another_project_has_yet_to_load_and_a_rename_waits_for_it());
+        Flow.StepApart("a folder deleted under its design-time build leaves another window's project to be built and loaded", () => new LanguageServerProjectsTests(folders), t => t.A_folder_deleted_under_its_design_time_build_leaves_another_windows_project_to_be_built_and_loaded());
+        Flow.StepApart("a folder deleted under its design-time build never holds another window's project while its window stays open", () => new LanguageServerProjectsTests(folders), t => t.A_folder_deleted_under_its_design_time_build_never_holds_another_windows_project_while_its_window_stays_open());
+    }
+
+    /// <summary>A multi-targeted project's files parsed with the symbols of the framework chosen for them, solution-
+    /// wide analysis listing its closed files in that framework and following a new choice, and letting go of a
+    /// framework's problems once the project no longer targets it.</summary>
+    [AvaloniaFact]
+    public void A_multi_targeted_projects_files_are_parsed_and_analysed_in_the_framework_chosen_letting_go_of_one_no_longer_targeted()
+    {
+        Flow.StepApart("a multi-targeted file's own parse takes the symbols of the target framework chosen for it", () => new LanguageServerProjectsTests(folders), t => t.A_multi_targeted_files_own_parse_takes_the_symbols_of_the_target_framework_chosen_for_it());
+        Flow.StepApart("solution-wide analysis lists a multi-targeted project's closed files in the framework chosen and follows a new choice", () => new LanguageServerProjectsTests(folders), t => t.Solution_wide_analysis_lists_a_multi_targeted_projects_closed_files_in_the_framework_chosen_and_follows_a_new_choice());
+        Flow.StepApart("solution-wide analysis lets go of a framework's problems once its project no longer targets it", () => new LanguageServerProjectsTests(folders), t => t.Solution_wide_analysis_lets_go_of_a_frameworks_problems_once_its_project_no_longer_targets_it());
+    }
+
+    /// <summary>A restore landing during a project's first design-time build, its assets dated before the build began (copied
+    /// in with their times kept): the language server, given that build, hears of them and is given one made after them,
+    /// which the folder opened again loads as kept.</summary>
+    private void A_project_whose_packages_arrive_during_its_first_build_is_built_again_as_the_server_hears_of_them()
+    {
+        string root = PathNames.Canonical(TestFolders.Create("late-assets-"));
+        try
+        {
+            string feed = Directory.CreateDirectory(Path.Combine(root, "feed")).FullName;
+            string package = Path.Combine(feed, "Passenger.RestoreTest.1.0.0.nupkg");
+            File.WriteAllBytes(package, StandInFeed.Package("Passenger.RestoreTest", "1.0.0"));
+            using (ZipArchive zip = ZipFile.Open(package, ZipArchiveMode.Update))
+            {
+                zip.CreateEntryFromFile(typeof(PathNames).Assembly.Location, "lib/net11.0/Pitstop.Core.dll");
+            }
+            Write(root, "nuget.config", """
+                <configuration>
+                  <packageSources><clear /><add key="local" value="feed" /></packageSources>
+                  <config><add key="globalPackagesFolder" value="packages" /></config>
+                </configuration>
+                """);
+            Write(root, "App.csproj", """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net11.0</TargetFramework>
+                    <RestorePackagesPath>$(MSBuildProjectDirectory)/packages</RestorePackagesPath>
+                  </PropertyGroup>
+                  <ItemGroup><PackageReference Include="Passenger.RestoreTest" Version="1.0.0" /></ItemGroup>
+                </Project>
+                """);
+            Write(root, "Page.cs", "using Pitstop.Core;\nclass Page { string Path() => PathNames.Canonical(Missing); }\n");
+            Restore.Run(Path.Combine(root, "App.csproj"));
+            string assets = Path.Combine(root, "obj", "project.assets.json");
+            string prebuilt = Path.Combine(root, "assets.prebuilt.json");
+            File.Move(assets, prebuilt);
+            // The build's Copy keeps this time, so no file's time can say the assets came after the build read the project.
+            File.SetLastWriteTimeUtc(prebuilt, DateTime.UtcNow - TimeSpan.FromMinutes(1));
+            // The build goes on a while after its assets arrive, so the language server asks for it while it runs and is given it.
+            int held = (int)Math.Ceiling(TimeSpan.FromSeconds(3).Scaled().TotalSeconds);
+            Write(root, "Directory.Build.targets", $"""
+                <Project>
+                  <Target Name="AssetsArriveLate" BeforeTargets="CoreCompile"
+                          Condition="'$(DesignTimeBuild)' == 'true' and !Exists('$(ProjectAssetsFile)')">
+                    <Copy SourceFiles="$(MSBuildProjectDirectory)/assets.prebuilt.json" DestinationFiles="$(ProjectAssetsFile)" />
+                    <Exec Condition="'$(OS)' != 'Windows_NT'" Command="sleep {held}" />
+                    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -Command Start-Sleep -Seconds {held}" />
+                  </Target>
+                </Project>
+                """);
+
+            string page = Path.Combine(root, "Page.cs");
+            MainWindow first = Keeping(root);
+            first.OpenFile(page);
+            Ui.WaitFor(() => Resolved(first, page),
+                () => $"the first window's language server to resolve the package whose assets arrived during its design-time build, told of them and given a build made after them, which the one made without them must not stand for: Page.cs has {string.Join(", ", Codes(first, page))}, after {first.Session.DesignTimeBuilds.Builds} design-time build(s)",
+                TimeSpan.FromMinutes(2));
+            Assert.True(File.Exists(assets), "The assets file did not arrive during the first design-time build");
+            Assert.True(first.Session.DesignTimeBuilds.Builds == 2,
+                $"The first window built the project {first.Session.DesignTimeBuilds.Builds} time(s) at design time, not once as its package's assets arrived and once more after them");
+            first.Close();
+
+            MainWindow second = Keeping(root);
+            second.OpenFile(page);
+            WaitForCode(second, page, "CS0103", "the error on Missing as the folder opened again loads the project");
+            Assert.True(second.Session.DesignTimeBuilds.Builds == 0,
+                $"Opened again with nothing changed, the project was built {second.Session.DesignTimeBuilds.Builds} time(s) rather than loaded from the build made after its assets arrived");
+            Assert.True(Resolved(second, page), $"Opened again, the project was loaded from a build without its package: Page.cs has {string.Join(", ", Codes(second, page))}");
+            second.Close();
+        }
+        finally
+        {
+            TestFolders.Delete(root);
+        }
+    }
+
+    private void A_folder_opened_with_builds_kept_before_restore_inputs_were_stamped_is_built_again_once()
+    {
+        string program = Path.Combine(folder, "App", "Program.cs");
+        MainWindow first = Keeping();
+        first.OpenFile(program);
+        WaitForAbsent(first, program);
+        first.Close();
+
+        string cache = Assert.Single(Directory.GetFiles(settings, "projectBuilds.json", SearchOption.AllDirectories));
+        JsonObject document = JsonNode.Parse(File.ReadAllText(cache))!.AsObject();
+        document["version"] = 3;
+        File.WriteAllText(cache, document.ToJsonString());
+
+        MainWindow second = Keeping();
+        second.OpenFile(program);
+        WaitForAbsent(second, program);
+        Assert.Equal(2, second.Session.DesignTimeBuilds.Builds);
+        second.Close();
+
+        MainWindow third = Keeping();
+        third.OpenFile(program);
+        WaitForAbsent(third, program);
+        Assert.Equal(0, third.Session.DesignTimeBuilds.Builds);
+        third.Close();
+    }
+
+    private void A_folder_opened_again_has_the_language_server_load_its_projects_from_the_design_time_builds_kept()
+    {
+        string program = Path.Combine(folder, "App", "Program.cs");
+        MainWindow first = Keeping();
+        first.OpenFile(program);
+        // Greeter is Lib's: the server took App's reference to it from the host's build.
+        WaitForAbsent(first, program);
+        Assert.True(first.CSharpService!.Session!.Fed, "The language server built the projects itself rather than load the project host's builds");
+        Assert.Equal(2, first.Session.DesignTimeBuilds.Builds);
+        first.Close();
+
+        MainWindow second = Keeping();
+        second.OpenFile(program);
+        WaitForAbsent(second, program);
+        Assert.True(second.CSharpService!.Session!.Fed, "Opened again, the language server built the projects itself rather than load the builds kept");
+        Assert.True(second.Session.DesignTimeBuilds.Builds == 0,
+            $"Opened again with nothing changed, the folder had {second.Session.DesignTimeBuilds.Builds} project(s) built again rather than loaded from the builds kept");
+        second.Close();
+    }
+
+    private void A_directory_build_file_made_above_the_projects_reaches_the_language_server_made_while_the_folder_was_closed_or_open()
+    {
+        // Each error but the first compiled only under a constant a Directory.Build file above the projects defines.
+        string counts = Path.Combine(folder, "App", "Counts.cs");
+        File.WriteAllText(counts, "static class Counts\n{\n    static int None() => Lacking;\n#if SHAPES\n    static int Many() => \"many\";\n#endif\n#if MORE\n    static int More() => 1.5;\n#endif\n}\n");
+        MainWindow first = Keeping();
+        first.OpenFile(counts);
+        WaitForCode(first, counts, "CS0103", "the server's error on Lacking, which it gives with nothing defined");
+        Assert.DoesNotContain("CS0029", Codes(first, counts));
+        first.Close();
+
+        Write(folder, "Directory.Build.props", "<Project>\n  <PropertyGroup>\n    <DefineConstants>$(DefineConstants);SHAPES</DefineConstants>\n  </PropertyGroup>\n</Project>\n");
+        MainWindow second = Keeping();
+        second.OpenFile(counts);
+        WaitForCode(second, counts, "CS0029", "the error only SHAPES compiles, the Directory.Build.props made while the folder was closed reaching the server's builds rather than the builds kept");
+
+        Write(folder, "Directory.Build.targets", "<Project>\n  <PropertyGroup>\n    <DefineConstants>$(DefineConstants);MORE</DefineConstants>\n  </PropertyGroup>\n</Project>\n");
+        WaitForCode(second, counts, "CS0266", "the error only MORE compiles, the Directory.Build.targets made while the folder is open reaching the server");
+        second.Close();
+    }
+
+    /// <summary>An .editorconfig beside the solution, above its projects' folders, reaches the language server made while
+    /// the folder was closed or while it is open, and its going too: Reformat Code lays braces out as the one there says
+    /// (#1459), and the unused local is the error it makes it.</summary>
+    private void An_editorconfig_made_or_deleted_above_the_projects_reaches_the_language_servers_formatting_with_the_folder_closed_or_open()
+    {
+        const string sameLine = "static class Braces {\n    static int Count(int x) {\n        int unused = 1;\n        if (x > 0) {\n            return x;\n        }\n        return 0;\n    }\n}\n";
+        const string ownLine = "static class Braces\n{\n    static int Count(int x)\n    {\n        int unused = 1;\n        if (x > 0)\n        {\n            return x;\n        }\n        return 0;\n    }\n}\n";
+        const string config = "root = true\n\n[*.cs]\nindent_style = space\nindent_size = 4\ncsharp_new_line_before_open_brace = none\ndotnet_diagnostic.CS0219.severity = error\n";
+        string braces = Write(folder, "App/Braces.cs", sameLine);
+        MainWindow first = Keeping();
+        first.OpenFile(braces);
+        WaitForUnused(first, braces, Pitstop.Lsp.DiagnosticSeverity.Warning, "the server's warning on the unused local, which no .editorconfig makes an error yet");
+        first.Close();
+
+        string made = Write(folder, ".editorconfig", config);
+        MainWindow second = Keeping();
+        second.OpenFile(braces);
+        WaitForUnused(second, braces, Pitstop.Lsp.DiagnosticSeverity.Error,
+            "the error the .editorconfig made beside the solution while the folder was closed makes of the unused local, reaching the server's builds rather than the builds kept");
+        Reformat(second, sameLine, "Already formatted", "with the .editorconfig made while the folder was closed");
+
+        File.Delete(made);
+        WaitForUnused(second, braces, Pitstop.Lsp.DiagnosticSeverity.Warning, "the unused local a warning again, the .editorconfig deleted while the folder is open");
+        Reformat(second, ownLine, "Reformatted", "with the .editorconfig deleted while the folder is open");
+
+        Write(folder, ".editorconfig", config);
+        WaitForUnused(second, braces, Pitstop.Lsp.DiagnosticSeverity.Error, "the unused local an error again, the .editorconfig made while the folder is open reaching the server");
+        Reformat(second, sameLine, "Reformatted", "with the .editorconfig made while the folder is open");
+        second.Close();
+
+        static void WaitForUnused(MainWindow window, string path, Pitstop.Lsp.DiagnosticSeverity severity, string what) =>
+            Ui.WaitFor(() => window.EditorArea.Documents.FirstOrDefault(d => d.Path == path) is { } open
+                && window.CSharpService?.For(open)?.Diagnostics.FirstOrDefault(d => d.Code?.ToString() == "CS0219") is { } unused && unused.Severity == severity,
+                what, TimeSpan.FromMinutes(2));
+
+        static void Reformat(MainWindow window, string expected, string status, string what)
+        {
+            Ui.Run(window, AppActions.Reformat);
+            string text = window.EditorArea.CodeEditor.Document.Snapshot.ToString();
+            Assert.True(window.Status == status && text == expected, $"Reformat Code {what} ({window.Status}) laid the braces out otherwise:\n{text}");
+        }
+    }
+
+    /// <summary>A caller of Lib's method comes into App, which references Lib, while App's design-time build is held, so the
+    /// language server cannot take it in: Find Usages on the method answers at once, the Find window and the status bar
+    /// saying it went without the caller, where it waited for App and refused; a rename of the method waits for App, which
+    /// loads once its build is let go, and renames the caller there too.</summary>
+    private void Find_usages_answers_at_once_without_a_file_another_project_has_yet_to_load_and_a_rename_waits_for_it()
+    {
+        // App's design-time builds, which the language server loads it from, held while App/hold is there until App/released is.
+        Write(folder, "App/Directory.Build.targets", """
+            <Project>
+              <Target Name="HeldLoad" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' == 'true'">
+                <Exec Condition="'$(OS)' != 'Windows_NT' and Exists('$(MSBuildProjectDirectory)/hold')" Command="for i in `seq 3000`; do test -f released &amp;&amp; break; sleep 0.1; done" />
+                <Exec Condition="'$(OS)' == 'Windows_NT' and Exists('$(MSBuildProjectDirectory)/hold')" Command="powershell -NoProfile -Command &quot;for (%24i = 0; %24i -lt 3000 -and -not (Test-Path released); %24i++) { Start-Sleep -Milliseconds 100 }&quot;" />
+              </Target>
+            </Project>
+            """);
+        MainWindow window = Keeping();
+        window.OpenFile(Path.Combine(folder, "Lib", "Greeter.cs"));
+        OpenDocument greeter = window.EditorArea.Active!;
+        Ui.WaitFor(() => window.CSharpService?.IsReady == true && window.CSharpService.For(greeter)?.Lsp is not null, "the language server to load the projects", TimeSpan.FromMinutes(2));
+        HashSet<string> heard = new(StringComparer.Ordinal);
+        EventHandler<FolderChanges> hear = (_, changes) => heard.UnionWith(changes.Paths.Select(Path.GetFileName).OfType<string>());
+        window.FolderWatcher!.Changed += hear;
+        Write(folder, "App/hold", string.Empty);
+        string caller = Write(folder, "App/Caller.cs", "static class Caller\n{\n    static string Call() => Lib.Greeter.Hello();\n}\n");
+        Ui.PumpUntil(() => heard.Contains("Caller.cs"), "the folder's watcher to hear of App's new caller");
+        window.FolderWatcher.Changed -= hear;
+
+        // Pumped, not settled from here until App's build is let go: what the server is asked of App waits for it.
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "string Hel");
+        Ui.Run(window, AppActions.FindUsages, settle: false);
+        Ui.PumpUntil(() => window.Find.Rows.Any(r => r.Usage is not null) || window.Status?.StartsWith("Find Usages:", StringComparison.Ordinal) == true,
+            "Find Usages to answer", TimeSpan.FromSeconds(30));
+        string[] usages = [.. window.Find.Rows.Where(r => r.Usage is not null).Select(r => $"{Path.GetFileName(r.Usage!.Path)}: {r.Label}")];
+        Assert.True(usages.Length > 0, $"Find Usages on Lib's method, while App's build was held with a new file in it, did not answer: {window.Status}");
+        Assert.DoesNotContain(usages, u => u.StartsWith("Caller.cs", StringComparison.Ordinal));
+        Assert.True(window.Find.Without?.Contains("Caller.cs", StringComparison.Ordinal) == true,
+            $"The Find window did not say its usages went without App's new caller, so the method reads as used less than it is: {window.Find.Without} [{string.Join("; ", usages)}]");
+        Assert.Contains("without Caller.cs", window.Status, StringComparison.Ordinal);
+
+        window.EditorArea.CodeEditor.Focus();
+        Ui.Run(window, AppActions.Rename, settle: false);
+        Ui.PumpUntil(() => window.FocusManager?.GetFocusedElement() is TextBox, "the rename box to take the keys");
+        window.KeyTextInput("Greet");
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.None, null);
+        Ui.PumpUntil(() => window.Status?.Contains("to load Caller.cs into its project", StringComparison.Ordinal) == true,
+            "the rename to say it waits for App to load its new caller", TimeSpan.FromSeconds(30));
+        Assert.Contains("Greeter.Hello()", File.ReadAllText(caller), StringComparison.Ordinal);
+        Write(folder, "App/released", string.Empty);
+        Ui.WaitFor(() => File.ReadAllText(caller).Contains("Greeter.Greet()", StringComparison.Ordinal), () => $"the rename, once App's build was let go, to reach App's new caller ({window.Status})",
+            TimeSpan.FromMinutes(1));
+        Assert.Contains("public static string Greet()", greeter.Text.Snapshot.ToString(), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>A file open as the language server starts again, or as the solution gains a project, reaches the new server
+    /// only once it has said that file's project loaded, never one of its Miscellaneous Files meanwhile, though a program
+    /// found beside the solution as it started is loaded beside the projects shown first; a file no project of the folder
+    /// holds reaches it at once.</summary>
+    private void Files_open_as_the_server_starts_again_or_the_solution_gains_a_project_reach_it_once_their_projects_have_loaded()
+    {
+        string program = Path.Combine(folder, "App", "Program.cs");
+        string greeter = Path.Combine(folder, "Lib", "Greeter.cs");
+        string extra = Write(folder, "Extra/Extra.cs", "namespace Extra;\n\npublic static class Sum\n{\n}\n");
+        Write(folder, "Extra/Extra.csproj", TestProjects.Library());
+        Restore.Run(Path.Combine(folder, "Extra", "Extra.csproj"));
+        MainWindow window = Keeping();
+        window.ApplySettings(window.Settings with { TraceProtocols = true });
+        try
+        {
+            window.OpenFile(program);
+            window.OpenFile(extra);
+            // Shown, Lib's file has Lib loaded first, App after it.
+            window.OpenFile(greeter);
+            int first = AllServed(window, 0, program, extra, greeter);
+
+            // Ended: the server started again finds a program written beside the solution as it starts.
+            Pitstop.App.CSharp.CSharpService csharp = window.CSharpService!;
+            HeldFeed held = new(csharp.Feed!);
+            csharp.Feed = held;
+            OwnProcess.Of(first).Kill(alone: true);
+            ProgramFoundAsItStarts(window, held, "tool.cs");
+            int again = AllServed(window, first, program, extra, greeter);
+            string[] trace = Trace(again);
+            List<string> early = Early(trace, (program, "App.csproj"), (greeter, "Lib.csproj"));
+            Assert.True(early.Count == 0,
+                $"The language server started again was given files before it loaded their projects, which it made Miscellaneous Files meanwhile: {string.Join("; ", early)}\n{Shown(trace)}");
+            int extraOpened = Array.FindIndex(trace, line => Opens(line, extra));
+            int firstLoad = Array.FindIndex(trace, line => Reports(line, ".csproj"));
+            Assert.True(extraOpened >= 0 && extraOpened < firstLoad,
+                $"Extra.cs, which no project of the solution held, was not given the server started again at once, before it loaded a project: {Shown(trace)}");
+
+            // The solution gains Extra, and the server started for it finds another program written as it starts.
+            HeldFeed? next = null;
+            EventHandler hold = (_, _) =>
+            {
+                if (next is null && window.Session.CSharp is { Feed: { } feed } made)
+                {
+                    made.Feed = next = new HeldFeed(feed);
+                }
+            };
+            window.Session.CSharpChanged += hold;
+            try
+            {
+                // Replaced whole, so no read finds it half written.
+                string written = Write(folder, "Shapes.slnx.new", "<Solution>\n  <Project Path=\"App/App.csproj\" />\n  <Project Path=\"Extra/Extra.csproj\" />\n  <Project Path=\"Lib/Lib.csproj\" />\n</Solution>\n");
+                File.Move(written, Path.Combine(folder, "Shapes.slnx"), overwrite: true);
+                Ui.PumpUntil(() => next is { Asked: true }, "a language server started for the solution with Extra to ask for its projects", TimeSpan.FromMinutes(1));
+                ProgramFoundAsItStarts(window, next!, "more.cs");
+            }
+            finally
+            {
+                window.Session.CSharpChanged -= hold;
+                next?.Release();
+            }
+            int gained = AllServed(window, again, program, extra, greeter);
+            string[] grown = Trace(gained);
+            early = Early(grown, (program, "App.csproj"), (extra, "Extra.csproj"), (greeter, "Lib.csproj"));
+            Assert.True(early.Count == 0,
+                $"The language server started for the solution with Extra was given files before it loaded their projects, which it made Miscellaneous Files meanwhile: {string.Join("; ", early)}\n{Shown(grown)}");
+        }
+        finally
+        {
+            window.ApplySettings(window.Settings with { TraceProtocols = false });
+            window.Close();
+        }
+    }
+
+    /// <summary>Writes a program beside the solution while a starting server's projects are held from it, and lets them go
+    /// once the folder has found the program.</summary>
+    private void ProgramFoundAsItStarts(MainWindow window, HeldFeed held, string name)
+    {
+        Ui.PumpUntil(() => held.Asked, "the language server starting to ask for the projects to load", TimeSpan.FromMinutes(1));
+        // Not published ahead of time, so its restore wants no runtime or compiler pack the package cache lacks.
+        string written = Write(folder, name, "#!/usr/bin/env dotnet\n#:property PublishAot=false\nSystem.Console.WriteLine(\"tool\");\n");
+        Ui.PumpUntil(() => window.Session.Workspace?.Programs.Any(p => PathNames.Same(p.Path, written)) == true,
+            $"{name}, written beside the solution, to be found as the language server starts", TimeSpan.FromMinutes(1));
+        held.Release();
+    }
+
+    /// <summary>Waits for a language server other than <paramref name="before"/> to have loaded every project and been given
+    /// each file; its process.</summary>
+    private static int AllServed(MainWindow window, int before, params string[] files)
+    {
+        Ui.WaitFor(() => window.CSharpService is { Session: { IsLoaded: true } session } csharp && session.Server.ProcessId != before
+            && files.All(f => window.EditorArea.Documents.FirstOrDefault(d => PathNames.Same(d.Path, f)) is { } open && csharp.For(open)?.Lsp is not null),
+            $"a language server to load the projects and be given the open files ({window.CSharpService?.State})", TimeSpan.FromMinutes(3));
+        return window.CSharpService!.Session!.Server.ProcessId;
+    }
+
+    /// <summary>What lsp.log holds of one server's messages, a line each.</summary>
+    private static string[] Trace(int server)
+    {
+        Pitstop.App.IdeErrors.Flush();
+        return [.. Ui.Shared(Path.Combine(Pitstop.App.IdeErrors.LogFolder, "lsp.log")).Split('\n').Where(line => line.Contains($"[server {server}] ", StringComparison.Ordinal))];
+    }
+
+    /// <summary>The files a server was told open before it said their projects loaded, each with its project's name.</summary>
+    private static List<string> Early(string[] trace, params (string File, string Project)[] files)
+    {
+        List<string> early = [];
+        foreach ((string file, string project) in files)
+        {
+            int opened = Array.FindIndex(trace, line => Opens(line, file));
+            int loaded = Array.FindIndex(trace, line => Reports(line, project));
+            if (opened < 0 || loaded < 0 || opened < loaded)
+            {
+                early.Add($"{Path.GetFileName(file)} told open at message {opened}, {project} said loaded at {loaded}");
+            }
+        }
+        return early;
+    }
+
+    /// <summary>Whether a traced line tells the server a file is open.</summary>
+    private static bool Opens(string line, string file) =>
+        line.Contains("] --> ", StringComparison.Ordinal) && line.Contains($"\"method\":\"{Pitstop.Lsp.LspMethods.DidOpen}\"", StringComparison.Ordinal)
+        && System.Text.RegularExpressions.Regex.Match(line, "\"uri\":\"([^\"]+)\"") is { Success: true } uri && PathNames.Same(new Uri(uri.Groups[1].Value).LocalPath, file);
+
+    /// <summary>Whether a traced line is the server's word that a project's load ended, with problems or none.</summary>
+    private static bool Reports(string line, string project) =>
+        line.Contains("] <-- ", StringComparison.Ordinal) && line.Contains($"\"method\":\"{Pitstop.Lsp.LspMethods.LogMessage}\"", StringComparison.Ordinal)
+        && (line.Contains("Successfully completed load of", StringComparison.Ordinal) || line.Contains(" while loading ", StringComparison.Ordinal))
+        && line.Contains(project, StringComparison.Ordinal);
+
+    /// <summary>The didOpen and load lines of a trace, for a failure's message.</summary>
+    private static string Shown(string[] trace) =>
+        string.Join('\n', trace.Where(line => line.Contains(Pitstop.Lsp.LspMethods.DidOpen, StringComparison.Ordinal) || Reports(line, ".csproj")).Select(line => line.Length > 300 ? line[..300] : line));
+
+    /// <summary>The window's project feed with its first list of the projects to load held until the test lets it go, as a
+    /// start whose design-time builds come slowly.</summary>
+    private sealed class HeldFeed(Pitstop.Lsp.IProjectFeed feed) : Pitstop.Lsp.IProjectFeed
+    {
+        private readonly TaskCompletionSource asked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource released = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public bool Asked => asked.Task.IsCompleted;
+
+        public void Release() => released.TrySetResult();
+
+        public async Task<Pitstop.Lsp.FedProjects?> ProjectsAsync(CancellationToken cancel)
+        {
+            asked.TrySetResult();
+            await released.Task.WaitAsync(cancel);
+            return await feed.ProjectsAsync(cancel);
+        }
+
+        public Task<Pitstop.Lsp.FedProject> InfoAsync(string path, CancellationToken cancel) => feed.InfoAsync(path, cancel);
+    }
+
+    private static IEnumerable<string?> Codes(MainWindow window, string path) =>
+        window.EditorArea.Documents.FirstOrDefault(d => d.Path == path) is { } open && window.CSharpService?.For(open) is { } served
+            ? served.Diagnostics.Select(d => d.Code?.ToString())
+            : [];
+
+    /// <summary>Whether Page.cs has the server's error on Missing and none from the package's PathNames, which resolved.</summary>
+    private static bool Resolved(MainWindow window, string page)
+    {
+        List<string?> codes = [.. Codes(window, page)];
+        return codes.Contains("CS0103") && !codes.Contains("CS0246") && !codes.Contains("CS0234");
+    }
+
+    private static void WaitForCode(MainWindow window, string path, string code, string what) =>
+        Ui.WaitFor(() => Codes(window, path).Contains(code), what, TimeSpan.FromMinutes(2));
+
+    private void A_file_of_a_multi_targeted_project_is_answered_for_in_the_target_framework_chosen_for_it()
+    {
+        string greeter = Path.Combine(folder, "Lib", "Greeter.cs");
+        MainWindow window = Keeping();
+        window.OpenFile(greeter);
+        OpenDocument document = window.EditorArea.Active!;
+        Ui.WaitFor(() => window.CSharpService?.IsReady == true && document.ProjectContexts.Count == 2,
+            "the server to say Greeter.cs is compiled for both of Lib's target frameworks", TimeSpan.FromMinutes(2));
+        Assert.Equal([$"Lib ({TestProjects.Framework})", "Lib (net11.0)"], document.ProjectContexts.Order(StringComparer.Ordinal));
+        Assert.Equal(document.ProjectContext![5..^1], window.TargetFrameworkShown);
+
+        // Only net11.0 compiles the member that names what does not exist.
+        Choose(window, "Lib (net11.0)");
+        Assert.Equal("net11.0", window.TargetFrameworkShown);
+        Ui.WaitFor(() => Missing(window, document), "the error on Missing, which only net11.0 compiles");
+        Choose(window, $"Lib ({TestProjects.Framework})");
+        Assert.Equal(TestProjects.Framework, window.TargetFrameworkShown);
+        Ui.WaitFor(() => !Missing(window, document) && window.CSharpService!.For(document)!.Diagnostics.Count == 0,
+            $"the error on Missing to go, {TestProjects.Framework} compiling none of it");
+        window.Close();
+    }
+
+    /// <summary>The file's own parse (its brackets' pairs, its folds, what Safe Delete reads) takes the symbols of the
+    /// framework chosen for it: the member only net11.0 compiles is disabled text to it in the other framework and
+    /// code in net11.0.</summary>
+    private void A_multi_targeted_files_own_parse_takes_the_symbols_of_the_target_framework_chosen_for_it()
+    {
+        string greeter = Path.Combine(folder, "Lib", "Greeter.cs");
+        MainWindow window = Keeping();
+        window.OpenFile(greeter);
+        OpenDocument document = window.EditorArea.Active!;
+        Ui.WaitFor(() => window.CSharpService?.IsReady == true && document.ProjectContexts.Count == 2,
+            "the server to say Greeter.cs is compiled for both of Lib's target frameworks", TimeSpan.FromMinutes(2));
+
+        Choose(window, "Lib (net11.0)");
+        Ui.WaitFor(() => !ParsedDisabled(document, "Missing;"), "Newer, which only net11.0 compiles, parsed as code with net11.0 chosen");
+        Choose(window, $"Lib ({TestProjects.Framework})");
+        Ui.WaitFor(() => ParsedDisabled(document, "Missing;"), $"Newer, which {TestProjects.Framework} never compiles, parsed as disabled text with {TestProjects.Framework} chosen");
+        window.Close();
+    }
+
+    /// <summary>Solution-wide analysis lists a multi-targeted project's files nobody has open in the framework chosen for
+    /// it, as the editor answers for its open ones: Sides.cs's error of the framework not chosen is never listed, and
+    /// once the switcher of another of its files chooses the other framework, that framework's error is listed in its
+    /// place (#1475).</summary>
+    private void Solution_wide_analysis_lists_a_multi_targeted_projects_closed_files_in_the_framework_chosen_and_follows_a_new_choice()
+    {
+        string sides = WriteSides();
+        MainWindow window = Keeping();
+        window.Perform(AppActions.ToggleSolutionAnalysis);
+        Assert.True(window.Settings.SolutionWideAnalysis);
+        window.OpenFile(Path.Combine(folder, "Lib", "Greeter.cs"));
+        OpenDocument greeter = window.EditorArea.Active!;
+        Ui.WaitFor(() => window.CSharpService?.IsReady == true && greeter.ProjectContexts.Count == 2,
+            "the server to say Greeter.cs is compiled for both of Lib's target frameworks", TimeSpan.FromMinutes(2));
+
+        ListsOnly(window, sides, "NotInTen", "NotInEleven", $"{TestProjects.Framework}, chosen first");
+        Choose(window, "Lib (net11.0)");
+        ListsOnly(window, sides, "NotInEleven", "NotInTen", "net11.0, chosen in Greeter.cs's switcher");
+        Choose(window, $"Lib ({TestProjects.Framework})");
+        ListsOnly(window, sides, "NotInTen", "NotInEleven", $"{TestProjects.Framework}, chosen again");
+        window.Close();
+    }
+
+    /// <summary>A multi-targeted project made to target one framework, the one not chosen, has solution-wide analysis let go
+    /// of what it found in the framework it no longer targets: Sides.cs's error of that framework goes, and the one of the
+    /// framework left is listed (#1475).</summary>
+    private void Solution_wide_analysis_lets_go_of_a_frameworks_problems_once_its_project_no_longer_targets_it()
+    {
+        string sides = WriteSides();
+        MainWindow window = Keeping();
+        window.Perform(AppActions.ToggleSolutionAnalysis);
+        Ui.WaitFor(() => window.CSharpService?.IsReady == true, "the language server to load the projects", TimeSpan.FromMinutes(2));
+        ListsOnly(window, sides, "NotInTen", "NotInEleven", $"{TestProjects.Framework}, chosen first");
+
+        Write(folder, "Lib/Lib.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net11.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
+        ListsOnly(window, sides, "NotInEleven", "NotInTen", "net11.0, the one framework Lib.csproj targets now");
+        window.Close();
+    }
+
+    /// <summary>Lib's Sides.cs, with an error each framework alone compiles: NotInTen's in net10.0, NotInEleven's in net11.0.</summary>
+    private string WriteSides() => Write(folder, "Lib/Sides.cs", """
+        namespace Lib;
+
+        static class Sides
+        {
+        #if NET11_0_OR_GREATER
+            static int Eleven() => NotInEleven;
+        #else
+            static int Ten() => NotInTen;
+        #endif
+        }
+
+        """);
+
+    /// <summary>Waits for solution-wide analysis to list a closed file's error on <paramref name="listed"/> and none on
+    /// <paramref name="left"/>, which Lib does not compile in the framework it is analysed in.</summary>
+    private static void ListsOnly(MainWindow window, string path, string listed, string left, string chosen)
+    {
+        ProblemsModel problems = window.BottomPanel.Problems;
+        string[] Named(string name) => [.. Listed().Where(m => m.Contains(name, StringComparison.Ordinal))];
+        IEnumerable<string> Listed() => (problems.SolutionProblems ?? []).Where(p => p.Path is { } at && PathNames.Same(at, path)).Select(p => p.Message);
+        Ui.WaitFor(() => window.CSharpService is { IsAnalysing: false } && Named(listed).Length > 0 && Named(left).Length == 0,
+            () => $"Problems to list Sides.cs as Lib compiles it in {chosen}: the error on {listed}, and none on {left}, which Lib does not compile there, "
+                + $"or the list says what the editor never shows. It lists [{string.Join("; ", Listed())}]",
+            TimeSpan.FromMinutes(2));
+    }
+
+    /// <summary>Whether the file's own parse colours the code at <paramref name="code"/> as disabled, whatever the server's colours.</summary>
+    private static bool ParsedDisabled(OpenDocument document, string code)
+    {
+        Pitstop.Text.TextSnapshot text = document.Text.Snapshot;
+        int at = text.ToString().IndexOf(code, StringComparison.Ordinal);
+        Pitstop.Text.LineSpan line = text.GetLine(text.GetLineFromOffset(at));
+        return document.Syntax!.GetSpans(text, line.Start, line.EndIncludingBreak - line.Start).Any(s => s.Kind == TokenKind.Excluded && s.Start <= at && s.End > at);
+    }
+
+    /// <summary>Clicks the status bar's context widget and the framework in the menu it opens.</summary>
+    private static void Choose(MainWindow window, string context)
+    {
+        Button widget = Avalonia.Controls.ControlExtensions.FindControl<Button>(window, "TargetFrameworkButton")!;
+        Assert.True(widget.IsEffectivelyVisible, "The status bar shows no target framework for a file compiled for two");
+        Ui.Click(widget);
+        Ui.Choose(Assert.IsType<ContextMenu>(window.OpenContextMenu), context);
+    }
+
+    private void Leaving_a_folder_whose_projects_are_still_being_built_lets_the_next_folders_builds_start_at_once()
+    {
+        // A project whose design-time build waits three minutes, as a large solution's round goes on for minutes.
+        string slow = PathNames.Canonical(TestFolders.Create("slow-"));
+        string quick = PathNames.Canonical(TestFolders.Create("quick-"));
+        try
+        {
+            Write(slow, "Slow/Slow.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net11.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
+            Write(slow, "Slow/Slow.cs", "class Slow\n{\n}\n");
+            Write(slow, "Directory.Build.targets", """
+                <Project>
+                  <Target Name="Wait" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' == 'true'">
+                    <Exec Condition="'$(OS)' != 'Windows_NT'" Command="echo begun &gt; built.started; sleep 180" />
+                    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -Command &quot;Set-Content -Path built.started -Value begun; Start-Sleep -Seconds 180&quot;" />
+                  </Target>
+                </Project>
+                """);
+            Write(quick, "Quick/Quick.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net11.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
+            Write(quick, "Quick/Quick.cs", "class Quick\n{\n}\n");
+            Restore.Run(Path.Combine(slow, "Slow", "Slow.csproj"));
+            Restore.Run(Path.Combine(quick, "Quick", "Quick.csproj"));
+
+            MainWindow window = new() { Width = 1200, Height = 800 };
+            window.Show();
+            window.OpenFolder(slow);
+            // Pumped, not settled: the language server's requests about the open file wait for its load, as long as the build.
+            Ui.PumpUntil(() => File.Exists(Path.Combine(slow, "Slow", "built.started")), "the slow project's design-time build to begin", TimeSpan.FromMinutes(2));
+
+            // The host builds one round at a time: the slow folder's must end as it is left, or the next waits minutes.
+            window.OpenFolder(quick);
+            Ui.PumpUntil(() => window.Session.DesignTimeBuilds.Builds == 1,
+                "the next folder's project built at design time, which waits behind the round of the folder left unless that round ended",
+                TimeSpan.FromSeconds(60));
+            window.Close();
+        }
+        finally
+        {
+            TestFolders.Delete(slow);
+            TestFolders.Delete(quick);
+        }
+    }
+
+    /// <summary>A folder deleted while the project host builds its project at design time ends the host, which every
+    /// window shares, as its window closes; another window's round, waiting in that host behind the first, is built by a
+    /// host started anew and its project loads. Windows will not delete a folder a process works in.</summary>
+    private void A_folder_deleted_under_its_design_time_build_leaves_another_windows_project_to_be_built_and_loaded()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Windows will not delete a folder a process works in");
+        BehindAHeldBuild((gone, first, other) =>
+        {
+            TestFolders.Delete(gone);
+            first.Close();
+            Assert.True(Ui.Pumped(() => other.Session.DesignTimeBuilds.Builds == 1, TimeSpan.FromMinutes(1)),
+                $"The other window's project was not built at design time once the host its round waited in had ended:\n{HostLines()}");
+            Ui.WaitFor(() => other.CSharpService?.Session is { IsLoaded: true }, "the other window's language server to load its project");
+            Assert.DoesNotContain("problems loading", Ui.ServerLogTail(), StringComparison.Ordinal);
+        });
+    }
+
+    /// <summary>A folder deleted while the project host builds its project at design time, its window left open: the
+    /// window sees the folder go and ends the host, which every window shares, so another window's round, waiting in that
+    /// host behind the first, is built by a host started anew and its project loads. Windows will not delete a folder a
+    /// process works in.</summary>
+    private void A_folder_deleted_under_its_design_time_build_never_holds_another_windows_project_while_its_window_stays_open()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Windows will not delete a folder a process works in");
+        BehindAHeldBuild((gone, first, other) =>
+        {
+            TestFolders.Delete(gone);
+            Assert.True(Ui.Pumped(() => other.Session.DesignTimeBuilds.Builds == 1, TimeSpan.FromMinutes(1)),
+                $"The other window's project was not built at design time while the window whose folder was deleted under its build stayed open:\n{HostLines()}");
+            Ui.WaitFor(() => other.CSharpService?.Session is { IsLoaded: true }, "the other window's language server to load its project");
+            Assert.True(first.Session.Folder == gone, $"The window whose folder was deleted no longer has it open, but {first.Session.Folder ?? "none"}");
+            Assert.DoesNotContain("problems loading", Ui.ServerLogTail(), StringComparison.Ordinal);
+        });
+    }
+
+    /// <summary>Two windows on folders of one project each, sharing a project host: the first's project held in its
+    /// design-time build until a file the build wrote in its folder goes, the second's round waiting in the host behind
+    /// it; then what <paramref name="then"/> does (given the first's folder), both windows closed and the folders deleted
+    /// after.</summary>
+    private static void BehindAHeldBuild(Action<string, MainWindow, MainWindow> then)
+    {
+        string gone = PathNames.Canonical(TestFolders.Create("gone-"));
+        string kept = PathNames.Canonical(TestFolders.Create("kept-"));
+        MainWindow? first = null;
+        MainWindow? second = null;
+        try
+        {
+            const string project = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net11.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n";
+            Write(gone, "Gone/Gone.csproj", project);
+            Write(gone, "Gone/Gone.cs", "class Gone\n{\n}\n");
+            Write(gone, "Directory.Build.targets", """
+                <Project>
+                  <Target Name="Hold" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' == 'true'">
+                    <Exec Command="echo held &gt; held; while [ -f held ]; do sleep 0.1; done" />
+                  </Target>
+                </Project>
+                """);
+            Write(kept, "Kept/Kept.csproj", project);
+            Write(kept, "Kept/Kept.cs", "class Kept\n{\n}\n");
+            Restore.Run(Path.Combine(gone, "Gone", "Gone.csproj"));
+            Restore.Run(Path.Combine(kept, "Kept", "Kept.csproj"));
+
+            first = new() { Width = 1200, Height = 800 };
+            first.Show();
+            first.OpenFolder(gone);
+            // Pumped, not settled: the language server's load waits for the design-time build.
+            Ui.PumpUntil(() => File.Exists(Path.Combine(gone, "Gone", "held")), "the design-time build of the folder to be deleted to begin", TimeSpan.FromMinutes(2));
+            ProjectHost host = Ui.AwaitPumped(Waiting.Apart(() => ProjectHosts.ForAsync(gone)), "the folder's project host");
+            second = new() { Width = 1200, Height = 800 };
+            second.Show();
+            second.OpenFolder(kept);
+            MainWindow other = second;
+            Ui.PumpUntil(() => host.Building == 2 && other.Session.DesignTimeBuilds.Awaited == 1,
+                "the other window's language server to wait for its project's builds, their round waiting in the host behind the first", TimeSpan.FromMinutes(2));
+            then(gone, first, second);
+        }
+        finally
+        {
+            second?.Close();
+            first?.Close();
+            TestFolders.Delete(gone);
+            TestFolders.Delete(kept);
+        }
+    }
+
+    /// <summary>The IDE's last words on the project hosts, but for what a host wrote itself.</summary>
+    private static string HostLines() =>
+        string.Join('\n', Ui.IdeLog().Split('\n').Where(l => l.Contains("project host", StringComparison.OrdinalIgnoreCase) && !HostSaid().IsMatch(l)).TakeLast(6));
+
+    /// <summary>A line the project host wrote to its error stream, as the IDE's log copies it.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"Project host \(process \d+\): ")]
+    private static partial System.Text.RegularExpressions.Regex HostSaid();
+
+    private static bool Missing(MainWindow window, OpenDocument document) =>
+        window.CSharpService?.For(document)?.Diagnostics.Any(d => d.Code?.ToString() == "CS0103" && d.Message.Contains("Missing", StringComparison.Ordinal)) == true;
+
+    private MainWindow Keeping(string? root = null)
+    {
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings };
+        window.Show();
+        window.KeepLayout();
+        window.OpenFolder(root ?? Path.Combine(folder, "Shapes.slnx"));
+        Ui.Settle();
+        return window;
+    }
+
+    /// <summary>Waits for the server's error on the member Greeter lacks, which it can give only knowing Lib's Greeter.</summary>
+    private static void WaitForAbsent(MainWindow window, string program) =>
+        Ui.WaitFor(() => window.EditorArea.Documents.FirstOrDefault(d => d.Path == program) is { } open && window.CSharpService?.For(open)?.Diagnostics.Any(d => d.Code?.ToString() == "CS0117" && d.Message.Contains("Absent", StringComparison.Ordinal)) == true,
+            "the server's error on Greeter.Absent, which it gives only knowing Lib's Greeter", TimeSpan.FromMinutes(2));
+
+    private static string Write(string root, string relative, string text) => TestFolders.Write(root, relative, text);
+}

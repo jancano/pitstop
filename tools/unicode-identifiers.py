@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes src/Passenger.Workspace/GDScript/UnicodeIdentifiers.cs from Unicode's security and character data.
+"""Writes src/Pitstop.Workspace/GDScript/UnicodeIdentifiers.cs from Unicode's security and character data.
 
 The characters a GDScript identifier starts with (XID_Start and '_') and goes on with (XID_Continue), as Godot's
 tokenizer reads them from DerivedCoreProperties.txt (Unicode 17.0.0 in Godot 4.7); and what Godot's spoof check of an
@@ -28,7 +28,7 @@ FILES = {
     "DerivedCoreProperties.txt": f"https://www.unicode.org/Public/{VERSION}/ucd/DerivedCoreProperties.txt",
 }
 
-OUT = os.path.join(unicode.ROOT, "src", "Passenger.Workspace", "GDScript", "UnicodeIdentifiers.cs")
+OUT = os.path.join(unicode.ROOT, "src", "Pitstop.Workspace", "GDScript", "UnicodeIdentifiers.cs")
 rows = unicode.rows
 points = unicode.points
 ranges = unicode.ranges
@@ -109,7 +109,7 @@ def main():
     flat_continues = [n for run in ranges(continues) for n in run[:2]]
     with open(OUT, "w", encoding="utf-8", newline="\n") as out:
         out.write("// Written by tools/unicode-identifiers.py from Unicode " + VERSION + "'s security and character data: do not edit.\n")
-        out.write("namespace Passenger.Workspace.GDScript;\n\n")
+        out.write("namespace Pitstop.Workspace.GDScript;\n\n")
         out.write("/// <summary>What an identifier is read by of Unicode " + VERSION + ": the characters it starts and goes on with\n")
         out.write("/// (<see cref=\"GDScriptTokenizer.IdentifierWidth\"/>), and what its spoof check reads (<see cref=\"IdentifierSpoofing\"/>),\n")
         out.write("/// the characters allowed, each run's augmented script set, the combining marks a hidden dot looks past, and the\n")

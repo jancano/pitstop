@@ -12,7 +12,7 @@
 set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/../.." && pwd -P)
-passenger="$repo/artifacts/bin/Passenger.App/debug/Pitstop"
+passenger="$repo/artifacts/bin/Pitstop.App/debug/Pitstop"
 work="$repo/artifacts/site-shots"
 images="$repo/site/images"
 # About 100–150 KB a picture at 2400x1500: this quality, or the most bytes when a busy one would take more.
@@ -412,7 +412,7 @@ encode() {
     echo "site-shots: $webp ($(($(wc -c < "$webp") / 1024)) KB)"
 }
 
-# Every look, in the picker's order (passenger-themes' as tests/Passenger.Tests/Themes lists them); those with no light look.
+# Every look, in the picker's order (passenger-themes' as tests/Pitstop.Tests/Themes lists them); those with no light look.
 looks=(Pitstop Cubicle Harbour Sorbet Nocturne Saffron Bonbon Ledger Slate Orbit Nightjar Moss Phosphor)
 dark_only=(Nocturne Slate Nightjar)
 # The themes scene: the same window in every look, each over a copy of the solution file named after its look, so its
@@ -452,11 +452,11 @@ themes() {
     encode "$work/png/themes/pitstop-$theme.png" "$images/themes-still-$theme.webp"
 }
 
-# The first start's tiles (src/Passenger.App/Assets/FirstStart): the sample's window in Passenger's own theme and in each
+# The first start's tiles (src/Pitstop.App/Assets/FirstStart): the sample's window in Passenger's own theme and in each
 # theme the app carries, at the tiles' size and lossless, with no window buttons, since a tile is no window of any one
 # system; and the version they are of, which the unit tests hold to the app's.
 first_start() {
-    local theme=$1 look file state out="$repo/src/Passenger.App/Assets/FirstStart" version
+    local theme=$1 look file state out="$repo/src/Pitstop.App/Assets/FirstStart" version
     mkdir -p "$work/png/first-start" "$out"
     # Each theme's name in lower case, as --look takes it, and its pictures' name, a space a hyphen (FirstStartPictures).
     while IFS= read -r look; do
@@ -470,7 +470,7 @@ first_start() {
             --screenshot "$work/png/first-start/$file-$theme.png"
         cwebp -quiet -lossless -z 9 "$work/png/first-start/$file-$theme.png" -o "$out/$file-$theme.webp"
         echo "site-shots: $out/$file-$theme.webp ($(($(wc -c < "$out/$file-$theme.webp") / 1024)) KB)"
-    done < <(echo pitstop; python3 -I - "$repo/src/Passenger.App/Theme/BuiltIn" <<'EOF2'
+    done < <(echo pitstop; python3 -I - "$repo/src/Pitstop.App/Theme/BuiltIn" <<'EOF2'
 import json, os, sys
 folder = sys.argv[1]
 with open(os.path.join(folder, "passenger-themes.json"), encoding="utf-8") as f:

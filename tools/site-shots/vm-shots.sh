@@ -16,7 +16,7 @@ share="$HOME/Documents/pitstop-vm/site-shots"
 shared='C:\Mac\Home\Documents\pitstop-vm\site-shots'
 root='C:\Users\zaneris\site-shots'
 clone=pitstop-site-shots
-exe="C:\\Users\\zaneris\\src\\$clone\\artifacts\\bin\\Passenger.App\\debug\\Passenger.exe"
+exe="C:\\Users\\zaneris\\src\\$clone\\artifacts\\bin\\Pitstop.App\\debug\\Passenger.exe"
 mkdir -p "$share" "$work/png"
 # The version whose What's New each state has shown, so none opens over the scene.
 version=$(sed -n 's|.*<Version>\(.*\)</Version>.*|\1|p' "$repo/Directory.Build.props" | head -1)

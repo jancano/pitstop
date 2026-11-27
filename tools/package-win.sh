@@ -71,7 +71,7 @@ done
 
 # Not Pitstop as pack id (its uninstaller empties %LocalAppData%\Pitstop, the person's state); --aumid is the process's own, so a pinned button shows the jump list.
 set -- --packId PitstopIDE --packVersion "$version" --packTitle Pitstop --packAuthors Pitstop \
-    --packDir "$publish" --mainExe Pitstop.exe --icon "$root/src/Passenger.App/Assets/Pitstop.ico" \
+    --packDir "$publish" --mainExe Pitstop.exe --icon "$root/src/Pitstop.App/Assets/Pitstop.ico" \
     --runtime "$rid" --channel "$rid" --shortcuts StartMenuRoot --aumid velopack.PitstopIDE --noPortable \
     --exclude 'lib(SkiaSharp|HarfBuzzSharp)\.pdb$' --outputDir "$release"
 if [ -n "$signtool_params" ]; then

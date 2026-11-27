@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes src/Passenger.Workspace/GodotShaderTypes.json, the table of Godot's shading language Passenger carries, from
+"""Writes src/Pitstop.Workspace/GodotShaderTypes.json, the table of Godot's shading language Passenger carries, from
 Godot's own sources at one commit (MIT, named in THIRD_PARTY_NOTICES.md):
 
 - servers/rendering/shader_types.cpp: each shader type's processor functions, the built-ins each offers (with "global"
@@ -20,7 +20,7 @@ _spec.loader.exec_module(fetched)
 
 FILES = ["servers/rendering/shader_types.cpp", "servers/rendering/shader_language.cpp"]
 ROOT = fetched.ROOT
-OUT = os.path.join(ROOT, "src", "Passenger.Workspace", "GodotShaderTypes.json")
+OUT = os.path.join(ROOT, "src", "Pitstop.Workspace", "GodotShaderTypes.json")
 
 MODES = {"SHADER_SPATIAL": "spatial", "SHADER_CANVAS_ITEM": "canvas_item", "SHADER_PARTICLES": "particles",
          "SHADER_SKY": "sky", "SHADER_FOG": "fog", "SHADER_TEXTURE_BLIT": "texture_blit"}

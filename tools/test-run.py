@@ -31,8 +31,8 @@ trx = shards.trx
 
 ROOT = shards.ROOT
 PROJECT = shards.PROJECT
-ASSEMBLY = os.path.join(ROOT, "artifacts", "bin", "Passenger.Tests", "debug", "Passenger.Tests.dll")
-UNIT_ASSEMBLY = os.path.join(ROOT, "artifacts", "bin", "Passenger.UnitTests", "debug", "Passenger.UnitTests.dll")
+ASSEMBLY = os.path.join(ROOT, "artifacts", "bin", "Pitstop.Tests", "debug", "Pitstop.Tests.dll")
+UNIT_ASSEMBLY = os.path.join(ROOT, "artifacts", "bin", "Pitstop.UnitTests", "debug", "Pitstop.UnitTests.dll")
 RESULTS = os.path.join(ROOT, "artifacts", "test-results", "local")
 SYSTEM = {"Darwin": "macOS", "Windows": "Windows", "Linux": "Linux"}.get(platform.system(), "Linux")
 TIME_SCALE = "PITSTOP_TEST_TIME_SCALE"

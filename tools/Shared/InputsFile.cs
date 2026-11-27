@@ -1,4 +1,4 @@
-namespace Passenger.Tools;
+namespace Pitstop.Tools;
 
 /// <summary>The file of what the build hands one of its tools: one <c>name=value</c> a line, both sides trimmed, blank
 /// lines passed over. A line that is no name=value, or a value of two parts without its '|', fails naming the file, as

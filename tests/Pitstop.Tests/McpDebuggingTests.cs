@@ -1,0 +1,747 @@
+using System.Diagnostics;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
+using Pitstop.App;
+using Pitstop.App.Mcp;
+using Pitstop.Core;
+using Pitstop.Dap;
+using Pitstop.Lsp;
+
+namespace Pitstop.Tests;
+
+/// <summary>An agent with no window (<c>--mcp</c>) where it debugs, or where what it tests is held to a time (a call's
+/// progress told every second): the code found, its warnings read and the program debugged, launched and attached to; a
+/// debugged test run's tally; a debug session stopped as it starts; and a long call's progress. So it runs alone.</summary>
+[Collection(Alone.Name)]
+public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
+{
+    /// <summary>The fixture each step of a flow takes for an instance of its own.</summary>
+    private readonly RestoredFolders restored;
+
+    public McpDebuggingTests(RestoredFolders folders)
+        : base(folders) => restored = folders;
+
+    [Fact]
+    public async Task An_agent_with_a_windowless_Passenger_finds_code_reads_its_warnings_and_debugs_it()
+    {
+        await TakeFolderAsync();
+        // A name that has the one asked for in it, in a file the server reads before Helper.cs.
+        Write("Aaa.cs", "static class Aaa\n{\n    public static int TwiceMore(int value) => value;\n}\n");
+        await using McpClient client = await Start(["--mcp", Folder]);
+        IList<McpClientTool> tools = await Exchange("Listing the tools", TimeSpan.FromMinutes(1), cancel => client.ListToolsAsync(cancellationToken: cancel).AsTask());
+        Assert.Contains(tools, t => t.Name == McpTools.DebugStart);
+        string testsRun = Assert.Single(tools, t => t.Name == McpTools.TestsRun).Description;
+        Assert.True(testsRun.Contains("Testing Platform", StringComparison.Ordinal) && testsRun.Contains("xUnit v3", StringComparison.Ordinal),
+            $"tests_run tells an agent its tests run otherwise than they do: {testsRun}");
+        // Every session pays to read the list, so it says each thing once and is held under 62 KB (the owner's call).
+        Assert.Equal([McpTools.AppTree], tools.Where(t => JsonSerializer.Serialize(t.ProtocolTool).Contains("#Panel/Button", StringComparison.Ordinal)).Select(t => t.Name));
+        Assert.DoesNotContain(tools, t => SaysNothing(t.ProtocolTool.InputSchema));
+        Assert.DoesNotContain(tools, t => t.ProtocolTool.Annotations?.Title is not null);
+        int listed = tools.Sum(t => JsonSerializer.Serialize(t.ProtocolTool, ModelContextProtocol.McpJsonUtilities.DefaultOptions).Length);
+        Assert.True(listed < 62_000, $"The tools an agent reads as each session starts take {listed} bytes");
+
+        // The symbol named as asked comes first, so a limit of one finds it rather than one with the name inside its own.
+        JsonElement symbol = Assert.Single((await Call(client, McpTools.FindSymbol, new() { ["query"] = "Twice", ["limit"] = 1 })).EnumerateArray());
+        Assert.Equal(("Twice", "Helper.cs", 3), (symbol.GetProperty("name").GetString(), symbol.GetProperty("path").GetString(), symbol.GetProperty("line").GetInt32()));
+
+        // Code in an answer reads as written, its quotes and angle brackets as they are, not as \u0022s an agent pays for.
+        string found = Text(await Result(client, McpTools.FindInFiles, new() { ["text"] = "total {total}" }));
+        Assert.True(found.Contains("Console.WriteLine($\\\"total {total}\\\");", StringComparison.Ordinal) && !found.Contains("\\u00", StringComparison.Ordinal),
+            $"find_in_files wrote a line of code as: {found}");
+
+        JsonElement warning = Assert.Single((await Call(client, McpTools.Diagnostics, new() { ["path"] = "Helper.cs" })).EnumerateArray(),
+            d => d.GetProperty("code").GetString() == "CS0219");
+        Assert.Equal("warning", warning.GetProperty("severity").GetString());
+        Assert.Equal(5, warning.GetProperty("line").GetInt32());
+
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 4 });
+        JsonElement stop = await Call(client, McpTools.DebugStart);
+        Assert.Equal("paused", stop.GetProperty("state").GetString());
+        Assert.StartsWith("Program.cs:4:", stop.GetProperty("location").GetString(), StringComparison.Ordinal);
+        Assert.Equal("1", Local(stop, "i"));
+        Assert.Equal("0", Local(stop, "total"));
+        Assert.Equal("42", (await Call(client, McpTools.DebugEvaluate, new() { ["expression"] = "Helper.Twice(i) + 40" })).GetProperty("value").GetString());
+        JsonElement ran = await Call(client, McpTools.DebugEvaluate, new() { ["expression"] = "System.GC.Collect()" });
+        Assert.True((ran.GetProperty("value").GetString(), ran.GetProperty("type").GetString()) == (DapRows.RanWithNoValue, "void"),
+            $"debug_evaluate of a call that returns nothing answered {ran}");
+        int depth = stop.GetProperty("frames").GetArrayLength();
+        foreach ((string tool, Dictionary<string, object?> arguments) in new (string, Dictionary<string, object?>)[]
+        {
+            (McpTools.DebugEvaluate, new() { ["expression"] = "i", ["frame"] = 99 }),
+            (McpTools.DebugEvaluate, new() { ["expression"] = "i", ["value"] = "1", ["frame"] = 99 }),
+        })
+        {
+            CallToolResult past = await Result(client, tool, arguments);
+            Assert.True(past.IsError == true && Text(past).Contains("There is no frame 99: the stopped thread has ", StringComparison.Ordinal)
+                && Text(past).Contains($"{depth} frame", StringComparison.Ordinal),
+                $"{tool} in frame 99 of a stack {depth} deep answered: {Text(past)}");
+        }
+
+        stop = await Call(client, McpTools.DebugContinue);
+        Assert.Equal("2", Local(stop, "i"));
+
+        // An agent's next step may be a click the debugger never sees, so the answer comes once the breakpoint is bound.
+        JsonElement later = Assert.Single((await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 6 })).EnumerateArray(),
+            b => b.GetProperty("line").GetInt32() == 6);
+        Assert.Equal("bound", later.GetProperty("status").GetString());
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 6, ["remove"] = true });
+
+        // An edit made while paused runs once it goes on: Twice(2) and Twice(3) add one each.
+        await Call(client, McpTools.Open, new() { ["path"] = "Helper.cs", ["line"] = 6, ["column"] = 25 });
+        await Call(client, McpTools.AppType, new() { ["app"] = "ide", ["text"] = " + 1" });
+
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 4, ["remove"] = true });
+        stop = await Call(client, McpTools.DebugContinue);
+        Assert.Equal("exception", stop.GetProperty("reason").GetString());
+        Assert.StartsWith("System.InvalidOperationException: the end", stop.GetProperty("exception").GetString(), StringComparison.Ordinal);
+        string output = (await Call(client, McpTools.Output, new() { ["of"] = "debug" })).GetString()!;
+        Assert.True(output.Contains("total 14", StringComparison.Ordinal), $"The edit made while paused did not run once the program went on:\n{output}");
+
+        CallToolResult picture = await Result(client, McpTools.AppScreenshot, new() { ["app"] = "ide" });
+        ImageContentBlock image = Assert.IsType<ImageContentBlock>(picture.Content[0]);
+        Assert.Equal("image/png", image.MimeType);
+        Assert.Equal([0x89, (byte)'P', (byte)'N', (byte)'G'], image.DecodedData.Slice(0, 4).ToArray());
+
+        await Call(client, McpTools.Stop);
+        Assert.Equal("not debugging", (await Call(client, McpTools.DebugState)).GetProperty("state").GetString());
+
+        CallToolResult refused = await Result(client, McpTools.DebugContinue);
+        Assert.True(refused.IsError);
+        Assert.Contains("debug_start starts it", Assert.IsType<TextContentBlock>(Assert.Single(refused.Content)).Text, StringComparison.Ordinal);
+
+        // A program already running, started as a terminal would start it.
+        ProcessStartInfo start = ChildProcesses.Command(Debugging.Helpers.Debuggees.Apphost("LoopingConsoleApp"), ["sleep"]);
+        start.RedirectStandardOutput = true;
+        using (Process looping = ChildProcesses.Start(start))
+        {
+            try
+            {
+                Assert.Equal("looping", looping.StandardOutput.ReadLine());
+                JsonElement program = Assert.Single((await Call(client, McpTools.DebugState, new() { ["of"] = "processes" })).EnumerateArray(), p => p.GetProperty("processId").GetInt32() == looping.Id);
+                Assert.Equal("LoopingConsoleApp", program.GetProperty("program").GetString());
+                string source = Debugging.Helpers.Debuggees.Source("LoopingConsoleApp", "Program.cs");
+                int line = Debugging.Helpers.Debuggees.Line("LoopingConsoleApp", "turns++;");
+                await Call(client, McpTools.BreakpointSet, new() { ["path"] = source, ["line"] = line });
+                // Waited for as long as a loaded machine takes to attach and bind; the answer comes as soon as it stops.
+                JsonElement attached = await Call(client, McpTools.DebugAttach, new() { ["processId"] = looping.Id, ["waitSeconds"] = 60 });
+                Assert.True(attached.GetProperty("state").GetString() == "paused"
+                    && attached.TryGetProperty("reason", out JsonElement reason) && reason.GetString() == Pitstop.Dap.StopReasons.Breakpoint,
+                    $"The attached program did not stop at its breakpoint: {attached}");
+                Assert.EndsWith($"Program.cs:{line}:5", attached.GetProperty("location").GetString(), StringComparison.Ordinal);
+                Assert.True(long.TryParse(Local(attached, "turns"), out long turns) && turns >= 0, $"The stop's locals had no count of turns: {attached}");
+                // Paused in its sleep, below the runtime's frames: an evaluation reads the locals of the frame the stop shows.
+                await Call(client, McpTools.BreakpointSet, new() { ["path"] = source, ["line"] = line, ["remove"] = true });
+                await Call(client, McpTools.DebugContinue, new() { ["waitSeconds"] = 0 });
+                JsonElement pausedInSleep = await Call(client, McpTools.DebugPause);
+                string counted = Local(pausedInSleep, "turns") ?? throw new Xunit.Sdk.XunitException($"The pause's locals had no count of turns: {pausedInSleep}");
+                JsonElement evaluated = await Call(client, McpTools.DebugEvaluate, new() { ["expression"] = "turns" });
+                Assert.True(evaluated.GetProperty("value").GetString() == counted
+                    && (!evaluated.TryGetProperty("frame", out JsonElement below) || below.GetString()!.Contains("Program.cs:", StringComparison.Ordinal)),
+                    $"Evaluating turns, which the pause listed as {counted}, did not read it in the stop's frame: {evaluated}");
+                // Attached to as it ran, it reads its input from what started it, never the debugger: input is refused, saying so.
+                CallToolResult typed = await Result(client, McpTools.DebugInput, new() { ["text"] = "hello" });
+                Assert.True(typed.IsError == true && Text(typed).Contains(Refusals.InputFromStarter("LoopingConsoleApp", "from what started it"), StringComparison.Ordinal),
+                    $"debug_input to a program the debugger attached to did not refuse, saying where it reads its input: {Text(typed)}");
+                Assert.Equal("Detached from LoopingConsoleApp, which runs on", (await Call(client, McpTools.Stop, new() { ["detach"] = true })).GetString());
+                Assert.Equal("not debugging", (await Call(client, McpTools.DebugState)).GetProperty("state").GetString());
+                Assert.False(looping.WaitForExit(TimeSpan.FromSeconds(2)), "The program the agent detached from ended");
+            }
+            finally
+            {
+                ChildProcesses.Kill(looping);
+            }
+        }
+
+        // The C# server never takes a project file, so its problems come from the editor's marks: the server's would be none.
+        await Call(client, McpTools.Open, new() { ["path"] = "Sum.csproj", ["line"] = 7, ["column"] = 1 });
+        await Call(client, McpTools.AppType, new() { ["app"] = "ide", ["text"] = "<Import Project=\"Missing.props\" />" });
+        JsonElement missing = Assert.Single((await Call(client, McpTools.Diagnostics, new() { ["path"] = "Sum.csproj" })).EnumerateArray());
+        Assert.Equal(("error", 7), (missing.GetProperty("severity").GetString(), missing.GetProperty("line").GetInt32()));
+        Assert.Contains("Missing.props", missing.GetProperty("message").GetString(), StringComparison.Ordinal);
+        // The hover card's lines end as the system's do (Windows' "\r\n").
+        string framework = (await Call(client, McpTools.SymbolInfo, new() { ["path"] = "Sum.csproj", ["line"] = 4, ["column"] = 8 })).GetString()!.ReplaceLineEndings("\n");
+        Assert.True(framework.StartsWith($"TargetFramework = {TestProjects.Framework}\nMSBuild property, set in Sum.csproj, line 4", StringComparison.Ordinal),
+            $"symbol_info on a project file's property did not say its value and where it was set: {framework}");
+    }
+
+    /// <summary>An agent's stops and breakpoints as one flow, each step one test's check in an instance of its own: a
+    /// million-character local answered by its first characters and length, a debugged test run's tally as it ends, an
+    /// async program's unhandled exception stopping once at its throw, a Release build's step out and over, a
+    /// breakpoint at a lambda's column or line and one in a lambda written away from its closed file, and one outside a
+    /// file's lines or in no file refused.</summary>
+    [Fact]
+    public async Task An_agents_debugger_stops_steps_and_binds_breakpoints_as_the_code_is_written()
+    {
+        await Flow.StepApartAsync("an agents stops beside a million character local answer its first characters and its length", () => new McpDebuggingTests(restored), t => t.An_agents_stops_beside_a_million_character_local_answer_its_first_characters_and_its_length());
+        await Flow.StepApartAsync("an agent going on from a stop in a debugged test run gets its tally as it ends", () => new McpDebuggingTests(restored), t => t.An_agent_going_on_from_a_stop_in_a_debugged_test_run_gets_its_tally_as_it_ends());
+        await Flow.StepApartAsync("an async programs unhandled exception stops at its throw with its locals once and a caught one stops nothing", () => new McpDebuggingTests(restored), t => t.An_async_programs_unhandled_exception_stops_at_its_throw_with_its_locals_once_and_a_caught_one_stops_nothing());
+        await Flow.StepApartAsync("a release builds step out stops in its caller and a step over at its next statement", () => new McpDebuggingTests(restored), t => t.A_release_builds_step_out_stops_in_its_caller_and_a_step_over_at_its_next_statement());
+        await Flow.StepApartAsync("an agents breakpoint given a lambdas column stops inside it and one on its line at the statement", () => new McpDebuggingTests(restored), t => t.An_agents_breakpoint_given_a_lambdas_column_stops_inside_it_and_one_on_its_line_at_the_statement());
+        await Flow.StepApartAsync("an agents breakpoint in a lambda written away from its closed file stops at the statement listed by its line", () => new McpDebuggingTests(restored), t => t.An_agents_breakpoint_in_a_lambda_written_away_from_its_closed_file_stops_at_the_statement_listed_by_its_line());
+        await Flow.StepApartAsync("an agents breakpoint outside a files lines or in no file is refused and none is kept", () => new McpDebuggingTests(restored), t => t.An_agents_breakpoint_outside_a_files_lines_or_in_no_file_is_refused_and_none_is_kept());
+    }
+
+    /// <summary>An agent's debug sessions as one flow, each step one test's check in an instance of its own:
+    /// Passenger's helpers on its own runtime, a stop ending a session still starting, a running configuration ended
+    /// first, output answering the program debugged, a web app answered once it serves, one the runtime gives up on
+    /// said failed and ended, a long call telling what it does, and a launch never reaching its breakpoint saying what
+    /// it waits for.</summary>
+    [Fact]
+    public async Task An_agents_debug_sessions_start_end_and_say_what_they_wait_for_on_Passengers_own_runtime()
+    {
+        await Flow.StepApartAsync("passengers own helpers run on the runtime Pitstop runs on", () => new McpDebuggingTests(restored), t => t.Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on());
+        await Flow.StepApartAsync("an agents stop ends a debug session whose program is still starting", () => new McpDebuggingTests(restored), t => t.An_agents_stop_ends_a_debug_session_whose_program_is_still_starting());
+        await Flow.StepApartAsync("an agents run and debug of a configuration that runs end it first and answer with the new start", () => new McpDebuggingTests(restored), t => t.An_agents_run_and_debug_of_a_configuration_that_runs_end_it_first_and_answer_with_the_new_start());
+        await Flow.StepApartAsync("an agents output naming no console answers the program debugged naming it not the run that ended", () => new McpDebuggingTests(restored), t => t.An_agents_output_naming_no_console_answers_the_program_debugged_naming_it_not_the_run_that_ended());
+        await Flow.StepApartAsync("an agents debug start of a web app answers once it serves saying where it listens", () => new McpDebuggingTests(restored), t => t.An_agents_debug_start_of_a_web_app_answers_once_it_serves_saying_where_it_listens());
+        await Flow.StepApartAsync("an agents debug start whose debugging the runtime gives up answers that it failed and the app is ended", () => new McpDebuggingTests(restored), t => t.An_agents_debug_start_whose_debugging_the_runtime_gives_up_answers_that_it_failed_and_the_app_is_ended());
+        await Flow.StepApartAsync("a call that takes a while tells its agent what it is doing and nothing reaches standard error", () => new McpDebuggingTests(restored), t => t.A_call_that_takes_a_while_tells_its_agent_what_it_is_doing_and_nothing_reaches_standard_error());
+        await Flow.StepApartAsync("a launch that never reaches its breakpoint says so and its progress says what it waits for", () => new McpDebuggingTests(restored), t => t.A_launch_that_never_reaches_its_breakpoint_says_so_and_its_progress_says_what_it_waits_for());
+    }
+
+    /// <summary>Passenger's own helpers, Roslyn's server, the project host and the debug adapter, run on the very runtime
+    /// Passenger runs on, whatever runtimes the machine has: a published Passenger's carried one (its own folder), so
+    /// nothing of Passenger's needs the machine's .NET. Run against an installed Passenger too (McpRig.ExecutableVariable).</summary>
+    private async Task Passengers_own_helpers_run_on_the_runtime_Passenger_runs_on()
+    {
+        await TakeFolderAsync();
+        await using McpClient client = await Start(["--mcp", Folder]);
+        Assert.Contains((await Call(client, McpTools.Diagnostics, new() { ["path"] = "Helper.cs" })).EnumerateArray(), d => d.GetProperty("code").GetString() == "CS0219");
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 4 });
+        Assert.Equal("paused", (await Call(client, McpTools.DebugStart)).GetProperty("state").GetString());
+        Process passenger = LastPassenger();
+        string? own = DotnetProcesses.RuntimeFolder(passenger.Id);
+        Assert.True(own is not null, $"Pitstop's own runtime (process {passenger.Id}) could not be read.{Said()}");
+        // As the system lists what it started: no debugger lists Roslyn's server on Linux, its runtime's pipes in its own TMPDIR.
+        IReadOnlyList<DotnetProcess> under = [.. Processes.Descendants(passenger.Id).Select(DotnetProcesses.Describe).OfType<DotnetProcess>()];
+        foreach ((string helper, string assembly) in new[]
+        {
+            ("Roslyn's server", RoslynServerFolder.Assembly), ("The project host", "Pitstop.Host.dll"), ("The debug adapter", "Pitstop.DebugAdapter.dll"),
+        })
+        {
+            DotnetProcess[] found = [.. under.Where(p => p.CommandLine.Contains(assembly, StringComparison.OrdinalIgnoreCase))];
+            Assert.True(found.Length == 1, $"{helper} is not among the .NET processes Pitstop started: {string.Join(" | ", under.Select(p => p.CommandLine))}");
+            string? runtime = DotnetProcesses.RuntimeFolder(found[0].Id);
+            Assert.True(runtime is not null && PathNames.Same(runtime, own),
+                $"{helper} (process {found[0].Id}, {found[0].CommandLine}) runs on the runtime in {runtime}, not the one Pitstop runs on in {own}");
+        }
+        await Call(client, McpTools.Stop);
+    }
+
+    /// <summary>A local a million characters long is shown to an agent as its first few thousand, saying its length and the
+    /// debug_evaluate that reads on, so each stop's answer stays one an agent's client takes; that read gives the next part
+    /// whole.</summary>
+    private async Task An_agents_stops_beside_a_million_character_local_answer_its_first_characters_and_its_length()
+    {
+        await TakeFolderAsync();
+        Write("Program.cs", "string big = new string('x', 1_000_000) + \"end\";\nint step = 0;\nstep++;\nstep++;\nConsole.WriteLine(big.Length + step);\n");
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 3 });
+        foreach ((string tool, string at) in new[] { (McpTools.DebugStart, "Program.cs:3:"), (McpTools.DebugStep, "Program.cs:4:") })
+        {
+            JsonElement stop = await Call(client, tool);
+            string answer = stop.GetRawText();
+            Assert.True(answer.Length < 20_000, $"{tool} beside a local of a million characters answered {answer.Length:N0} characters, more than an agent's client may take");
+            Assert.StartsWith(at, stop.GetProperty("location").GetString(), StringComparison.Ordinal);
+            JsonElement big = stop.GetProperty("locals").EnumerateArray().Single(l => l.GetProperty("name").GetString() == "big");
+            Assert.True(big.TryGetProperty("cut", out JsonElement cut)
+                && cut.GetString() == "1,000,003 characters, the first 3,998 shown: debug_evaluate big.Substring(3998, 3998) reads on",
+                $"{tool} did not say the local's length and how to read on: {big}");
+            Assert.Equal($"\"{new string('x', 3998)}…", big.GetProperty("value").GetString());
+        }
+        JsonElement next = await Call(client, McpTools.DebugEvaluate, new() { ["expression"] = "big.Substring(3998, 3998)" });
+        Assert.True(next.GetProperty("value").GetString() == $"\"{new string('x', 3998)}\"" && !next.TryGetProperty("cut", out _),
+            $"The read a cut offered did not give the next part whole: {next.GetRawText()[..Math.Min(200, next.GetRawText().Length)]}");
+        Assert.Equal("\"xxend\"", (await Call(client, McpTools.DebugEvaluate, new() { ["expression"] = "big.Substring(999_998)" })).GetProperty("value").GetString());
+        await Call(client, McpTools.Stop);
+    }
+
+    /// <summary>A debugged test run an agent goes on with from its stop answers, as its test host ends, with the tally and
+    /// failures tests_run gives; its stop answers that it is paused there, never an earlier run's tally; and stopped at a
+    /// failed assertion, an evaluation reads the test's own local, not the assertion's.</summary>
+    private async Task An_agent_going_on_from_a_stop_in_a_debugged_test_run_gets_its_tally_as_it_ends()
+    {
+        string tests = PathNames.Canonical(TestFolders.Create("mcp-debug-tests-"));
+        DeleteAtEnd(tests);
+        await TestFolders.PrepareAsync(async () =>
+        {
+            File.WriteAllText(Path.Combine(tests, "Sums.Tests.csproj"),
+                $"<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>{TestProjects.Framework}</TargetFramework>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n" +
+                $"  <ItemGroup>\n    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" Version=\"{TestPackages.TestSdk}\" />\n    <PackageReference Include=\"xunit\" Version=\"{TestPackages.XunitTwo}\" />\n" +
+                $"    <PackageReference Include=\"xunit.runner.visualstudio\" Version=\"{TestPackages.XunitTwoRunner}\" />\n  </ItemGroup>\n</Project>\n");
+            File.WriteAllText(Path.Combine(tests, "SumTests.cs"),
+                "using Xunit;\n\nnamespace Sums.Tests;\n\npublic class SumTests\n{\n    [Fact]\n    public void Two_and_two_make_four()\n    {\n        int sum = 2 + 2;\n" +
+                "        Assert.Equal(4, sum);\n    }\n\n    [Fact]\n    public void Two_and_two_make_five()\n    {\n        int two = 2;\n        Assert.Equal(5, two + two);\n    }\n}\n");
+            await Restore.RunAsync(tests);
+        }, tests);
+        await using McpClient client = await Start(["--mcp", tests], languageServer: false);
+        Assert.StartsWith("Tests passed: 1, failed: 1 of 2", (await Call(client, McpTools.TestsRun)).GetProperty("summary").GetString(), StringComparison.Ordinal);
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "SumTests.cs", ["line"] = 10 });
+        // Stopped at the breakpoint, and at the failing test's exception where the exception breakpoints say so, in either order.
+        JsonElement paused = await Call(client, McpTools.TestsRun, new() { ["debug"] = true });
+        Assert.True(paused.GetProperty("summary").GetString()!.StartsWith("Running under the debugger, paused at ", StringComparison.Ordinal) && paused.GetProperty("failures").GetArrayLength() == 0,
+            $"tests_run with debug, its test paused, did not answer that it is paused there: {paused}");
+        JsonElement ended = paused.GetProperty("debugger");
+        List<string> stops = [];
+        while (ended.GetProperty("state").GetString() == "paused" && stops.Count < 5)
+        {
+            stops.Add(ended.GetProperty("location").GetString()!);
+            if (ended.GetProperty("reason").GetString() == Pitstop.Dap.StopReasons.Exception)
+            {
+                // Stopped in the assertion's code, the stop shows the test's frame: an evaluation reads that frame's locals.
+                JsonElement two = await Call(client, McpTools.DebugEvaluate, new() { ["expression"] = "two" });
+                Assert.True(two.GetProperty("value").GetString() == "2" && two.TryGetProperty("frame", out JsonElement test)
+                    && test.GetString()!.Contains("Two_and_two_make_five", StringComparison.Ordinal),
+                    $"At the failed assertion, the test's own local was not read in the test's frame: {two}");
+            }
+            ended = await Call(client, McpTools.DebugContinue);
+        }
+        Assert.Contains(stops, s => s.StartsWith("SumTests.cs:10:", StringComparison.Ordinal));
+        Assert.Contains(stops, s => s.StartsWith("SumTests.cs:18:", StringComparison.Ordinal));
+        Assert.Equal("not debugging", ended.GetProperty("state").GetString());
+        Assert.True(ended.TryGetProperty("tests", out JsonElement tally), $"debug_continue answered the debugged run's end without its tests: {ended}");
+        Assert.StartsWith("Tests passed: 1, failed: 1 of 2", tally.GetProperty("summary").GetString(), StringComparison.Ordinal);
+        JsonElement failure = Assert.Single(tally.GetProperty("failures").EnumerateArray());
+        Assert.Equal("Sums.Tests.SumTests.Two_and_two_make_five", failure.GetProperty("test").GetString());
+        Assert.Contains("Assert.Equal() Failure", failure.GetProperty("details").GetString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A program whose top-level statements await, crashing four ways: an exception thrown in sync code they
+    /// call ("here"), in an async method they await after its own awaits, through another awaiting it (none), or in one
+    /// going on on another thread from its first await before they have its task to await ("elsewhere"), which no code
+    /// catches; or the second, caught by the code awaiting it ("caught").</summary>
+    private const string Crashing = """
+        using System.Runtime.CompilerServices;
+
+        if (args is ["caught"])
+        {
+            try
+            {
+                await CrashesLaterAsync(1);
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine($"caught {e.Message}");
+            }
+            return;
+        }
+        await Task.Yield();
+        if (args is ["here"])
+        {
+            Crash(1);
+        }
+        if (args is ["elsewhere"])
+        {
+            await CrashesElsewhereAsync();
+        }
+        await CrashesLaterAsync(1);
+
+        static async Task CrashesLaterAsync(int depth)
+        {
+            await Task.Yield();
+            if (depth > 0)
+            {
+                await CrashesLaterAsync(depth - 1);
+            }
+            string reached = $"crashing at {depth}";
+            throw new InvalidOperationException(reached);
+        }
+
+        static void Crash(int depth)
+        {
+            string here = $"here at {depth}";
+            throw new InvalidOperationException(here);
+        }
+
+        static async Task CrashesElsewhereAsync()
+        {
+            await new GoesOnElsewhere();
+            try
+            {
+                string elsewhere = "crashing elsewhere";
+                throw new InvalidOperationException(elsewhere);
+            }
+            finally
+            {
+                GoesOnElsewhere.Unwound.Set();
+            }
+        }
+
+        // Goes on on another thread, the thread awaiting held in the await until what went on has unwound from its throw.
+        sealed class GoesOnElsewhere : INotifyCompletion
+        {
+            public static readonly ManualResetEventSlim Unwound = new();
+
+            public GoesOnElsewhere GetAwaiter() => this;
+
+            public bool IsCompleted => false;
+
+            public void GetResult()
+            {
+            }
+
+            public void OnCompleted(Action continuation)
+            {
+                ThreadPool.UnsafeQueueUserWorkItem(_ => continuation(), null);
+                Unwound.Wait();
+            }
+        }
+
+        """;
+
+    /// <summary>An exception an async program leaves unhandled stops it where it was thrown, with that frame's locals, as a
+    /// synchronous program's does, and once: going on ends the program. So does one thrown where its method went on on
+    /// another thread before the code awaiting it had its task, as a loaded machine has it. One the code awaiting it
+    /// catches stops nothing.</summary>
+    private async Task An_async_programs_unhandled_exception_stops_at_its_throw_with_its_locals_once_and_a_caught_one_stops_nothing()
+    {
+        string folder = PathNames.Canonical(TestFolders.Create("mcp-async-crash-"));
+        DeleteAtEnd(folder);
+        await TestFolders.PrepareAsync(async () =>
+        {
+            File.WriteAllText(Path.Combine(folder, "Crashing.csproj"), TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>"));
+            File.WriteAllText(Path.Combine(folder, "Program.cs"), Crashing);
+            await Restore.RunAsync(folder);
+        }, folder);
+        await using McpClient client = await Start(["--mcp", folder], languageServer: false);
+        foreach ((string? arguments, string thrown, string local, string value) in new (string?, string, string, string)[]
+        {
+            (null, "throw new InvalidOperationException(reached);", "reached", "\"crashing at 0\""),
+            ("here", "throw new InvalidOperationException(here);", "here", "\"here at 1\""),
+            ("elsewhere", "throw new InvalidOperationException(elsewhere);", "elsewhere", "\"crashing elsewhere\""),
+        })
+        {
+            int line = Array.FindIndex(Crashing.Split('\n'), l => l.Trim() == thrown) + 1;
+            JsonElement stop = await Call(client, McpTools.DebugStart, arguments is null ? null : new() { ["arguments"] = arguments });
+            Assert.True(stop.GetProperty("state").GetString() == "paused" && stop.GetProperty("reason").GetString() == Pitstop.Dap.StopReasons.Exception
+                && At(stop).StartsWith($"Program.cs:{line}:", StringComparison.Ordinal),
+                $"The async program{(arguments is null ? "" : $" run with {arguments}")} left its exception unhandled and did not stop at its throw on line {line}: {stop}");
+            Assert.True(Local(stop, local) == value, $"Stopped at the throw on line {line}, {local} did not read {value}: {stop}");
+            JsonElement ended = await Call(client, McpTools.DebugContinue);
+            Assert.True(ended.GetProperty("state").GetString() == "not debugging",
+                $"Going on from the unhandled exception's stop did not end the program, which stopped again: {ended}");
+        }
+        JsonElement caught = await Call(client, McpTools.DebugStart, new() { ["arguments"] = "caught" });
+        Assert.True(caught.GetProperty("state").GetString() == "not debugging",
+            $"An exception the awaiting code catches stopped the program: {caught}");
+        Assert.Contains("caught crashing at 0", Text(await Result(client, McpTools.Output, new() { ["of"] = "debug" })), StringComparison.Ordinal);
+    }
+
+    /// <summary>Where a stop is, as debug_start and its steps say; empty where it names no place of the folder's.</summary>
+    private static string At(JsonElement stop) => stop.TryGetProperty("location", out JsonElement location) ? location.GetString() ?? string.Empty : string.Empty;
+
+    /// <summary>The folder's own program built as Release is stepped through as a Debug build is: stopped in a method, a step
+    /// out stops in its caller with what the method returned, and a step over at the caller's next statement.</summary>
+    private async Task A_release_builds_step_out_stops_in_its_caller_and_a_step_over_at_its_next_statement()
+    {
+        await TakeFolderAsync();
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        await Call(client, McpTools.IdeAction, new() { ["action"] = AppActions.ChooseBuildConfiguration, ["input"] = "Release|AnyCPU" });
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Helper.cs", ["line"] = 6 });
+        JsonElement stop = await Call(client, McpTools.DebugStart);
+        Assert.True(At(stop).StartsWith("Helper.cs:6:", StringComparison.Ordinal), $"Debug did not stop at the breakpoint in Twice: {stop}");
+        Assert.True(Directory.Exists(Path.Combine(Folder, "bin", "Release")), "Debug under Release did not build the program as Release");
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Helper.cs", ["line"] = 6, ["remove"] = true });
+
+        stop = await Call(client, McpTools.DebugStep, new() { ["kind"] = "out" });
+        Assert.True(stop.GetProperty("state").GetString() == "paused" && At(stop).StartsWith("Program.cs:4:", StringComparison.Ordinal),
+            $"A step out of Twice in the Release build did not stop in its caller: {stop}");
+        Assert.True(Local(stop, "Twice() returned") == "2", $"The step out of Twice(1) did not list what it returned: {stop}");
+        stop = await Call(client, McpTools.DebugStep, new() { ["kind"] = "over" });
+        Assert.True(stop.GetProperty("state").GetString() == "paused" && At(stop).StartsWith("Program.cs:2:", StringComparison.Ordinal),
+            $"A step over in the Release build did not stop at the loop's next statement: {stop}");
+        await Call(client, McpTools.Stop);
+    }
+
+    /// <summary>An agent's stop ends a debug session still starting: while debug_start waits for a program whose runtime is
+    /// held at its start (the test's own diagnostic port), stop ends the session and the program at once, and debug_start
+    /// answers that it was stopped.</summary>
+    private async Task An_agents_stop_ends_a_debug_session_whose_program_is_still_starting()
+    {
+        using Debugging.Helpers.StartHold hold = new();
+        await TakeFolderAsync();
+        Directory.CreateDirectory(Path.Combine(Folder, "Properties"));
+        File.WriteAllText(Path.Combine(Folder, "Properties", "launchSettings.json"), JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["profiles"] = new Dictionary<string, object> { ["Held"] = new Dictionary<string, object> { ["commandName"] = "Project", ["environmentVariables"] = hold.Environment } },
+        }));
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        Task<int> held = hold.Held(TimeSpan.FromMinutes(3));
+        Task<CallToolResult> debugging = Result(client, McpTools.DebugStart, new() { ["configuration"] = "Sum: Held" });
+        OwnProcess program = default;
+        try
+        {
+            if (await Task.WhenAny(held, debugging) == debugging)
+            {
+                Assert.Fail($"debug_start answered before the program came to the hold: {Text(await debugging)}{Said()}");
+            }
+            program = OwnProcess.Of(await held);
+
+            Assert.Equal("Stopped", (await Call(client, McpTools.Stop)).GetString());
+            Assert.True(await Waiting.Within(debugging, TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken),
+                $"debug_start still waited for the program {TimeSpan.FromSeconds(15).Scaled().TotalSeconds} s after the agent's stop{Said()}");
+            CallToolResult stopped = await debugging;
+            Assert.True(stopped.IsError == true && Text(stopped).Contains("Debugging Sum: Held was stopped as it started", StringComparison.Ordinal),
+                $"debug_start, stopped as it started, answered: {Text(stopped)}");
+            Assert.True(Processes.Gone(program.Id), $"The agent's stop left the program running: {Processes.Describe(program.Id)}");
+            Assert.Equal("not debugging", (await Call(client, McpTools.DebugState)).GetProperty("state").GetString());
+        }
+        finally
+        {
+            program.Kill();
+        }
+    }
+
+    /// <summary>An agent's Run and Debug, through ide_action, of a configuration that runs, by Run or under the debugger, each
+    /// end the program running first and start it again, one copy left running each time, and each answers with what it came
+    /// to, the new start, never the end of the program it took the place of.</summary>
+    private async Task An_agents_run_and_debug_of_a_configuration_that_runs_end_it_first_and_answer_with_the_new_start()
+    {
+        await TakeFolderAsync();
+        string runs = Path.Combine(Folder, "program.pids");
+        Write("Program.cs", $"File.AppendAllText(@\"{runs}\", Environment.ProcessId + \"\\n\");\nThread.Sleep(Timeout.Infinite);\n");
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        List<OwnProcess> started = [];
+        try
+        {
+            string[] actions = [AppActions.RunProgram, AppActions.RunProgram, AppActions.Debug, AppActions.Debug, AppActions.RunProgram, AppActions.Debug];
+            for (int i = 0; i < actions.Length; i++)
+            {
+                string answer = (await Call(client, McpTools.IdeAction, new() { ["action"] = actions[i] })).GetString()!;
+                string asked = i == 0 ? actions[i] : $"{actions[i]} after {actions[i - 1]}";
+                Assert.True(answer == (actions[i] == AppActions.Debug ? "Debugging Sum" : "Running Sum"), $"The agent's {asked} answered: {answer}{Said()}");
+                int[] ids = [];
+                Assert.True(await Waiting.UntilAsync(() => (ids = Ids(runs)).Length == i + 1, TimeSpan.FromMinutes(1), Cancel, TimeSpan.FromMilliseconds(100)),
+                    $"After the agent's {asked}, {Plural.Of(ids.Length, "program")} had started, not {i + 1}{Said()}");
+                started.Add(OwnProcess.Of(ids[^1]));
+                foreach (int ended in ids[..^1])
+                {
+                    Assert.True(Processes.Gone(ended), $"The agent's {asked} left an earlier copy running beside the new one: {Processes.Describe(ended)}");
+                }
+            }
+        }
+        finally
+        {
+            await Call(client, McpTools.Stop);
+            started.ForEach(program => program.Kill());
+        }
+
+        static int[] Ids(string file) => File.Exists(file)
+            ? [.. Ui.Shared(file).Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse)]
+            : [];
+    }
+
+    /// <summary>An agent's breakpoint given a column in a lambda written on its statement's line is the lambda's, at its body:
+    /// it stops inside the lambda each time it runs, where one on the line stops once at the statement; a column no lambda
+    /// holds is refused, naming where the line's lambdas are.</summary>
+    private async Task An_agents_breakpoint_given_a_lambdas_column_stops_inside_it_and_one_on_its_line_at_the_statement()
+    {
+        await TakeFolderAsync();
+        const string Counting = "int count = items.Count(i => i > 1);";
+        int lambda = Counting.IndexOf("i =>", StringComparison.Ordinal) + 1;
+        int body = Counting.IndexOf("i > 1", StringComparison.Ordinal) + 1;
+        Write("Program.cs", $"int[] items = [1, 2, 3];\n{Counting}\nConsole.WriteLine($\"count {{count}}\");\n");
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        CallToolResult missed = await Result(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 2, ["column"] = 5 });
+        Assert.True(missed.IsError == true && Text(missed).Contains($"its lambdas are at columns {lambda}-{Counting.Length - 2}", StringComparison.Ordinal),
+            $"breakpoint_set at a column no lambda holds answered: {Text(missed)}");
+        JsonElement set = Assert.Single((await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 2, ["column"] = lambda })).EnumerateArray());
+        Assert.Equal((2, body), (set.GetProperty("line").GetInt32(), set.GetProperty("column").GetInt32()));
+        Assert.Equal(2, (await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 2 })).GetArrayLength());
+
+        JsonElement stop = await Call(client, McpTools.DebugStart);
+        Assert.Equal(("Program.cs:2:1", (string?)null), (stop.GetProperty("location").GetString(), Local(stop, "i")));
+        foreach (string i in new[] { "1", "2", "3" })
+        {
+            stop = await Call(client, McpTools.DebugContinue);
+            Assert.Equal(($"Program.cs:2:{body}", i), (stop.GetProperty("location").GetString(), Local(stop, "i")));
+        }
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 2, ["column"] = body, ["remove"] = true });
+        Assert.Equal("not debugging", (await Call(client, McpTools.DebugContinue)).GetProperty("state").GetString());
+        Assert.Contains("count 2", (await Call(client, McpTools.Output, new() { ["of"] = "debug" })).GetString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>An agent's breakpoint in a lambda of a closed file whose lambda is then written away on disk is the line's
+    /// once the program is debugged: it stops once at the statement and is listed by its line, never asking the debugger
+    /// for a column nothing holds.</summary>
+    private async Task An_agents_breakpoint_in_a_lambda_written_away_from_its_closed_file_stops_at_the_statement_listed_by_its_line()
+    {
+        await TakeFolderAsync();
+        const string Counting = "int count = items.Count(i => i > 1);";
+        int body = Counting.IndexOf("i > 1", StringComparison.Ordinal) + 1;
+        Write("Program.cs", $"int[] items = [1, 2, 3];\n{Counting}\nConsole.WriteLine($\"count {{count}}\");\n");
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        JsonElement set = Assert.Single((await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 2, ["column"] = body })).EnumerateArray());
+        Assert.Equal((2, body), (set.GetProperty("line").GetInt32(), set.GetProperty("column").GetInt32()));
+        Write("Program.cs", "int[] items = [1, 2, 3];\nint count = items.Length;\nConsole.WriteLine($\"count {count}\");\n");
+
+        JsonElement stop = await Call(client, McpTools.DebugStart);
+        Assert.Equal("Program.cs:2:1", stop.GetProperty("location").GetString());
+        JsonElement listed = Assert.Single((await Call(client, McpTools.DebugState, new() { ["of"] = "breakpoints" })).EnumerateArray(),
+            b => b.TryGetProperty("path", out JsonElement path) && path.GetString() == "Program.cs");
+        Assert.True(listed.GetProperty("line").GetInt32() == 2 && (!listed.TryGetProperty("column", out JsonElement column) || column.ValueKind == JsonValueKind.Null),
+            $"The breakpoint whose lambda was written away is listed as {listed}, not as its line's");
+        Assert.Equal("not debugging", (await Call(client, McpTools.DebugContinue)).GetProperty("state").GetString());
+        Assert.Contains("count 3", (await Call(client, McpTools.Output, new() { ["of"] = "debug" })).GetString(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A line breakpoint an agent sets below a file's first line, past its last, or in a file not there is refused
+    /// naming the file's lines or the file, and none is kept, where each was kept, the first two stopping at the program's
+    /// first statement.</summary>
+    private async Task An_agents_breakpoint_outside_a_files_lines_or_in_no_file_is_refused_and_none_is_kept()
+    {
+        await TakeFolderAsync();
+        Write("Program.cs", "int total = 1;\ntotal += 2;\nConsole.WriteLine($\"total {total}\");");
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        foreach (int line in (int[])[0, -5, 4, 999])
+        {
+            CallToolResult outside = await Result(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = line });
+            Assert.True(outside.IsError == true && Text(outside).Contains($"Line {line} is outside Program.cs, whose lines are 1 to 3", StringComparison.Ordinal),
+                $"breakpoint_set at line {line} of a 3-line file answered: {Text(outside)}");
+        }
+        CallToolResult missing = await Result(client, McpTools.BreakpointSet, new() { ["path"] = "NoSuchFile.cs", ["line"] = 1 });
+        Assert.True(missing.IsError == true && Text(missing).Contains("No file NoSuchFile.cs is here to set a breakpoint in", StringComparison.Ordinal),
+            $"breakpoint_set in a file not there answered: {Text(missing)}");
+        JsonElement kept = await Call(client, McpTools.DebugState, new() { ["of"] = "breakpoints" });
+        Assert.False(kept.EnumerateArray().Any(b => b.TryGetProperty("line", out JsonElement line) && line.ValueKind == JsonValueKind.Number),
+            $"Refused breakpoints were kept: {kept}");
+        JsonElement set = Assert.Single((await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 3 })).EnumerateArray());
+        Assert.Equal(3, set.GetProperty("line").GetInt32());
+    }
+
+    /// <summary>An agent's output naming no console, once a program Run started has ended and while another is debugged,
+    /// answers the debugged program's lines under a line naming it, never the ended run's; once that one has ended too, the
+    /// run's, under a line naming it and how it ended.</summary>
+    private async Task An_agents_output_naming_no_console_answers_the_program_debugged_naming_it_not_the_run_that_ended()
+    {
+        await TakeFolderAsync();
+        Write("Program.cs", "Console.WriteLine($\"said {args[0]}\");\nConsole.WriteLine(\"then\");\n");
+        Write("Properties/launchSettings.json", "{\n  \"profiles\": {\n"
+            + "    \"Ran\": { \"commandName\": \"Project\", \"commandLineArgs\": \"ran\" },\n"
+            + "    \"Debugged\": { \"commandName\": \"Project\", \"commandLineArgs\": \"debugged\" }\n  }\n}\n");
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        JsonElement ran = await Call(client, McpTools.Run, new() { ["configuration"] = "Sum: Ran", ["waitSeconds"] = 120 });
+        Assert.True(ran.GetProperty("exitCode").GetInt32() == 0 && ran.GetProperty("output").GetString()!.Contains("said ran", StringComparison.Ordinal), $"The first program's run answered: {ran}");
+
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 2 });
+        JsonElement stop = await Call(client, McpTools.DebugStart, new() { ["configuration"] = "Sum: Debugged" });
+        Assert.Equal("paused", stop.GetProperty("state").GetString());
+        string output = string.Empty;
+        await Waiting.UntilAsync(async () => (output = (await Call(client, McpTools.Output)).GetString()!).Contains("said debugged", StringComparison.Ordinal),
+            TimeSpan.FromSeconds(30), Cancel, TimeSpan.FromMilliseconds(200));
+        Assert.True(output.StartsWith("Sum: Debugged, debugged, paused:\n", StringComparison.Ordinal) && output.Contains("said debugged", StringComparison.Ordinal)
+            && !output.Contains("said ran", StringComparison.Ordinal), $"output naming no console, while a program is debugged after another ran, answered:\n{output}");
+
+        Assert.Equal("not debugging", (await Call(client, McpTools.DebugContinue)).GetProperty("state").GetString());
+        output = (await Call(client, McpTools.Output)).GetString()!;
+        Assert.True(output.StartsWith("Sum: Ran ended with exit code 0:\n", StringComparison.Ordinal) && output.Contains("said ran", StringComparison.Ordinal),
+            $"output naming no console, once the debugged program had ended too, answered:\n{output}");
+    }
+
+    /// <summary>An agent's debug_start of a web app, which serves until it is stopped, answers once the app's host has
+    /// started, running and saying where it listens, rather than waiting out its time for a stop or an end that never
+    /// comes; the app answers there.</summary>
+    private async Task An_agents_debug_start_of_a_web_app_answers_once_it_serves_saying_where_it_listens()
+    {
+        string folder = await WebAppAsync();
+        await using McpClient client = await Start(["--mcp", folder], languageServer: false);
+        // Far longer than the app takes to start, which the answer is not to wait out.
+        JsonElement started = await Call(client, McpTools.DebugStart, new() { ["configuration"] = "Web: Serve", ["waitSeconds"] = 600 });
+        Match listening = Regex.Match(started.GetProperty("status").GetString() ?? string.Empty, @"listening at (http://127\.0\.0\.1:\d+)");
+        Assert.True(started.GetProperty("state").GetString() == "running" && listening.Success, $"debug_start of a web app answered: {started.GetRawText()}");
+        using (System.Net.Http.HttpClient http = new())
+        {
+            Assert.Equal("served", await http.GetStringAsync(new Uri(listening.Groups[1].Value), TestContext.Current.CancellationToken));
+        }
+        await Call(client, McpTools.Stop);
+    }
+
+    /// <summary>An agent's debug_start of a web app whose debugging the runtime gives up for good as it starts, as it once did
+    /// under load, holding the app where it stood, answers once the app is ended, saying its debugging failed and why,
+    /// rather than waiting out its whole time for an app that will never serve; its console says so too.</summary>
+    private async Task An_agents_debug_start_whose_debugging_the_runtime_gives_up_answers_that_it_failed_and_the_app_is_ended()
+    {
+        string folder = await WebAppAsync();
+        // The engine takes the load of the app's hosting as the runtime's word that its debugging failed.
+        await using McpClient client = await Start(["--mcp", folder],
+            environment: new() { [global::Pitstop.Dap.AdapterEnvironment.FailAtModuleVariable] = "Microsoft.AspNetCore.Hosting.dll" }, languageServer: false);
+        // Far longer than the call's own limit: only the app's end can answer it.
+        JsonElement started = await Call(client, McpTools.DebugStart, new() { ["configuration"] = "Web: Serve", ["waitSeconds"] = 600 });
+        Assert.True(started.GetProperty("state").GetString() == "not debugging"
+            && started.GetProperty("status").GetString() == "Debugging Web: Serve ended: the runtime's debugging of the program failed (0x80004005), so it can be debugged no further",
+            $"debug_start of a web app whose debugging failed as it started answered: {started.GetRawText()}");
+        string console = (await Call(client, McpTools.Output, new() { ["of"] = "debug" })).GetString()!;
+        Assert.True(console.Contains("The runtime's debugging of the program failed (0x80004005): it can be debugged no further, so it is ended.", StringComparison.Ordinal),
+            $"The Debug console of a program whose debugging failed reads:\n{console}");
+    }
+
+    /// <summary>A web app that answers "served" at its root, restored, in a folder of the test's own; its launch profile Serve
+    /// listens at port 0, the port it took said only in its own words.</summary>
+    private async Task<string> WebAppAsync()
+    {
+        string folder = PathNames.Canonical(TestFolders.Create("mcp-web-"));
+        DeleteAtEnd(folder);
+        TestFolders.Write(folder, "Web.csproj", TestProjects.Web("<ImplicitUsings>enable</ImplicitUsings>"));
+        TestFolders.Write(folder, "Program.cs", "WebApplication app = WebApplication.Create(args);\napp.MapGet(\"/\", () => \"served\");\napp.Run();\n");
+        TestFolders.Write(folder, "Properties/launchSettings.json",
+            "{\n  \"profiles\": {\n    \"Serve\": { \"commandName\": \"Project\", \"applicationUrl\": \"http://127.0.0.1:0\" }\n  }\n}\n");
+        await Restore.RunAsync(Path.Combine(folder, "Web.csproj"));
+        return folder;
+    }
+
+    /// <summary>A call that takes a while tells an agent that asked for progress what it is doing as it goes (the run's
+    /// stages, then the wait for the program), at rising counts, so a client that gives up on a silent call (OpenCode's
+    /// 60 s) waits on; and the agent's own Passenger writes nothing to the standard error an agent may never read.</summary>
+    private async Task A_call_that_takes_a_while_tells_its_agent_what_it_is_doing_and_nothing_reaches_standard_error()
+    {
+        await TakeFolderAsync();
+        Write("Program.cs", "Console.WriteLine(\"waiting\");\nThread.Sleep(Timeout.Infinite);\n");
+        await using McpClient client = await Start(["--mcp", Folder]);
+        Heard heard = new();
+        CallToolResult ran = await Result(client, McpTools.Run, new() { ["waitSeconds"] = 4 }, heard: heard);
+        Assert.False(ran.IsError == true, $"run failed: {Text(ran)}{Said()}");
+        IReadOnlyList<ModelContextProtocol.ProgressNotificationValue> told = heard.Told;
+        Assert.True(told.Count >= 2, $"A run that waited 4 s for its program told its agent {told.Count} times (every second asked): {heard}");
+        // The SDK's client hands the progress over as it comes, not always in order.
+        Assert.True(told.Select(t => t.Progress).Distinct().Count() == told.Count, $"The progress told repeated a count: {heard}");
+        Assert.True(told.Any(t => t.Message?.StartsWith("Running Sum: waiting up to 4 s for it to end", StringComparison.Ordinal) == true),
+            $"The agent was never told the run waits for its program: {heard}");
+        // Each word says how long the call has taken so far.
+        Assert.Matches($@"\({SaidWhile.Pattern}\)$", told[^1].Message ?? string.Empty);
+        await Call(client, McpTools.Stop);
+        Assert.True(Errors().Length == 0, $"The agent's Pitstop wrote to its standard error, which an agent may never read:\n{string.Join('\n', Errors())}");
+    }
+
+    /// <summary>A launch whose program never reaches its breakpoint in the time waited is answered as running, naming the
+    /// breakpoint it never stopped at, never as a plain "running" an agent takes for a stop yet to come; its progress says
+    /// meanwhile what it waits for, the stop at that breakpoint among it.</summary>
+    private async Task A_launch_that_never_reaches_its_breakpoint_says_so_and_its_progress_says_what_it_waits_for()
+    {
+        await TakeFolderAsync();
+        Write("Program.cs", "int ticks = 0;\nwhile (true)\n{\n    ticks++;\n    Thread.Sleep(50);\n    if (ticks < 0)\n    {\n"
+            + "        Console.WriteLine(\"never\");\n    }\n}\n");
+        await using McpClient client = await Start(["--mcp", Folder], languageServer: false);
+        await Call(client, McpTools.BreakpointSet, new() { ["path"] = "Program.cs", ["line"] = 8 });
+        Heard heard = new();
+        CallToolResult started = await Result(client, McpTools.DebugStart, new() { ["waitSeconds"] = 4 }, heard: heard);
+        Assert.False(started.IsError == true, $"debug_start failed: {Text(started)}");
+        JsonElement answer = JsonDocument.Parse(Text(started)).RootElement;
+        Assert.Equal("running", answer.GetProperty("state").GetString());
+        Assert.True(answer.GetProperty("status").GetString()!.Contains("in the 4 s waited it never stopped at its breakpoint at Program.cs:8", StringComparison.Ordinal),
+            $"A launch that never reached its breakpoint did not say so: {answer}");
+        Assert.True(heard.Told.Any(t => t.Message?.Contains("for a stop at its breakpoint at Program.cs:8", StringComparison.Ordinal) == true),
+            $"The agent was never told the launch waits for a stop at its breakpoint: {heard}");
+        await Call(client, McpTools.Stop);
+    }
+
+    /// <summary>Whether a schema says what leaving a parameter out says already: a null default, or null among its types.</summary>
+    private static bool SaysNothing(JsonElement schema) => schema.ValueKind switch
+    {
+        JsonValueKind.Object => schema.EnumerateObject().Any(p => (p.Name == "default" && p.Value.ValueKind == JsonValueKind.Null)
+            || (p.Name == "type" && p.Value.ValueKind == JsonValueKind.Array) || SaysNothing(p.Value)),
+        JsonValueKind.Array => schema.EnumerateArray().Any(SaysNothing),
+        _ => false,
+    };
+}

@@ -28,24 +28,24 @@ from collections import Counter
 from xml.sax.saxutils import escape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TIMES = os.path.join(ROOT, "tests", "Passenger.Tests", "TestTimes.json")
-PROJECT = os.path.join(ROOT, "tests", "Passenger.Tests")
+TIMES = os.path.join(ROOT, "tests", "Pitstop.Tests", "TestTimes.json")
+PROJECT = os.path.join(ROOT, "tests", "Pitstop.Tests")
 # Pure logic's tests, every one in the gate; a checkout may not have them yet.
-UNIT_PROJECT = os.path.join(ROOT, "tests", "Passenger.UnitTests")
-UNIT_PREFIX = "Passenger.UnitTests."
+UNIT_PROJECT = os.path.join(ROOT, "tests", "Pitstop.UnitTests")
+UNIT_PREFIX = "Pitstop.UnitTests."
 # A test class's seconds while TestTimes.json has none for it, to deal it by; a unit test class's tests take
 # milliseconds.
 CLASS_SECONDS = 60
 UNIT_CLASS_SECONDS = 1
 SYSTEMS = ("macOS", "Windows", "Linux")
 LANES = ("gate", "report", "all")
-# The trait [Gate] gives a test (tests/Passenger.Tests/Gate.cs).
+# The trait [Gate] gives a test (tests/Pitstop.Tests/Gate.cs).
 GATE = "Gate"
 # The trait [SameOnEverySystem] gives a report class whose subject behaves the same on every system
-# (tests/Passenger.Tests/SameOnEverySystem.cs), and the one system whose report lane runs it: the others leave it out.
+# (tests/Pitstop.Tests/SameOnEverySystem.cs), and the one system whose report lane runs it: the others leave it out.
 SAME = "SameOnEverySystem"
 ONE_SYSTEM = "Linux"
-# The trait [AboutMacOS] gives a report class that reaches macOS's own behaviour (tests/Passenger.Tests/AboutMacOS.cs),
+# The trait [AboutMacOS] gives a report class that reaches macOS's own behaviour (tests/Pitstop.Tests/AboutMacOS.cs),
 # and the system whose report lane runs only those: the others stand in for it in every other report class.
 ABOUT_MAC_OS = "AboutMacOS"
 MAC_OS = "macOS"
@@ -200,7 +200,7 @@ def key(name):
 
 def unit_tests():
     """Whether the checkout has the unit tests' project."""
-    return os.path.isfile(os.path.join(UNIT_PROJECT, "Passenger.UnitTests.csproj"))
+    return os.path.isfile(os.path.join(UNIT_PROJECT, "Pitstop.UnitTests.csproj"))
 
 
 def projects(lane):

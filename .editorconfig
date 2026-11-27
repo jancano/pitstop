@@ -26,5 +26,5 @@ dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
 
 # ICorDebug, IMetaDataImport and dbgshim declared for the source generators, recovered from ICorDebugSharp
 # (THIRD_PARTY_NOTICES.md): analyzers and the comment rules pass over them, as over the generators' own output.
-[src/Passenger.Debugger.Interop/**.cs]
+[src/Pitstop.Debugger.Interop/**.cs]
 generated_code = true

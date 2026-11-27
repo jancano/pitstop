@@ -3,7 +3,7 @@
 each cloned at its commit outside any repository (pitstop-godot-sweep.noindex in the temporary folder), imported by
 Godot, then read by a headless Passenger (mcp-call, a state of its own): diagnostics of every scene, resource, script
 and shader, the main scene run and debugged headless, the project's files compared with before, and Godot's own load of
-every resource beside each mark. Every .gd is parsed by Passenger's own parser (Passenger.GodotSweep). Every Godot has a
+every resource beside each mark. Every .gd is parsed by Passenger's own parser (Pitstop.GodotSweep). Every Godot has a
 HOME of the run's own. It writes report.md and results.json in the run's folder, and opens no window.
 
 python3 -I tools/godot-sweep.py [--godot EXECUTABLE] [--folder DIR] [--skip-run] [--parse-only] [--report RUN] [NAME...]
@@ -21,7 +21,7 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETS = os.path.join(ROOT, "tools", "godot-projects.json")
-PARSER = os.path.join(ROOT, "artifacts", "bin", "Passenger.GodotSweep", "debug", "Passenger.GodotSweep")
+PARSER = os.path.join(ROOT, "artifacts", "bin", "Pitstop.GodotSweep", "debug", "Pitstop.GodotSweep")
 KINDS = (".gd", ".tscn", ".tres", ".cs", ".gdshader")
 SKIPPED = {".godot", ".git", "bin", "obj", ".generated", "node_modules", ".import", ".vs", ".idea"}
 # How long a step may take before the sweep ends it and says so.

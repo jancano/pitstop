@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The code editor control and the keymap. Draws Pitstop.Text's documents; knows nothing of
+       files, languages or the IDE around it. -->
+  <PropertyGroup>
+    <RootNamespace>Pitstop.Editor</RootNamespace>
+    <!-- UI Automation's text pattern on Windows: generated COM interfaces and P/Invokes (UiaInterop.cs). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <!-- InFlight, whose watch names background work's holds. -->
+    <ProjectReference Include="../Pitstop.Core/Pitstop.Core.csproj" />
+    <ProjectReference Include="../Pitstop.Text/Pitstop.Text.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The tests read UI Automation's providers as UI Automation calls them (UiaTextTests). -->
+    <InternalsVisibleTo Include="Pitstop.Tests" />
+    <InternalsVisibleTo Include="Pitstop.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Fonts/*.ttf" />
+  </ItemGroup>
+
+  <!-- The theme's keys as constants for the editor, the IDE and the tests (Pitstop.Analyzers' ResourceKeys), read from the
+       XAML that gives them: TokenKeys every Passenger.* key, IconKeys every Icon.* one; and StyleClasses every class the
+       styles take (Pitstop.Analyzers' StyleClassNames). -->
+  <ItemGroup>
+    <AdditionalFiles Include="../Pitstop.App/Theme/Tokens.axaml" KeysClass="TokenKeys" KeysPrefix="Passenger." />
+    <AdditionalFiles Include="../Pitstop.App/Theme/ControlThemes.axaml;../Pitstop.App/Theme/Shell.axaml"
+                     KeysClass="TokenKeys" KeysPrefix="Passenger." ClassesClass="StyleClasses" />
+    <AdditionalFiles Include="../Pitstop.App/Theme/Icons.axaml" KeysClass="IconKeys" KeysPrefix="Icon." />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="KeysClass" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="KeysPrefix" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ClassesClass" />
+  </ItemGroup>
+</Project>

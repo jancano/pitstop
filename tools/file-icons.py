@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes src/Passenger.App/Theme/FileIconSet.axaml, Passenger's file icons, from the sets the file-icons package
+"""Writes src/Pitstop.App/Theme/FileIconSet.axaml, Passenger's file icons, from the sets the file-icons package
 (https://github.com/file-icons) draws with: its own icons (ISC), MFixx (MIT) and GitHub's Octicons (MIT), plus the few
 drawn here.
 
@@ -477,7 +477,7 @@ def main():
             data, rule = outlined(key, data, places), "F0"
         lines.append(f'    <StreamGeometry x:Key="FileIcon.{key}">{rule} {data}</StreamGeometry>')
     lines.append("</ResourceDictionary>")
-    target = os.path.join(root, "src", "Passenger.App", "Theme", "FileIconSet.axaml")
+    target = os.path.join(root, "src", "Pitstop.App", "Theme", "FileIconSet.axaml")
     with open(target, "w", encoding="utf-8", newline="\n") as out:
         out.write("\n".join(lines) + "\n")
     print(f"file-icons: {len(ICONS) + len(OWN)} written to {os.path.relpath(target, root)}")

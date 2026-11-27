@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
-using Passenger.Core;
-using Passenger.Lsp;
+using Pitstop.Core;
+using Pitstop.Lsp;
 using Pitstop.ProjectSystem;
 
 namespace Pitstop.Cpp;

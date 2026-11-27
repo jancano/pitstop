@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using Passenger.Core;
+using Pitstop.Core;
 
 namespace Pitstop.CppProbe;
 

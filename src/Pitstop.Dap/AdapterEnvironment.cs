@@ -1,5 +1,5 @@
-using Passenger;
-using Passenger.Core;
+using Pitstop;
+using Pitstop.Core;
 
 namespace Pitstop.Dap;
 

@@ -34,11 +34,11 @@
     <DisableTransitiveFrameworkReferenceDownloads>true</DisableTransitiveFrameworkReferenceDownloads>
   </PropertyGroup>
 
-  <!-- Passenger's own rules (src/Passenger.Analyzers) over every project but theirs, as an analyzer alone: nothing of it
+  <!-- Passenger's own rules (src/Pitstop.Analyzers) over every project but theirs, as an analyzer alone: nothing of it
        is referenced or carried. Built for no system, whatever a publish is for: the compiler that loads it runs on the
        publishing machine, which can't load a library marked for another's processor. -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Passenger.Analyzers'">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)src/Passenger.Analyzers/Passenger.Analyzers.csproj"
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Pitstop.Analyzers'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src/Pitstop.Analyzers/Pitstop.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all"
                       GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
   </ItemGroup>
@@ -46,7 +46,7 @@
   <!-- The window's process, and the tests' that drive it: no more than 4 MB allocated between collections of the young
        generation. On a large heap such a collection pauses a little shorter than at the default's 6 MB, and a scroll's
        first pass, which promotes the lines it lays out, never pauses past a 144 Hz screen's 6.9 ms frame (#1157). -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Passenger.App' or '$(MSBuildProjectName)' == 'Passenger.Tests'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Pitstop.App' or '$(MSBuildProjectName)' == 'Pitstop.Tests'">
     <RuntimeHostConfigurationOption Include="System.GC.Gen0MaxBudget" Value="4194304" />
   </ItemGroup>
 

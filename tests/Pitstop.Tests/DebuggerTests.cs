@@ -1,0 +1,3182 @@
+using System.Diagnostics;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.VisualTree;
+using Pitstop.App.Editors;
+using Pitstop.App;
+using Pitstop.App.Debugging;
+using Pitstop.App.ToolWindows;
+using Pitstop.Core;
+using Pitstop.Dap;
+using Pitstop.Editor;
+using Pitstop.Text;
+
+namespace Pitstop.Tests;
+
+/// <summary>Debugging from the window, as a person does it: F9 on a line, Alt+F5, the stop shown where
+/// it is with its values, then stepping, resuming and stopping with the keys Rider's keymap gives
+/// them. The tests on Sum as written share it (<see cref="Sum"/>): restored once, and the build the last test left, so each
+/// one's Debug finds nothing to compile; those that end a program that would run for ever share <see cref="Sleeper"/>
+/// likewise; a test that changes the program takes a folder of its own (<see cref="Fresh"/>). A window starts no C#
+/// language server unless the test's edits go into the program debugged (Hot Reload works them out in the server), the
+/// debugger and the file's own parse answering the rest. Debugged, and the console's answers timed, so run alone.</summary>
+[Collection(Alone.Name)]
+[AboutMacOS]
+public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixture<DebuggerTests.Sleeper>, IClassFixture<RestoredFolders>, IAsyncLifetime
+{
+    private readonly Sum sum;
+    private readonly Sleeper sleeper;
+    private readonly RestoredFolders folders;
+
+    /// <summary>The test's own folder, once it has taken one.</summary>
+    private string? fresh;
+
+    public DebuggerTests(Sum sum, Sleeper sleeper, RestoredFolders folders)
+    {
+        this.sum = sum;
+        this.sleeper = sleeper;
+        this.folders = folders;
+    }
+
+    /// <summary>The shared projects as written for the test, on whichever thread it runs (a window test's, or one of its own).</summary>
+    public async ValueTask InitializeAsync()
+    {
+        await sum.ResetAsync();
+        await sleeper.ResetAsync();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (fresh is not null)
+        {
+            TestFolders.Delete(fresh);
+        }
+        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>The folder the test debugs: its own once it has taken one, else the class's Sum.</summary>
+    private string Folder => fresh ?? sum.Folder;
+
+    /// <summary>The folder's Program.cs, as the breakpoints name it.</summary>
+    private string Program => Path.Combine(PathNames.Canonical(Folder), "Program.cs");
+
+    /// <summary>A folder of the test's own, Sum as written and restored, for a test that changes the program or leaves a file
+    /// of its own there: taken the first time it is asked for, and removed as the test ends.</summary>
+    private string Fresh() => fresh ??= folders.Take("debug-", made =>
+    {
+        Sum.WriteTo(made);
+        return made;
+    });
+
+    /// <summary>A breakpoint set with F9 stops the program with its locals, keeps to its code as lines are added and
+    /// removed above it (while paused too, and below line breaks only the compiler counts), says in its hover and in
+    /// Problems whether it is bound, and on a line holding a lambda acts on the statement or inside the lambda as it
+    /// is set; a key near the top of a long debugged file costs what it does in a short one.</summary>
+    [AvaloniaFact]
+    public async Task A_breakpoint_stops_at_its_statement_as_lines_come_and_go_above_it_and_in_a_lambda_where_it_is_set()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("a breakpoint set with F9 stops the program there with its locals and the variables and frames menus copy them", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_breakpoint_set_with_F9_stops_the_program_there_with_its_locals_and_the_variables_and_frames_menus_copy_them();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a breakpoint keeps to its code as lines are added and removed above it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_breakpoint_keeps_to_its_code_as_lines_are_added_and_removed_above_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a breakpoint's hover says it is bound moved or not bound and why and problems lists those that will not stop", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_breakpoints_hover_says_it_is_bound_moved_or_not_bound_and_why_and_problems_lists_those_that_will_not_stop();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a line typed above a bound breakpoint while paused leaves it stopping at its statement", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_line_typed_above_a_bound_breakpoint_while_paused_leaves_it_stopping_at_its_statement();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a key near the top of a long debugged file costs what it does in a short one and its breakpoint and stop go with their code", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_key_near_the_top_of_a_long_debugged_file_costs_what_it_does_in_a_short_one_and_its_breakpoint_and_stop_go_with_their_code();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("below line breaks only the compiler counts a breakpoint its stop run to cursor and set next statement keep to the editor's lines", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Below_line_breaks_only_the_compiler_counts_a_breakpoint_its_stop_run_to_cursor_and_set_next_statement_keep_to_the_editors_lines();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a breakpoint run to cursor and set next statement on a line holding a lambda act on its statement", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_breakpoint_run_to_cursor_and_set_next_statement_on_a_line_holding_a_lambda_act_on_its_statement();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a breakpoint set in a lambda on its statement's line stops inside it and the gutter's mark on that line at the statement", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_breakpoint_set_in_a_lambda_on_its_statements_line_stops_inside_it_and_the_gutters_on_that_line_at_the_statement();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("edit breakpoint in a lambda sets its own and the lambda edited away leaves the line's, which stops at the statement", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Edit_breakpoint_in_a_lambda_sets_its_own_and_the_lambda_edited_away_leaves_the_lines_which_stops_at_the_statement();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a breakpoint set while debugging starts reaches the program and stops it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_breakpoint_set_while_debugging_starts_reaches_the_program_and_stops_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>Conditions typed into a breakpoint's popup, a tracepoint logging and running on, Run to Cursor past a
+    /// false condition or a tracepoint, the Breakpoints window listing, turning off, adding and keeping exception
+    /// breakpoints, an exception breakpoint stopping by its type, its condition and its handler options, and Mute
+    /// letting a run pass every breakpoint until unmuted.</summary>
+    [AvaloniaFact]
+    public async Task A_breakpoints_condition_tracepoint_exception_type_and_mute_decide_where_a_run_stops()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("a condition typed into a breakpoint's popup decides where it stops", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_condition_typed_into_a_breakpoints_popup_decides_where_it_stops();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a tracepoint set with shift click logs its message and the program runs on", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_tracepoint_set_with_shift_click_logs_its_message_and_the_program_runs_on();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("run to cursor stops at a line holding a false condition or a tracepoint each as it was after", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Run_to_cursor_stops_at_a_line_holding_a_false_condition_or_a_tracepoint_each_as_it_was_after();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("the Breakpoints window lists every breakpoint and turns one off", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.The_breakpoints_window_lists_every_breakpoint_and_turns_one_off();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("an exception breakpoint added by its type stops where that type is thrown as its condition allows and at no other type", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.An_exception_breakpoint_added_by_its_type_stops_where_that_type_is_thrown_as_its_condition_allows_and_at_no_other_type();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("an exception breakpoint's condition that cannot be told stops at the throw and says why on the breakpoint", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.An_exception_breakpoints_condition_that_cannot_be_told_stops_at_the_throw_and_says_why_on_the_breakpoint();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("an exception breakpoint's handler options stop it where the user's code leaves the exception or where it handles it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.An_exception_breakpoints_handler_options_stop_it_where_the_users_code_leaves_the_exception_or_where_it_handles_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("mute Breakpoints lets a run pass a line breakpoint and an exception breakpoint and unmuting stops it again", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Mute_breakpoints_lets_a_run_pass_a_line_breakpoint_and_an_exception_breakpoint_and_unmuting_stops_it_again();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("the Breakpoints window adds and removes exception breakpoints and the folder keeps them", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.The_breakpoints_window_adds_and_removes_exception_breakpoints_and_the_folder_keeps_them();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>Step Over from a floated Debug window, dragging the execution arrow past a loop, Smart Step Into
+    /// offering a line's calls (under its framework's symbols, and in a file nested past what the parser reads), a
+    /// step over a call listing what it returned and an exception stop naming the exception at its line.</summary>
+    [AvaloniaFact]
+    public async Task Stepping_goes_where_it_is_asked_over_a_call_into_the_call_chosen_and_past_a_loop()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("step Over pressed in the Debug window floated off steps the program and its evaluate box keeps its keys", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Step_Over_pressed_in_the_Debug_window_floated_off_steps_the_program_and_its_evaluate_box_keeps_its_keys();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("dragging the execution arrow past the loop goes on from there and skips it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Dragging_the_execution_arrow_past_the_loop_goes_on_from_there_and_skips_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("smart step into offers the calls of a line under its framework's symbols", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Smart_step_into_offers_the_calls_of_a_line_under_its_frameworks_symbols();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("smart step into in a file nested past what the parser reads steps into the first call and a watch as deep is refused", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Smart_step_into_in_a_file_nested_past_what_the_parser_reads_steps_into_the_first_call_and_a_watch_as_deep_is_refused();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a step over a call lists what it returned smart step into steps into the call chosen and an exception stop names the exception at its line", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_step_over_a_call_lists_what_it_returned_smart_step_into_steps_into_the_call_chosen_and_an_exception_stop_names_the_exception_at_its_line();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>An expression evaluated at a stop runs once; a value set in Variables, under a range, on a hidden base
+    /// field, a struct held through an interface, a nullable struct's member or what a pointer points at is the one the
+    /// program goes on with; a hash set's element greyed; watches evaluate; a string of megabytes never holds the
+    /// window; a value from the stop before a step opens to an error, never another value's members.</summary>
+    [AvaloniaFact]
+    public async Task A_value_set_or_evaluated_at_a_stop_is_the_one_the_program_goes_on_with()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("an expression evaluated at a stop runs once with the stop and a value set in variables is the one the program goes on with", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.An_expression_evaluated_at_a_stop_runs_once_with_the_stop_and_a_value_set_in_variables_is_the_one_the_program_goes_on_with();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a value set on an element listed under a range is the one the program goes on with", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_value_set_on_an_element_listed_under_a_range_is_the_one_the_program_goes_on_with();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a value set on a hidden base field changes that field and not the one hiding it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_value_set_on_a_hidden_base_field_changes_that_field_and_not_the_one_hiding_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a value set on an interface property of a struct held through the interface changes the held struct", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_value_set_on_an_interface_property_of_a_struct_held_through_the_interface_changes_the_held_struct();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a hashset element a dictionary entry's value and an explicit interface member added to watches evaluate", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_hashset_element_a_dictionary_entrys_value_and_an_explicit_interface_member_added_to_watches_evaluate();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a hashset element's set value is greyed saying why and a nullable struct's member is watched and set", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_hashset_elements_set_value_is_greyed_saying_why_and_a_nullable_structs_member_is_watched_and_set();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a value set on what a pointer points at is the one the program goes on with", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_value_set_on_what_a_pointer_points_at_is_the_one_the_program_goes_on_with();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a string of megabytes shows its start in variables and a hover without holding the window", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_string_of_megabytes_shows_its_start_in_variables_and_a_hover_without_holding_the_window();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a value from the stop before a step opens to an error never to another value's members", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_value_from_the_stop_before_a_step_opens_to_an_error_never_to_another_values_members();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>A watch waiting on a lock another thread holds runs again with every thread let go; an evaluation that
+    /// could not be stopped leaves the program paused and a step goes on once it returns; Continue pressed while a
+    /// stop's values are read shows the program running at once; a program stopped at once finds the hook's thread
+    /// waiting in its read.</summary>
+    [AvaloniaFact]
+    public async Task An_evaluation_that_waits_or_cannot_be_stopped_never_holds_the_window_or_loses_the_program()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("a watch waiting on a lock another thread holds runs again with every thread let go from its link", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_watch_waiting_on_a_lock_another_thread_holds_runs_again_with_every_thread_let_go_from_its_link();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("an evaluation that could not be stopped leaves the program paused and a step goes on once it returns", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.An_evaluation_that_could_not_be_stopped_leaves_the_program_paused_and_a_step_goes_on_once_it_returns();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("continue pressed while a stop's values are read shows the program running at once and sets it going", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Continue_pressed_while_a_stops_values_are_read_shows_the_program_running_at_once_and_sets_it_going();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a program stopped at once finds the hook's thread waiting in its read with no thread of its beside it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_program_stopped_at_once_finds_the_hooks_thread_waiting_in_its_read_with_no_thread_of_its_beside_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>What is typed into the Debug console is the program's input and Pause stops it in its loop; 100,000
+    /// coloured lines show in their colours within the console's limit; debugged in the terminal a program stops on
+    /// Main's first line, reads what is typed there and Stop ends it and what it started; a program needing a terminal
+    /// is offered one at its exception's stop.</summary>
+    [AvaloniaFact]
+    public async Task A_debugged_programs_console_takes_its_input_and_shows_its_output_and_a_terminal_is_offered_where_it_needs_one()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("what is typed into the debug console is the program's input and pause stops it where it is in its loop", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.What_is_typed_into_the_debug_console_is_the_programs_input_and_pause_stops_it_where_it_is_in_its_loop();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("debugging a program that prints 100000 coloured lines shows them in their colours free of colour codes within its limit", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Debugging_a_program_that_prints_100000_coloured_lines_shows_them_in_their_colours_free_of_colour_codes_within_its_limit();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("debugged in the terminal a program stops on Main's first line reads what is typed there and stop ends it and what it started", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Debugged_in_the_terminal_a_program_stops_on_Mains_first_line_reads_what_is_typed_there_and_stop_ends_it_and_what_it_started();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a program debugged needing a terminal is offered one at its stop on the exception and reads a key there", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_program_debugged_needing_a_terminal_is_offered_one_at_its_stop_on_the_exception_and_reads_a_key_there();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>A debugger dying with an exception leaves the window up with its words; one killed while its program
+    /// is paused takes the program with it; closing the window while debugging leaves no program, debugger or language
+    /// server; Debug Tests whose host the debugger cannot attach to ends saying why; Stop ends a session whose program
+    /// is still starting; Debug again and Stop end what a debugged program started with it.</summary>
+    [AvaloniaFact]
+    public async Task A_debug_session_ends_whole_however_it_ends_leaving_nothing_running()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("a debugger that dies with an exception leaves the window up with its words in the console and the log", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_debugger_that_dies_with_an_exception_leaves_the_window_up_with_its_words_in_the_console_and_the_log();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("a debugger killed while its program is paused takes the program with it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_debugger_killed_while_its_program_is_paused_takes_the_program_with_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("closing the window while debugging leaves no program debugger or language server running", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Closing_the_window_while_debugging_leaves_no_program_debugger_or_language_server_running();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("debug tests with a test host the debugger cannot attach to ends the session saying why", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Debug_tests_with_a_test_host_the_debugger_cannot_attach_to_ends_the_session_saying_why();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("stop ends a debug session whose program is still starting and the program with it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Stop_ends_a_debug_session_whose_program_is_still_starting_and_the_program_with_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("debug again and stop end what a debugged program started with it", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Debug_again_and_stop_end_what_a_debugged_program_started_with_it();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>Attach to Process lists .NET programs alone, stops one started outside Passenger at a breakpoint it
+    /// then reaches and Detach leaves it running to its end; closing the window while attached lets go of the program,
+    /// which runs on.</summary>
+    [AvaloniaFact]
+    public async Task Attach_to_Process_stops_a_program_started_elsewhere_and_lets_it_go_running()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("attach to process lists dotnet programs alone", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Attach_to_process_lists_dotnet_programs_alone();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("attach to process stops a program started outside pitstop at a breakpoint it then reaches and detach leaves it running to its end", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Attach_to_process_stops_a_program_started_outside_passenger_at_a_breakpoint_it_then_reaches_and_detach_leaves_it_running_to_its_end();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("closing the window while attached lets go of the program which runs on", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Closing_the_window_while_attached_lets_go_of_the_program_which_runs_on();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>A configuration is run, debugged and profiled with the same arguments, variable and working folder;
+    /// Run of a debugged configuration and Debug of a run one end the other first, as does either pressed while the
+    /// other's start is under way, leaving one copy.</summary>
+    [AvaloniaFact]
+    public async Task Run_and_Debug_of_one_configuration_take_the_same_arguments_and_leave_one_copy_running()
+    {
+        await Flow.StepApartLivedAsync<DebuggerTests>("a configuration is run debugged and profiled with the same arguments variable and working folder", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.A_configuration_is_run_debugged_and_profiled_with_the_same_arguments_variable_and_working_folder();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("run of a debugged configuration and Debug of a run one each end it first leaving one copy", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Run_of_a_debugged_configuration_and_Debug_of_a_run_one_each_end_it_first_leaving_one_copy();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+        await Flow.StepApartLivedAsync<DebuggerTests>("run or Debug pressed as the other's start of a configuration is under way stops that start leaving one copy", () => new DebuggerTests(sum, sleeper, folders), t =>
+        {
+            t.Run_or_Debug_pressed_as_the_others_start_of_a_configuration_is_under_way_stops_that_start_leaving_one_copy();
+            OpenWindows.CloseAll();
+            return Task.CompletedTask;
+        });
+    }
+
+    /// <summary>F9 and Debug stop the program at the line with its locals, in a Debug window that shares a side pane, its
+    /// next hit on Resume and the step after it; the menus of Variables and Frames copy a value, watch it and copy the stack.</summary>
+    private void A_breakpoint_set_with_F9_stops_the_program_there_with_its_locals_and_the_variables_and_frames_menus_copy_them()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Assert.Contains(new LineMark(3, LineMarkKind.Breakpoint), editor.LineMarks);
+
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused, "the program to stop at the breakpoint");
+        Ui.WaitFor(() => Value(window, "i") == "1", "the locals at the first stop");
+        Assert.Equal("0", Value(window, "total"));
+        Assert.Contains(new LineMark(3, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains(new LineMark(3, LineMarkKind.BreakpointBound), editor.LineMarks);
+        DapStackFrame top = window.BottomPanel.Debug.Frames[0];
+        Assert.Contains("<Main>$", top.Name, StringComparison.Ordinal);
+        Assert.Equal(4, top.Line);
+
+        Pitstop.App.Docking.DockHost dock = window.DockHost;
+        dock.Move(dock[ToolWindowIds.Debug], Pitstop.App.Docking.ToolAnchor.RightTop);
+        Ui.Settle();
+        Pitstop.App.ToolWindows.DebugView debug = window.DebugWindow;
+        Point origin = debug.TranslatePoint(default, window)!.Value;
+        ListBox[] lists = [.. debug.GetVisualDescendants().OfType<ListBox>().Where(l => l.IsEffectivelyVisible)];
+        Assert.Equal(2, lists.Length);
+        foreach (ListBox list in lists)
+        {
+            Point at = list.TranslatePoint(default, window)!.Value;
+            Assert.True(list.Bounds.Width >= debug.Bounds.Width / 4 && at.X + list.Bounds.Width <= origin.X + debug.Bounds.Width + 0.5,
+                $"A list of the {debug.Bounds.Width:0.#} px Debug window is {list.Bounds.Width:0.#} px wide, ending at {at.X + list.Bounds.Width:0.#} where the window ends at {origin.X + debug.Bounds.Width:0.#}");
+        }
+        dock.Move(dock[ToolWindowIds.Debug], Pitstop.App.Docking.ToolAnchor.BottomLeft);
+        Ui.Settle();
+        Assert.Contains(new LineAnnotation(0, "total: 0", LineAnnotationLook.Muted), editor.LineAnnotations);
+        Assert.Contains(new LineAnnotation(1, "i: 1", LineAnnotationLook.Muted), editor.LineAnnotations);
+        Assert.Contains(new LineAnnotation(3, "total: 0", LineAnnotationLook.Muted), editor.LineAnnotations);
+        Assert.DoesNotContain(editor.LineAnnotations, a => a.Line > 3);
+
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => Value(window, "i") == "2", "the second stop");
+        Assert.Equal("1", Value(window, "total"));
+        Assert.Contains(new LineAnnotation(1, "i: 2", LineAnnotationLook.Muted), editor.LineAnnotations);
+
+        Ui.Run(window, AppActions.StepOver);
+        Ui.WaitFor(() => editor.LineMarks.Any(m => m.Kind == LineMarkKind.ExecutionPoint && m.Line != 3), "the step");
+        Ui.WaitFor(() => Value(window, "total") == "3", "the values after the step");
+        Assert.True(window.Debugger.LastStopTimes is { Asked: "step over", ToStop: { } stepped, Frames: var framed, Locals: var listed }
+            && stepped + listed < TimeSpan.FromSeconds(1).Scaled() && framed <= listed,
+            $"The step's stop took too long to show, or was not timed: {window.Debugger.LastStopTimes}");
+        Assert.Contains("Debugging Sum: step over stopped", Ui.IdeLog(), StringComparison.Ordinal);
+
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        window.DebugWindow.VariablesList.SelectedItem = view.Tree.Rows.First(r => r.Depth == 0 && r.Name == "i");
+        Ui.ChooseFromMenu(window.DebugWindow.VariablesList, "Copy Value");
+        Ui.WaitFor(() => Ui.Clipboard(window) == "2", "the value on the clipboard");
+        Ui.ChooseFromMenu(window.DebugWindow.VariablesList, "Add to Watches");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Role == VariableRole.Watch && r.Name == "i" && r.Value == "2"), "the watch");
+        ListBox frames = window.DebugWindow.GetVisualDescendants().OfType<ListBox>().First(l => ReferenceEquals(l.ItemsSource, view.Frames));
+        Ui.ChooseFromMenu(frames, "Copy Stack");
+        Ui.WaitFor(() => Ui.Clipboard(window)?.Contains("<Main>$", StringComparison.Ordinal) == true, "the stack on the clipboard");
+        Assert.Contains($"Program.cs:{view.Frames[0].Line}", Ui.Clipboard(window), StringComparison.Ordinal);
+
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        Assert.DoesNotContain(editor.LineMarks, m => m.Kind == LineMarkKind.ExecutionPoint);
+        Assert.Contains(new LineMark(3, LineMarkKind.Breakpoint), editor.LineMarks);
+        Assert.Empty(editor.LineAnnotations);
+        window.Close();
+    }
+
+    /// <summary>The Debug window floated off into a window of its own still answers the IDE's keys pressed there: Step
+    /// Over with its Variables clicked steps the program, Find Action opens over it, its evaluate box keeps what is
+    /// typed and deleted there, Enter evaluating it, and Stop ends the session.</summary>
+    private void Step_Over_pressed_in_the_Debug_window_floated_off_steps_the_program_and_its_evaluate_box_keeps_its_keys()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused, "the program to stop at the breakpoint");
+        Ui.WaitFor(() => Value(window, "i") == "1", "the locals at the first stop");
+
+        Pitstop.App.Docking.DockHost dock = window.DockHost;
+        dock.SetMode(dock[ToolWindowIds.Debug], Pitstop.App.Docking.ToolMode.Floating);
+        Ui.Settle();
+        Window floating = Assert.Single(window.OwnedWindows);
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        Assert.Contains(window.DebugWindow, floating.GetVisualDescendants());
+        ListBox variables = window.DebugWindow.VariablesList;
+        Point row = variables.TranslatePoint(new Point(variables.Bounds.Width / 2, 12), floating)!.Value;
+        floating.MouseDown(row, MouseButton.Left);
+        floating.MouseUp(row, MouseButton.Left);
+        Ui.Settle();
+        Assert.True(variables.IsKeyboardFocusWithin, "A click on the floating Debug window's Variables left the keys elsewhere");
+
+        Ui.Run(floating, AppActions.FindAction);
+        Control popup = Assert.IsType<Pitstop.App.Navigation.ActionPopup>(window.Popup);
+        Assert.True(floating.GetVisualDescendants().Contains(popup), "Find Action, pressed in the floating Debug window, opened over the main window");
+        Ui.Press(floating, "ESCAPE");
+        Assert.False(window.IsPopupOpen);
+        Assert.True(variables.IsKeyboardFocusWithin, "Find Action, closed, left the floating Debug window's keys away from its Variables");
+
+        Ui.Run(floating, AppActions.StepOver);
+        WaitDebugging(window, () => editor.LineMarks.Any(m => m.Kind == LineMarkKind.ExecutionPoint && m.Line != 3),
+            "Step Over, pressed in the floating Debug window, to step the program");
+        Ui.WaitFor(() => Value(window, "total") == "1", "the values after the step");
+
+        Ui.Run(floating, AppActions.Evaluate);
+        TextBox evaluate = window.DebugWindow.GetVisualDescendants().OfType<TextBox>().Single(b => b.IsKeyboardFocusWithin);
+        floating.KeyTextInput("total + 100");
+        Ui.Press(floating, "BACK_SPACE");
+        Assert.Equal("total + 10", evaluate.Text);
+        Ui.Press(floating, "ENTER");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Name == "total + 10" && r.Value == "11"), "the expression typed in the floating Debug window evaluated");
+
+        Ui.Run(floating, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "Stop, pressed in the floating Debug window, to end the session");
+        window.Close();
+    }
+
+    private void Dragging_the_execution_arrow_past_the_loop_goes_on_from_there_and_skips_it()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Value(window, "i") == "1", "the stop in the loop");
+
+        // From the arrow beside line 4 to line 6, the Console.WriteLine after the loop.
+        Point from = Arrow(window, editor, 3);
+        Point to = Arrow(window, editor, 5);
+        window.MouseDown(from, MouseButton.Left);
+        window.MouseMove(to, RawInputModifiers.LeftMouseButton);
+        window.MouseUp(to, MouseButton.Left);
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(5, LineMarkKind.ExecutionPoint)), "the arrow to stand at the line after the loop");
+        Assert.Contains(new LineMark(3, LineMarkKind.BreakpointBound), editor.LineMarks);
+
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("total 0", StringComparison.Ordinal), "the loop skipped");
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the program's end");
+        window.Close();
+    }
+
+    private void A_breakpoint_keeps_to_its_code_as_lines_are_added_and_removed_above_it()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+
+        editor.GoTo(new TextPosition(0, 0));
+        editor.Focus();
+        Ui.Press(window, "Enter");
+        Ui.Press(window, "Enter");
+        Assert.Equal(5, Assert.Single(window.Debugger.Breakpoints.In(Program)).Line);
+        Assert.Contains(new LineMark(5, LineMarkKind.Breakpoint), editor.LineMarks);
+
+        Ui.Press(window, "Back");
+        Assert.Equal(4, Assert.Single(window.Debugger.Breakpoints.In(Program)).Line);
+
+        editor.GoTo(new TextPosition(4, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Assert.Empty(window.Debugger.Breakpoints.In(Program));
+        Assert.Empty(editor.LineMarks);
+        window.Close();
+    }
+
+    /// <summary>A breakpoint says its state where a person looks: the gutter's hover over one before debugging, one bound, one
+    /// the debugger moved to the nearest line with code, one on a line with no code and one on a line written after the build,
+    /// the last two with why and how to put it right; Problems' Breakpoints lists those two at their lines, and the hover
+    /// says what a breakpoint carries.</summary>
+    private void A_breakpoints_hover_says_it_is_bound_moved_or_not_bound_and_why_and_problems_lists_those_that_will_not_stop()
+    {
+        Write("Program.cs", "int total = 0;\nfor (int i = 1; i <= 3; i++)\n{\n    total += i;\n}\n\nConsole.WriteLine($\"total {total}\");\n\n"
+            + "static class Notes\n{\n    // Nothing runs here.\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        foreach (int line in (int[])[3, 5, 10])
+        {
+            editor.GoTo(new TextPosition(line, 0));
+            Ui.Run(window, AppActions.ToggleBreakpoint);
+        }
+        LineBreakpoint carrying = window.Debugger.Breakpoints.In(Program).Single(b => b.Line == 3);
+        window.Debugger.Breakpoints.Update(carrying, enabled: true, suspend: true, "i > 0", null, null);
+        Assert.Equal("Breakpoint: it binds as the program is debugged\nCondition: i > 0", Hovered(window, editor, 3));
+
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused, "the program to stop at the bound breakpoint");
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(10, LineMarkKind.BreakpointInvalid)), "the breakpoint on the line with no code refused");
+        Assert.Equal("Breakpoint, bound: the program stops here\nCondition: i > 0", Hovered(window, editor, 3));
+        Assert.Equal("Breakpoint, moved to line 7, the nearest line with code: the program stops there", Hovered(window, editor, 5));
+        string noCode = Hovered(window, editor, 10);
+        Assert.StartsWith("Breakpoint, not bound: it will not stop the program\nIts line has no code to stop at", noCode, StringComparison.Ordinal);
+        Assert.EndsWith("put the breakpoint on a line with a statement", noCode, StringComparison.Ordinal);
+
+        editor.GoTo(new TextPosition(0, 0));
+        editor.Focus();
+        Ui.Press(window, "Enter");
+        editor.GoTo(new TextPosition(0, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(0, LineMarkKind.BreakpointInvalid)), "the new line's breakpoint refused");
+        Assert.Equal("Breakpoint, not bound: it will not stop the program\nIts line was written after the program being debugged was built: restart debugging to build it",
+            Hovered(window, editor, 0));
+
+        Ui.WaitFor(() => window.BottomPanel.Problems.BreakpointProblems.Count == 2, () => $"Problems' Breakpoints listing the two that will not stop; it lists {string.Join("; ", window.BottomPanel.Problems.BreakpointProblems.Select(p => p.Message))}");
+        Assert.Equal([0, 11], window.BottomPanel.Problems.BreakpointProblems.Select(p => p.Position.Line));
+        Assert.All(window.BottomPanel.Problems.BreakpointProblems, p => Assert.Equal(Program, p.Path));
+        Assert.StartsWith("Breakpoint not bound: Its line was written after", window.BottomPanel.Problems.BreakpointProblems[0].Message, StringComparison.Ordinal);
+        Assert.StartsWith("Breakpoint not bound: Its line has no code to stop at", window.BottomPanel.Problems.BreakpointProblems[1].Message, StringComparison.Ordinal);
+        window.BottomPanel.Problems.Shown = ProblemsTab.Breakpoints;
+        Assert.Contains(window.BottomPanel.Problems.Rows, r => r.Problem?.Position.Line == 11);
+
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        Ui.WaitFor(() => window.BottomPanel.Problems.BreakpointProblems.Count == 0, "Problems' Breakpoints emptied as the session ended");
+        window.Close();
+    }
+
+    /// <summary>What the hover card says with the pointer rested on the gutter beside a line (from zero).</summary>
+    private static string Hovered(MainWindow window, CodeEditor editor, int line)
+    {
+        window.MouseMove(new Point(0, 0), RawInputModifiers.None);
+        Ui.WaitFor(() => window.Assist.HoverText is null, "the last card gone as the pointer left the editor");
+        Point at = editor.PointOf(editor.Document.Snapshot.GetLineStart(line));
+        window.MouseMove(editor.TranslatePoint(new Point(4, at.Y + editor.LineHeight / 2), window)!.Value, RawInputModifiers.None);
+        Ui.WaitFor(() => window.Assist.HoverText is not null, $"the card of the gutter beside line {line + 1}");
+        return window.Assist.HoverText!;
+    }
+
+    private void A_line_typed_above_a_bound_breakpoint_while_paused_leaves_it_stopping_at_its_statement()
+    {
+        MainWindow window = Open(hotReload: true);
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Value(window, "i") == "1", "the first stop");
+
+        editor.GoTo(new TextPosition(0, 0));
+        editor.Focus();
+        Ui.Press(window, "Enter");
+        Assert.Contains(new LineMark(4, LineMarkKind.BreakpointBound), editor.LineMarks);
+        Assert.Contains(new LineMark(4, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains(new LineAnnotation(2, "i: 1", LineAnnotationLook.Muted), editor.LineAnnotations);
+
+        editor.GoTo(new TextPosition(0, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(0, LineMarkKind.BreakpointInvalid)), "the new line's breakpoint refused");
+        Assert.Contains("written after the program being debugged was built", window.Debugger.Breakpoints.In(Program)[0].Message, StringComparison.Ordinal);
+
+        // Hot Reload applied the moved lines as it went on, so the debugger names the line as it now is.
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => editor.LineMarks.Any(m => m.Kind == LineMarkKind.ExecutionPoint), "the next stop");
+        Ui.WaitFor(() => Value(window, "i") == "2", "the loop's next turn at the breakpoint's statement, not the line after it");
+        Assert.Equal(5, window.BottomPanel.Debug.Frames[0].Line);
+        Assert.Contains(new LineMark(4, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains(new LineMark(4, LineMarkKind.BreakpointBound), editor.LineMarks);
+        Assert.Contains(new LineAnnotation(2, "i: 2", LineAnnotationLook.Muted), editor.LineAnnotations);
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>A key in a file of the program being debugged carries the build's lines through it by what it changed:
+    /// an Enter near the top of a file of 20,000 lines allocates on the UI thread about what one in a short file does,
+    /// each with a breakpoint below; the breakpoint goes down with its code, and the program, let go, stops there,
+    /// shown at its line now.</summary>
+    private void A_key_near_the_top_of_a_long_debugged_file_costs_what_it_does_in_a_short_one_and_its_breakpoint_and_stop_go_with_their_code()
+    {
+        Write("Program.cs", "int total = 0;\nfor (int i = 1; i <= 3; i++)\n{\n    total += i;\n}\nConsole.WriteLine($\"total {total} {Long.Last()} {Short.Last()}\");\n");
+        Write("Long.cs", "static class Long\n{\n" + string.Concat(Enumerable.Range(0, 20_000).Select(i => $"    public const int Value{i} = {i};\n"))
+            + "\n    public static int Last()\n    {\n        return Value0;\n    }\n}\n");
+        Write("Short.cs", "static class Short\n{\n    public const int One = 1;\n\n    public static int Last()\n    {\n        return One;\n    }\n}\n");
+        string longFile = Path.Combine(PathNames.Canonical(Folder), "Long.cs");
+        string shortFile = Path.Combine(PathNames.Canonical(Folder), "Short.cs");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused, "the stop in the loop");
+        int longReturn = Breakpoint(longFile, "return Value0;");
+        int shortReturn = Breakpoint(shortFile, "return One;");
+        Ui.Settle();
+
+        const int Keys = 5;
+        long inShort = Enters(shortFile);
+        long inLong = Enters(longFile);
+        TestContext.Current.TestOutputHelper?.WriteLine($"An Enter in the short file allocated {inShort / 1024} KB on the UI thread, near the top of 20,000 lines {inLong / 1024} KB");
+        Assert.True(inLong <= inShort + (32 * 1024),
+            $"An Enter near the top of a debugged file of 20,000 lines allocated {inLong / 1024} KB on the UI thread, against {inShort / 1024} KB in a short one: the build's lines were carried through it one by one");
+        Assert.Equal(longReturn + Keys, Assert.Single(window.Debugger.Breakpoints.In(longFile)).Line);
+        Assert.Equal(shortReturn + Keys, Assert.Single(window.Debugger.Breakpoints.In(shortFile)).Line);
+
+        window.OpenFile(Program);
+        Ui.Settle();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => window.EditorArea.Active?.Path == longFile
+            && window.EditorArea.CodeEditor.LineMarks.Contains(new LineMark(longReturn + Keys, LineMarkKind.ExecutionPoint)), "the stop at Long's return, where its line is now");
+        Assert.Contains(new LineMark(longReturn + Keys, LineMarkKind.BreakpointBound), window.EditorArea.CodeEditor.LineMarks);
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+
+        // A breakpoint on a statement of a file, bound: its line.
+        int Breakpoint(string file, string statement)
+        {
+            window.OpenFile(file);
+            Ui.Settle();
+            CodeEditor editor = window.EditorArea.CodeEditor;
+            int line = editor.Document.Snapshot.GetLineFromOffset(editor.Document.Snapshot.ToString().IndexOf(statement, StringComparison.Ordinal));
+            editor.GoTo(new TextPosition(line, 8));
+            Ui.Run(window, AppActions.ToggleBreakpoint);
+            Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(line, LineMarkKind.BreakpointBound)), $"the breakpoint at {Path.GetFileName(file)}'s {statement} bound");
+            return line;
+        }
+
+        // The least an Enter at the top of a file allocated on the UI thread, of a few.
+        long Enters(string file)
+        {
+            window.OpenFile(file);
+            Ui.Settle();
+            CodeEditor shown = window.EditorArea.CodeEditor;
+            shown.GoTo(new TextPosition(0, 0));
+            shown.Focus();
+            Ui.Settle();
+            long least = long.MaxValue;
+            for (int i = 0; i < Keys; i++)
+            {
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+                window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+                least = Math.Min(least, GC.GetAllocatedBytesForCurrentThread() - before);
+                Ui.Settle();
+            }
+            return least;
+        }
+    }
+
+    /// <summary>Roslyn's compiler ends a line at each break in the comment that the editor does not, so the PDB's lines run four
+    /// ahead of the editor's below it: a breakpoint stops at its own line, the arrow, the frame's row and an agent's place say
+    /// it, a line typed above while paused moves them with their code, and Run to Cursor and Set Next Statement go to the
+    /// lines asked.</summary>
+    private void Below_line_breaks_only_the_compiler_counts_a_breakpoint_its_stop_run_to_cursor_and_set_next_statement_keep_to_the_editors_lines()
+    {
+        Write("Program.cs", $"int total = 0;\n/* Pasted:{(char)0x2028}a{(char)0x2029}b{(char)0x85}c\rd */\nfor (int i = 1; i <= 3; i++)\n{{\n    total += i;\n}}\n"
+            + "total *= 2;\nConsole.WriteLine($\"total {total}\");\n");
+        MainWindow window = Open(hotReload: true);
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(4, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Value(window, "i") == "1", "the stop at the breakpoint on total += i");
+        Assert.Equal("0", Value(window, "total"));
+        Assert.Contains(new LineMark(4, LineMarkKind.BreakpointBound), editor.LineMarks);
+        Assert.Contains(new LineMark(4, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains(new LineAnnotation(4, "total: 0", LineAnnotationLook.Muted), editor.LineAnnotations);
+        // The debugger names the compiler's line 9; the frame's row, and the stack copied from it, the editor's 5.
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        Assert.Equal(9, view.Frames[0].Line);
+        ListBox frames = window.DebugWindow.GetVisualDescendants().OfType<ListBox>().First(l => ReferenceEquals(l.ItemsSource, view.Frames));
+        Ui.ChooseFromMenu(frames, "Copy Stack");
+        Ui.WaitFor(() => Ui.Clipboard(window)?.Contains("<Main>$", StringComparison.Ordinal) == true, "the stack on the clipboard");
+        Assert.Contains("Program.cs:5", Ui.Clipboard(window), StringComparison.Ordinal);
+        Pitstop.App.Mcp.DebugSnapshot told = (Pitstop.App.Mcp.DebugSnapshot)Ui.Await(new Pitstop.App.Mcp.PitstopTools(window).GetDebugState(), "the stop as an agent is told it");
+        Assert.StartsWith("Program.cs:5:", told.Location, StringComparison.Ordinal);
+        Assert.EndsWith("at Program.cs:5", told.Frames[0], StringComparison.Ordinal);
+
+        editor.GoTo(new TextPosition(0, 0));
+        editor.Focus();
+        Ui.Press(window, "Enter");
+        Assert.Contains(new LineMark(5, LineMarkKind.BreakpointBound), editor.LineMarks);
+        Assert.Contains(new LineMark(5, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => Value(window, "i") == "2", "the loop's next turn at the breakpoint's statement");
+        Assert.Equal(10, view.Frames[0].Line);
+        Assert.Contains(new LineMark(5, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains(new LineMark(5, LineMarkKind.BreakpointBound), editor.LineMarks);
+
+        editor.GoTo(new TextPosition(5, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        editor.GoTo(new TextPosition(7, 0));
+        Ui.Run(window, AppActions.RunToCursor);
+        WaitDebugging(window, () => Value(window, "total") == "6" && editor.LineMarks.Contains(new LineMark(7, LineMarkKind.ExecutionPoint)), "Run to Cursor's stop at total *= 2");
+
+        editor.GoTo(new TextPosition(8, 0));
+        Ui.Run(window, AppActions.SetNextStatement);
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(8, LineMarkKind.ExecutionPoint)), "the arrow at the WriteLine Set Next Statement chose");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => view.Console.Document.Snapshot.ToString().Contains("total 6", StringComparison.Ordinal), "the program to print the total it had, not doubled");
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the program's end");
+        window.Close();
+    }
+
+    /// <summary>A line holding a lambda after its statement begins is the statement's: a breakpoint on a query never read
+    /// stops there, Run to Cursor onto a count with a lambda stops at the count rather than in the lambda, and Set Next
+    /// Statement goes back to one, the program then counting again and stopping at the breakpoint again.</summary>
+    private void A_breakpoint_run_to_cursor_and_set_next_statement_on_a_line_holding_a_lambda_act_on_its_statement()
+    {
+        Write("Program.cs", "int[] items = [1, 2, 3, 4, 5];\nint count = items.Count(i => i > 2);\nIEnumerable<int> big = items.Where(i => i > 3);\n"
+            + "Console.WriteLine($\"count {count}\");\ncount = items.Count(i => i > 4);\nConsole.WriteLine($\"then {count}\");\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(2, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        DebugSession session = window.Debugger.Session!;
+        WaitDebugging(window, () => session.State == DebugState.Paused && Value(window, "count") == "3", "the stop at the query never read");
+        Assert.Contains(new LineMark(2, LineMarkKind.ExecutionPoint), editor.LineMarks);
+
+        editor.GoTo(new TextPosition(4, 0));
+        Ui.Run(window, AppActions.RunToCursor);
+        WaitDebugging(window, () => session is { State: DebugState.Paused, Stops: 2 }, "Run to Cursor's stop at the second count");
+        Assert.Contains(new LineMark(4, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Null(Value(window, "i"));
+        Assert.Contains("<Main>$", window.BottomPanel.Debug.Frames[0].Name, StringComparison.Ordinal);
+
+        editor.GoTo(new TextPosition(1, 0));
+        Ui.Run(window, AppActions.SetNextStatement);
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(1, LineMarkKind.ExecutionPoint)), "the arrow at the first count, where Set Next Statement went back");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => session is { State: DebugState.Paused, Stops: 4 }, "the breakpoint's stop at the query again");
+        Assert.Contains(new LineMark(2, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => session.State == DebugState.Ended, "the program to run to its end without stopping in a lambda");
+        Assert.Contains("count 3\nthen 1\n", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>F9 with the caret in a lambda written on its statement's line sets the lambda's own breakpoint beside the
+    /// gutter's for the line, the lambda tinted, both carried down by a line typed above and named in the Breakpoints window,
+    /// the lambda's by its column; the gutter's menu offers the line and the lambda and takes either away or sets it again.
+    /// The gutter's stops once at the statement, and the lambda's inside the lambda each time it runs.</summary>
+    private void A_breakpoint_set_in_a_lambda_on_its_statements_line_stops_inside_it_and_the_gutters_on_that_line_at_the_statement()
+    {
+        const string Counting = "int count = items.Count(i => i > 1);";
+        int body = Counting.IndexOf("i > 1", StringComparison.Ordinal);
+        Write("Program.cs", $"int[] items = [1, 2, 3];\n{Counting}\nConsole.WriteLine($\"count {{count}}\");\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Point gutter = Gutter(window, editor, 1);
+        window.MouseDown(gutter, MouseButton.Left);
+        window.MouseUp(gutter, MouseButton.Left);
+        editor.GoTo(new TextPosition(1, body + 2));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        editor.GoTo(new TextPosition(0, 0));
+        window.KeyTextInput("Console.WriteLine(\"counting\");");
+        Ui.Press(window, "Enter");
+        Ui.Settle();
+        string[] listed = ["Program.cs:3", $"Program.cs:3:{body + 1}"];
+        Assert.Equal(listed, window.Debugger.Breakpoints.In(Program).Select(b => b.Location));
+        Assert.Contains(new LineMark(2, LineMarkKind.Breakpoint), editor.LineMarks);
+        Assert.Equal("i => i > 1", Tinted(editor, 2));
+
+        RightClick(window, Gutter(window, editor, 2));
+        ContextMenu menu = window.OpenContextMenu ?? throw new Xunit.Sdk.XunitException("A right-click on the gutter of a line holding a lambda opened no menu");
+        Assert.Equal([("Line", true), ("i => i > 1", true)], menu.Items.OfType<MenuItem>().Take(2).Select(m => ((string?)m.Header, m.IsChecked)));
+        Ui.Choose(menu, "i => i > 1");
+        Assert.Equal(["Program.cs:3"], window.Debugger.Breakpoints.In(Program).Select(b => b.Location));
+        Assert.Null(Tinted(editor, 2));
+        RightClick(window, Gutter(window, editor, 2));
+        Ui.Choose(window.OpenContextMenu, "i => i > 1");
+        Ui.Run(window, AppActions.ViewBreakpoints);
+        BreakpointsWindow breakpoints = Assert.IsType<BreakpointsWindow>(window.Popup);
+        Assert.Equal([.. listed, ExceptionBreakpoint.AnyException, BindingErrorBreakpoint.AnyBindingError, ScriptErrorBreakpoint.AnyScriptError], breakpoints.Listed.Select(b => b.Location));
+        Ui.Press(window, "Escape");
+
+        StartDebugging(window);
+        DebugSession session = window.Debugger.Session!;
+        WaitDebugging(window, () => session is { State: DebugState.Paused, Stops: 1 } && window.BottomPanel.Debug.Frames.Count > 0, "the gutter's stop at the count");
+        Assert.Contains(new LineMark(2, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains("<Main>$", window.BottomPanel.Debug.Frames[0].Name, StringComparison.Ordinal);
+        Assert.Equal(1, window.BottomPanel.Debug.Frames[0].Column);
+        foreach (string i in new[] { "1", "2", "3" })
+        {
+            int stops = session.Stops;
+            Ui.Run(window, AppActions.Resume);
+            WaitDebugging(window, () => session.State == DebugState.Paused && session.Stops > stops && Value(window, "i") == i, $"the stop inside the lambda with i at {i}");
+            DapStackFrame top = window.BottomPanel.Debug.Frames[0];
+            Assert.True(top.Name.EndsWith("!Program.<Main>$.lambda(int i)", StringComparison.Ordinal) && top.Column == body + 1,
+                $"The lambda's breakpoint stopped in {top.Name} at column {top.Column}, not inside the lambda at column {body + 1}");
+        }
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => session.State == DebugState.Ended, "the program to run to its end, the lambda run three times");
+        Assert.Contains("count 2", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>Edit Breakpoint with the caret in a lambda without a breakpoint of its own sets the lambda's to edit, beside
+    /// the line's. A comment left open above as it is typed leaves it the lambda's, and the lambda edited away makes it the
+    /// line's, listed by its line, which stops once at the statement.</summary>
+    private void Edit_breakpoint_in_a_lambda_sets_its_own_and_the_lambda_edited_away_leaves_the_lines_which_stops_at_the_statement()
+    {
+        const string Counting = "int count = items.Count(i => i > 1);";
+        int body = Counting.IndexOf("i > 1", StringComparison.Ordinal);
+        string inside = $"Program.cs:2:{body + 1}";
+        Write("Program.cs", $"int[] items = [1, 2, 3];\n{Counting}\nConsole.WriteLine($\"count {{count}}\");\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Point gutter = Gutter(window, editor, 1);
+        window.MouseDown(gutter, MouseButton.Left);
+        window.MouseUp(gutter, MouseButton.Left);
+        editor.GoTo(new TextPosition(1, body + 2));
+        Ui.Run(window, AppActions.EditBreakpoint);
+        BreakpointPopup popup = Assert.IsType<BreakpointPopup>(window.Popup);
+        Ui.Settle();
+        Assert.Equal(inside, popup.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains(StyleClasses.PaneTitle)).Text);
+        Ui.Press(window, "Enter");
+        Assert.Equal(["Program.cs:2", inside], window.Debugger.Breakpoints.In(Program).Select(b => b.Location));
+        RightClick(window, gutter);
+        Ui.Choose(window.OpenContextMenu, "Line");
+        Assert.Equal([inside], window.Debugger.Breakpoints.In(Program).Select(b => b.Location));
+
+        editor.GoTo(new TextPosition(0, 0));
+        window.KeyTextInput("/*");
+        Ui.Settle();
+        Assert.True(window.Debugger.Breakpoints.In(Program).Select(b => b.Location).SequenceEqual([inside]),
+            $"A comment left open above the lambda made its breakpoint {string.Join(", ", window.Debugger.Breakpoints.In(Program).Select(b => b.Location))}");
+        Ui.Press(window, "Back");
+        Ui.Press(window, "Back");
+        Ui.Settle();
+        Assert.Equal("i => i > 1", Tinted(editor, 1));
+        Typing.Replace(window, "Count(i => i > 1)", "Length");
+        Assert.Equal(["Program.cs:2"], window.Debugger.Breakpoints.In(Program).Select(b => b.Location));
+        Assert.Contains(new LineMark(1, LineMarkKind.Breakpoint), editor.LineMarks);
+        Ui.Run(window, AppActions.ViewBreakpoints);
+        BreakpointsWindow breakpoints = Assert.IsType<BreakpointsWindow>(window.Popup);
+        Assert.Equal(["Program.cs:2", ExceptionBreakpoint.AnyException, BindingErrorBreakpoint.AnyBindingError, ScriptErrorBreakpoint.AnyScriptError], breakpoints.Listed.Select(b => b.Location));
+        Ui.Press(window, "Escape");
+
+        StartDebugging(window);
+        DebugSession session = window.Debugger.Session!;
+        WaitDebugging(window, () => session is { State: DebugState.Paused, Stops: 1 } && window.BottomPanel.Debug.Frames.Count > 0, "the stop at the statement");
+        Assert.Contains(new LineMark(1, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.Contains("<Main>$", window.BottomPanel.Debug.Frames[0].Name, StringComparison.Ordinal);
+        Assert.Equal(1, window.BottomPanel.Debug.Frames[0].Column);
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => session.State == DebugState.Ended, "the program to run to its end, stopping nowhere else");
+        Assert.Equal(1, session.Stops);
+        Assert.Contains("count 3", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    private static void RightClick(MainWindow window, Point at)
+    {
+        window.MouseDown(at, MouseButton.Right);
+        window.MouseUp(at, MouseButton.Right);
+        Ui.Settle();
+    }
+
+    /// <summary>What a line's breakpoint on part of it tints there, as the editor shows it; null where none does.</summary>
+    private static string? Tinted(CodeEditor editor, int line) =>
+        editor.LineMarks.FirstOrDefault(m => m.Line == line && m.Range is { Length: > 0 }) is { Range: { } range }
+            ? editor.Document.Snapshot.GetText(range.Start, range.Length)
+            : null;
+
+    /// <summary>Run to Cursor stops at its line whatever breakpoint stands there, one whose condition is false and a
+    /// tracepoint alike, each as it was once the stop is made: the condition passed by on the loop's later turns.</summary>
+    private void Run_to_cursor_stops_at_a_line_holding_a_false_condition_or_a_tracepoint_each_as_it_was_after()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(0, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.EditBreakpoint);
+        Ui.Settle();
+        window.KeyTextInput("total > 100");
+        Ui.Press(window, "Enter");
+        Point gutter = Gutter(window, editor, 5);
+        window.MouseDown(gutter, MouseButton.Left, RawInputModifiers.Shift);
+        window.MouseUp(gutter, MouseButton.Left, RawInputModifiers.Shift);
+        Ui.Settle();
+        Assert.Contains(new LineMark(3, LineMarkKind.Breakpoint, Conditional: true), editor.LineMarks);
+        Assert.Contains(new LineMark(5, LineMarkKind.Breakpoint, Tracepoint: true), editor.LineMarks);
+
+        StartDebugging(window);
+        DebugSession session = window.Debugger.Session!;
+        WaitDebugging(window, () => session is { State: DebugState.Paused, Stops: 1 }, "the stop at the first line");
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.RunToCursor);
+        WaitDebugging(window, () => session is { State: DebugState.Paused, Stops: 2 }, "Run to Cursor's stop at the line whose condition is false");
+        Assert.Contains(new LineMark(3, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Ui.WaitFor(() => (Value(window, "i"), Value(window, "total")) == ("1", "0"),
+            () => $"the stop's locals as the loop's first turn left them, where i is {Value(window, "i") ?? "not listed"} and total {Value(window, "total") ?? "not listed"}");
+
+        editor.GoTo(new TextPosition(5, 0));
+        Ui.Run(window, AppActions.RunToCursor);
+        WaitDebugging(window, () => session is { State: DebugState.Paused, Stops: 3 }, "Run to Cursor's stop at the tracepoint");
+        Assert.Contains(new LineMark(5, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Ui.WaitFor(() => Value(window, "total") == "6", () => $"the tracepoint's stop's total, listed as {Value(window, "total") ?? "nothing"}");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => session.State == DebugState.Ended, "the program to run to its end");
+        Assert.Contains("total 6", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    private void A_configuration_is_run_debugged_and_profiled_with_the_same_arguments_variable_and_working_folder()
+    {
+        Write("Program.cs", "Console.WriteLine($\"seen [{string.Join(\"|\", args)}] {Environment.GetEnvironmentVariable(\"PITSTOP_SEEN\")} in {Environment.CurrentDirectory}\");\n");
+        Write("Properties/launchSettings.json", """
+            { "profiles": { "Seen": { "commandName": "Project", "commandLineArgs": "first \"second word\"", "workingDirectory": "work dir",
+              "environmentVariables": { "PITSTOP_SEEN": "yes, seen" } } } }
+            """);
+        string work = Path.GetDirectoryName(Write("work dir/.keep", string.Empty))!;
+        string settings = TestFolders.Create("settings-");
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings, StartsLanguageServer = false };
+        window.Show();
+        window.OpenFolder(Fresh());
+        Ui.Settle();
+        try
+        {
+            Assert.Equal("Sum: Seen", window.Configuration?.Name);
+            string seen = $"seen [first|second word] yes, seen in {PathNames.Canonical(work)}";
+
+            Ui.Launched(window, window.RunAsync(), "the run to start", TimeSpan.FromMinutes(2));
+            Ui.WaitFor(() => window.Runner.Ended.IsCompleted, "the run to end");
+            string ran = window.BottomPanel.Run.Document.Snapshot.ToString();
+            Assert.True(ran.Contains(seen, StringComparison.Ordinal), $"Run did not give the program what Debug and Profile give it, {seen}:\n{ran}");
+
+            Ui.Launched(window, window.DebugAsync(), "the debug session to start", TimeSpan.FromMinutes(2));
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the debugged program to end");
+            string debugged = window.BottomPanel.Debug.Console.Document.Snapshot.ToString();
+            Assert.True(debugged.Contains(seen, StringComparison.Ordinal), $"Debug did not give the program what Run and Profile give it, {seen}:\n{debugged}");
+
+            Ui.Launched(window, window.ProfileAsync(), "the profiled run to start", TimeSpan.FromMinutes(2));
+            Ui.WaitFor(() => window.ProfilerView.Snapshot is not null, "the profiled program to end", TimeSpan.FromMinutes(2));
+            string profiled = window.BottomPanel.Run.Document.Snapshot.ToString();
+            Assert.True(profiled.Contains(seen, StringComparison.Ordinal), $"Profile did not give the program what Run and Debug give it, {seen}:\n{profiled}");
+        }
+        finally
+        {
+            window.Close();
+            TestFolders.Delete(settings);
+        }
+    }
+
+    /// <summary>Smart Step Into reads the line it stopped at as the project compiles it: a line of calls under
+    /// #if NET8_0_OR_GREATER offers its calls in the order they run, and Enter steps into the one chosen.</summary>
+    private void Smart_step_into_offers_the_calls_of_a_line_under_its_frameworks_symbols()
+    {
+        Write("Program.cs", "int nested = 0;\n#if NET8_0_OR_GREATER\nnested = Outer(Inner());\n#endif\nConsole.WriteLine(nested);\n\n"
+            + "static int Inner() => 20;\nstatic int Outer(int value)\n{\n    return value + 1;\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(2, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused && editor.LineMarks.Contains(new LineMark(2, LineMarkKind.ExecutionPoint)),
+            "the stop at the line of calls under #if NET8_0_OR_GREATER");
+
+        editor.Focus();
+        Ui.Run(window, AppActions.SmartStepInto);
+        Ui.WaitFor(() => editor.IsChoosing, () => $"the calls of the line under #if NET8_0_OR_GREATER to be offered: {window.Status}");
+        Assert.Equal(["Inner", "Outer"], editor.Choices.Select(r => editor.Document.Snapshot.GetText(r.Start, r.Length)));
+        Ui.Press(window, "Right");
+        Ui.Press(window, "Enter");
+        Ui.WaitFor(() => Value(window, "value") == "20", "the stop in Outer, given what Inner returned");
+        Assert.Contains(new LineMark(8, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>Smart Step Into in a file whose text, written since its build, nests past what the parser reads (interpolations
+    /// within interpolations, where reading it ended the adapter) has no calls placed to choose between, so it steps into the
+    /// first, Inner, as Step Into does; a watch nested as deep is refused saying so, and the program stays paused.</summary>
+    private void Smart_step_into_in_a_file_nested_past_what_the_parser_reads_steps_into_the_first_call_and_a_watch_as_deep_is_refused()
+    {
+        const string Calls = "int nested = Outer(Inner());\nConsole.WriteLine(nested);\n\nstatic int Inner() => 20;\nstatic int Outer(int value)\n{\n    return value + 1;\n}\n";
+        string deep = string.Concat(Enumerable.Repeat("$\"{", 5_000)) + "0" + string.Concat(Enumerable.Repeat("}\"", 5_000));
+        Write("Program.cs", Calls);
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(0, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused && editor.LineMarks.Contains(new LineMark(0, LineMarkKind.ExecutionPoint)),
+            "the stop at the line of calls");
+
+        Write("Program.cs", Calls + $"\nstatic class Deep\n{{\n    public static string Text = {deep};\n}}\n");
+        Ui.WaitFor(() => editor.Document.Snapshot.Length > Calls.Length, "the file's deep text in its editor");
+        editor.Focus();
+        Ui.Run(window, AppActions.SmartStepInto);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused && editor.LineMarks.Contains(new LineMark(3, LineMarkKind.ExecutionPoint)),
+            "the step into Inner, the line's first call");
+        Assert.False(editor.IsChoosing, "Smart Step Into offered calls placed in a file too deep to read");
+
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput(deep);
+        Ui.Press(window, OperatingSystem.IsMacOS() ? "meta shift Enter" : "control shift Enter");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Role == VariableRole.Watch && r.Value?.Contains("The expression nests deeper than the debugger reads", StringComparison.Ordinal) == true),
+            () => $"the watch too deep to read refused saying so: {string.Join("; ", view.Tree.Rows.Where(r => r.Role == VariableRole.Watch).Select(r => r.Value))}");
+        Assert.Equal(DebugState.Paused, window.Debugger.Session?.State);
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>One program of calls stepped through: a step over a call lists what it returned at the top of Variables, which
+    /// a watch names and the next step's calls replace; then Smart Step Into marks the next line's calls in the order they
+    /// run, and Enter steps into the one chosen. Resumed, the program ends in an exception the runtime throws, which stops it
+    /// at the line that threw it, named there and in the status bar, and is listed in Variables as $exception, which opens
+    /// to its members and a watch reads.</summary>
+    private void A_step_over_a_call_lists_what_it_returned_smart_step_into_steps_into_the_call_chosen_and_an_exception_stop_names_the_exception_at_its_line()
+    {
+        Write("Program.cs", "int total = Add(2, 3);\nConsole.WriteLine(Describe(total));\nint nested = Outer(Inner());\nConsole.WriteLine(nested);\nConsole.WriteLine(\"done\");\n"
+            + "int[] values = [1, 2];\nint index = 5;\nConsole.WriteLine(values[index]);\n\n"
+            + "static int Add(int a, int b) => a + b;\nstatic string Describe(int value) => $\"total {value}\";\n"
+            + "static int Inner() => 20;\nstatic int Outer(int value)\n{\n    return value + 1;\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(0, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused && Row(window, "total") is not null, "the stop before the call");
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        Assert.DoesNotContain(view.Tree.Rows, r => r.IsReturnValue);
+
+        Ui.Run(window, AppActions.StepOver);
+        Ui.WaitFor(() => Value(window, "Add() returned") == "5", "what the call returned, in Variables");
+        VariableNode returned = view.Tree.Rows[0];
+        Assert.Equal(("Add() returned", "int", "$ReturnValue"), (returned.Name, returned.Type, returned.Expression));
+        Assert.True(returned.IsReturnValue, "The call's value was not shown as one");
+
+        window.DebugWindow.VariablesList.SelectedItem = returned;
+        Ui.ChooseFromMenu(window.DebugWindow.VariablesList, "Add to Watches");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Role == VariableRole.Watch && r.Name == "$ReturnValue" && r.Value == "5"), "the watch of the value returned");
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput("$returnvalue * 2");
+        Ui.Press(window, OperatingSystem.IsMacOS() ? "meta shift Enter" : "control shift Enter");
+        Watched(view, "$returnvalue * 2", "10", "a watch computed from the value returned");
+
+        Ui.Run(window, AppActions.StepOver);
+        Shows(view, "Describe() returned", "\"total 5\"", "the next step's value");
+        Assert.DoesNotContain(view.Tree.Rows, r => r.Name == "Add() returned");
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(2, LineMarkKind.ExecutionPoint)), "the step to the line of calls");
+
+        // The keys go to the editor, back from the evaluate box.
+        editor.Focus();
+        Ui.Settle();
+        Ui.Run(window, AppActions.SmartStepInto);
+        Ui.WaitFor(() => editor.IsChoosing, "the line's calls to be offered");
+        Assert.Equal(["Inner", "Outer"], editor.Choices.Select(r => editor.Document.Snapshot.GetText(r.Start, r.Length)));
+        Assert.Equal(0, editor.Chosen);
+        Ui.Press(window, "Escape");
+        Assert.False(editor.IsChoosing, "Escape did not leave Smart Step Into");
+        Assert.Equal(DebugState.Paused, window.Debugger.Session?.State);
+        Assert.Contains(new LineMark(2, LineMarkKind.ExecutionPoint), editor.LineMarks);
+
+        Ui.Run(window, AppActions.SmartStepInto);
+        Ui.WaitFor(() => editor.IsChoosing, "the line's calls offered again");
+        Ui.Press(window, "Right");
+        Assert.Equal(1, editor.Chosen);
+        Ui.Press(window, "Tab");
+        Assert.Equal(0, editor.Chosen);
+        Ui.Press(window, "shift Tab");
+        Assert.Equal(1, editor.Chosen);
+        Ui.Press(window, "Enter");
+        Ui.WaitFor(() => Value(window, "value") == "20", "the stop in Outer, given what Inner returned");
+        Assert.False(editor.IsChoosing);
+        Assert.Contains(new LineMark(13, LineMarkKind.ExecutionPoint), editor.LineMarks);
+
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => editor.LineAnnotations.Any(a => a.Look == LineAnnotationLook.ErrorOnGround), "the exception at its line");
+        LineAnnotation thrown = Assert.Single(editor.LineAnnotations, a => a.Look == LineAnnotationLook.ErrorOnGround);
+        Assert.Equal(7, thrown.Line);
+        Assert.StartsWith("IndexOutOfRangeException", thrown.Text, StringComparison.Ordinal);
+        Assert.Contains(new LineAnnotation(7, "index: 5", LineAnnotationLook.Muted), editor.LineAnnotations);
+        Assert.Contains("IndexOutOfRangeException", window.Status, StringComparison.Ordinal);
+
+        WaitDebugging(window, () => Row(window, "$exception") is not null, "the exception in Variables");
+        VariableNode exception = Row(window, "$exception")!;
+        Assert.True(exception.IsException);
+        Assert.Equal("System.IndexOutOfRangeException", exception.Type);
+        Assert.True(exception.HasChildren, "The exception does not open to its members");
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput("$exception.Message");
+        Ui.Press(window, OperatingSystem.IsMacOS() ? "meta shift Enter" : "control shift Enter");
+        Watched(view, "$exception.Message", "\"Index was outside the bounds of the array.\"", "the watch of the exception's message");
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>A watch of a property read under a lock another thread holds never ends while that thread is held, and says
+    /// it probably needs another thread to run, as it does again when the values are shown again, nothing having run that
+    /// thread; its link runs it again with every thread let go, giving its value, after which a watch on that thread works.</summary>
+    private void A_watch_waiting_on_a_lock_another_thread_holds_runs_again_with_every_thread_let_go_from_its_link()
+    {
+        Write("Program.cs", "Locked locked = new();\nLocked.Hold();\nConsole.WriteLine(\"locked\");\nConsole.WriteLine(locked.Value);\n\n"
+            + "sealed class Locked\n{\n    private static readonly object Gate = new();\n    public static bool LetGo;\n\n"
+            + "    public string Value\n    {\n        get\n        {\n            lock (Gate)\n            {\n                return \"read under the lock\";\n            }\n        }\n    }\n\n"
+            + "    public static void Hold()\n    {\n        using ManualResetEventSlim held = new();\n        Thread holder = new(() =>\n        {\n"
+            + "            lock (Gate)\n            {\n                held.Set();\n                Thread.Sleep(1000);\n                LetGo = true;\n            }\n"
+            + "        }) { IsBackground = true };\n        holder.Start();\n        held.Wait();\n    }\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(2, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused && Row(window, "locked") is not null, "the stop while the other thread holds the lock");
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput("locked.Value");
+        Ui.Press(window, OperatingSystem.IsMacOS() ? "meta shift Enter" : "control shift Enter");
+        Ui.WaitFor(() => Watch(view) is { NeedsThreads: true }, () => $"the watch to say it needs another thread to run: {Watch(view)?.Value}", TimeSpan.FromSeconds(30));
+        Assert.Contains("needs another thread", Watch(view)!.Value, StringComparison.Ordinal);
+        // Shown again, the watch is evaluated as before, with the other threads held: still waiting, nothing ran the holder.
+        VariableNode first = Watch(view)!;
+        Ui.Await(window.Debugger.RefreshAsync(), "the values shown again");
+        Ui.WaitFor(() => Watch(view) is { } again && again != first, "the watch evaluated again");
+        Assert.True(Watch(view) is { NeedsThreads: true }, $"Shown again, the watch read {Watch(view)?.Value}, where nothing was to let the thread holding the lock run");
+
+        Control row = Ui.Row(window.DebugWindow.VariablesList, Watch(view)!);
+        Button link = row.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, VariablesList.RunWithThreads));
+        Ui.Click(link);
+        Ui.WaitFor(() => Watch(view)?.Value == "\"read under the lock\"", () => $"the watch run with every thread let go to give its value: {Watch(view)?.Value}", TimeSpan.FromSeconds(30));
+        Assert.False(Watch(view)!.NeedsThreads, "The value read with every thread let go still offered to run again");
+
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput("Locked.LetGo");
+        Ui.Press(window, OperatingSystem.IsMacOS() ? "meta shift Enter" : "control shift Enter");
+        Watched(view, "Locked.LetGo", "true", "a later watch on the thread, once the other has let go of the lock");
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+
+        static VariableNode? Watch(Pitstop.App.ToolWindows.DebugModel view) => view.Tree.Rows.FirstOrDefault(r => r.Role == VariableRole.Watch && r.Name == "locked.Value");
+    }
+
+    private void A_condition_typed_into_a_breakpoints_popup_decides_where_it_stops()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.EditBreakpoint);
+        Assert.IsType<BreakpointPopup>(window.Popup);
+        Ui.Settle();
+        window.KeyTextInput("i == 2");
+        Ui.Press(window, "Enter");
+        Assert.Null(window.Popup);
+        LineBreakpoint breakpoint = Assert.Single(window.Debugger.Breakpoints.In(Program));
+        Assert.Equal("i == 2", breakpoint.Condition);
+        Assert.Contains(new LineMark(3, LineMarkKind.Breakpoint, Conditional: true), editor.LineMarks);
+
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused && Value(window, "i") is not null, "the stop the condition allows");
+        Assert.Equal("2", Value(window, "i"));
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    private void A_tracepoint_set_with_shift_click_logs_its_message_and_the_program_runs_on()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Point gutter = Gutter(window, editor, 3);
+        window.MouseDown(gutter, MouseButton.Left, RawInputModifiers.Shift);
+        window.MouseUp(gutter, MouseButton.Left, RawInputModifiers.Shift);
+        Ui.Settle();
+        Assert.Contains(new LineMark(3, LineMarkKind.Breakpoint, Tracepoint: true), editor.LineMarks);
+
+        // The log message is two fields on from the condition.
+        window.MouseDown(gutter, MouseButton.Right);
+        window.MouseUp(gutter, MouseButton.Right);
+        Ui.Settle();
+        Assert.IsType<BreakpointPopup>(window.Popup);
+        Ui.Press(window, "Tab");
+        Ui.Press(window, "Tab");
+        window.KeyTextInput("i is {i}, total {total}");
+        Ui.Press(window, "Enter");
+        Assert.Equal("i is {i}, total {total}", Assert.Single(window.Debugger.Breakpoints.In(Program)).LogMessage);
+
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Ended, "the program to run to its end without stopping");
+        string console = window.BottomPanel.Debug.Console.Document.Snapshot.ToString();
+        Assert.Contains("i is 1, total 0\ni is 2, total 1\ni is 3, total 3\n", console, StringComparison.Ordinal);
+        Assert.Contains("total 6", console, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    private void The_breakpoints_window_lists_every_breakpoint_and_turns_one_off()
+    {
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        editor.GoTo(new TextPosition(5, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+
+        Ui.Run(window, AppActions.ViewBreakpoints);
+        BreakpointsWindow breakpoints = Assert.IsType<BreakpointsWindow>(window.Popup);
+        Assert.Equal(["Program.cs:4", "Program.cs:6", ExceptionBreakpoint.AnyException, BindingErrorBreakpoint.AnyBindingError, ScriptErrorBreakpoint.AnyScriptError], breakpoints.Listed.Select(b => b.Location));
+        CheckBox first = breakpoints.GetVisualDescendants().OfType<CheckBox>().First(c => c.Content is null);
+        first.IsChecked = false;
+        Assert.False(window.Debugger.Breakpoints.In(Program)[0].Enabled);
+        Assert.Contains(new LineMark(3, LineMarkKind.BreakpointDisabled), editor.LineMarks);
+        Ui.Press(window, "Escape");
+        Assert.Null(window.Popup);
+        window.Close();
+    }
+
+    private void An_exception_breakpoint_added_by_its_type_stops_where_that_type_is_thrown_as_its_condition_allows_and_at_no_other_type()
+    {
+        Write("Program.cs", "for (int turn = 1; turn <= 3; turn++)\n{\n    try\n    {\n        throw new ArgumentException($\"argument {turn}\");\n    }\n"
+            + "    catch (ArgumentException)\n    {\n    }\n    try\n    {\n        throw new InvalidOperationException($\"operation {turn}\");\n    }\n"
+            + "    catch (InvalidOperationException)\n    {\n    }\n}\nConsole.WriteLine(\"done\");\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        BreakpointsWindow breakpoints = OpenBreakpoints(window);
+        ExceptionBreakpoint operation = AddException(window, breakpoints, "InvalidOperationEx", "System.InvalidOperationException");
+        // A new breakpoint on a type stops wherever it is thrown, however it is handled.
+        Assert.Equal(ExceptionScenarios.All, operation.Scenarios);
+        Ui.Click(breakpoints.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText?.StartsWith("A C# condition", StringComparison.Ordinal) == true));
+        window.KeyTextInput("turn == 2");
+        Ui.Click(Button(breakpoints, "Done"));
+        Assert.Null(window.Popup);
+        Assert.Equal("turn == 2", operation.Condition);
+
+        // The argument exceptions and the first turn's pass: the stop is the second turn's, at the line that threw it.
+        StartDebugging(window);
+        WaitDebugging(window, () => editor.LineAnnotations.Any(a => a.Look == LineAnnotationLook.ErrorOnGround), "the stop at the exception breakpoint");
+        LineAnnotation thrown = Assert.Single(editor.LineAnnotations, a => a.Look == LineAnnotationLook.ErrorOnGround);
+        Assert.Equal((11, "InvalidOperationException: operation 2"), (thrown.Line, thrown.Text));
+        Assert.Equal("2", Value(window, "turn"));
+
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Ended, "the program to run to its end");
+        Assert.Contains("done", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        window.Close();
+    }
+
+    /// <summary>An exception breakpoint whose condition cannot be told stops where its type is thrown, and the breakpoint
+    /// says why, as a line breakpoint does.</summary>
+    private void An_exception_breakpoints_condition_that_cannot_be_told_stops_at_the_throw_and_says_why_on_the_breakpoint()
+    {
+        Write("Program.cs", "for (int turn = 1; turn <= 2; turn++)\n{\n    try\n    {\n        throw new InvalidOperationException($\"operation {turn}\");\n    }\n"
+            + "    catch (InvalidOperationException)\n    {\n    }\n}\nConsole.WriteLine(\"done\");\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        BreakpointsWindow breakpoints = OpenBreakpoints(window);
+        ExceptionBreakpoint operation = AddException(window, breakpoints, "InvalidOperationEx", "System.InvalidOperationException");
+        Ui.Click(breakpoints.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText?.StartsWith("A C# condition", StringComparison.Ordinal) == true));
+        window.KeyTextInput("noSuchName == 2");
+        Ui.Click(Button(breakpoints, "Done"));
+        Assert.Equal("noSuchName == 2", operation.Condition);
+
+        StartDebugging(window);
+        WaitDebugging(window, () => editor.LineAnnotations.Any(a => a.Look == LineAnnotationLook.ErrorOnGround), "the stop at the exception breakpoint");
+        Assert.Equal((4, "InvalidOperationException: operation 1"), Thrown(editor));
+        Ui.WaitFor(() => operation.Message is not null, () => $"the exception breakpoint to say why it stopped, its condition not told (it is {operation.Status})");
+        Assert.StartsWith(BreakpointConditions.NotEvaluated("noSuchName == 2"), operation.Message, StringComparison.Ordinal);
+        Assert.Equal(BreakpointStatus.Bound, operation.Status);
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    private void An_exception_breakpoints_handler_options_stop_it_where_the_users_code_leaves_the_exception_or_where_it_handles_it()
+    {
+        // The first is handled where it is thrown; List.Sort catches the comparer's and throws its own, which the program handles.
+        Write("Program.cs", "try\n{\n    throw new InvalidOperationException(\"caught by the program\");\n}\ncatch (InvalidOperationException)\n{\n}\n"
+            + "List<int> numbers = [3, 1, 2];\ntry\n{\n    numbers.Sort((_, _) => throw new InvalidOperationException(\"left to List.Sort\"));\n}\n"
+            + "catch (InvalidOperationException)\n{\n}\nConsole.WriteLine(\"done\");\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        BreakpointsWindow breakpoints = OpenBreakpoints(window);
+        // "Any exception" off, so only the breakpoint on the type stops the program.
+        Ui.Click(Row(breakpoints, ExceptionBreakpoint.AnyException).GetVisualDescendants().OfType<CheckBox>().First());
+        Assert.False(window.Debugger.Breakpoints.Exceptions[0].Enabled);
+        ExceptionBreakpoint operation = AddException(window, breakpoints, "InvalidOperationEx", "System.InvalidOperationException");
+        // User-unhandled: handled outside the user's code, or not at all.
+        Ui.Click(Scenario(breakpoints, "Exception handler", "User code"));
+        Ui.Click(Button(breakpoints, "Done"));
+        Assert.Equal(ExceptionScenarios.Thrown | ExceptionScenarios.HandledInExternalCode | ExceptionScenarios.Unhandled, operation.Scenarios);
+
+        StartDebugging(window);
+        WaitDebugging(window, () => editor.LineAnnotations.Any(a => a.Look == LineAnnotationLook.ErrorOnGround) || window.Debugger.Session?.State == DebugState.Ended,
+            "the stop where List.Sort catches the comparer's exception");
+        Assert.Equal((10, "InvalidOperationException: left to List.Sort"), Thrown(editor));
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Ended, "the program to run to its end past the exceptions it handles");
+
+        breakpoints = OpenBreakpoints(window);
+        Ui.Click(Row(breakpoints, "System.InvalidOperationException"));
+        Ui.Click(Scenario(breakpoints, "Exception handler", "User code"));
+        Ui.Click(Scenario(breakpoints, "Exception handler", "External code"));
+        Ui.Click(Scenario(breakpoints, "Exception handler", "Unhandled"));
+        // With no handler box checked it never stops, said in the words an agent's answer takes too.
+        Ui.Click(Scenario(breakpoints, "Exception handler", "User code"));
+        string inactive = ExceptionBreakpoint.InactiveIn(ExceptionScenarios.Thrown)!;
+        Assert.Contains(breakpoints.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == inactive && t.IsEffectivelyVisible);
+        Ui.Click(Scenario(breakpoints, "Exception handler", "User code"));
+        Assert.DoesNotContain(breakpoints.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == inactive && t.IsEffectivelyVisible);
+        Ui.Click(Button(breakpoints, "Done"));
+        Assert.Equal(ExceptionScenarios.Thrown | ExceptionScenarios.HandledInUserCode, operation.Scenarios);
+        StartDebugging(window);
+        WaitDebugging(window, () => editor.LineAnnotations.Any(a => a.Look == LineAnnotationLook.ErrorOnGround) || window.Debugger.Session?.State == DebugState.Ended,
+            "the stop at the exception the program catches");
+        Assert.Equal((2, "InvalidOperationException: caught by the program"), Thrown(editor));
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => Thrown(editor) is (10, string text) && text.Contains("Failed to compare", StringComparison.Ordinal) || window.Debugger.Session?.State == DebugState.Ended,
+            "the stop at List.Sort's exception the program catches");
+        Assert.True(Thrown(editor) is (10, string said) && said.StartsWith("InvalidOperationException: Failed to compare", StringComparison.Ordinal),
+            $"The second stop was not at List.Sort's own exception but {Thrown(editor)}, the session {window.Debugger.Session?.State}");
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Ended, "the program to run to its end");
+        window.Close();
+    }
+
+    private void Mute_breakpoints_lets_a_run_pass_a_line_breakpoint_and_an_exception_breakpoint_and_unmuting_stops_it_again()
+    {
+        Write("Program.cs", "for (int turn = 1; turn <= 2; turn++)\n{\n    Console.WriteLine($\"turn {turn}\");\n    try\n    {\n"
+            + "        throw new InvalidOperationException($\"turn {turn}\");\n    }\n    catch (InvalidOperationException)\n    {\n    }\n"
+            + "    Console.WriteLine($\"passed {turn}\");\n    Console.ReadLine();\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(2, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        BreakpointsWindow breakpoints = OpenBreakpoints(window);
+        AddException(window, breakpoints, "InvalidOperationEx", "System.InvalidOperationException");
+        Ui.Click(Button(breakpoints, "Done"));
+
+        Assert.False(MuteItem(window).IsChecked);
+        MuteItem(window).Command!.Execute(null);
+        Ui.Settle();
+        Assert.True(window.Debugger.Breakpoints.Muted);
+        Assert.True(MuteItem(window).IsChecked, "Run > Mute Breakpoints shows no check while the breakpoints are muted");
+        Assert.Contains(new LineMark(2, LineMarkKind.Breakpoint, Muted: true), editor.LineMarks);
+        Assert.True(window.BottomPanel.Debug.ShowsMuted, "The Debug window's Mute Breakpoints does not show pressed while they are muted");
+        Assert.Single(window.Debugger.Breakpoints.In(Program));
+        Assert.Equal(2, window.Debugger.Breakpoints.Exceptions.Count);
+
+        StartDebugging(window);
+        Pitstop.App.ToolWindows.OutputView console = window.BottomPanel.Debug.Console;
+        Ui.WaitFor(() => console.Document.Snapshot.ToString().Contains("passed 1", StringComparison.Ordinal) || window.Debugger.Session?.State is DebugState.Paused or DebugState.Ended,
+            "the first turn to run past both breakpoints");
+        Assert.True(window.Debugger.Session?.State == DebugState.Running, $"Muted, the program still stopped: {window.Status}");
+
+        Ui.Run(window, AppActions.MuteBreakpoints);
+        Assert.False(window.BottomPanel.Debug.ShowsMuted);
+        Ui.WaitFor(() => editor.LineMarks.Contains(new LineMark(2, LineMarkKind.BreakpointBound)), "the breakpoint bound again once unmuted");
+        _ = window.Debugger.Session!.InputAsync("\n");
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && Value(window, "turn") is not null, "the stop at the line breakpoint");
+        Assert.Equal("2", Value(window, "turn"));
+        Assert.Contains(new LineMark(2, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => editor.LineAnnotations.Any(a => a.Look == LineAnnotationLook.ErrorOnGround), "the stop at the exception breakpoint");
+        Assert.Equal((5, "InvalidOperationException: turn 2"), Thrown(editor));
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    private void The_breakpoints_window_adds_and_removes_exception_breakpoints_and_the_folder_keeps_them()
+    {
+        string settings = TestFolders.Create("settings-");
+        try
+        {
+            MainWindow first = Keeping(settings);
+            BreakpointsWindow breakpoints = OpenBreakpoints(first);
+            AddException(first, breakpoints, "InvalidOperationEx", "System.InvalidOperationException");
+            Ui.Click(Scenario(breakpoints, "Exception handler", "User code"));
+            AddException(first, breakpoints, "ArgumentNull", "System.ArgumentNullException");
+            Ui.Click(Row(breakpoints, ExceptionBreakpoint.AnyException).GetVisualDescendants().OfType<CheckBox>().First());
+            Assert.Equal([ExceptionBreakpoint.AnyException, "System.InvalidOperationException", "System.ArgumentNullException", BindingErrorBreakpoint.AnyBindingError, ScriptErrorBreakpoint.AnyScriptError],
+                breakpoints.Listed.Select(b => b.Location));
+            Assert.False(first.Debugger.Breakpoints.BindingErrors.Enabled, "XAML Binding Errors was on in a folder that never turned it on");
+            Assert.Contains(breakpoints.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "XAML Binding Errors");
+            Ui.Click(Row(breakpoints, BindingErrorBreakpoint.AnyBindingError).GetVisualDescendants().OfType<CheckBox>().First());
+            Ui.Click(Row(breakpoints, BindingErrorBreakpoint.AnyBindingError));
+            Ui.Click(breakpoints.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText?.StartsWith("A C# condition", StringComparison.Ordinal) == true));
+            first.KeyTextInput("$bindingError.Path == \"Name\"");
+            Ui.Click(Button(breakpoints, "Done"));
+            first.Close();
+
+            MainWindow second = Keeping(settings);
+            IReadOnlyList<ExceptionBreakpoint> kept = second.Debugger.Breakpoints.Exceptions;
+            Assert.Equal([null, "System.InvalidOperationException", "System.ArgumentNullException"], kept.Select(e => e.Type));
+            Assert.False(kept[0].Enabled);
+            Assert.Equal(ExceptionScenarios.Thrown | ExceptionScenarios.HandledInExternalCode | ExceptionScenarios.Unhandled, kept[1].Scenarios);
+            Assert.Equal(ExceptionScenarios.All, kept[2].Scenarios);
+            BindingErrorBreakpoint bindings = second.Debugger.Breakpoints.BindingErrors;
+            Assert.Equal((true, "$bindingError.Path == \"Name\""), (bindings.Enabled, bindings.Condition));
+
+            breakpoints = OpenBreakpoints(second);
+            Ui.Click(Row(breakpoints, "System.ArgumentNullException"));
+            Ui.Press(second, "Delete");
+            Ui.Click(Row(breakpoints, ExceptionBreakpoint.AnyException));
+            Ui.Press(second, "Delete");
+            Ui.Click(Row(breakpoints, BindingErrorBreakpoint.AnyBindingError));
+            Ui.Press(second, "Delete");
+            Assert.Equal([ExceptionBreakpoint.AnyException, "System.InvalidOperationException", BindingErrorBreakpoint.AnyBindingError, ScriptErrorBreakpoint.AnyScriptError], breakpoints.Listed.Select(b => b.Location));
+            Ui.Press(second, "Escape");
+            second.Close();
+
+            MainWindow third = Keeping(settings);
+            Assert.Equal([null, "System.InvalidOperationException"], third.Debugger.Breakpoints.Exceptions.Select(e => e.Type));
+            Assert.True(third.Debugger.Breakpoints.BindingErrors.Enabled, "XAML Binding Errors was not kept on with the folder");
+            third.Close();
+        }
+        finally
+        {
+            TestFolders.Delete(settings);
+        }
+    }
+
+    /// <summary>The window a person uses, keeping its folders' state in a store of its own, over Sum, on the server the last
+    /// window on it left.</summary>
+    private MainWindow Keeping(string settings)
+    {
+        MainWindow window = new() { Width = 1200, Height = 800, StateFolder = settings, StartsLanguageServer = false };
+        window.Show();
+        window.KeepLayout();
+        window.OpenFolder(sum.Folder);
+        Ui.Settle();
+        window.OpenFile(Program);
+        Ui.Settle();
+        return window;
+    }
+
+    /// <summary>Run > Mute Breakpoints as the menu bar has it when it opens.</summary>
+    private static NativeMenuItem MuteItem(MainWindow window) =>
+        Ui.Submenu(window.MenuBar, "Run").Items.OfType<NativeMenuItem>().First(i => i.Header == "Mute Breakpoints");
+
+    private static BreakpointsWindow OpenBreakpoints(MainWindow window)
+    {
+        Ui.Run(window, AppActions.ViewBreakpoints);
+        return Assert.IsType<BreakpointsWindow>(window.Popup);
+    }
+
+    /// <summary>Adds an exception breakpoint as a person does: + in the Breakpoints window, part of the type's name typed, and
+    /// Enter on the type it offers first, which is then the one chosen.</summary>
+    private static ExceptionBreakpoint AddException(MainWindow window, BreakpointsWindow breakpoints, string typed, string type)
+    {
+        Ui.Click(breakpoints.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) as string == "Add CLR Exception Breakpoints"));
+        window.KeyTextInput(typed);
+        Ui.WaitFor(() => breakpoints.Offered.FirstOrDefault() == type, $"{type} offered first for \"{typed}\", not [{string.Join(", ", breakpoints.Offered.Take(5))}]");
+        Ui.Press(window, "Enter");
+        ExceptionBreakpoint added = Assert.IsType<ExceptionBreakpoint>(breakpoints.Chosen);
+        Assert.Equal(type, added.Type);
+        return added;
+    }
+
+    /// <summary>A breakpoint's row in the Breakpoints window, by how it is named there.</summary>
+    private static ListBoxItem Row(BreakpointsWindow breakpoints, string location) =>
+        breakpoints.GetVisualDescendants().OfType<ListBoxItem>().First(i => (i.Tag as Breakpoint)?.Location == location);
+
+    /// <summary>One of the "Suspend If" boxes for the chosen exception breakpoint: its row's label and its
+    /// own.</summary>
+    private static CheckBox Scenario(BreakpointsWindow breakpoints, string row, string box)
+    {
+        TextBlock label = breakpoints.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == row && t.IsEffectivelyVisible);
+        Grid grid = (Grid)label.Parent!;
+        StackPanel boxes = grid.Children.OfType<StackPanel>().First(p => Grid.GetRow(p) == Grid.GetRow(label));
+        return boxes.Children.OfType<CheckBox>().First(c => (string?)c.Content == box);
+    }
+
+    private static Button Button(Control within, string content) =>
+        within.GetVisualDescendants().OfType<Button>().First(b => (b.Content as string) == content && b.IsEffectivelyVisible);
+
+    /// <summary>Waits for a top-level row of Variables to show a value; a failure says what the rows showed instead.</summary>
+    private static void Shows(Pitstop.App.ToolWindows.DebugModel view, string name, string value, string what)
+    {
+        try
+        {
+            Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Depth == 0 && r.Name == name && r.Value == value), what, TimeSpan.FromSeconds(30));
+        }
+        catch (TimeoutException)
+        {
+            string shown = string.Join("; ", view.Tree.Rows.Where(r => r.Depth == 0).Select(r => $"{r.Name} = {r.Value}"));
+            throw new TimeoutException($"{name} never showed {value}: the rows were {(shown.Length == 0 ? "none" : shown)}");
+        }
+    }
+
+    /// <summary>Waits for a watch to show a value; a failure says what the watches showed instead.</summary>
+    private static void Watched(Pitstop.App.ToolWindows.DebugModel view, string expression, string value, string what)
+    {
+        try
+        {
+            Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Role == VariableRole.Watch && r.Name == expression && r.Value == value), what, TimeSpan.FromSeconds(30));
+        }
+        catch (TimeoutException)
+        {
+            string shown = string.Join("; ", view.Tree.Rows.Where(r => r.Role == VariableRole.Watch).Select(r => $"{r.Name} = {r.Value}"));
+            throw new TimeoutException($"{expression} never showed {value} as a watch: the watches were {(shown.Length == 0 ? "none" : shown)}");
+        }
+    }
+
+    /// <summary>The exception the stop shown names, and the line it shows it at.</summary>
+    private static (int Line, string Text)? Thrown(CodeEditor editor) =>
+        editor.LineAnnotations.FirstOrDefault(a => a.Look == LineAnnotationLook.ErrorOnGround) is { Text: not null } thrown ? (thrown.Line, thrown.Text) : null;
+
+    /// <summary>A stop where a local holds a string of megabytes shows the start of it in its row and in a hover, and
+    /// Copy Value still has all of it.</summary>
+    private void A_string_of_megabytes_shows_its_start_in_variables_and_a_hover_without_holding_the_window()
+    {
+        Write("Program.cs", "string big = new string('x', 4_000_000);\nint n = big.Length;\nConsole.WriteLine(n);\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(2, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused, "the stop");
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        WaitDebugging(window, () => Row(window, "big") is not null, "the string's row");
+        Ui.Settle();
+        long shown = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.True(shown < 16 << 20, $"Showing the stop's values allocated {shown >> 20} MB on the UI thread: the 8 MB string was laid out whole");
+        Assert.Equal(4_000_002, Row(window, "big")!.Value.Length);
+
+        Point at = editor.TranslatePoint(editor.PointOf(editor.Document.Snapshot.ToString().IndexOf("big.Length", StringComparison.Ordinal) + 1)
+            + new Point(1, editor.LineHeight / 2), window)!.Value;
+        before = GC.GetAllocatedBytesForCurrentThread();
+        window.MouseMove(at, RawInputModifiers.None);
+        Ui.WaitFor(() => window.Assist.HoverText is not null, "the hover card on big");
+        Ui.Settle();
+        long hovered = GC.GetAllocatedBytesForCurrentThread() - before;
+        string card = window.Assist.HoverText!;
+        Assert.True(card.StartsWith("big = {string} \"xxx", StringComparison.Ordinal) && card.Length < 2000,
+            $"The hover card says {card.Length} characters, beginning \"{card[..Math.Min(40, card.Length)]}\"");
+        Assert.True(hovered < 16 << 20, $"Showing the hover card allocated {hovered >> 20} MB on the UI thread: the string was laid out whole");
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>An expression evaluated at a stop runs once, when it is asked: its result is that stop's, gone once the
+    /// program goes on, never evaluated again at a later stop. At the next stop, a value set in Variables is the one
+    /// the program goes on with.</summary>
+    private void An_expression_evaluated_at_a_stop_runs_once_with_the_stop_and_a_value_set_in_variables_is_the_one_the_program_goes_on_with()
+    {
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(3, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Value(window, "total") == "0", "the first stop");
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput("total += 100");
+        Ui.Press(window, "Enter");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Role == VariableRole.Result && r.Name == "total += 100" && r.Value == "100"), "the expression's result");
+        Ui.WaitFor(() => Value(window, "total") == "100", "the value the expression set");
+
+        // Two steps: the loop's own add once (101), and then nothing, the expression never run again.
+        StepOver();
+        Assert.True(Value(window, "total") == "101", $"After a step total was {Value(window, "total")}: the expression evaluated at the stop before ran again");
+        Assert.DoesNotContain(view.Tree.Rows, r => r.Role == VariableRole.Result);
+        StepOver();
+        Assert.True(Value(window, "total") == "101", $"After a second step total was {Value(window, "total")}: the expression ran again");
+
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => Value(window, "i") == "2" && Value(window, "total") == "101", "the loop's next turn");
+        ListBox list = window.DebugWindow.VariablesList;
+        VariableNode total = view.Tree.Rows.First(r => r.Name == "total");
+        Control row = list.ContainerFromItem(total)!;
+        Ui.Click(row, settle: false);
+        Ui.Press(window, "F2");
+        Assert.True(total.IsEditing);
+        window.KeyTextInput("100");
+        Ui.Press(window, "Enter");
+        Ui.WaitFor(() => Value(window, "total") == "100", "the value set");
+        Ui.Run(window, AppActions.StepOver);
+        Ui.WaitFor(() => Value(window, "total") == "102", "the program to add to the value set, not the old one");
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+
+        void StepOver()
+        {
+            StopTimes? before = window.Debugger.LastStopTimes;
+            Ui.Run(window, AppActions.StepOver);
+            WaitDebugging(window, () => !ReferenceEquals(window.Debugger.LastStopTimes, before), "the step's stop and its locals");
+        }
+    }
+
+    /// <summary>An element listed under a range (an array longer than a hundred, a row of a two-dimensional one) takes a
+    /// value set in its row as any element does: the range's row is no step of the expression that reaches it.</summary>
+    private void A_value_set_on_an_element_listed_under_a_range_is_the_one_the_program_goes_on_with()
+    {
+        Write("Program.cs", "int[] numbers = new int[250];\nint[,] grid = new int[2, 2];\nConsole.WriteLine($\"set {numbers[150]} {grid[1, 0]}\");\n");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(2, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Row(window, "grid") is not null, "the stop before the line that writes them");
+
+        TreeKeysCheck.Press(window, window.BottomPanel.Debug.Tree.Rows, Row(window, "numbers")!, "Variables");
+        SetElement(window, "numbers", "[100..199]", "[150]", "7");
+        SetElement(window, "grid", "[1, ...]", "[1, 0]", "5");
+        Assert.True(window.Status?.StartsWith("Could not set", StringComparison.Ordinal) != true, $"Set Value was refused: {window.Status}");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("set ", StringComparison.Ordinal),
+            "the program to write the values");
+        Assert.Contains("set 7 5", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+
+        static void SetElement(MainWindow window, string local, string range, string element, string value)
+        {
+            Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+            VariableNode Child(VariableNode parent, string name)
+            {
+                Task opened = view.Tree.Expand(parent);
+                Ui.WaitFor(() => opened.IsCompleted, $"{parent.Name}'s rows");
+                return parent.Children?.FirstOrDefault(c => c.Name == name)
+                    ?? throw new InvalidOperationException($"{parent.Name} has no row {name}: {string.Join(", ", (parent.Children ?? []).Select(c => c.Name))}");
+            }
+            VariableNode top = Row(window, local)!;
+            VariableNode row = Child(Child(top, range), element);
+            ListBox list = window.DebugWindow.VariablesList;
+            Ui.Click(Ui.Row(list, row), settle: false);
+            Ui.Press(window, "F2");
+            Assert.True(row.IsEditing, $"F2 on {local}'s {element} did not open its value for editing");
+            window.KeyTextInput(value);
+            Ui.Press(window, "Enter");
+            Ui.WaitFor(() => Row(window, local) is { } again && again != top, "the variables shown again once the value was set");
+        }
+    }
+
+    /// <summary>A base class's field that a derived class hides by its name takes a value set in its own row: the base's
+    /// field changes, the derived one's stays as it was.</summary>
+    private void A_value_set_on_a_hidden_base_field_changes_that_field_and_not_the_one_hiding_it()
+    {
+        Write("Program.cs", "Derived item = new();\nConsole.WriteLine($\"counts {((Base)item).count} {item.count}\");\n\n"
+            + "class Base\n{\n    public int count = 1;\n}\n\nclass Derived : Base\n{\n    public new int count = 2;\n}\n");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(1, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Row(window, "item") is not null, "the stop before the line that writes the counts");
+
+        VariableNode item = Row(window, "item")!;
+        Task opened = window.BottomPanel.Debug.Tree.Expand(item);
+        Ui.WaitFor(() => opened.IsCompleted, "item's rows");
+        VariableNode[] counts = [.. (item.Children ?? []).Where(c => c.Name == "count")];
+        Assert.True(counts.Select(c => c.Value).SequenceEqual(["2", "1"]), $"item lists its counts as {string.Join(", ", counts.Select(c => c.Value))}, not the derived 2 and the base's 1");
+        SetInRow(window, counts[1], "5");
+        Assert.True(window.Status?.StartsWith("Could not set", StringComparison.Ordinal) != true, $"Set Value was refused: {window.Status}");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("counts ", StringComparison.Ordinal),
+            "the program to write the counts");
+        Assert.True(window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("counts 5 2", StringComparison.Ordinal),
+            $"The program wrote {window.BottomPanel.Debug.Console.Document.Snapshot}, where the base's count set to 5 leaves the derived one 2");
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>Under an interface local holding a struct, the property the interface declares takes a value set in its row,
+    /// which reaches it through the interface, with no cast: the struct the local holds boxed is the one changed.</summary>
+    private void A_value_set_on_an_interface_property_of_a_struct_held_through_the_interface_changes_the_held_struct()
+    {
+        Write("Program.cs", "IShape item = new Square();\nConsole.WriteLine($\"side {item.Side}\");\n\n"
+            + "interface IShape\n{\n    int Side { get; set; }\n}\n\nstruct Square : IShape\n{\n    public int Side { get; set; }\n}\n");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(1, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Row(window, "item") is not null, "the stop before the line that writes the side");
+
+        VariableNode side = Member(window, "Side", 0);
+        Assert.True(side.Expression == "item.Side", $"Side's row reaches it as {side.Expression}, where an IShape variable reaches it as item.Side");
+        SetInRow(window, side, "7");
+        Assert.True(window.Status?.StartsWith("Could not set", StringComparison.Ordinal) != true, $"Set Value on {side.Expression} was refused: {window.Status}");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("side ", StringComparison.Ordinal),
+            "the program to write the side");
+        Assert.True(window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("side 7", StringComparison.Ordinal),
+            $"The program wrote {window.BottomPanel.Debug.Console.Document.Snapshot}, where Side set to 7 through the interface writes side 7");
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>A HashSet's element, a dictionary entry's Value and a list's explicit interface implementation, each added to
+    /// Watches from its row, evaluate there to the row's value; Raw View, a row the debugger adds, has Set Value, Add to
+    /// Watches and Inspect greyed, each saying why.</summary>
+    private void A_hashset_element_a_dictionary_entrys_value_and_an_explicit_interface_member_added_to_watches_evaluate()
+    {
+        Write("Program.cs", "HashSet<int> set = [7, 9];\nDictionary<string, int> ages = new() { [\"Ada\"] = 36 };\nList<string> names = [\"Ada\", \"Grace\"];\n"
+            + "Console.WriteLine($\"rows {set.Count} {ages.Count} {names.Count}\");\n");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(3, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Row(window, "names") is not null, "the stop before the line that writes the counts");
+
+        string[][] paths = [["set", "[0]"], ["ages", "[\"Ada\"]", "Value"], ["names", "Raw View", "System.Collections.Generic.ICollection<T>.IsReadOnly"]];
+        string[] values = ["7", "36", "false"];
+        foreach ((string[] path, string value) in paths.Zip(values))
+        {
+            VariableNode row = Opened(window, path);
+            Assert.True(row.Value == value, $"{string.Join(" > ", path)} reads {row.Value}, not {value}");
+            string expression = row.Expression ?? throw new InvalidOperationException($"{string.Join(" > ", path)} has no expression: {row.NoExpression}");
+            window.DebugWindow.VariablesList.SelectedItem = row;
+            Ui.ChooseFromMenu(window.DebugWindow.VariablesList, "Add to Watches");
+            Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(r => r.Role == VariableRole.Watch && r.Name == expression), $"the watch of {expression}");
+            VariableNode watch = window.BottomPanel.Debug.Tree.Rows.First(r => r.Role == VariableRole.Watch && r.Name == expression);
+            Assert.True(watch.Value == value, $"{string.Join(" > ", path)} added to Watches as {expression}, which evaluates to {watch.Value}, not {value}");
+        }
+
+        VariableNode raw = Opened(window, "names", "Raw View");
+        window.DebugWindow.VariablesList.SelectedItem = raw;
+        ContextMenu menu = window.DebugWindow.VariablesList.ContextMenu ?? throw new InvalidOperationException("Raw View's row has no menu");
+        window.DebugWindow.VariablesList.RaiseEvent(new ContextRequestedEventArgs());
+        Ui.Settle();
+        MenuItem[] greyed = [.. menu.Items.OfType<MenuItem>().Where(item => item.Header is "Set Value…" or "Add to Watches" or "Inspect")];
+        menu.Close();
+        Ui.Settle();
+        Assert.True(greyed.Length == 3 && greyed.All(item => !item.IsEnabled && ToolTip.GetTip(item) is string why && why == raw.NoExpression && why.Length > 0),
+            $"Raw View's Set Value, Add to Watches and Inspect are {string.Join(", ", greyed.Select(item => $"{item.Header} {(item.IsEnabled ? "enabled" : "greyed")} saying {ToolTip.GetTip(item) ?? "nothing"}"))}, where each is to be greyed saying why");
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>A HashSet's element, shown through the debugger's copy, has Set Value greyed saying why, F2 opening nothing,
+    /// while Add to Watches and Inspect stay offered; a nullable struct's member under its Value, added to Watches from its
+    /// row, evaluates there and takes a value set in its row, which the program goes on with.</summary>
+    private void A_hashset_elements_set_value_is_greyed_saying_why_and_a_nullable_structs_member_is_watched_and_set()
+    {
+        Write("Program.cs", "HashSet<int> set = [7, 9];\nSpot? place = new Spot(3, 4);\nConsole.WriteLine($\"place {set.Count} {place?.X}\");\n\n"
+            + "record struct Spot(int X, int Y);\n");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(2, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Row(window, "place") is not null, "the stop before the line that writes the place");
+
+        VariableNode element = Opened(window, "set", "[0]");
+        window.DebugWindow.VariablesList.SelectedItem = element;
+        ContextMenu menu = window.DebugWindow.VariablesList.ContextMenu ?? throw new InvalidOperationException("The set's element has no menu");
+        window.DebugWindow.VariablesList.RaiseEvent(new ContextRequestedEventArgs());
+        Ui.Settle();
+        MenuItem[] items = [.. menu.Items.OfType<MenuItem>().Where(item => item.Header is "Set Value…" or "Add to Watches" or "Inspect")];
+        menu.Close();
+        Ui.Settle();
+        Assert.True(items is [{ IsEnabled: false } setValue, { IsEnabled: true }, { IsEnabled: true }] && ToolTip.GetTip(setValue) is string why && why == element.NoSetting && why.Length > 0,
+            $"The set's element has {string.Join(", ", items.Select(item => $"{item.Header} {(item.IsEnabled ? "enabled" : "greyed")} saying {ToolTip.GetTip(item) ?? "nothing"}"))}, where Set Value is to be greyed saying why and the others offered");
+        Ui.Click(Ui.Row(window.DebugWindow.VariablesList, element), settle: false);
+        Ui.Press(window, "F2");
+        Assert.False(element.IsEditing, "F2 on the set's element opened its value for editing, where a value set there changes only the debugger's copy");
+
+        VariableNode member = Opened(window, "place", "Value", "X");
+        string expression = member.Expression ?? throw new InvalidOperationException($"place > Value > X has no expression: {member.NoExpression}");
+        window.DebugWindow.VariablesList.SelectedItem = member;
+        Ui.ChooseFromMenu(window.DebugWindow.VariablesList, "Add to Watches");
+        Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(r => r.Role == VariableRole.Watch && r.Name == expression), $"the watch of {expression}");
+        VariableNode watch = window.BottomPanel.Debug.Tree.Rows.First(r => r.Role == VariableRole.Watch && r.Name == expression);
+        Assert.True(watch.Value == "3", $"place > Value > X added to Watches as {expression}, which evaluates to {watch.Value}, not 3");
+        SetInRow(window, Opened(window, "place", "Value", "X"), "10");
+        Assert.True(window.Status?.StartsWith("Could not set", StringComparison.Ordinal) != true, $"Set Value on {expression} was refused: {window.Status}");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("place ", StringComparison.Ordinal), "the program to write the place");
+        Assert.True(window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("place 2 10", StringComparison.Ordinal),
+            $"The program wrote {window.BottomPanel.Debug.Console.Document.Snapshot}, where place's X set to 10 writes place 2 10");
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>The row reached by opening the frame's value named first, then each row named after it under the one before.</summary>
+    private static VariableNode Opened(MainWindow window, params string[] path)
+    {
+        VariableNode row = Row(window, path[0]) ?? throw new InvalidOperationException($"The frame lists no {path[0]}");
+        foreach (string name in path.Skip(1))
+        {
+            Task opened = window.BottomPanel.Debug.Tree.Expand(row);
+            Ui.WaitFor(() => opened.IsCompleted, $"{row.Name}'s rows");
+            row = row.Children?.FirstOrDefault(c => c.Name == name)
+                ?? throw new InvalidOperationException($"{row.Name} lists {string.Join(", ", (row.Children ?? []).Select(c => c.Name))}, without {name}");
+        }
+        return row;
+    }
+
+    /// <summary>The <paramref name="index"/>th row named <paramref name="name"/> under item, its rows read afresh.</summary>
+    private static VariableNode Member(MainWindow window, string name, int index)
+    {
+        VariableNode item = Row(window, "item")!;
+        Task opened = window.BottomPanel.Debug.Tree.Expand(item);
+        Ui.WaitFor(() => opened.IsCompleted, "item's rows");
+        VariableNode[] named = [.. (item.Children ?? []).Where(c => c.Name == name)];
+        Assert.True(named.Length > index, $"item lists {string.Join(", ", (item.Children ?? []).Select(c => c.Name))}, without a {name} at {index}");
+        return named[index];
+    }
+
+    /// <summary>The value under a pointer's row, what it points at, takes a value set in that row.</summary>
+    private void A_value_set_on_what_a_pointer_points_at_is_the_one_the_program_goes_on_with()
+    {
+        Write("Sum.csproj", TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>", "<AllowUnsafeBlocks>true</AllowUnsafeBlocks>"));
+        Write("Program.cs", "Pointing.Run();\n\nstatic class Pointing\n{\n    public static unsafe void Run()\n    {\n        int number = 42;\n"
+            + "        int* pointer = &number;\n        Console.WriteLine($\"pointed {*pointer} {number}\");\n    }\n}\n");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(8, 8));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Row(window, "pointer") is not null, "the stop before the line that writes the number");
+
+        VariableNode pointer = Row(window, "pointer")!;
+        Task opened = window.BottomPanel.Debug.Tree.Expand(pointer);
+        Ui.WaitFor(() => opened.IsCompleted, "pointer's row");
+        VariableNode pointedAt = Assert.Single(pointer.Children ?? []);
+        Assert.Equal(("*pointer", "42"), (pointedAt.Name, pointedAt.Value));
+        SetInRow(window, pointedAt, "7");
+        Assert.True(window.Status?.StartsWith("Could not set", StringComparison.Ordinal) != true, $"Set Value was refused: {window.Status}");
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => window.BottomPanel.Debug.Console.Document.Snapshot.ToString().Contains("pointed ", StringComparison.Ordinal),
+            "the program to write the number");
+        Assert.Contains("pointed 7 7", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>Set Value as a person gives it: the row clicked, F2, the value typed and Enter, the variables shown again after.</summary>
+    private static void SetInRow(MainWindow window, VariableNode row, string value)
+    {
+        VariableNode top = window.BottomPanel.Debug.Tree.Rows.First(r => r.Depth == 0);
+        Ui.Click(Ui.Row(window.DebugWindow.VariablesList, row), settle: false);
+        Ui.Press(window, "F2");
+        Assert.True(row.IsEditing, $"F2 on {row.Name} did not open its value for editing");
+        window.KeyTextInput(value);
+        Ui.Press(window, "Enter");
+        Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.FirstOrDefault(r => r.Depth == 0) is { } again && again != top, "the variables shown again once the value was set");
+    }
+
+    private void An_evaluation_that_could_not_be_stopped_leaves_the_program_paused_and_a_step_goes_on_once_it_returns()
+    {
+        // A getter that reads input the program has not been given: an evaluation of it cannot be stopped, and runs on.
+        Write("Program.cs", "Counted counted = new();\nint total = 0;\nfor (int i = 1; i <= 3; i++)\n{\n    total += i;\n}\nConsole.WriteLine($\"total {total} {counted.Count}\");\n\n"
+            + "static class Waits\n{\n    public static string Input => Console.ReadLine() ?? \"none\";\n}\n\n"
+            + "sealed class Counted\n{\n    public int Count => 1;\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(4, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Value(window, "i") == "1", "the stop in the loop");
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+
+        Evaluate(window, "Waits.Input");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Name == "Waits.Input" && r.Value.Contains("could not be stopped", StringComparison.Ordinal)),
+            "the debugger to give up on the evaluation");
+        Assert.True(window.Debugger.Session?.State == DebugState.Paused, "The program was left running while the IDE showed it paused");
+        Assert.Contains(new LineMark(4, LineMarkKind.ExecutionPoint), editor.LineMarks);
+        Assert.NotEmpty(view.Frames);
+        // The locals read after it are the stop's: the evaluation's frames, left on its thread above them, are not.
+        Assert.True(Value(window, "i") == "1", $"After the evaluation Variables showed {string.Join(", ", view.Tree.Rows.Select(r => $"{r.Name} = {r.Value}"))}: the evaluation's frames were taken for the stop's");
+        // No getter runs while it does, though what needs no code run in the program evaluates.
+        Assert.True(Member(window, "counted", "Count").StartsWith("Implicit evaluation is disabled", StringComparison.Ordinal),
+            "A getter ran while an evaluation that could not be stopped was held unfinished");
+        Evaluate(window, "i + 1");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Name == "i + 1"), "the sum evaluated");
+        Assert.Equal("2", view.Tree.Rows.First(r => r.Name == "i + 1").Value);
+
+        Ui.Run(window, AppActions.StepOver);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Running || window.Status?.StartsWith("Could not", StringComparison.Ordinal) == true,
+            "the step to be taken");
+        Assert.True(window.Debugger.Session?.State == DebugState.Running, $"The step was refused: {window.Status}");
+        _ = window.Debugger.Session!.InputAsync("typed\n");
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && editor.LineMarks.Contains(new LineMark(5, LineMarkKind.ExecutionPoint)),
+            "the step to end at the next line");
+        Ui.WaitFor(() => Value(window, "total") == "1", "the stop's locals");
+        // The program has gone on since, so getters run again.
+        Assert.Equal("1", Member(window, "counted", "Count"));
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+
+        static void Evaluate(MainWindow window, string expression)
+        {
+            Ui.Run(window, AppActions.Evaluate);
+            window.KeyTextInput(expression);
+            Ui.Press(window, "Enter");
+        }
+
+        static string Member(MainWindow window, string local, string member)
+        {
+            VariableNode row = Row(window, local) ?? throw new InvalidOperationException($"Variables shows no {local}");
+            Task opened = window.BottomPanel.Debug.Tree.Expand(row);
+            Ui.WaitFor(() => opened.IsCompleted, $"{local}'s members");
+            return row.Children?.FirstOrDefault(c => c.Name == member)?.Value
+                ?? throw new InvalidOperationException($"{local} has no member {member}: {string.Join(", ", (row.Children ?? []).Select(c => c.Name))}");
+        }
+    }
+
+    /// <summary>Continue pressed while a stop's values are still being read (a watch, a result and a ToString that each
+    /// run 1.5 s in the program) shows the program running at once and sets it going before the evaluation under way
+    /// ends: its other thread, which an evaluation at a stop holds, ticks while that evaluation still spins, and the
+    /// evaluation ends in the program, which goes on from it to the next stop.</summary>
+    private void Continue_pressed_while_a_stops_values_are_read_shows_the_program_running_at_once_and_sets_it_going()
+    {
+        string engineLog = Path.Combine(Fresh(), "engine.log");
+        string? kept = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+        try
+        {
+            ContinuePressedWhileValuesAreRead();
+        }
+        catch (TimeoutException stuck) when (Ui.Shared(engineLog) is { } log && log.IndexOf("is past its time", StringComparison.Ordinal) is >= 0 and int from)
+        {
+            throw new TimeoutException($"{stuck.Message}. The engine's log, from an evaluation's first going past its time:\n{log[from..Math.Min(log.Length, from + 12_000)]}", stuck);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, kept);
+        }
+    }
+
+    private void ContinuePressedWhileValuesAreRead()
+    {
+        string ticks = Path.Combine(Fresh(), "ticks.txt");
+        // Each spin's begin, and its end with the other thread's count of ticks as it began and as it ended.
+        string spins = Path.Combine(Fresh(), "spins.txt");
+        Write("Program.cs", "Slow slow = new();\n"
+            + $"new Thread(() =>\n{{\n    for (long n = 1; ; n++)\n    {{\n        try\n        {{\n            File.WriteAllText(@\"{ticks}\", n.ToString());\n        }}\n        catch (IOException)\n        {{\n        }}\n        Interlocked.Exchange(ref Slow.Ticks, n); Thread.Sleep(5);\n    }}\n}}) {{ IsBackground = true }}.Start();\n"
+            // The stop waits out the other thread's start, whose locks an evaluation there would wait on while holding it still.
+            + "while (Interlocked.Read(ref Slow.Ticks) < 2)\n{\n    Thread.Sleep(1);\n}\n"
+            + "int total = 0;\nfor (int i = 1; i <= 3; i++)\n{\n    total += i;\n}\nConsole.WriteLine($\"total {total}\");\n\n"
+            + "sealed class Slow\n{\n    public static long Ticks;\n\n    public int Getter => Spin(1500);\n\n    public override string ToString() => $\"slow {Spin(1500)}\";\n\n"
+            + $"    static int Spin(int ms)\n    {{\n        long from = Interlocked.Read(ref Ticks);\n        File.AppendAllText(@\"{spins}\", \"began\\n\");\n"
+            + "        System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();\n"
+            + $"        while (clock.ElapsedMilliseconds < ms)\n        {{\n        }}\n        File.AppendAllText(@\"{spins}\", $\"ended {{from}} {{Interlocked.Read(ref Ticks)}}\\n\");\n        return ms;\n    }}\n}}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(22, 4));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Value(window, "i") == "1", "the first stop's locals");
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput("slow.Getter");
+        Ui.Press(window, OperatingSystem.IsMacOS() ? "meta shift Enter" : "control shift Enter");
+        Watched(view, "slow.Getter", "1500", "the slow watch");
+        Ui.Run(window, AppActions.Evaluate);
+        window.KeyTextInput("slow.Getter + 1");
+        Ui.Press(window, "Enter");
+        Ui.WaitFor(() => view.Tree.Rows.Any(r => r.Role == VariableRole.Result && r.Value == "1501"), "the slow result");
+
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => window.Debugger.Stop is not null, "the second stop's frames");
+        // Continue pressed while an evaluation spins, its thread alone running.
+        WaitDebugging(window, () => Said("began") > Said("ended"), "an evaluation of the second stop's values under way");
+        DebugSession session = window.Debugger.Session!;
+        long before = Ticks();
+        Assert.True(window.Perform(AppActions.Resume), $"Resume was refused at the stop: {window.Status}");
+        Assert.True(session.State == DebugState.Running && !editor.LineMarks.Any(m => m.Kind == LineMarkKind.ExecutionPoint)
+            && window.Status?.EndsWith(": running", StringComparison.Ordinal) == true,
+            $"Continue left the window showing the stop: the session was {session.State} and the status bar said \"{window.Status}\"");
+        Ui.PumpUntil(() => Ticks() > before, "the program to run on", TimeSpan.FromSeconds(30));
+        WaitDebugging(window, () => Value(window, "i") == "3", "the third stop's locals, once the evaluation left running had ended");
+        Assert.Equal("3", Value(window, "total"));
+        // The other thread ticks during a spin only once the program runs: at a stop the evaluation's thread runs alone.
+        string[] ended = [.. Ui.Shared(spins).Split('\n').Where(l => l.StartsWith("ended ", StringComparison.Ordinal))];
+        Assert.True(ended.Any(l => l.Split(' ') is [_, string from, string to] && long.Parse(to, System.Globalization.CultureInfo.InvariantCulture) > long.Parse(from, System.Globalization.CultureInfo.InvariantCulture)),
+            $"No evaluation spun while the program ran on, each spin's ticks the same at its start and end: the debugger waited for the stop's evaluations before it let the program go ({string.Join("; ", ended)})");
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+
+        long Ticks() => long.TryParse(Ui.Shared(ticks), out long n) ? n : 0;
+        int Said(string word) => Ui.Shared(spins).Split('\n').Count(l => l.StartsWith(word, StringComparison.Ordinal));
+    }
+
+    /// <summary>A program debugged with Hot Reload and stopped at once finds the thread of Passenger's hook in it in its call
+    /// of the system's receive, partway through nothing an evaluation there could need, and on macOS and Linux, where .NET's
+    /// sockets have a thread of their own, no such thread in a program that made no socket.</summary>
+    private void A_program_stopped_at_once_finds_the_hooks_thread_waiting_in_its_read_with_no_thread_of_its_beside_it()
+    {
+        string hook = Pitstop.UpdateHandlers.Wire.ThreadName;
+        Write("Program.cs", "Probe probe = new();\nConsole.WriteLine(probe);\nThread.Sleep(500);\nConsole.WriteLine(\"slept\");\n\n"
+            + "sealed class Probe\n{\n    public override string ToString() => $\"probe {DateTime.MinValue.Year}\";\n}\n");
+        MainWindow window = Open();
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(1, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        editor.GoTo(new TextPosition(3, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        WaitDebugging(window, () => Value(window, "probe") == "probe 1", "the first stop's probe, its ToString evaluated there");
+        Ui.WaitFor(() => view.Threads.Any(t => t.Name == hook), () => $"the hook's thread among the program's: {string.Join(", ", view.Threads.Select(t => t.Name))}");
+        ComboBox threads = window.DebugWindow.GetVisualDescendants().OfType<ComboBox>().First(c => ReferenceEquals(c.ItemsSource, view.Threads));
+        threads.SelectedItem = view.Threads.First(t => t.Name == hook);
+        Ui.WaitFor(() => view.Frames.Any(f => f.Name.StartsWith("Pitstop.UpdateHandlers.dll!", StringComparison.Ordinal)), () => $"the hook's thread's frames: {Frames()}");
+        // The topmost managed frame is the call into the system: what is above it, if shown, is the system's own.
+        string called = view.Frames.First(f => f.Name.Contains('!', StringComparison.Ordinal)).Name;
+        string method = called[called.IndexOf('!', StringComparison.Ordinal)..];
+        Assert.True(method.Contains("Receive", StringComparison.Ordinal) || method.Contains("recv", StringComparison.Ordinal),
+            $"At a stop as Main began the hook's thread was not in its call of the system's receive, so a stop there catches it partway through what an evaluation may need: {Frames()}");
+
+        Ui.Run(window, AppActions.Resume);
+        WaitDebugging(window, () => editor.LineMarks.Contains(new LineMark(3, LineMarkKind.ExecutionPoint)), "the stop after the program slept");
+        Ui.WaitFor(() => view.Threads.Any(t => t.Name == hook), "the threads at the second stop");
+        Assert.False(!OperatingSystem.IsWindows() && view.Threads.Any(t => t.Name == ".NET Sockets"),
+            $".NET's socket thread runs in a program that made no socket, started by the hook, where a stop can catch it starting: {string.Join(", ", view.Threads.Select(t => t.Name))}");
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+
+        string Frames() => string.Join("; ", view.Frames.Select(f => f.Name));
+    }
+
+    private void A_value_from_the_stop_before_a_step_opens_to_an_error_never_to_another_values_members()
+    {
+        Write("Program.cs", "static class Program\n{\n    static void Main()\n    {\n        Inner inner = new();\n        Visited visited = new();\n"
+            + "        Visit(visited);\n        Console.WriteLine(Console.ReadLine());\n    }\n\n    static void Visit(Visited visited)\n    {\n"
+            + "        Console.WriteLine(visited.VisitedField);\n    }\n}\n\nsealed class Inner\n{\n    public int InnerField = 1;\n}\n\n"
+            + "sealed class Visited\n{\n    public string VisitedField = \"v\";\n}\n");
+        MainWindow window = Open();
+        window.EditorArea.CodeEditor.GoTo(new TextPosition(6, 8));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        StartDebugging(window);
+        WaitDebugging(window, () => Row(window, "inner") is not null, "the stop before the call");
+        Pitstop.App.ToolWindows.DebugModel view = window.BottomPanel.Debug;
+        VariableNode stale = Row(window, "inner")!;
+        Assert.True(stale.HasChildren);
+
+        Ui.Run(window, AppActions.StepInto);
+        Ui.WaitFor(() => Row(window, "inner") is null && Row(window, "visited") is not null, "the stop in the method called");
+        // The row the last stop showed, opened as a click on it would: what it named is gone with that stop.
+        Task opened = view.Tree.Expand(stale);
+        Ui.WaitFor(() => opened.IsCompleted, "the row's members to be asked for");
+        Assert.DoesNotContain(stale.Children ?? [], c => c.Name == "VisitedField");
+        VariableNode refused = Assert.Single(stale.Children ?? []);
+        Assert.Equal(VariableRole.Error, refused.Role);
+        Assert.Contains("earlier stop", refused.Value, StringComparison.Ordinal);
+        Assert.DoesNotContain(view.Tree.Rows, r => r.Parent == stale);
+
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Running && view.Tree.Rows.Count == 0 && view.Frames.Count == 0,
+            "the last stop's frames and values to be cleared while the program runs");
+        Assert.Null(view.SelectedFrame);
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        window.Close();
+    }
+
+    /// <summary>The middle of a line's number in the gutter, in the window's coordinates.</summary>
+    private static Point Gutter(MainWindow window, CodeEditor editor, int line)
+    {
+        Point bottom = editor.GutterPoint(line);
+        return editor.TranslatePoint(new Point(bottom.X / 2, bottom.Y - 8), window)!.Value;
+    }
+
+    /// <summary>Where a line's execution arrow is drawn, right of its number, in the window's coordinates.</summary>
+    private static Point Arrow(MainWindow window, CodeEditor editor, int line) =>
+        editor.TranslatePoint(editor.GutterColumnPoint(editor.Gutter!.Marks, line), window)!.Value;
+
+    /// <summary>A top-level row of the Variables view, by name.</summary>
+    private static string? Value(MainWindow window, string name) => Row(window, name)?.Value;
+
+    private static VariableNode? Row(MainWindow window, string name) =>
+        window.BottomPanel.Debug.Tree.Rows.FirstOrDefault(r => r.Depth == 0 && r.Name == name);
+
+    /// <summary>What is typed into the Debug console is the program's input; and Pause stops the program where it runs on in
+    /// its loop, shown there.</summary>
+    private void What_is_typed_into_the_debug_console_is_the_programs_input_and_pause_stops_it_where_it_is_in_its_loop()
+    {
+        // Said by another thread once the loop has turned: said before it, a pause could find the program in its write.
+        Write("Program.cs", "Console.Write(\"Name? \");\nstring? name = Console.ReadLine();\nConsole.WriteLine($\"read: {name}\");\n"
+            + "long turns = 0;\nTurned turned = new();\nnew Thread(() => { while (!turned.Yes) { Thread.Sleep(1); } Console.WriteLine(\"looping\"); }).Start();\n"
+            + "while (true)\n{\n    turns++;\n    turned.Yes = true;\n}\n\nclass Turned\n{\n    public volatile bool Yes;\n}\n");
+        MainWindow window = Open();
+        try
+        {
+            StartDebugging(window);
+            Pitstop.App.ToolWindows.OutputView console = window.BottomPanel.Debug.Console;
+            Ui.WaitFor(() => console.Document.Snapshot.ToString().Contains("Name? ", StringComparison.Ordinal), "the program to ask");
+            Ui.TypeToDebugged(window, "Ada");
+            WaitDebugging(window, () => console.Document.Snapshot.ToString().Contains("looping", StringComparison.Ordinal), "the program to read the line and go on to its loop");
+            Assert.Contains("Name? Ada\nread: Ada\n", console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+
+            window.Perform(AppActions.Pause);
+            Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && window.BottomPanel.Debug.Frames.Count > 0, "the pause to be shown");
+            Assert.InRange(window.BottomPanel.Debug.Frames[0].Line, 7, 11);
+            Assert.Contains(window.EditorArea.CodeEditor.LineMarks, m => m.Kind == LineMarkKind.ExecutionPoint && m.Line is >= 6 and <= 10);
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+            window.Close();
+        }
+    }
+
+    /// <summary>A program debugged prints 100,000 lines each in a colour of its own, then a line in .NET's console colour
+    /// (with TERM set, as an IDE started from a terminal passes on): the Debug console keeps the end of them within its
+    /// limit, free of colour codes, each line in its colour, .NET's too where it writes colours into a pipe once told.</summary>
+    private void Debugging_a_program_that_prints_100000_coloured_lines_shows_them_in_their_colours_free_of_colour_codes_within_its_limit()
+    {
+        Write("Program.cs", "Environment.SetEnvironmentVariable(\"TERM\", \"xterm-256color\");\n"
+            + "for (int i = 0; i < 100_000; i++)\n{\n    Console.WriteLine($\"\\u001b[3{i % 7 + 1}mline {i}\\u001b[0m\");\n}\n"
+            + "Console.ForegroundColor = ConsoleColor.DarkCyan;\nConsole.Write(\"printed\");\nConsole.ResetColor();\nConsole.WriteLine();\n");
+        MainWindow window = Open();
+        Pitstop.App.ToolWindows.OutputView console = window.BottomPanel.Debug.Console;
+        string Text() => console.Document.Snapshot.ToString();
+        try
+        {
+            window.Perform(AppActions.Debug);
+            Ui.PumpUntil(() => Text().Contains("printed", StringComparison.Ordinal), "the program to print its last line", TimeSpan.FromMinutes(2));
+
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the program to end");
+            string text = Text();
+            Assert.DoesNotContain("\u001b", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("[0m", text, StringComparison.Ordinal);
+            Assert.Contains("\nline 99999\nprinted\n", text, StringComparison.Ordinal);
+            Assert.True(text.Length <= Pitstop.App.ToolWindows.OutputView.DefaultLimitKb * 1024, $"The console kept {text.Length} characters");
+            Assert.Equal(TokenKeys.Terminal_Ansi5, ConsoleColoursTests.LookAt(console, "line 99999")?.Fore.Token);
+            Assert.Equal(TokenKeys.Terminal_Ansi4, ConsoleColoursTests.LookAt(console, "line 99998")?.Fore.Token);
+            if (!OperatingSystem.IsWindows())
+            {
+                // Windows' .NET sets a console's colours through the console alone, writing none into a pipe.
+                Assert.Equal(TokenKeys.Terminal_Ansi6, ConsoleColoursTests.LookAt(console, "printed")?.Fore.Token);
+            }
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+            window.Close();
+        }
+    }
+
+    private void A_debugger_that_dies_with_an_exception_leaves_the_window_up_with_its_words_in_the_console_and_the_log()
+    {
+        // A folder in the engine log's place kills the adapter as it starts, its stack trace on standard error.
+        string folderForLog = TestFolders.Create("engine-log-");
+        string? engineLog = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, folderForLog);
+        try
+        {
+            MainWindow window = Open();
+            // This session's debugger, by its process: another test's may have ended in the run's log before.
+            int adapter = 0;
+            window.Debugger.StateChanged += (_, _) => adapter = window.Debugger.Session?.AdapterProcessId ?? adapter;
+            Ui.Run(window, AppActions.Debug);
+            Assert.True(adapter != 0, $"Debug started no debugger: {window.Status}");
+            string ended = $"Pitstop's debugger (process {adapter}) stopped";
+            Ui.WaitFor(() => Ui.IdeLog().Contains(ended, StringComparison.Ordinal), "the debugger's end in the IDE's log");
+
+            Assert.True(window.IsVisible, "The IDE went down with its debugger");
+            Assert.False(window.Debugger.IsDebugging);
+            Assert.Contains("Could not debug", window.Status, StringComparison.Ordinal);
+            // Every line of the stack trace, to its last frame: a line that failed on the wrong thread would end the reading.
+            string console = window.BottomPanel.Debug.Console.Document.Snapshot.ToString();
+            Assert.Contains("Unhandled exception. System.UnauthorizedAccessException", console, StringComparison.Ordinal);
+            Assert.Contains("at Program.<Main>", console, StringComparison.Ordinal);
+            string log = Ui.IdeLog();
+            log = log[log.IndexOf(ended, StringComparison.Ordinal)..];
+            Assert.Contains("UnauthorizedAccessException", log, StringComparison.Ordinal);
+            Assert.Contains("at Program.<Main>", log, StringComparison.Ordinal);
+            string debuggerLog = Ui.Shared(Path.Combine(IdeErrors.LogFolder, "dap.log"));
+            Assert.Contains("Unhandled exception. System.UnauthorizedAccessException", debuggerLog, StringComparison.Ordinal);
+            window.Close();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+        }
+    }
+
+    private void A_debugger_killed_while_its_program_is_paused_takes_the_program_with_it()
+    {
+        string started = Path.Combine(TestFolders.Create("debuggee-"), "program.pid");
+        MainWindow window = OpenSleeper(started, languageServer: false);
+        OwnProcess debuggee = default;
+        OwnProcess adapter = default;
+        try
+        {
+            window.EditorArea.CodeEditor.GoTo(new TextPosition(1, 0));
+            Ui.Run(window, AppActions.ToggleBreakpoint);
+            StartDebugging(window);
+            WaitDebugging(window, () => window.Debugger.Session?.State == DebugState.Paused, "the program to stop at the breakpoint");
+            debuggee = OwnProcess.Of(Running(window, started));
+            adapter = OwnProcess.Of(window.Debugger.Session!.AdapterProcessId);
+
+            // The debugger alone, as a crash ends it: what it started is left to whatever ends it next.
+            adapter.Kill(alone: true);
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end with its debugger");
+            Assert.True(Processes.Gone(debuggee.Id), "The debugger died and the IDE left the program it launched running, held at its breakpoint, until the IDE closed");
+            Assert.Contains("the debugger itself stopped", window.Status, StringComparison.Ordinal);
+            window.Close();
+        }
+        finally
+        {
+            debuggee.Kill();
+            adapter.Kill();
+        }
+    }
+
+    /// <summary>A configuration started again ends what runs of it first, whichever of Run and Debug started it: Run of the
+    /// one debugged ends the debugged program and its session, Debug of the one Run runs ends that run, one copy running
+    /// after each.</summary>
+    private void Run_of_a_debugged_configuration_and_Debug_of_a_run_one_each_end_it_first_leaving_one_copy()
+    {
+        string started = Path.Combine(TestFolders.Create("debuggee-"), "program.pid");
+        MainWindow window = OpenSleeper(started, languageServer: false);
+        List<OwnProcess> programs = [];
+        try
+        {
+            StartDebugging(window);
+            int debugged = Running(window, started);
+            programs.Add(OwnProcess.Of(debugged));
+            File.Delete(started);
+
+            Ui.Launched(window, window.RunAsync(), "Run of the configuration debugged");
+            int run = Processes.WrittenId(started, "Run's program to start");
+            programs.Add(OwnProcess.Of(run));
+            Assert.True(Processes.Gone(debugged), $"Run of the configuration debugged left the debugged program running beside its own: {Processes.Describe(debugged)}");
+            Assert.False(window.Debugger.IsDebugging, "Run of the configuration debugged left its session going");
+            File.Delete(started);
+
+            StartDebugging(window);
+            int again = Running(window, started);
+            programs.Add(OwnProcess.Of(again));
+            Assert.True(Processes.Gone(run), $"Debug of the configuration Run runs left Run's program running beside the debugged one: {Processes.Describe(run)}");
+            Assert.False(window.Runner.IsRunning, "Debug of the configuration Run runs left Run's program holding the Run console");
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            programs.ForEach(program => program.Kill());
+            window.Close();
+        }
+    }
+
+    /// <summary>Run or Debug pressed as the other's start of the same configuration is under way, its program not started
+    /// yet, stops that start first, as it ends one that runs: Run as Debug's start begins leaves Run's program running alone
+    /// and no session open, and Debug as Run's start begins leaves the debugged program alone and the Run console free.</summary>
+    private void Run_or_Debug_pressed_as_the_others_start_of_a_configuration_is_under_way_stops_that_start_leaving_one_copy()
+    {
+        string started = Path.Combine(TestFolders.Create("debuggee-"), "program.pid");
+        MainWindow window = OpenSleeper(started, languageServer: false);
+        List<OwnProcess> programs = [];
+        try
+        {
+            Task<string?> debugging = window.DebugAsync();
+            Task<string?> running = window.RunAsync();
+            Ui.Launched(window, running, "Run, pressed as Debug's start of the configuration began");
+            string? debugged = Ui.Await(debugging, "Debug's start, which Run was to stop");
+            int run = Processes.WrittenId(started, "Run's program to start");
+            programs.Add(OwnProcess.Of(run));
+            Assert.True(debugged is not null && !window.Debugger.IsDebugging && window.Runner.IsRunning,
+                $"Run pressed as Debug's start began left two copies: Debug's start came to \"{debugged ?? "a session open"}\", Run's program "
+                + $"{(window.Runner.IsRunning ? "runs" : "does not run")}");
+            Assert.True(Copies(started) is not { } copies || copies.SequenceEqual([run]), $"Run pressed as Debug's start began left these copies running: {Listed(Copies(started))}");
+
+            Ui.Run(window, AppActions.Stop);
+            Ui.WaitFor(() => !window.Runner.IsRunning && Processes.Gone(run), "Run's program to end");
+            File.Delete(started);
+
+            running = window.RunAsync();
+            debugging = window.DebugAsync();
+            Ui.Launched(window, debugging, "Debug, pressed as Run's start of the configuration began");
+            string? ran = Ui.Await(running, "Run's start, which Debug was to stop");
+            int again = Running(window, started);
+            programs.Add(OwnProcess.Of(again));
+            Assert.True(ran is not null && window.Debugger.IsDebugging && !window.Runner.IsRunning,
+                $"Debug pressed as Run's start began left two copies: Run's start came to \"{ran ?? "its program running"}\", the session is "
+                + $"{(window.Debugger.IsDebugging ? "open" : "not open")}");
+            Assert.True(Copies(started) is not { } left || left.SequenceEqual([again]), $"Debug pressed as Run's start began left these copies running: {Listed(Copies(started))}");
+        }
+        finally
+        {
+            Ui.Run(window, AppActions.Stop);
+            programs.ForEach(program => program.Kill());
+            window.Close();
+        }
+
+        // The sleepers running that were given this file, by id, as ps lists them; null on Windows, which has no ps.
+        static int[]? Copies(string file) => OperatingSystem.IsWindows() ? null
+            : [.. Processes.Listed().Where(p => p.Value.Contains(file, StringComparison.Ordinal)).Select(p => p.Key).Order()];
+
+        static string Listed(int[]? ids) => ids is null ? "unknown" : string.Join(", ", ids.Select(Processes.Describe));
+    }
+
+    private void Closing_the_window_while_debugging_leaves_no_program_debugger_or_language_server_running()
+    {
+        string started = Path.Combine(TestFolders.Create("debuggee-"), "program.pid");
+        // A server of the window's own, which its close is to end, not one it would leave for the next window.
+        MainWindow window = OpenSleeper(started, languageServer: true);
+        OwnProcess debuggee = default;
+        OwnProcess adapter = default;
+        int server = window.CSharpService?.Session?.Server.ProcessId ?? throw new InvalidOperationException("The language server did not start");
+        try
+        {
+            StartDebugging(window);
+            debuggee = OwnProcess.Of(Running(window, started));
+            Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Running }, "the session to say the program runs");
+            adapter = OwnProcess.Of(window.Debugger.Session!.AdapterProcessId);
+            window.Close();
+
+            // The IDE's process waits for these before it ends, a few seconds at most.
+            Assert.True(Ui.Ended(window), "The window closed without ending what it started within its limit, so the IDE's process would not end");
+            Assert.True(Processes.Gone(debuggee.Id), "After the window closed, the program being debugged went on running");
+            Assert.True(Processes.Gone(adapter.Id), "After the window closed, the debugger went on running");
+            Assert.True(Processes.Gone(server), "After the window closed, the language server went on running until the IDE's own end");
+        }
+        finally
+        {
+            debuggee.Kill();
+            adapter.Kill();
+        }
+    }
+
+    /// <summary>Run as a window test is, on a dispatcher that goes when its run ends, and looked at after: whatever the
+    /// window left waiting on that dispatcher is never come back to, and a request it waited on that failed later would be
+    /// an error for the finalizer to report into whichever test ran then.</summary>
+    [Fact]
+    public async Task Stop_and_the_windows_close_on_a_program_the_debugger_cannot_end_leave_no_failed_request_once_the_windows_loop_is_gone()
+    {
+        string started = Path.Combine(TestFolders.Create("debuggee-"), "program.pid");
+        List<DapException> unheard = [];
+        EventHandler<UnobservedTaskExceptionEventArgs> finalized = (_, e) =>
+        {
+            lock (unheard)
+            {
+                unheard.AddRange(e.Exception.InnerExceptions.OfType<DapException>());
+            }
+        };
+        TaskScheduler.UnobservedTaskException += finalized;
+        OwnProcess debuggee = default;
+        OwnProcess adapter = default;
+        try
+        {
+            // A failure comes back as the run's answer: thrown, it would end this test on the window's thread (below).
+            (OwnProcess Program, OwnProcess Debugger, Task? Ended, Exception? Failed) run = await HeadlessUnitTestSession.GetOrStartForAssembly(typeof(DebuggerTests).Assembly).Dispatch(() =>
+            {
+                // As every window test starts and ends (TestsLeaveNothingBehind), its window closed however the run ends.
+                BackgroundWork.Forget();
+                OpenWindows.Watch();
+                try
+                {
+                    // No language server: nothing it starts on this dispatcher is left for a later window to take up.
+                    MainWindow window = OpenSleeper(started, languageServer: false);
+                    StartDebugging(window);
+                    OwnProcess program = OwnProcess.Of(Running(window, started));
+                    Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Running }, "the session to say the program runs");
+                    OwnProcess debugger = OwnProcess.Of(window.Debugger.Session!.AdapterProcessId);
+                    // Stopped where it stands, it answers neither Stop nor the close, which kills both after its limit.
+                    program.Suspend("The program");
+                    window.Perform(AppActions.Stop);
+                    window.Close();
+                    return (program, debugger, window.Ended, (Exception?)null);
+                }
+                catch (Exception failed)
+                {
+                    OpenWindows.CloseAll();
+                    return (default, default, null, failed);
+                }
+            }, TestContext.Current.CancellationToken);
+            // Off the window's thread, where the session ends a run: a test ending there holds it in the runner's wait for the next.
+            await Task.Yield();
+            if (run.Failed is not null)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(run.Failed);
+            }
+            (debuggee, adapter) = (run.Program, run.Debugger);
+            Task ended = run.Ended ?? throw new InvalidOperationException("The window closed with no end to wait for");
+
+            Assert.True(await Waiting.Within(ended, MainWindow.EndLimit + TimeSpan.FromSeconds(5).Scaled(), TestContext.Current.CancellationToken, scaled: false),
+                "The window closed without ending what it started within its limit, so the IDE's process would not end");
+            Assert.True(Processes.Gone(adapter.Id), "After the window closed, the debugger went on running");
+            Assert.True(Processes.Gone(debuggee.Id), "After the window closed, the program being debugged went on running");
+            // A task nobody came back for is heard of when the collector finalizes it.
+            for (int i = 0; i < 20; i++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Waiting.For(TimeSpan.FromMilliseconds(100), "for a task nobody came back for to be finalized and heard of, were there one");
+            }
+            lock (unheard)
+            {
+                Assert.True(unheard.Count == 0, "A request to the debugger failed once the window's loop was gone, with nothing left to hear it, so the IDE "
+                    + $"would report it as an error into whatever ran next: {string.Join("; ", unheard.Select(e => e.Message))}");
+            }
+        }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= finalized;
+            debuggee.Kill();
+            adapter.Kill();
+        }
+    }
+
+    private void Debug_tests_with_a_test_host_the_debugger_cannot_attach_to_ends_the_session_saying_why()
+    {
+        // What VSTest hands the IDE to attach to, here a host with no .NET in it.
+        using Process host = Debugging.Helpers.Debuggees.NotDotnet();
+        try
+        {
+            MainWindow window = Open();
+            Task<bool> attached = window.Tests.AttachDebugger!(host.Id, null);
+            Assert.False(Ui.Await(attached, "the attach to give up", TimeSpan.FromSeconds(30)), "The IDE told VSTest the debugger had hold of a test host it could not attach to");
+            Assert.False(window.Debugger.IsDebugging, "The session went on after its attach failed, saying the tests run");
+            Assert.Contains($"Could not debug Tests: Could not attach to process {host.Id}", window.Status, StringComparison.Ordinal);
+            Assert.Contains("not a .NET program", window.Status, StringComparison.Ordinal);
+            window.Close();
+        }
+        finally
+        {
+            ChildProcesses.Kill(host);
+        }
+    }
+
+    /// <summary>A program started outside Passenger, as a terminal starts one, waiting for a line: Attach to Process
+    /// lists it, its process id typed narrows the list to the programs that show it (its own, and any whose id or
+    /// command line has it inside), its row chosen and Enter attaches; Detach lets it go still waiting, and Reattach to
+    /// Process takes hold of it again; then the line it reads brings it to the breakpoint, and Detach leaves it running
+    /// on past the breakpoint to its end, reading and writing as it would have undebugged.</summary>
+    private void Attach_to_process_stops_a_program_started_outside_passenger_at_a_breakpoint_it_then_reaches_and_detach_leaves_it_running_to_its_end()
+    {
+        string source = PathNames.Canonical(Debugging.Helpers.Debuggees.Source("ReadsInputConsoleApp", "Program.cs"));
+        int line = Debugging.Helpers.Debuggees.Line("ReadsInputConsoleApp", "Console.WriteLine") - 1;
+        ProcessStartInfo start = ChildProcesses.Command(Debugging.Helpers.Debuggees.Apphost("ReadsInputConsoleApp"), []);
+        start.RedirectStandardInput = true;
+        start.RedirectStandardOutput = true;
+        using Process program = ChildProcesses.Start(start);
+        Task<string> output = program.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
+        try
+        {
+            // Running, as a program a person attaches to is: its runtime has opened what a debugger attaches through.
+            Ui.WaitFor(() => DotnetProcesses.List().Any(p => p.Id == program.Id), "the program's runtime to start");
+            MainWindow window = new() { Width = 1200, Height = 800 };
+            window.Show();
+            window.OpenFile(source);
+            Ui.Settle();
+            CodeEditor editor = window.EditorArea.CodeEditor;
+            editor.GoTo(new TextPosition(line, 4));
+            Ui.Run(window, AppActions.ToggleBreakpoint);
+
+            AttachToProcessDialog dialog = OpenAttachToProcess(window);
+            DotnetProcess listed = Assert.Single(dialog.Shown, p => p.Id == program.Id);
+            Assert.Equal(OperatingSystem.IsWindows() ? "ReadsInputConsoleApp.exe" : "ReadsInputConsoleApp", listed.Name);
+            Assert.Contains("ReadsInputConsoleApp", listed.CommandLine, StringComparison.Ordinal);
+            Assert.True(listed.IsMine && listed.User.Length > 0, $"The program the person started was listed as {(listed.IsMine ? "theirs" : "another user's")}, user '{listed.User}'");
+            ChooseById(dialog, program.Id);
+            dialog.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.None, null);
+            Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Running }, "the debugger to attach to the program");
+            Assert.Empty(window.OwnedWindows.OfType<AttachToProcessDialog>());
+            Assert.True(window.DockHost.IsShown(ToolWindowIds.Debug), "Attaching left the Debug window closed");
+            Assert.Equal("ReadsInputConsoleApp: running", window.Status);
+
+            Assert.True(window.Perform(AppActions.Detach), "Detach could not run on the program attached to");
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the debugger to let go of the program");
+            Assert.Equal("Detached from ReadsInputConsoleApp, which runs on", window.Status);
+            Assert.True(DotnetProcesses.Runs(program), "Detach ended the program it let go of");
+            Ui.Run(window, AppActions.ReattachToProcess);
+            Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Running }, "Reattach to Process to attach to the program again");
+
+            program.StandardInput.WriteLine("hello");
+            program.StandardInput.Flush();
+            Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && Value(window, "line") is not null, "the program to stop at the breakpoint");
+            Assert.Equal("\"hello\"", Value(window, "line"));
+            Assert.Contains(new LineMark(line, LineMarkKind.ExecutionPoint), editor.LineMarks);
+
+            Assert.True(window.Perform(AppActions.Detach), "Detach could not run on the paused program");
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the debugger to let go of the paused program");
+            Assert.True(program.WaitForExit(TimeSpan.FromSeconds(30)), "The program let go of at its breakpoint never ran on to its end");
+            if (program.ExitCode != 0 && OperatingSystem.IsWindows() && System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.X64)
+            {
+                // Its copy with CET's shadow stacks off, let go the same way, says whether they are what ended it.
+                string unshadowed = LetGoAtBreakpoint(window, "ReadsInputConsoleAppNoCet");
+                Assert.Fail($"The program let go of at its breakpoint ended with exit code 0x{program.ExitCode:X8}; its copy built with CetCompat=false, let go the same way, {unshadowed}");
+            }
+            Assert.Equal(0, program.ExitCode);
+            Assert.Equal("read: hello", Ui.Await(output, "the program's output to its end").Trim());
+            Assert.DoesNotContain(editor.LineMarks, m => m.Kind == LineMarkKind.ExecutionPoint);
+            window.Close();
+        }
+        finally
+        {
+            ChildProcesses.Kill(program);
+        }
+    }
+
+    /// <summary>Attach to Process lists the .NET programs running and nothing else: not a program with no .NET in it, not
+    /// Passenger itself, and not a process that took the number of a .NET program which crashed and left its debugger
+    /// pipes behind; a program's command line shows with its secrets masked, and what the search finds of none says so.</summary>
+    private void Attach_to_process_lists_dotnet_programs_alone()
+    {
+        using Process other = Debugging.Helpers.Debuggees.NotDotnet();
+        ProcessStartInfo start = ChildProcesses.Command(Debugging.Helpers.Debuggees.Apphost("LoopingConsoleApp"), ["sleep", "--Password=hunter2-in-a-row", "--ApiKey=sk-live-123456"]);
+        start.RedirectStandardOutput = true;
+        using Process looping = ChildProcesses.Start(start);
+        // What a .NET program that crashed would leave in the temporary folder, under a number the other has since.
+        string left = Path.Combine(Path.GetTempPath(), $"clr-debug-pipe-{other.Id}-1-in");
+        if (!OperatingSystem.IsWindows())
+        {
+            File.WriteAllText(left, string.Empty);
+        }
+        try
+        {
+            Assert.Equal("looping", looping.StandardOutput.ReadLine());
+            MainWindow window = new() { Width = 1200, Height = 800 };
+            window.Show();
+            Ui.Settle();
+            AttachToProcessDialog dialog = OpenAttachToProcess(window);
+            Assert.Contains(dialog.Shown, p => p.Id == looping.Id && p.Program == "LoopingConsoleApp");
+            Assert.DoesNotContain(dialog.Shown, p => p.Id == other.Id);
+            Assert.DoesNotContain(dialog.Shown, p => p.Id == Environment.ProcessId);
+
+            // Other programs may show its id, so the search's word for none is asked with words no program shows.
+            dialog.KeyTextInput(other.Id.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Ui.Settle();
+            Assert.DoesNotContain(dialog.Shown, p => p.Id == other.Id);
+
+            dialog.Search.SelectAll();
+            dialog.KeyTextInput("--ApiKey");
+            Ui.Settle();
+            Control row = Ui.Row(dialog.GetVisualDescendants().OfType<ListBox>().Single(), Assert.Single(dialog.Rows, r => r.Process?.Id == looping.Id));
+            TextBlock line = row.GetVisualDescendants().OfType<TextBlock>().Single(t => Grid.GetColumn(t) == 3);
+            string masked = $" sleep --Password={Pitstop.App.Containers.ContainerSecrets.Masked} --ApiKey={Pitstop.App.Containers.ContainerSecrets.Masked}";
+            string shown = $"{line.Text}\n{ToolTip.GetTip(line)}";
+            Assert.True(line.Text?.Contains(masked, StringComparison.Ordinal) == true && ToolTip.GetTip(line) is string tip && tip.Contains(masked, StringComparison.Ordinal)
+                && !shown.Contains("hunter2", StringComparison.Ordinal) && !shown.Contains("sk-live", StringComparison.Ordinal),
+                $"Attach to Process showed the program's command line in its row and tip as:\n{shown}");
+            string nothing = $"no-program-{Guid.NewGuid():N}";
+            dialog.Search.SelectAll();
+            dialog.KeyTextInput(nothing);
+            Ui.Settle();
+            Assert.Empty(dialog.Shown);
+            Assert.Equal($"No .NET process matches '{nothing}'", dialog.Placeholder);
+            dialog.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.None, null);
+            Ui.Settle();
+            Assert.Empty(window.OwnedWindows.OfType<AttachToProcessDialog>());
+            Assert.False(window.Debugger.IsDebugging, "Cancelling Attach to Process attached to something");
+            window.Close();
+        }
+        finally
+        {
+            File.Delete(left);
+            ChildProcesses.Kill(looping);
+            ChildProcesses.Kill(other);
+        }
+    }
+
+    /// <summary>A program attached to ran before Passenger did: closing the window lets go of it, as Detach does, and it
+    /// runs on, where a program the debugger started ends with the window.</summary>
+    private void Closing_the_window_while_attached_lets_go_of_the_program_which_runs_on()
+    {
+        ProcessStartInfo start = ChildProcesses.Command(Debugging.Helpers.Debuggees.Apphost("LoopingConsoleApp"), ["sleep"]);
+        start.RedirectStandardOutput = true;
+        using Process looping = ChildProcesses.Start(start);
+        OwnProcess adapter = default;
+        try
+        {
+            Assert.Equal("looping", looping.StandardOutput.ReadLine());
+            MainWindow window = new() { Width = 1200, Height = 800 };
+            window.Show();
+            Ui.Settle();
+            AttachToProcessDialog dialog = OpenAttachToProcess(window);
+            dialog.Choose(looping.Id);
+            dialog.Attach();
+            Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Running }, "the debugger to attach to the program");
+            adapter = OwnProcess.Of(window.Debugger.Session!.AdapterProcessId);
+            window.Close();
+
+            Assert.True(Ui.Ended(window), "The window closed without letting go of what it attached to within its limit");
+            Assert.True(Processes.Gone(adapter.Id), "After the window closed, the debugger went on running");
+            Assert.False(looping.WaitForExit(TimeSpan.FromSeconds(2)), "Closing the window ended a program it had only attached to");
+        }
+        finally
+        {
+            ChildProcesses.Kill(looping);
+            adapter.Kill();
+        }
+    }
+
+    /// <summary>A debuggee built from ReadsInputConsoleApp's Program.cs, started outside Passenger, attached to through
+    /// Attach to Process, brought by a line to the breakpoint the window has on its source and let go there with
+    /// Detach: how it ended, in words for a failure message.</summary>
+    private static string LetGoAtBreakpoint(MainWindow window, string debuggee)
+    {
+        ProcessStartInfo start = ChildProcesses.Command(Debugging.Helpers.Debuggees.Apphost(debuggee), []);
+        start.RedirectStandardInput = true;
+        start.RedirectStandardOutput = true;
+        using Process program = ChildProcesses.Start(start);
+        Task<string> output = program.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
+        try
+        {
+            Ui.WaitFor(() => DotnetProcesses.List().Any(p => p.Id == program.Id), $"{debuggee}'s runtime to start");
+            AttachToProcessDialog dialog = OpenAttachToProcess(window);
+            ChooseById(dialog, program.Id);
+            dialog.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.None, null);
+            Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Running }, $"the debugger to attach to {debuggee}");
+            program.StandardInput.WriteLine("hello");
+            program.StandardInput.Flush();
+            Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused, $"{debuggee} to stop at the breakpoint");
+            Assert.True(window.Perform(AppActions.Detach), $"Detach could not run on {debuggee}");
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, $"the debugger to let go of {debuggee}");
+            return program.WaitForExit(TimeSpan.FromSeconds(30))
+                ? $"ended with exit code 0x{program.ExitCode:X8}, having written '{Ui.Await(output, $"{debuggee}'s output to its end").Trim()}'"
+                : "never ran on to its end";
+        }
+        finally
+        {
+            ChildProcesses.Kill(program);
+        }
+    }
+
+    /// <summary>A program's process id typed into Attach to Process's search, as a person finds it: the rows left are those
+    /// that show it, its own among them and any other whose id or command line has it inside (10328 for 328), so its own is
+    /// chosen by its id, as a person clicks it.</summary>
+    private static void ChooseById(AttachToProcessDialog dialog, int processId)
+    {
+        dialog.KeyTextInput(processId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Ui.Settle();
+        Assert.Contains(processId, dialog.Shown.Select(p => p.Id));
+        dialog.Choose(processId);
+        Assert.Equal(processId, dialog.Chosen?.Id);
+    }
+
+    /// <summary>Attach to Process from its keys, once it has listed the programs.</summary>
+    private static AttachToProcessDialog OpenAttachToProcess(MainWindow window)
+    {
+        Ui.Run(window, AppActions.AttachToProcess);
+        AttachToProcessDialog dialog = Assert.Single(window.OwnedWindows.OfType<AttachToProcessDialog>());
+        Ui.WaitFor(() => dialog.Listed.IsCompleted, "Attach to Process to list the .NET programs");
+        Assert.Same(dialog.Search, dialog.FocusManager?.GetFocusedElement());
+        return dialog;
+    }
+
+    /// <summary>A configuration that uses the terminal is debugged there: the program starts in a tab of the Terminal
+    /// window held until the debugger has hold of it, so a breakpoint on Main's first line stops it before any of it
+    /// runs; let go, it reads the key and the line typed into its tab, and its end is told there and in the status bar
+    /// with its exit code. Debugged again, starting a child, Stop ends it with what it started, and its tab says it was
+    /// ended.</summary>
+    private void Debugged_in_the_terminal_a_program_stops_on_Mains_first_line_reads_what_is_typed_there_and_stop_ends_it_and_what_it_started()
+    {
+        Write("Program.cs", File.ReadAllText(Debugging.Helpers.Debuggees.Source("TerminalConsoleApp", "Program.cs")));
+        MainWindow window = InTerminal(string.Empty);
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        editor.GoTo(new TextPosition(0, 0));
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        editor.Focus();
+        Ui.Run(window, AppActions.Debug);
+        Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Paused or DebugState.Ended }, "the debugged program to stop at the breakpoint");
+        DebugSession going = window.Debugger.Session!;
+        Assert.True(going.State == DebugState.Paused, $"Debugged in the terminal, the program ended without stopping at the breakpoint on Main's first line: {window.Status}");
+        Ui.WaitFor(() => window.BottomPanel.Debug.Frames.Count > 0, "the stop's frames");
+        Assert.True(window.BottomPanel.Debug.Frames[0].Line == 1, $"The program stopped at line {window.BottomPanel.Debug.Frames[0].Line}, not on Main's first line");
+        Pitstop.App.Run.TerminalRun program = Assert.IsType<Pitstop.App.Run.TerminalRun>(going.Terminal);
+        Assert.True(program.IsRunning && window.TerminalPanel.Tabs.Any(t => t.Run == program && t.Name == "Sum in the terminal"),
+            "The program debugged is not running in a tab of the Terminal window named for its configuration");
+        Assert.DoesNotContain("started", TerminalText(program), StringComparison.Ordinal);
+
+        Ui.Run(window, AppActions.Resume);
+        Ui.WaitFor(() => TerminalText(program).Contains("key?", StringComparison.Ordinal), "the program to ask for a key in its tab");
+        window.ShowToolWindow(ToolWindowIds.Terminal);
+        window.TerminalPanel.FocusView();
+        Ui.WaitFor(() => window.TerminalPanel.View.IsFocused && window.TerminalPanel.ActiveTab?.Run == program, "the keys to go to the program's tab");
+        window.KeyTextInput("q");
+        window.KeyTextInput("hello");
+        Ui.Press(window, "ENTER");
+        Ui.WaitFor(() => going.State == DebugState.Ended && program.Ended.IsCompleted, "the program's end");
+        string shown = TerminalText(program);
+        // A key typed before ReadKey takes the terminal is echoed by the terminal's own line discipline, as anywhere.
+        Assert.True((shown.Contains("key? key q", StringComparison.Ordinal) || shown.Contains("key? qkey q", StringComparison.Ordinal)) && shown.Contains("line hello", StringComparison.Ordinal)
+            && shown.Contains("Process finished with exit code 3.", StringComparison.Ordinal), $"The program's tab shows:\n{shown}");
+        Assert.Equal(3, going.ExitCode);
+        Ui.WaitFor(() => window.Status == "Debugging Sum in the terminal ended with exit code 3", $"the status bar to say how it ended, not \"{window.Status}\"");
+
+        editor.GoTo(new TextPosition(0, 0));
+        editor.Focus();
+        Ui.Run(window, AppActions.ToggleBreakpoint);
+        Assert.Empty(window.Debugger.Breakpoints.In(Program));
+        window.SetConfigurations([new Pitstop.App.Run.RunConfiguration
+        {
+            Name = "Sum in the terminal",
+            Project = Path.Combine(PathNames.Canonical(Folder), "Sum.csproj"),
+            Arguments = "child",
+            Console = Pitstop.App.Run.ConsoleKind.Terminal,
+        }], "Sum in the terminal");
+        StartDebugging(window);
+        WaitDebugging(window, () => window.Debugger.Session is { } next && next != going && next.Terminal is { } started && TerminalText(started).Contains("key?", StringComparison.Ordinal),
+            "the program to start its child and ask for a key");
+        Pitstop.App.Run.TerminalRun run = window.Debugger.Session!.Terminal!;
+        string said = TerminalText(run).Split('\n').First(l => l.StartsWith("child ", StringComparison.Ordinal));
+        int child = int.Parse(said["child ".Length..], System.Globalization.CultureInfo.InvariantCulture);
+        Assert.True(Processes.IsRunning(child), "The program's child is not running");
+
+        Ui.Run(window, AppActions.Stop);
+        Ui.WaitFor(() => !window.Debugger.IsDebugging && run.Ended.IsCompleted, "the session to end");
+        Assert.True(Processes.Gone(run.ProcessId), $"Stop left the program running: {Processes.Describe(run.ProcessId)}");
+        Assert.True(Processes.Gone(child), $"Stop left the program's child running: {Processes.Describe(child)}");
+        Assert.Contains("Process finished with exit code ", TerminalText(run), StringComparison.Ordinal);
+        Assert.False(window.FindControl<Avalonia.Controls.Button>("StopButton")!.IsEnabled, "The toolbar's Stop could still be clicked once the session ended");
+        window.Close();
+    }
+
+    /// <summary>A program debugged with the Debug window's console that needs a terminal (Console.ReadKey refusing the
+    /// console's pipe) is offered one at the debugger's stop on the exception, read from the exception the debugger has
+    /// before the runtime writes it: the Debugger tab and the console say so, and Debug in the Terminal debugs it again in a
+    /// tab of the Terminal window, where it reads a key typed there, the configuration using the terminal from then on.</summary>
+    private void A_program_debugged_needing_a_terminal_is_offered_one_at_its_stop_on_the_exception_and_reads_a_key_there()
+    {
+        Write("Program.cs", "Console.WriteLine(\"key?\");\nConsoleKeyInfo key = Console.ReadKey(intercept: true);\nConsole.WriteLine($\"key {key.KeyChar}\");\n");
+        MainWindow window = Open();
+        try
+        {
+            StartDebugging(window);
+            WaitDebugging(window, () => window.Debugger.Session is { State: DebugState.Paused or DebugState.Ended }, "the program to stop at ReadKey's exception");
+            DebugSession stopped = window.Debugger.Session!;
+            Assert.True(stopped.State == DebugState.Paused, $"The program did not stop at ReadKey's exception: {window.Status}");
+            DebugView debug = window.DebugWindow;
+            Ui.WaitFor(() => debug.Offered is not null, () => $"the Debugger tab to offer a terminal at the stop: {window.Status}");
+            const string said = "Sum needs a terminal for Console.ReadKey: the Debug window gives it pipes";
+            Assert.Equal(said, debug.Offered);
+            OutputView console = window.BottomPanel.Debug.Console;
+            Assert.True(stopped.State == DebugState.Paused && console.Offered == said,
+                $"The offer did not come at the stop, over the console too: {stopped.State}, the console offering {console.Offered ?? "nothing"}");
+            console.Flush();
+            Assert.DoesNotContain("Unhandled exception", console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+
+            Ui.ClickButton(debug, "Debug in the Terminal");
+            WaitDebugging(window, () => window.Debugger.Session is { } next && next != stopped && next.Terminal is { } started && TerminalText(started).Contains("key?", StringComparison.Ordinal),
+                "the program debugged again in the terminal to ask for a key");
+            Pitstop.App.Run.TerminalRun program = window.Debugger.Session!.Terminal!;
+            Assert.Equal(Pitstop.App.Run.ConsoleKind.Terminal, window.Configuration?.Console);
+            Assert.True(debug.Offered is null && console.Offered is null, $"The offer taken is still made: {debug.Offered ?? console.Offered}");
+            window.ShowToolWindow(ToolWindowIds.Terminal);
+            window.TerminalPanel.FocusView();
+            Ui.WaitFor(() => window.TerminalPanel.View.IsFocused && window.TerminalPanel.ActiveTab?.Run == program, "the keys to go to the program's tab");
+            window.KeyTextInput("q");
+            Ui.WaitFor(() => TerminalText(program).Contains("key q", StringComparison.Ordinal), () => $"the program to read the key typed in the terminal; its tab shows:\n{TerminalText(program)}");
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the program to end once it read its key");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>A breakpoint set while the debugger still waits for the program's runtime (here held at its start, a
+    /// diagnostic port of the test's own), the first in a file of its own, reaches the program once it runs and stops
+    /// it.</summary>
+    private void A_breakpoint_set_while_debugging_starts_reaches_the_program_and_stops_it()
+    {
+        Write("Program.cs", "Console.ReadLine();\nOther.Run();\n");
+        string other = Write("Other.cs", "static class Other\n{\n    public static void Run()\n    {\n        Console.WriteLine(\"other ran\");\n    }\n}\n");
+        using Debugging.Helpers.StartHold hold = new();
+        MainWindow window = Open();
+        window.SetConfigurations([new Pitstop.App.Run.RunConfiguration
+        {
+            Name = "Sum held",
+            Project = Path.Combine(PathNames.Canonical(Folder), "Sum.csproj"),
+            Environment = new Dictionary<string, string>(hold.Environment),
+        }], "Sum held");
+        Task<int> held = hold.Held(TimeSpan.FromMinutes(3));
+        OwnProcess program = default;
+        OwnProcess adapter = default;
+        try
+        {
+            // Not settled: the start holds the window's background work for as long as the debugger waits for the program.
+            Assert.True(window.Perform(AppActions.Debug), $"Debug did not start: {Ui.Said(window)}");
+            program = OwnProcess.Of(Ui.AwaitPumped(held, "the build, then the program's runtime to come to the hold", TimeSpan.FromMinutes(3)));
+            DebugSession starting = window.Debugger.Session ?? throw new InvalidOperationException($"No session while the program was held: {window.Status}");
+            adapter = OwnProcess.Of(starting.AdapterProcessId);
+            Assert.Equal(DebugState.Starting, starting.State);
+            window.OpenFile(other);
+            CodeEditor editor = window.EditorArea.CodeEditor;
+            editor.GoTo(new TextPosition(4, 8));
+            Assert.True(window.Perform(AppActions.ToggleBreakpoint), $"Toggle Breakpoint was refused: {window.Status}");
+
+            Task letGo = hold.LetGo();
+            Ui.PumpUntil(() => letGo.IsCompleted && starting.State != DebugState.Starting, "the program to run", TimeSpan.FromSeconds(60));
+            WaitDebugging(window, () => editor.LineMarks.Contains(new LineMark(4, LineMarkKind.BreakpointBound)),
+                "the breakpoint set while the debugger started to be bound in the program");
+            _ = starting.InputAsync("go\n");
+            WaitDebugging(window, () => starting.State == DebugState.Paused && editor.LineMarks.Contains(new LineMark(4, LineMarkKind.ExecutionPoint)),
+                "the program to stop at the breakpoint set while it started");
+            Ui.Run(window, AppActions.Stop);
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+            window.Close();
+        }
+        finally
+        {
+            program.Kill();
+            adapter.Kill();
+        }
+    }
+
+    /// <summary>A program debugged in the Debug window's console that started another has it ended with it, by Debug again
+    /// before the next starts, then by Stop, as Run's Stop ends what a program started: the debugger ends the program
+    /// alone, and what it started would run on, holding the port an app's dev server holds.</summary>
+    private void Debug_again_and_stop_end_what_a_debugged_program_started_with_it()
+    {
+        Write("Program.cs", "System.Diagnostics.Process child = System.Diagnostics.Process.Start(OperatingSystem.IsWindows()\n"
+            + "    ? new System.Diagnostics.ProcessStartInfo(\"ping\", [\"-n\", \"600\", \"127.0.0.1\"]) { RedirectStandardOutput = true }\n"
+            + "    : new System.Diagnostics.ProcessStartInfo(\"/bin/sleep\", [\"600\"]))!;\nConsole.WriteLine($\"child {child.Id}\");\nConsole.ReadLine();\n");
+        MainWindow window = Open();
+        window.ApplySettings(window.Settings with { AskBeforeRerun = false });
+        string Said() => window.BottomPanel.Debug.Console.Document.Snapshot.ToString();
+        int? Child(DebugSession? past) => window.Debugger.Session is { } now && now != past
+            && Said().Split('\n').LastOrDefault(l => l.StartsWith("child ", StringComparison.Ordinal)) is { } line ? int.Parse(line["child ".Length..], System.Globalization.CultureInfo.InvariantCulture) : null;
+        OwnProcess first = default;
+        OwnProcess second = default;
+        try
+        {
+            StartDebugging(window);
+            WaitDebugging(window, () => Child(null) is not null, "the debugged program to start its child");
+            DebugSession going = window.Debugger.Session!;
+            first = OwnProcess.Of(Child(null)!.Value);
+            Assert.True(Processes.IsRunning(first.Id), "The debugged program's child is not running");
+
+            StartDebugging(window);
+            WaitDebugging(window, () => Child(going) is { } next && next != first.Id, "the program debugged again to start its child");
+            second = OwnProcess.Of(Child(going)!.Value);
+            Assert.False(Processes.IsRunning(first.Id), $"Debug again started the program while the child its last run started still ran: {Processes.Describe(first.Id)}");
+
+            Ui.Run(window, AppActions.Stop);
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+            Assert.True(Processes.Gone(second.Id), $"Stop left the debugged program's child running: {Processes.Describe(second.Id)}");
+            window.Close();
+        }
+        finally
+        {
+            first.Kill();
+            second.Kill();
+        }
+    }
+
+    /// <summary>A debug session is Stop's from its first moment: one whose program's runtime is slow to start (here
+    /// held at its start, a diagnostic port of the test's own) shows Stop on the toolbar and in the Debug window while
+    /// the debugger waits, and Stop ends it at once, the program and the debugger with it, the Debug window and the
+    /// status bar saying it was stopped.</summary>
+    private void Stop_ends_a_debug_session_whose_program_is_still_starting_and_the_program_with_it()
+    {
+        using Debugging.Helpers.StartHold hold = new();
+        MainWindow window = Open();
+        window.SetConfigurations([new Pitstop.App.Run.RunConfiguration
+        {
+            Name = "Sum held",
+            Project = Path.Combine(PathNames.Canonical(Folder), "Sum.csproj"),
+            Environment = new Dictionary<string, string>(hold.Environment),
+        }], "Sum held");
+        Task<int> held = hold.Held(TimeSpan.FromMinutes(3));
+        OwnProcess program = default;
+        OwnProcess adapter = default;
+        try
+        {
+            // Not settled: the start holds the window's background work for as long as the debugger waits for the program.
+            Assert.True(window.Perform(AppActions.Debug), $"Debug did not start: {Ui.Said(window)}");
+            program = OwnProcess.Of(Ui.AwaitPumped(held, "the build, then the program's runtime to come to the hold", TimeSpan.FromMinutes(3)));
+            Assert.True(window.Debugger.Session is not null, $"The debugger waited for the program to start with no session for Stop to end: the status bar said \"{window.Status}\"");
+            DebugSession starting = window.Debugger.Session!;
+            adapter = OwnProcess.Of(starting.AdapterProcessId);
+            Assert.Equal(DebugState.Starting, starting.State);
+            Assert.True(window.FindControl<Button>("StopButton")!.IsEnabled, "The toolbar's Stop could not be clicked while the debugger waited for the program to start");
+            Button stop = window.DebugWindow.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) is string tip && tip.StartsWith("Stop", StringComparison.Ordinal));
+            Assert.True(stop.IsEnabled, "The Debug window's Stop was greyed while the debugger waited for the program to start");
+
+            // Not settled: without Stop the start would hold the background work for good.
+            Ui.Click(stop, settle: false);
+            try
+            {
+                Ui.PumpUntil(() => window.Debugger.Session is null && !Processes.IsRunning(program.Id), "Stop to end the starting session and its program", TimeSpan.FromSeconds(15));
+            }
+            catch (TimeoutException waited)
+            {
+                throw new TimeoutException($"{waited.Message}. {Debugged(window)}", waited);
+            }
+            Assert.True(Processes.Gone(adapter.Id), $"Stop left the debugger running: {Processes.Describe(adapter.Id)}");
+            Assert.Equal("Debugging Sum held was stopped as it started", window.Status);
+            Assert.Contains("Debugging Sum held was stopped as it started", window.BottomPanel.Debug.Console.Document.Snapshot.ToString(), StringComparison.Ordinal);
+            Assert.False(window.FindControl<Button>("StopButton")!.IsEnabled, "The toolbar's Stop could still be clicked once the session ended");
+            Assert.False(stop.IsEnabled, "The Debug window's Stop stayed once the session ended");
+            window.Close();
+        }
+        finally
+        {
+            program.Kill();
+            adapter.Kill();
+        }
+    }
+
+    /// <summary>The window over the folder, its configuration "Sum in the terminal" debugging Sum in the terminal with these
+    /// arguments, and chosen.</summary>
+    private MainWindow InTerminal(string arguments)
+    {
+        MainWindow window = Open();
+        window.SetConfigurations([new Pitstop.App.Run.RunConfiguration
+        {
+            Name = "Sum in the terminal",
+            Project = Path.Combine(PathNames.Canonical(Folder), "Sum.csproj"),
+            Arguments = arguments,
+            Console = Pitstop.App.Run.ConsoleKind.Terminal,
+        }], "Sum in the terminal");
+        return window;
+    }
+
+    /// <summary>A program's tab of the Terminal window as it reads, scrollback and screen.</summary>
+    private static string TerminalText(Pitstop.App.Run.TerminalRun run) =>
+        string.Join('\n', run.Session.Screen.Scrollback.Select(l => l.Text()).Concat(run.Session.Screen.Lines.Select(l => l.Text())));
+
+    /// <summary>A window on the folder with its Program.cs open: on Sum, the server the last window on it left, never saving
+    /// what the test types, so the build stays the one the files were built into; on the test's own folder, with no C#
+    /// language server unless the test applies its edits to the program (<paramref name="hotReload"/>), which the server
+    /// works out, since the debugger and the file's own parse answer the rest.</summary>
+    private MainWindow Open(bool hotReload = false)
+    {
+        if (fresh is null)
+        {
+            return sum.Open(Program, languageServer: hotReload);
+        }
+        MainWindow window = Ui.OpenFolder(fresh, languageServer: hotReload);
+        window.OpenFile(Program);
+        Ui.Settle();
+        return window;
+    }
+
+    /// <summary>Debug, as Alt+F5 starts it, its build and the debugger's start landed: one that was refused fails here with
+    /// the status bar's words, not in a wait for a program that never ran.</summary>
+    private static void StartDebugging(MainWindow window)
+    {
+        Ui.Run(window, AppActions.Debug);
+        Assert.True(window.Debugger.Session is not null, $"Debug did not start the program: {Ui.Said(window)}");
+    }
+
+    /// <summary>Waits as <see cref="Ui.WaitFor"/> does for what a program being debugged does; one that never comes says
+    /// how the debugging stood.</summary>
+    private static void WaitDebugging(MainWindow window, Func<bool> condition, string what)
+    {
+        try
+        {
+            Ui.WaitFor(condition, what);
+        }
+        catch (TimeoutException waited)
+        {
+            throw new TimeoutException($"{waited.Message}. {Debugged(window)}", waited);
+        }
+    }
+
+    /// <summary>The id a program being debugged wrote to a file as it began, saying how the debugging stood when none came.</summary>
+    private static int Running(MainWindow window, string file)
+    {
+        try
+        {
+            return Processes.WrittenId(file, "the program to run under the debugger");
+        }
+        catch (TimeoutException waited)
+        {
+            throw new TimeoutException($"{waited.Message}. {Debugged(window)}", waited);
+        }
+    }
+
+    /// <summary>The debugging as the window shows it: the session's state, the status bar and the end of the Debug console.</summary>
+    private static string Debugged(MainWindow window)
+    {
+        string console = window.BottomPanel.Debug.Console.Document.Snapshot.ToString();
+        return $"The session is {window.Debugger.Session?.State.ToString() ?? "not started"}, the status bar says \"{window.Status}\" "
+            + $"and the console ends \"{console[Math.Max(0, console.Length - 400)..]}\"";
+    }
+
+    /// <summary>A file written into the test's own folder, which it takes for a program of its own.</summary>
+    private string Write(string relative, string text) => TestFolders.Write(PathNames.Canonical(Fresh()), relative, text);
+
+    /// <summary>A window on <see cref="Sleeper"/> with its Program.cs open, which never saves what the test types, a
+    /// configuration of its own (named apart from the project's generated one) giving the program the file to write its id
+    /// to; with a C# language server of its own that ends with the window (<paramref name="languageServer"/>), or none.</summary>
+    private MainWindow OpenSleeper(string started, bool languageServer)
+    {
+        string project = PathNames.Canonical(sleeper.Folder);
+        MainWindow window = Ui.OpenFolder(sleeper.Folder, autosaves: false, languageServer: languageServer);
+        window.OpenFile(Path.Combine(project, "Program.cs"));
+        Ui.Settle();
+        window.SetConfigurations([new Pitstop.App.Run.RunConfiguration { Name = "Sleeper writing its id", Project = Path.Combine(project, "Sleeper.csproj"), Arguments = $"\"{started}\"" }], "Sleeper writing its id");
+        return window;
+    }
+
+    /// <summary>A program that writes its id to the file its argument names, says so on its second line, where a breakpoint
+    /// stops it, and sleeps for ever: the tests that end such a program share it, built once.</summary>
+    public sealed class Sleeper : SharedProject
+    {
+        public Sleeper()
+            : base("debug-sleeper-")
+        {
+            File.WriteAllText(PathOf("Sleeper.csproj"),
+                TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>"));
+            File.WriteAllText(PathOf("Program.cs"), "File.WriteAllText(args[0], Environment.ProcessId.ToString());\nConsole.WriteLine(\"stopped here\");\nThread.Sleep(Timeout.Infinite);\n");
+            // The first build makes bin, which a reset would take for a file the test added: made now, the folder stays as reset.
+            Directory.CreateDirectory(PathOf("bin"));
+        }
+    }
+
+    /// <summary>Sum as written, a loop adding one to three and the total printed, which the tests that leave it so share.</summary>
+    public sealed class Sum : SharedProject
+    {
+        public Sum()
+            : base("debug-")
+        {
+            WriteTo(Folder);
+            // The first build makes bin, which a reset would take for a file the test added: made now, the folder stays as reset.
+            Directory.CreateDirectory(PathOf("bin"));
+        }
+
+        public static void WriteTo(string folder)
+        {
+            File.WriteAllText(Path.Combine(folder, "Sum.csproj"),
+                TestProjects.Console("<ImplicitUsings>enable</ImplicitUsings>"));
+            File.WriteAllText(Path.Combine(folder, "Program.cs"),
+                "int total = 0;\nfor (int i = 1; i <= 3; i++)\n{\n    total += i;\n}\nConsole.WriteLine($\"total {total}\");\n");
+        }
+    }
+}

@@ -1,0 +1,598 @@
+using System.IO.Compression;
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using Pitstop.App;
+using Pitstop.App.CSharp;
+using Pitstop.App.Explorer;
+using Pitstop.App.Run;
+using Pitstop.App.Testing;
+using Pitstop.App.Debugging;
+using Pitstop.Workspace;
+using Pitstop.Core;
+using Pitstop.Editor;
+
+namespace Pitstop.Tests;
+
+/// <summary>A file-based program (<c>dotnet run app.cs</c>) of two files, app.cs including helper.cs and referencing a
+/// package, opened as a folder or as its C# file alone: a project of its own, named by app.cs, whose included file is its
+/// too, so the language server answers across both with no error; Run builds and runs it with its app.run.json profile's
+/// arguments, Debug stops in the included file, and a program written beside it is one too. Debugged through the window,
+/// so run alone.</summary>
+[Collection(Alone.Name)]
+public sealed class FileBasedProgramsTests : IDisposable
+{
+    private readonly string folder = PathNames.Canonical(TestFolders.Create("program-"));
+
+    public FileBasedProgramsTests()
+    {
+        string feed = Directory.CreateDirectory(Path.Combine(folder, "feed")).FullName;
+        string package = Path.Combine(feed, "Passenger.ProgramTest.1.0.0.nupkg");
+        File.WriteAllBytes(package, StandInFeed.Package("Passenger.ProgramTest", "1.0.0"));
+        using (ZipArchive zip = ZipFile.Open(package, ZipArchiveMode.Update))
+        {
+            zip.CreateEntryFromFile(typeof(PathNames).Assembly.Location, "lib/net11.0/Pitstop.Core.dll");
+        }
+        TestFolders.Write(folder, "nuget.config", """
+            <configuration>
+              <packageSources><clear /><add key="local" value="feed" /></packageSources>
+              <config><add key="globalPackagesFolder" value="packages" /></config>
+            </configuration>
+            """);
+        TestFolders.Write(folder, "Directory.Build.props", ProgramProps);
+        TestFolders.Write(folder, "app.cs", """
+            #:package Passenger.ProgramTest@1.0.0
+            #:property PublishAot=false
+            #:include helper.cs
+            int unused = 0;
+            Console.WriteLine(Helper.Greet(string.Join(" ", args)));
+            Console.WriteLine(typeof(Pitstop.Core.PathNames).Name);
+
+            """);
+        TestFolders.Write(folder, "helper.cs", """
+            static class Helper
+            {
+                public static string Greet(string name)
+                {
+                    int unused = 0;
+                    return $"Hello, {name}";
+                }
+            }
+
+            """);
+        TestFolders.Write(folder, "app.run.json", """
+            {
+              "profiles": {
+                "greet": { "commandName": "Project", "commandLineArgs": "Ada Lovelace" }
+              }
+            }
+            """);
+        // Native AOT, on for a program by default, would restore its compiler's packages, which the stand-in feed lacks.
+        Restore.Run(App);
+    }
+
+    public void Dispose() => TestFolders.Delete(folder);
+
+    /// <summary>The Directory.Build.props of every program's folder: what its restores and builds write lies in the folder,
+    /// each program's apart (the SDK's project names a folder of the person's), which the test removes; and Native AOT's
+    /// publish, on for a program by default, has no restore fetch this platform's runtime packs, which the feeds lack.</summary>
+    private const string ProgramProps = """
+        <Project>
+          <PropertyGroup>
+            <UseArtifactsOutput>true</UseArtifactsOutput>
+            <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+            <IncludeProjectNameInArtifactsPaths>true</IncludeProjectNameInArtifactsPaths>
+            <UseDefaultPublishRuntimeIdentifier>false</UseDefaultPublishRuntimeIdentifier>
+          </PropertyGroup>
+        </Project>
+
+        """;
+
+    private string App => Path.Combine(folder, "app.cs");
+
+    private string Helper => Path.Combine(folder, "helper.cs");
+
+    /// <summary>A file-based program opened as a folder or a file, beside a solution or alone, is a project that
+    /// answers across its files and references, runs with its profile, debugs into an included file, builds only what
+    /// changed and lists its tests, and what it includes is never a program itself, on the earliest .NET 10 SDK too, as one
+    /// flow, each step the check one test made in an instance of its own.</summary>
+    [AvaloniaFact]
+    public void A_file_based_program_is_a_project_that_answers_runs_debugs_and_tests()
+    {
+        Flow.StepApart<FileBasedProgramsTests>("a program opened as a folder is a project that answers across its files runs with its profile and stops in its included file", t => t.A_program_opened_as_a_folder_is_a_project_that_answers_across_its_files_runs_with_its_profile_and_stops_in_its_included_file());
+        Flow.StepApart<FileBasedProgramsTests>("a program opened as its file opens with its folder as the same project", t => t.A_program_opened_as_its_file_opens_with_its_folder_as_the_same_project());
+        Flow.StepApart<FileBasedProgramsTests>("a program beside a solution is listed after its projects and runs and debugs", t => t.A_program_beside_a_solution_is_listed_after_its_projects_and_runs_and_debugs());
+        Flow.StepApart<FileBasedProgramsTests>("a second run of an unchanged program builds nothing and a change to its included file builds it", t => t.A_second_run_of_an_unchanged_program_builds_nothing_and_a_change_to_its_included_file_builds_it());
+        Flow.StepApart<FileBasedProgramsTests>("a programs xunit tests show in the tests window and run from it", t => t.A_programs_xunit_tests_show_in_the_tests_window_and_run_from_it());
+        Flow.StepApart<FileBasedProgramsTests>("files a program includes from another folder or by a wildcard are never programs themselves", t => t.Files_a_program_includes_from_another_folder_or_by_a_wildcard_are_never_programs_themselves());
+        Flow.StepApart<FileBasedProgramsTests>("a program referencing another under an alias has it for a project answered across run with it and followed renamed", t => t.A_program_referencing_another_under_an_alias_has_it_for_a_project_answered_across_run_with_it_and_followed_renamed());
+        Flow.StepApart<FileBasedProgramsTests>("a file of top level statements alone with no directive is a program that completes runs and debugs", t => t.A_file_of_top_level_statements_alone_with_no_directive_is_a_program_that_completes_runs_and_debugs());
+        Flow.StepApart<FileBasedProgramsTests>("programs beside a solution on net 10 sdks are projects that build and run", t => t.Programs_beside_a_solution_on_net_10_sdks_are_projects_that_build_and_run());
+    }
+
+    private void A_program_opened_as_a_folder_is_a_project_that_answers_across_its_files_runs_with_its_profile_and_stops_in_its_included_file()
+    {
+        MainWindow window = Ui.OpenFolder(folder);
+        try
+        {
+            Assert.Null(window.OpenFile(App));
+            Holds(window);
+
+            TestFolders.Write(folder, "tool.cs", "#!/usr/bin/env dotnet\n#:property PublishAot=false\nConsole.WriteLine(\"tool\");\n");
+            Ui.WaitFor(() => window.Configurations.Any(c => c.Name == "tool"), "tool.cs, written beside app.cs, to be a program of its own", TimeSpan.FromMinutes(1));
+            Assert.Equal(2, window.Projects.Count);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    private void A_program_opened_as_its_file_opens_with_its_folder_as_the_same_project()
+    {
+        MainWindow window = new() { Width = 1200, Height = 800 };
+        window.Show();
+        try
+        {
+            Assert.Null(window.Open(App));
+            Ui.WaitFor(() => window.Folder is { } open && PathNames.Same(open, folder) && window.EditorArea.Active?.Path is { } shown && PathNames.Same(shown, App),
+                "app.cs open in its folder's window");
+            Holds(window);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>A program beside a solution is the folder's, as in a folder with no solution: a project row of the Solution
+    /// view after the solution's own, with its run configuration, its file served in its project, and Run and Debug
+    /// building and launching it; Build builds the solution and the program.</summary>
+    private void A_program_beside_a_solution_is_listed_after_its_projects_and_runs_and_debugs()
+    {
+        TestFolders.Write(folder, "Lib/Lib.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net11.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
+        TestFolders.Write(folder, "Lib/Shapes.cs", "namespace Lib;\n\npublic static class Shapes\n{\n}\n");
+        TestFolders.Write(folder, "Tools.slnx", "<Solution>\n  <Project Path=\"Lib/Lib.csproj\" />\n</Solution>\n");
+        MainWindow window = Ui.OpenFolder(folder);
+        try
+        {
+            Assert.Equal("Tools", window.Solution?.Name);
+            Ui.WaitFor(() => window.Configurations.Any(c => c.Name == "app: greet"), "app.cs beside the solution to be a program with its app.run.json profile's configuration",
+                TimeSpan.FromMinutes(2));
+            Assert.Equal(["Lib.csproj", "app.cs"], window.Projects.Select(p => Path.GetFileName(p.Path)).Order(StringComparer.Ordinal));
+            Ui.WaitFor(() => window.ExplorerView.Tree.Root?.Children is [{ Name: "Lib" }, { Name: "app", IsProgram: true }],
+                () => $"the Solution view to list Lib, then the program app; it lists {string.Join(", ", window.ExplorerView.Tree.Root?.Children?.Select(c => c.Name) ?? [])}");
+            Assert.Equal("2 projects", window.ExplorerView.Tree.Root!.Detail);
+            Ui.WaitFor(() => window.Projects.Single(p => PathNames.Same(p.Path, App)).IsEvaluated, "the program evaluated", TimeSpan.FromMinutes(2));
+            ExplorerNode program = window.ExplorerView.Tree.Root.Children![1];
+            window.ExplorerView.Tree.Expand(program);
+            Assert.Equal(["Dependencies", "app.cs", "helper.cs"], program.Children!.Select(c => c.Name));
+            Assert.Equal([Path.Combine(folder, "Tools.slnx"), App], window.WorkspaceModel!.BuildTargets(window.Projects));
+            Assert.Null(window.OpenFile(App));
+            WaitForWarning(window, App, "app.cs");
+
+            // A program written beside them is found and loaded by the same language server, which is not started again.
+            CSharpService? served = window.CSharpService;
+            TestFolders.Write(folder, "tools/tool.cs", "#:property PublishAot=false\nint unused = 0;\nConsole.WriteLine(\"tool\");\n");
+            Ui.WaitFor(() => window.Configurations.Any(c => c.Name == "tool"), "tools/tool.cs, written beside the solution, to be a program of its own", TimeSpan.FromMinutes(1));
+            Assert.Same(served, window.CSharpService);
+            Assert.Null(window.OpenFile(Path.Combine(folder, "tools", "tool.cs")));
+            WaitForWarning(window, Path.Combine(folder, "tools", "tool.cs"), "tool.cs");
+            RunsAndStops(window);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>A second Run of a program nothing of which changed builds nothing, the Build window saying it is up to date;
+    /// a change to a file it includes builds it first, and the run shows the change.</summary>
+    private void A_second_run_of_an_unchanged_program_builds_nothing_and_a_change_to_its_included_file_builds_it()
+    {
+        List<string> builds = [];
+        EventHandler<ChildStart> started = (_, child) =>
+        {
+            if (child.Command.Contains(" build ", StringComparison.Ordinal) && child.Command.Contains("app.cs", StringComparison.Ordinal))
+            {
+                lock (builds)
+                {
+                    builds.Add(child.Command);
+                }
+            }
+        };
+        ChildProcesses.Started += started;
+        MainWindow window = Ui.OpenFolder(folder, languageServer: false);
+        try
+        {
+            Ui.WaitFor(() => window.Configurations.Any(c => c.Name == "app: greet"), "app.cs's configuration", TimeSpan.FromMinutes(2));
+            Assert.True(window.SelectConfiguration("app: greet"));
+            Ran(window, builds, built: true, "Hello, Ada Lovelace", "its first run");
+            Ran(window, builds, built: false, "Hello, Ada Lovelace", "a run with nothing changed");
+
+            File.WriteAllText(Helper, File.ReadAllText(Helper).Replace("$\"Hello, {name}\"", "$\"Goodbye, {name}\"", StringComparison.Ordinal));
+            Ran(window, builds, built: true, "Goodbye, Ada Lovelace", "a run after the file it includes changed");
+            Ran(window, builds, built: false, "Goodbye, Ada Lovelace", "a run with nothing changed since");
+        }
+        finally
+        {
+            ChildProcesses.Started -= started;
+            window.Close();
+        }
+    }
+
+    /// <summary>Runs the program chosen, holding it to a dotnet build of it or none, and to printing what it should.</summary>
+    private static void Ran(MainWindow window, List<string> builds, bool built, string printed, string which)
+    {
+        int before;
+        lock (builds)
+        {
+            before = builds.Count;
+        }
+        Ui.Launched(window, window.RunAsync(), $"app.cs's run ({which})", TimeSpan.FromMinutes(2));
+        Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), $"the program to finish ({which})", TimeSpan.FromMinutes(2));
+        Assert.Contains(printed, Output(window), StringComparison.Ordinal);
+        int ran;
+        lock (builds)
+        {
+            ran = builds.Count - before;
+        }
+        window.BottomPanel.Build.Flush();
+        string console = window.BottomPanel.Build.Document.Snapshot.ToString();
+        bool skipped = console.Contains(BuildRunController.UpToDateSaid("app"), StringComparison.Ordinal);
+        Assert.True(built ? ran == 1 && !skipped : ran == 0 && skipped,
+            $"{which} {(built ? "was not built first" : "was built though nothing it reads changed")}: {ran} dotnet builds of app.cs started, and the Build window says:\n{console}");
+    }
+
+    /// <summary>A program holding xUnit tests (<c>#:package xunit.v3</c>) is a test project of its own: the Unit Tests window
+    /// shows its tests from its code, and Run All builds it and runs them, each passing or failing as it does.</summary>
+    private void A_programs_xunit_tests_show_in_the_tests_window_and_run_from_it()
+    {
+        // The run's own NuGet configuration, whose package cache holds xunit.v3 as the tests' own project restores it.
+        string tests = PathNames.Canonical(TestFolders.Create("program-tests-"));
+        try
+        {
+            TestFolders.Write(tests, "Directory.Build.props", ProgramProps);
+            string sums = TestFolders.Write(tests, "sums.cs", """
+                #:package xunit.v3@3.2.2
+                #:property PublishAot=false
+                using Xunit;
+
+                public class SumTests
+                {
+                    [Fact]
+                    public void Two_and_two_make_four() => Assert.Equal(4, 2 + 2);
+
+                    [Fact]
+                    public void Two_and_two_make_five() => Assert.Equal(5, 2 + 2);
+                }
+
+                """);
+            Restore.Run(sums);
+            MainWindow window = Ui.OpenFolder(tests, languageServer: false);
+            try
+            {
+                Ui.WaitFor(() => window.Projects is [{ IsTestProject: true }], "sums.cs to be a program holding tests", TimeSpan.FromMinutes(2));
+                window.Perform(AppActions.ShowTests);
+                Ui.WaitFor(() => Method(window, "Two_and_two_make_four") is not null && Method(window, "Two_and_two_make_five") is not null,
+                    () => $"the Unit Tests window to show the program's tests from its code; it shows {string.Join(", ", window.Tests.Tree.Rows.Select(r => r.Name))}");
+
+                Assert.True(window.Perform(AppActions.RunAllTests));
+                Ui.WaitFor(() => !window.Tests.IsBusy && Method(window, "Two_and_two_make_four")?.State is TestState.Passed or TestState.Failed,
+                    () => $"the run of the program's tests ({window.BottomPanel.Tests.Status})", TimeSpan.FromMinutes(3));
+                Assert.True(Method(window, "Two_and_two_make_four")!.State == TestState.Passed,
+                    $"The program's passing test did not pass: {Method(window, "Two_and_two_make_four")!.Details}\n{window.BottomPanel.Tests.Status}");
+                Assert.Equal(TestState.Failed, Method(window, "Two_and_two_make_five")!.State);
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            TestFolders.Delete(tests);
+        }
+    }
+
+    private static TestNode? Method(MainWindow window, string name) =>
+        window.Tests.Tree.Roots.SelectMany(r => r.Methods).FirstOrDefault(m => m.Name == name);
+
+    /// <summary>Files a program includes from another folder and by a wildcard, each with directives of its own, are the
+    /// program's code rather than programs of their own: the folder's one project is the program, compiling them, and its
+    /// run prints what each gives.</summary>
+    private void Files_a_program_includes_from_another_folder_or_by_a_wildcard_are_never_programs_themselves()
+    {
+        TestFolders.Write(folder, "app.cs", """
+            #:package Passenger.ProgramTest@1.0.0
+            #:property PublishAot=false
+            #:include helper.cs
+            #:include shared/util.cs
+            #:include lib/*.cs
+            Console.WriteLine(Helper.Greet(Util.Name + " " + Extra.Name));
+
+            """);
+        TestFolders.Write(folder, "shared/util.cs", "#:property Nullable=enable\nstatic class Util\n{\n    public const string Name = \"util\";\n}\n");
+        TestFolders.Write(folder, "lib/extra.cs", "#:property ImplicitUsings=enable\nstatic class Extra\n{\n    public const string Name = \"extra\";\n}\n");
+        MainWindow window = Ui.OpenFolder(folder, languageServer: false);
+        try
+        {
+            Ui.WaitFor(() => window.Projects is [{ IsEvaluated: true }], () => $"app.cs to be the folder's one program, evaluated; the projects are {string.Join(", ", window.Projects.Select(p => p.Path))}",
+                TimeSpan.FromMinutes(2));
+            ProjectModel program = Assert.Single(window.Projects);
+            Assert.True(PathNames.Same(program.Path, App), $"The folder's one project is {program.Path}, not the program app.cs");
+            Assert.True(program.Holds(Path.Combine(folder, "shared", "util.cs")) && program.Holds(Path.Combine(folder, "lib", "extra.cs")),
+                $"app.cs does not compile the files it includes: {string.Join(", ", program.Evaluated!.Items.Where(i => i.Type == MSBuildNames.Compile).Select(i => i.Path))}");
+            Assert.True(window.SelectConfiguration("app: greet"));
+            Ui.Launched(window, window.RunAsync(), "app.cs to build and run", TimeSpan.FromMinutes(2));
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to finish", TimeSpan.FromMinutes(2));
+            Assert.Contains("Hello, util extra\n", Output(window), StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>A program that references another (<c>#:ref lib.cs Aliases=Shared</c>, a library of its own under an alias)
+    /// has that program for a project too, which the language server answers across into, and Run builds and runs the two;
+    /// the library renamed, the directive names it there, its metadata kept, and the program is evaluated with it again.</summary>
+    private void A_program_referencing_another_under_an_alias_has_it_for_a_project_answered_across_run_with_it_and_followed_renamed()
+    {
+        TestFolders.Write(folder, "lib.cs", """
+            #:property OutputType=Library
+            #:property PublishAot=false
+            public static class Lib
+            {
+                public static string Shout(string text) => text.ToUpperInvariant();
+            }
+
+            """);
+        TestFolders.Write(folder, "app.cs", """
+            #:property PublishAot=false
+            #:ref lib.cs Aliases=Shared
+            extern alias Shared;
+            int unused = 0;
+            Console.WriteLine(Shared::Lib.Shout("referenced"));
+
+            """);
+        Restore.Run(App);
+        MainWindow window = Ui.OpenFolder(folder);
+        try
+        {
+            Ui.WaitFor(() => window.Configurations.Any(c => c.Name == "app: greet") && window.Projects.All(p => p.IsEvaluated), "the two programs evaluated",
+                TimeSpan.FromMinutes(2));
+            Assert.Equal(["app.cs", "lib.cs"], window.Projects.Select(p => Path.GetFileName(p.Path)).Order(StringComparer.Ordinal));
+            Assert.Contains(Path.Combine(folder, "lib.cs"), window.Projects.Single(p => PathNames.Same(p.Path, App)).ProjectReferences);
+            Assert.Null(window.OpenFile(App));
+            WaitForWarning(window, App, "app.cs");
+            Ui.PlaceAfter(window.EditorArea.CodeEditor, "Lib.Sh");
+            Ui.Run(window, AppActions.GoToDeclaration);
+            Ui.WaitFor(() => window.EditorArea.Active?.Name == "lib.cs", "Go to Definition of Lib.Shout to open lib.cs");
+
+            Assert.True(window.SelectConfiguration("app: greet"));
+            Ui.Launched(window, window.RunAsync(), "app.cs to build and run", TimeSpan.FromMinutes(2));
+            Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to finish", TimeSpan.FromMinutes(2));
+            Assert.Contains("REFERENCED\n", Output(window), StringComparison.Ordinal);
+
+            Assert.Null(Ui.Await(window.RenameAsync(Path.Combine(folder, "lib.cs"), "shared.cs"), "the rename of lib.cs"));
+            Assert.Contains("#:ref shared.cs Aliases=Shared\n", File.ReadAllText(App), StringComparison.Ordinal);
+            string shared = Path.Combine(folder, "shared.cs");
+            Ui.WaitFor(() => window.Projects.FirstOrDefault(p => PathNames.Same(p.Path, App)) is { IsEvaluated: true } app && app.ProjectReferences.Contains(shared, PathNames.Comparer),
+                () => $"app.cs, its #:ref renamed, to be evaluated referencing shared.cs ({string.Join(", ", window.Projects.Select(p => $"{Path.GetFileName(p.Path)}: {string.Join(", ", p.ProjectReferences)}"))})",
+                TimeSpan.FromMinutes(1));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    /// <summary>A C# file of no directive, only top-level statements (named with an accent and a space), opened alone in a
+    /// folder of no project, is a program as <c>dotnet run</c> takes it: its folder opens with its run configuration, the
+    /// language server warns of its unused variable and completes in it, Run prints its output and Debug stops at its
+    /// breakpoint.</summary>
+    private void A_file_of_top_level_statements_alone_with_no_directive_is_a_program_that_completes_runs_and_debugs()
+    {
+        string plain = PathNames.Canonical(TestFolders.Create("plain-program-"));
+        try
+        {
+            TestFolders.Write(plain, "nuget.config", """
+                <configuration>
+                  <packageSources><clear /><add key="local" value="feed" /></packageSources>
+                </configuration>
+                """);
+            Directory.CreateDirectory(Path.Combine(plain, "feed"));
+            TestFolders.Write(plain, "Directory.Build.props", ProgramProps);
+            // Native AOT, on for a program by default, would restore its compiler's packages, which the empty feed lacks.
+            TestFolders.Write(plain, "Directory.Build.targets", "<Project>\n  <PropertyGroup>\n    <PublishAot>false</PublishAot>\n  </PropertyGroup>\n</Project>\n");
+            string program = Path.Combine(plain, "héllo app.cs");
+            TestFolders.Write(plain, "héllo app.cs", """
+                int unused = 0;
+                var greeting = "Hello from a plain program";
+                Console.WriteLine(greeting);
+                Console.WriteLine(greeting.Length);
+
+                """);
+            Restore.Run(program);
+            MainWindow window = new() { Width = 1200, Height = 800 };
+            window.Show();
+            try
+            {
+                Assert.Null(window.Open(program));
+                Ui.WaitFor(() => window.Folder is { } open && PathNames.Same(open, plain) && window.EditorArea.Active?.Path is { } shown && PathNames.Same(shown, program),
+                    "héllo app.cs open in its folder's window");
+                Ui.WaitFor(() => window.Configurations.Any(c => c.Name == "héllo app"), () => $"héllo app.cs to be a program with its configuration; the window has {string.Join(", ", window.Configurations.Select(c => c.Name))} ({window.Status})",
+                    TimeSpan.FromMinutes(2));
+                ProjectModel only = Assert.Single(window.Projects);
+                Assert.True(PathNames.Same(only.Path, program), $"The folder's one project is {only.Path}, not the program héllo app.cs");
+
+                WaitForWarning(window, program, "héllo app.cs");
+                Ui.PlaceAfter(window.EditorArea.CodeEditor, "Console.WriteLine(greeting.");
+                Ui.Run(window, AppActions.Complete);
+                Ui.WaitFor(() => window.Assist.CompletionLabels.Contains("Length") && window.Assist.CompletionLabels.Contains("ToUpper"),
+                    () => $"the server's completion of a string in héllo app.cs; it offers {string.Join(", ", window.Assist.CompletionLabels.Take(10))}");
+                Ui.Press(window, "ESCAPE");
+
+                Assert.True(window.SelectConfiguration("héllo app"));
+                Ui.Launched(window, window.RunAsync(), "héllo app.cs to build and run", TimeSpan.FromMinutes(2));
+                Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to finish", TimeSpan.FromMinutes(2));
+                Assert.Contains("Hello from a plain program\n26\n", Output(window), StringComparison.Ordinal);
+
+                int line = Array.FindIndex(File.ReadAllLines(program), l => l.Contains("greeting.Length", StringComparison.Ordinal));
+                window.Debugger.Breakpoints.Toggle(program, line);
+                Ui.Launched(window, window.DebugAsync(), "héllo app.cs to build and start under the debugger", TimeSpan.FromMinutes(2));
+                try
+                {
+                    Ui.WaitFor(() => window.Debugger.Session?.State is DebugState.Paused or DebugState.Ended && (window.Debugger.Stop is not null || window.Debugger.Session.State == DebugState.Ended),
+                        "the program to stop at its breakpoint", TimeSpan.FromMinutes(1));
+                    Assert.True(window.Debugger.Stop?.Top is { Source.Path: { } at } && PathNames.Same(at, program) && window.Debugger.Stop.Top.Line == line + 1,
+                        $"The program did not stop at line {line + 1} of héllo app.cs but at {window.Debugger.Stop?.Top?.Source?.Path}:{window.Debugger.Stop?.Top?.Line} ({window.Status})");
+                }
+                finally
+                {
+                    window.Perform(AppActions.Stop);
+                    Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+                }
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            TestFolders.Delete(plain);
+        }
+    }
+
+    /// <summary>A program in a folder of its own beside a solution, its global.json taking a .NET 10 SDK, is a project
+    /// evaluated for .NET 10 that the language server warns in, and Build and Run build and run it: on the earliest .NET 10
+    /// SDK installed (one of the first, whose project names no place for it and whose command line reads the C# file as a
+    /// project file beside MSBuild's own switches) and on the tests' own installation's newest; skipped where none is.</summary>
+    private void Programs_beside_a_solution_on_net_10_sdks_are_projects_that_build_and_run()
+    {
+        string[] installations = OperatingSystem.IsWindows() ? [Dotnet.Root(), Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet")]
+            : [Dotnet.Root(), "/usr/local/share/dotnet", "/usr/share/dotnet", "/usr/lib/dotnet", "/usr/lib64/dotnet"];
+        static IEnumerable<string> Tens(string root) =>
+            DotnetInstallation.Read(root).Sdks.Where(version => version.StartsWith("10.0.", StringComparison.Ordinal) && !version.Contains('-'));
+        string? earliest = installations.Where(Directory.Exists).SelectMany(Tens).MinBy(Version.Parse);
+        Assert.SkipWhen(earliest is null, $"No .NET 10 SDK is installed in {string.Join(", ", installations)}, so no program can be made on one");
+        foreach (string sdk in new[] { earliest, Tens(Dotnet.Root()).MaxBy(Version.Parse) }.OfType<string>().Distinct(StringComparer.Ordinal))
+        {
+            ProgramOnSdk(sdk);
+        }
+    }
+
+    /// <summary>A program beside a solution in a folder whose global.json takes the SDK given: evaluated for .NET 10, the
+    /// language server's warning on its unused variable, Build building the solution and the program, Run printing its line.</summary>
+    private static void ProgramOnSdk(string sdk)
+    {
+        string ten = PathNames.Canonical(TestFolders.Create("ten-program-"));
+        try
+        {
+            TestFolders.Write(ten, "global.json", $"{{ \"sdk\": {{ \"version\": \"{sdk}\", \"rollForward\": \"disable\" }} }}\n");
+            TestFolders.Write(ten, "nuget.config", """
+                <configuration>
+                  <packageSources><clear /><add key="local" value="feed" /></packageSources>
+                </configuration>
+                """);
+            Directory.CreateDirectory(Path.Combine(ten, "feed"));
+            TestFolders.Write(ten, "Directory.Build.props", ProgramProps);
+            // Native AOT, on for a program by default, would restore its compiler's packages, which the empty feed lacks.
+            TestFolders.Write(ten, "Directory.Build.targets", "<Project>\n  <PropertyGroup>\n    <PublishAot>false</PublishAot>\n  </PropertyGroup>\n</Project>\n");
+            TestFolders.Write(ten, "Lib/Lib.csproj", "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n");
+            TestFolders.Write(ten, "Lib/Shapes.cs", "namespace Lib;\n\npublic static class Shapes\n{\n}\n");
+            TestFolders.Write(ten, "Ten.slnx", "<Solution>\n  <Project Path=\"Lib/Lib.csproj\" />\n</Solution>\n");
+            string server = Path.Combine(ten, "tools", "mcp", "server.cs");
+            TestFolders.Write(ten, "tools/mcp/server.cs", "#:property Nullable=enable\nint unused = 0;\nConsole.WriteLine(\"server on .NET \" + Environment.Version.Major);\n");
+            Restore.Run(server, ten);
+            MainWindow window = Ui.OpenFolder(ten);
+            try
+            {
+                Ui.WaitFor(() => window.Projects.Any(p => PathNames.Same(p.Path, server) && p.Evaluated is not null),
+                    () => $"server.cs, beside Ten.slnx on SDK {sdk}, to be a program evaluated; the projects are {string.Join(", ", window.Projects.Select(p => $"{p.Path} ({p.Problem})"))}",
+                    TimeSpan.FromMinutes(2));
+                ProjectModel program = window.Projects.Single(p => PathNames.Same(p.Path, server));
+                Assert.True(program.IsEvaluated, $"server.cs on SDK {sdk} is no project the language server can load: {program.Problem}");
+                Assert.Equal(["net10.0"], program.TargetFrameworks);
+                Assert.Null(window.OpenFile(server));
+                WaitForWarning(window, server, "server.cs");
+
+                BuildOutcome built = Ui.Landed(window.BuildAsync(), $"Build of Ten.slnx and server.cs on SDK {sdk}");
+                Assert.True(built.Succeeded, $"Build of Ten.slnx and server.cs on SDK {sdk} ended {built.Status}, so a person cannot build the program there: "
+                    + $"{built.Message}\n{string.Join("\n", built.Output)}");
+                Assert.True(window.SelectConfiguration("server"));
+                Ui.Launched(window, window.RunAsync(), $"server.cs to build and run on SDK {sdk}", TimeSpan.FromMinutes(2));
+                Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), $"server.cs's run on SDK {sdk} to finish", TimeSpan.FromMinutes(2));
+                Assert.Contains("server on .NET 10\n", Output(window), StringComparison.Ordinal);
+                TestContext.Current.TestOutputHelper?.WriteLine($"server.cs beside Ten.slnx loaded, built and ran on SDK {sdk}");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            TestFolders.Delete(ten);
+        }
+    }
+
+    /// <summary>What a person gets of the program in a window open on its folder with app.cs shown.</summary>
+    private void Holds(MainWindow window)
+    {
+        Ui.WaitFor(() => window.Configurations.Any(c => c.Name == "app: greet"), "app.cs to be a program with its app.run.json profile's configuration",
+            TimeSpan.FromMinutes(2));
+        ProjectModel program = Assert.Single(window.Projects);
+        Assert.True(PathNames.Same(program.Path, App), $"The folder's one project is {program.Path}, not the program app.cs");
+        Assert.Equal("Exe", program.OutputType);
+        Assert.Contains(program.Packages, p => p.Name == "Passenger.ProgramTest" && p.Version == "1.0.0");
+
+        // An unused variable is warned of only in the program's project: a file outside it would be told no more than its syntax.
+        WaitForWarning(window, App, "app.cs");
+        Ui.PlaceAfter(window.EditorArea.CodeEditor, "Helper.Gr");
+        Ui.Run(window, AppActions.GoToDeclaration);
+        Ui.WaitFor(() => window.EditorArea.Active?.Path is { } shown && PathNames.Same(shown, Helper), "Go to Definition of Helper.Greet to open helper.cs");
+        CodeEditor editor = window.EditorArea.CodeEditor;
+        Assert.Contains("public static string Greet", editor.Document.Snapshot.GetLineText(editor.CaretPosition.Line), StringComparison.Ordinal);
+        WaitForWarning(window, Helper, "helper.cs");
+        RunsAndStops(window);
+    }
+
+    /// <summary>Run prints the program's output with its profile's arguments, and Debug stops at a breakpoint in its included file.</summary>
+    private void RunsAndStops(MainWindow window)
+    {
+        Assert.True(window.SelectConfiguration("app: greet"));
+        Ui.Launched(window, window.RunAsync(), "app.cs to build and run", TimeSpan.FromMinutes(2));
+        Ui.WaitFor(() => Output(window).Contains("Process finished", StringComparison.Ordinal), "the program to finish", TimeSpan.FromMinutes(2));
+        Assert.Contains("Hello, Ada Lovelace\nPathNames\n", Output(window), StringComparison.Ordinal);
+
+        int line = Array.FindIndex(File.ReadAllLines(Helper), l => l.Contains("return $\"Hello", StringComparison.Ordinal));
+        window.Debugger.Breakpoints.Toggle(Helper, line);
+        Ui.Launched(window, window.DebugAsync(), "app.cs to build and start under the debugger", TimeSpan.FromMinutes(2));
+        try
+        {
+            Ui.WaitFor(() => window.Debugger.Session?.State is DebugState.Paused or DebugState.Ended && (window.Debugger.Stop is not null || window.Debugger.Session.State == DebugState.Ended),
+                "the program to stop at the breakpoint in helper.cs", TimeSpan.FromMinutes(1));
+            Assert.True(window.Debugger.Stop?.Top is { Source.Path: { } at } && PathNames.Same(at, Helper) && window.Debugger.Stop.Top.Line == line + 1,
+                $"The program did not stop at line {line + 1} of helper.cs but at {window.Debugger.Stop?.Top?.Source?.Path}:{window.Debugger.Stop?.Top?.Line} ({window.Status})");
+        }
+        finally
+        {
+            window.Perform(AppActions.Stop);
+            Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
+        }
+    }
+
+    /// <summary>Waits for the server's warning on the unused variable in an open file, then holds the file to no error.</summary>
+    private static void WaitForWarning(MainWindow window, string path, string name)
+    {
+        IEnumerable<Pitstop.Lsp.Diagnostic> Diagnostics() =>
+            window.EditorArea.Documents.FirstOrDefault(d => PathNames.Same(d.Path, path)) is { } open && window.CSharpService?.For(open) is { } served ? served.Diagnostics : [];
+        Ui.WaitFor(() => Diagnostics().Any(d => d.Code?.ToString() == "CS0219"), $"the server's warning on {name}'s unused variable, which it gives only in the program's project",
+            TimeSpan.FromMinutes(2));
+        Assert.Empty(Diagnostics().Where(d => d.Severity == Pitstop.Lsp.DiagnosticSeverity.Error).Select(d => $"{d.Code}: {d.Message}"));
+    }
+
+    private static string Output(MainWindow window) => window.BottomPanel.Run.Document.Snapshot.ToString();
+}

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="../Passenger.Core/Passenger.Core.csproj" />
+    <ProjectReference Include="../Pitstop.Core/Pitstop.Core.csproj" />
     <ProjectReference Include="../Pitstop.ProjectSystem/Pitstop.ProjectSystem.csproj" />
-    <InternalsVisibleTo Include="Passenger.UnitTests" />
+    <InternalsVisibleTo Include="Pitstop.UnitTests" />
   </ItemGroup>
 </Project>

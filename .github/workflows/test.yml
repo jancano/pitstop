@@ -92,7 +92,7 @@ jobs:
       MOBILE: ${{ matrix.lane == 'report' && contains(format(' {0} ', matrix.mobile_shards), format(' {0} ', matrix.shard)) }}
       ASPIRE: ${{ matrix.lane == 'report' && matrix.shard == 2 && matrix.system == 'Linux' }}
       # Aspire's dashboard and orchestrator, and the run's own aspire CLI, downloaded by the restore and named in the
-      # tests' build (Passenger.Tests.csproj) where the job sets up for them.
+      # tests' build (Pitstop.Tests.csproj) where the job sets up for them.
       PassengerAspireRuntime: ${{ matrix.lane == 'report' && matrix.shard == 2 && matrix.system == 'Linux' }}
     defaults:
       run:
@@ -280,7 +280,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/container-images.tar
-          key: container-images-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tests/Passenger.Tests/ContainerImages.txt') }}
+          key: container-images-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tests/Pitstop.Tests/ContainerImages.txt') }}
 
       # A pull that fails is a warning, not the shard's failure: the container tests skip, saying which image is missing.
       - name: The container images the tests run on
@@ -293,7 +293,7 @@ jobs:
             echo "::warning title=Container images::The cached images did not load, so they are pulled"
             rm -f "$IMAGES"
           fi
-          images=$(grep -v '^[[:space:]]*$' tests/Passenger.Tests/ContainerImages.txt)
+          images=$(grep -v '^[[:space:]]*$' tests/Pitstop.Tests/ContainerImages.txt)
           missing=
           for image in $images; do
             docker image inspect "$image" > /dev/null 2>&1 && continue
@@ -612,7 +612,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             tools
-            tests/Passenger.Tests
+            tests/Pitstop.Tests
 
       # Each shard's artifact in a folder of its own, or, when only one shard left any, in results itself.
       - name: Download the shards' results

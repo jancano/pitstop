@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ElementTree
 from datetime import datetime, timedelta, timezone
 
 TRX = "{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}"
-PREFIX = "Passenger.Tests."
+PREFIX = "Pitstop.Tests."
 # The folder a system's results come in, as its shard's job names its artifact (with its lane since there are two) and a
 # download makes it a folder.
 SHARD_FOLDER = re.compile(r"^test-results-(?P<system>[A-Za-z]+)(?:-(?:gate|report))?(?:-(?P<shard>\d+))?$")
