@@ -29,7 +29,7 @@ The application lockfile's base framework profile has 24 direct packages, 51 tra
 | Package UI and future Xrepo | App package windows and Passenger.Packages specializations | Keep generic presentation and progress and retain evaluated Xmake package metadata. Managed feeds and mutation require a separate extraction. NuGet still builds Pitstop. |
 | Test Explorer and BDD execution | App testing and Step Library, TestFrames, managed test discovery and runners | Preserve result trees, test identities, cancellation, source navigation and generic workflow. Separate managed discovery from presentation. Pitstop's headless and screenshot tooling exercises its own Avalonia UI. |
 | Managed project services | Workspace and Host for MSBuild, Lsp and Roslyn.Extension for C# services, App templates and logic | Phase 7 prevents activation in native sessions. Verify linked protocol consumers before dropping workspace evaluation and Roslyn types. Ordinary C# editing and generic LSP remain. |
-| WPF and MAUI preview and inspection | Dedicated child previewers and inspector projects, linked preview protocols, App XAML controls, mobile and input utilities | Prune controllers, packaging and linked code with the child projects. Keep Pitstop's Avalonia resources, generic XML and preview support. MAUI/WPF inspection also serves runtime modes, which need separate ownership analysis. |
+| WPF and MAUI preview and inspection | Dedicated child previewers and inspector projects, linked preview protocols, App XAML controls, mobile and input utilities | Removed four dedicated child projects, their controllers and packaging. Kept standalone launch for source tests, shared XML editing, Avalonia resources, and device discovery and input utilities. |
 | EF migrations, managed certificates, launch profiles and User Secrets | App commands use evaluated managed projects. HTTP, TLS, containers and run configurations also have independent callers. | Remove only verified managed paths. Keep native run state, user credentials and HTTP testing. |
 | Godot | GDScript services and editor communication share App integration with managed scene and launch workflows | Preserve auxiliary languages and integration until a product decision on runtime scope. No GDExtension support is established. |
 | Android, Apple devices and mobile | Device discovery, SDK and simulator queries, ADB, generic process utilities, managed MAUI run and relays | Preserve reusable discovery and communication. Managed mobile extraction requires isolated coverage. Native mobile remains unverified. |
@@ -38,17 +38,27 @@ The application lockfile's base framework profile has 24 direct packages, 51 tra
 
 The first-party dependency graph remains in the solution and project references. Production modules and tests are enumerated directly by those files. Payload ownership is additionally defined by the `Include*` targets in the application project and the web and Roslyn targets in the LSP project. Classify linked sources independently of the executable that owns their file path.
 
+## Build, CI and MCP
+
+Use `dotnet restore Pitstop.slnx --locked-mode` and `just build`. Unit tests are in `tests/Pitstop.UnitTests` and headless integration tests in `tests/Pitstop.Tests`. `just test --gate` runs the Windows-relevant gate, and `just test --report` runs the rest of the supported cases for the current system. Running the test runner without a lane filter exercises both. The workflows can upload CI artifacts and do not publish releases.
+
+The native MCP entry points use `pitstop-ide` or `Pitstop --mcp` and the same native workspace, trust checks and module snapshots as the desktop. `module_workspace` can query the current providers, dependencies and potential impact. The managed MCP verification switch is available in source builds for repository tests. The Windows package disables that profile.
+
 ## Upstream integration
 
 Keep Passenger as an upstream reference and preserve the original history and attribution. Select changes for shared editor, terminal, Git, protocol, performance, accessibility and general-purpose tooling. Review dependency and test changes against the retained scope. Keep managed backend developments out of Pitstop after their consumers have been removed, and preserve Pitstop product identifiers, temporary folders and release boundaries when reconciling equivalent code.
 
-## Preview backends
+## Preview and inspection backends
 
-The WPF and MAUI preview projects, child hosts, linked request protocols and their exclusive tests have been removed. Windows packages already excluded those binaries in Phase 7. Avalonia preview in the repository's managed verification profile still uses Avalonia's previewer. WPF and MAUI runtime inspection, XAML code intelligence and the fixtures that exercise those separate implementations remain. Generic HTML, Markdown, SVG, image and audio preview code is independent of the removed hosts. The `Avalonia.Controls.Maui` central package pin was exclusive to the MAUI previewer. MAUI dependencies used by retained inspection and fixtures remain.
+WPF and MAUI preview and runtime inspection were removed, including the four child projects, their launch wiring, packaging targets and dedicated tests. The shared Avalonia inspector, workspace XAML editing and Pitstop's own Avalonia resources remain. The managed mobile verification paths retain ADB, Apple simulators, device launch, process ownership and the tests for those paths. Generic HTML, Markdown, SVG, image and audio previews are independent of the deleted hosts. The `Avalonia.Controls.Maui` and `Microsoft.Maui.Controls.Core` direct pins were exclusive to the removed projects. The test fixture that uses `Microsoft.Maui.Controls` still restores its own graph.
 
 ## Solution identity
 
-`Pitstop.slnx` is the entry point for restore, builds and toolchain probes. CI and repository-root discovery use that name. `Pitstop.Dap` contains the shared debugger protocol and CDP types, including `HitCondition`, which the retained inspector projects compile from the same source. DAP and CDP wire names, persisted JSON fields and application IPC identifiers keep their existing values. Other inherited assembly names and namespaces remain pending dedicated migrations. Stable theme keys such as `Passenger.Text` still appear in the theme format and its mappings. Godot probe resources retain their inherited logical names. `site/` is the upstream Passenger website source and remains outside Pitstop publication.
+`Pitstop.slnx` is the entry point for restore, builds and toolchain probes. Commit `d8e494f14` moved 32 projects to Pitstop directories, project files and namespaces. It updated assembly references, analyzers, test discovery, CI, package scripts and MCP launchers. The managed source verification projects share the Pitstop namespace. `Pitstop.Dap` is the shared debugger protocol and CDP library. The Windows packaging script rejects any `Passenger.*.dll` in the publish tree.
+
+DAP and CDP wire names, settings roots, application IPC identifiers and existing theme keys such as `Passenger.Text`, `Passenger.Editor.Background` and `Passenger.Vcs.Added` retain their values. Godot probe resources retain their inherited logical names. The verification profile also retains private Roslyn protocol names, the mobile debug relay's source directory, and the deliberately named `PassengerCases` managed debugger fixture. The upstream site, historical records, original MIT copyright and attribution retain Passenger references.
+
+Existing Pitstop state keeps its directory, JSON documents and trust decisions. Readers ignore the retired migrations and WPF/MAUI inspection keys in older documents. The native profile still reads ordinary C# and XAML files through the editor. It uses its own app, CLI, IPC, log, registration and temp identities.
 
 ## Discord Rich Presence
 
@@ -62,16 +72,18 @@ The native Endpoints window serves `.http` and `.rest` files. It uses the existi
 
 ## EF Core migrations
 
-The Migrations window, managed tool invocation, MCP actions, configuration keys, diagnostics and exclusive regression tests were removed. Older workspace state can still be read, with the retired migration fields ignored. NuGet grouping for EF Core package-family upgrades and the managed launch, HTTP and SQL tests still use EF Core test dependencies. The HTTP Client's data and permissions, runtime console and shared service connection-string logic remain in place.
+The Migrations window, managed tool invocation, MCP actions, configuration keys, diagnostics and exclusive regression tests were removed. Older workspace state can still be read, with the retired migration fields ignored. The two remaining restore fixtures pin SQLite for the managed HTTP and SQL tests and the older EF Core base package for launch freshness. The EF Core 11 and PostgreSQL migration graphs and the design package were removed. Managed NuGet's bulk package grouping and shared service connection-string logic remain available.
 
 ## Measurements after pruning
 
-Measured at `03ae4a8de` with the baseline's counting rules. The removed preview projects were already excluded from the Windows native packaging profile. Source reductions and package size changes measure different effects.
+Measured at `02edbfe31` with the baseline's counting rules. The Phase 7 Windows profile already excluded the removed preview and inspection hosts.
 
 | Tree | Projects | C# and AXAML files | Physical lines | Change in lines |
 | --- | ---: | ---: | ---: | ---: |
-| `src/` | 32 | 2,200 | 563,698 | −7,954 |
-| `tests/` | 46 | 1,133 | 268,576 | −3,088 |
+| `src/` | 30 | 2,175 | 558,905 | −12,747 |
+| `tests/` | 44 | 1,128 | 267,467 | −4,197 |
+
+The default application lockfile retains 24 direct packages, 51 transitive packages, nine central transitive pins and 17 project entries. These figures describe the base framework profile for source verification. Windows native packaging also excludes the project references and source-specific restore downloads for the managed child tools. The solution and bundled-package notice check passed for 502 package names.
 
 ## Validation
 
@@ -81,23 +93,42 @@ The focused headless run passed 12 cases, including Discord IPC, native OpenAPI 
 
 Thirteen integration tests passed with the reference toolchain. They exercised C++23 and C++26 module completion and navigation, `import std`, module interface refresh, Xmake evaluation, rebuild and incremental build, interactive execution, diagnostics, and the real MCP module API. The tests include missing and ambiguous providers, request cancellation, configuration isolation and workspace trust revocation.
 
-The complete Windows CI gate at `daf2a8427` ran in four shards, with 711 passed, two failed, seven skipped and no timeouts. The managed parallel-loop debugger case stopped at a breakpoint before the expected exception. Its isolated rerun passed, and the same test passed in a clean checkout of the baseline. The cause under parallel load remains unresolved. The UI rule flagged the native template dialog creating item-template rows. The dialog now uses the shared `ReusedRows` implementation and resets each row's icon, label, opacity and tooltip when it receives another template. The separate CI report lane remains unverified.
+The Windows CI gate at `daf2a8427` ran in four shards, with 711 passed, two failed, seven skipped and no timeouts. The managed parallel-loop debugger case stopped at a breakpoint before the expected exception. Its isolated rerun passed, and the same test passed in a clean checkout of the baseline. The cause under parallel load remains unresolved. The UI rule flagged the native template dialog creating item-template rows. The dialog now uses `ReusedRows`, `ListRow.Dim` and the existing `BrowseRow` control.
 
 At `03ae4a8de` the complete solution build passed again with zero warnings or errors. Five targeted tests passed, including the previously failing reusable-row rule, wizard creation and native command isolation across desktop and MCP. Two toolchain cases skipped in that run. A second run with the reference tools passed all three wizard cases, including standards detection and executable overrides.
+
+At `02edbfe31`, locked restore and `just build` in a fresh checkout passed with zero warnings and zero errors. The build step took 4 minutes 36 seconds with six workers under concurrent validation load. Another solution build from the development checkout took 4 minutes 5 seconds before the combined suite.
+
+The Git signing fix associates a generic SSH passphrase prompt with the signing key from Git's configuration when the signing format is SSH. The targeted runs passed five cases, including an actual MCP commit, Git for Windows GPG and SSH signing, signed-log output and cleanup of a held signing file. Standalone GPG and X.509 cases skipped because `gpg` and `gpgsm` were unavailable on PATH.
 
 Light and dark captures were taken from both the headless tests and the Windows package. The captures cover the welcome screen, project creation, toolchain settings, project and module views, graph, editor completion and diagnostics, Build and Run, HTTP Client, Containers, and Discord settings. This machine has no Docker command and no production Discord application registration. Containers' missing-tool presentation and the configuration path for Discord were visible. The Discord IPC tests use a local peer.
 
 ## Windows x64 package
 
-`tools/package-win.sh win-x64` created the unsigned `0.3.0-alpha.1` candidate from a clean checkout of `03ae4a8de`. The archive contains 306 DLLs and five EXEs. `Pitstop.Dap.dll` replaces `Passenger.Dap.dll` and the native payload has no managed child-tool folders. The Phase 7 baseline already excluded the removed preview hosts. The portable ZIP and installer are each about 0.34 MB smaller than the respective Phase 7 packages.
+`tools/package-win.sh win-x64` created the unsigned `0.3.0-alpha.1` candidate from a clean checkout of `02edbfe31`. The archive contains 306 DLLs and five EXEs, with no `Passenger.*.dll` or managed child-tool folders. The Phase 7 baseline already excluded the removed preview hosts. The portable ZIP is 342,404 bytes smaller and the installer is 353,232 bytes smaller than the Phase 7 packages.
 
 The portable and installed application both opened the isolated Hello Modules fixture, reported the module index through MCP, navigated to a provider, saved an edit, built the project and printed `Hello, modules!` with exit code zero. The portable also produced the missing-Xmake guidance. Installation and uninstall checks covered Open With associations, the user `PATH`, and the existing Pitstop and Passenger settings roots. The native child payload and installed trust checks passed.
 
 | Package | Bytes | SHA-256 |
 | --- | ---: | --- |
-| `Pitstop-windows-x64-portable.zip` | 143,252,905 | `0728030f71d182ff015a5569224dd35d9f3f82422f3d71388c7295c19e213c25` |
-| `Pitstop-windows-x64.exe` | 157,174,269 | `50c871d3f29c189ff36dd8e72fce508d637a351862f17658a47971988e17eb1f` |
+| `Pitstop-windows-x64-portable.zip` | 143,254,855 | `47a68be9ca95e430834611a4c4509db5c635a9e2461e62c6c2b8daa1871d4f4a` |
+| `Pitstop-windows-x64.exe` | 157,163,675 | `4021a7faa6e33be6fe9ddbbde7fdb2e4d932b04411906a44485a661994924560` |
 
-## Remaining extraction
+For an off-screen startup comparison, run `Pitstop.exe --screenshot shell.png --theme dark --size 1260x820 --scale 1` in each portable distribution with a fresh `PITSTOP_SETTINGS` directory. Six alternating runs per build, with the first sample discarded, gave medians of 1.879 s for Phase 7 (1.695–2.872 s) and 2.245 s for the consolidated build (1.617–2.447 s). The measurement includes PNG encoding and process exit. Both ran on the same Windows host while build and test jobs were active, so these ranges leave normal interactive startup unmeasured.
 
-The source still compiles managed MSBuild, Roslyn, CoreCLR debugging, NuGet, Aspire, mobile and runtime XAML inspection services for the repository verification profile. The native package excludes their dedicated executables and retains assemblies that still contain shared services and legacy code. The next extraction boundaries are the generic debugger views from managed launch and Hot Reload, Compose and telemetry from Aspire resource discovery, and template and package presentation from managed project discovery. Linux and macOS native distribution remain unverified.
+## Retained verification and product boundaries
+
+| Boundary | Retained source and reason |
+| --- | --- |
+| Native projects | `Pitstop.ProjectSystem`, `Pitstop.Xmake`, `Pitstop.Cpp`, `Pitstop.Modules` and `Pitstop.Templates` remain separate. The evaluated snapshot and Xmake compilation database are authoritative. |
+| Editor and auxiliary languages | `Pitstop.Core`, `Pitstop.Text`, `Pitstop.Editor`, `Pitstop.Languages`, `Pitstop.Lsp`, `Pitstop.Terminal` and `Pitstop.Vcs` supply shared editor, transport, process and Git capabilities. |
+| Managed project and language tests | `Pitstop.Host`, `Pitstop.Roslyn.Extension` and `Pitstop.RoslynPatch` serve the source verification profile. The Windows native build excludes their project references and Roslyn server download. The App and LSP share linked protocol definitions with the verification implementations. |
+| Debugger, profiler and inspectors | The debugger views and `Pitstop.Dap` remain reusable. `Pitstop.Debugger`, `Pitstop.Debugger.Interop`, `Pitstop.DebugAdapter`, `Pitstop.UpdateHandlers`, `Pitstop.TestFrames` and Avalonia's `Pitstop.Inspector` remain for source verification or linked shared code. Managed CLR profiling and native-independent views still share `Pitstop.Profiler`. |
+| HTTP, Docker, telemetry and packages | The native HTTP client uses file-backed requests. Containers and telemetry retain their shared workflow and views. `Pitstop.ContainerTools` still shares managed launch and profiler code for the verification profile. Managed package behavior remains confined to that profile, with generic presentation to reuse if an Xrepo backend is added. |
+| Godot and mobile | Godot's language, parsers and communication remain. Existing ADB, simulator and device features remain in source for verification. Native mobile and GDExtension workflows remain unverified. |
+
+The Windows package excludes the dedicated managed host, debugger, Roslyn, inspector, test and Hot Reload payloads. Some shared assemblies still compile managed features for the repository's legacy verification profile. Removing those implementations requires extracting their remaining shared callers. Linux and macOS native distribution remain unverified.
+
+The future LLDB adapter can reuse `Pitstop.Dap`, the debugger views, breakpoints and child-process ownership. Xrepo can reuse the package presentation and Xmake's evaluated package metadata. Native test discovery can feed the shared result tree and navigation commands. A native profiler first needs a backend-independent capture to feed the flame graph, call tree and timeline. The native project-system provider interface remains available for a future CMake provider.
+
+The native profile preserves standalone container tools, file-based HTTP/OpenAPI, web language servers, file previews and Gherkin editing. Live Docker and Compose operations require an available engine. Managed route discovery, profiling, test execution, package mutation and Gherkin step discovery still use their verification backends where applicable. The observability models and views retain their existing producers. Generic updates are still configured off. The native product offers no managed project commands through the desktop or MCP.

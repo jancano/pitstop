@@ -44,7 +44,7 @@ just test [FILTER]         # the tests, or those whose name matches; results in 
 just screenshot shell.png  # the main window drawn off-screen to a PNG
 ```
 
-The desktop and Windows packages use native project loading. The inherited managed profile remains available to repository tests that cover shared editor, debugger and process infrastructure.
+The desktop and Windows packages use native project loading. The inherited managed profile remains available to repository tests that cover shared editor, debugger and process infrastructure. The [consolidation report](docs/architecture/codebase-consolidation.md) describes where those backends are built, the native MCP checks, the two CI test lanes and Windows package verification.
 
 Working on Pitstop needs only open-source tools: the .NET SDK, just, and the packages the projects
 restore, among them Avalonia's MIT framework. Pitstop uses none of Avalonia's commercial tooling (Avalonia Accelerate's

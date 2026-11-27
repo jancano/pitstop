@@ -13,4 +13,4 @@ Pitstop is an open-source, modules-first C++ IDE. Trusted Xmake workspaces suppl
 - Keep provider-specific compilation ownership in the provider. Project templates use versioned manifests and produce an inspectable generation plan before writing. [Native project system](docs/architecture/native-project-system.md) · [Template authoring](docs/templates/authoring.md)
 - Run `just build` and the relevant `just test <FILTER>` suites. Keep warnings as errors. For direct `dotnet` or IDE builds set `AVALONIA_TELEMETRY_OPTOUT=1`.
 
-[CLAUDE.md](CLAUDE.md) describes subsystem conventions and test infrastructure in more detail.
+[CLAUDE.md](CLAUDE.md) describes subsystem conventions and test infrastructure. [Codebase consolidation](docs/architecture/codebase-consolidation.md) records the Windows package boundary, retained verification backends and upstream integration policy.
