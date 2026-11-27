@@ -12,7 +12,7 @@ using Passenger.Workspace;
 
 namespace Passenger.App.Packages;
 
-/// <summary>The folder's NuGet, whoever asks of it (the NuGet window, MSBuild files' code help, Migrations, an agent): the
+/// <summary>The folder's NuGet, whoever asks of it (the NuGet window, MSBuild files' code help, an agent): the
 /// package sources its nuget.config files give, read when first asked for and again after one changes, their feeds, the
 /// audit's known vulnerabilities, the versions their owners deprecated, and the one way a package goes in, moves or comes
 /// out of a project, through the .NET command line (under central package management written by Passenger, then

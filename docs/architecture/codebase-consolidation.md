@@ -59,3 +59,7 @@ Create a Pitstop application in Discord's Developer Portal, copy its Application
 ## Native HTTP Client
 
 The native Endpoints window serves `.http` and `.rest` files. It uses the existing request editor, environment choices and grants, and response presentation. With an OpenAPI JSON document open in the workspace, **Generate Requests from OpenAPI** appends missing requests to the adjacent `.http` file. Review its `base` variable before sending a request. Generation reads the editor buffer and uses the existing file change and undo mechanism. Managed route discovery and build-based OpenAPI input remain confined to the verification profile.
+
+## EF Core migrations
+
+The Migrations window, managed tool invocation, MCP actions, configuration keys, diagnostics and exclusive regression tests were removed. Older workspace state can still be read, with the retired migration fields ignored. NuGet grouping for EF Core package-family upgrades and the managed launch, HTTP and SQL tests still use EF Core test dependencies. The HTTP Client's data and permissions, runtime console and shared service connection-string logic remain in place.

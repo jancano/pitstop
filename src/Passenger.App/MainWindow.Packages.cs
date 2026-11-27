@@ -22,7 +22,6 @@ public partial class MainWindow
             view.LinkClicked += (_, link) => Browse(link);
             view.ActionRequested += (_, action) => Request(action);
             // The NuGet window's update of one of EF Core's packages moves its set, weighed against the project's provider first.
-            view.BeforeInstall = migrations is { } weighs ? weighs.WeighUpdateAsync : null;
             return view;
         }, Docking.ToolAnchor.BottomLeft)
         {

@@ -1,4 +1,3 @@
-using Passenger.App.Migrations;
 using Passenger.App.Run;
 using Passenger.Workspace;
 
@@ -22,9 +21,6 @@ public enum FolderHolds
 
     /// <summary>An .http or .rest file of requests.</summary>
     HttpFile = 8,
-
-    /// <summary>A project referencing EF Core or a provider of it, or one whose restore holds EF Core.</summary>
-    EfCore = 16,
 
     /// <summary>A Reqnroll or SpecFlow project.</summary>
     StepDefinitions = 32,
@@ -70,9 +66,6 @@ public sealed class ToolWindowServes
 
     public static ToolWindowServes RequestFiles { get; } = new(FolderHolds.HttpFile, "Open a folder containing an .http or .rest request file.");
 
-    /// <summary>An EF Core project, whose migrations the Migrations window lists.</summary>
-    public static ToolWindowServes EfCore { get; } = new(FolderHolds.EfCore, Refusals.NoEfCore);
-
     /// <summary>A Reqnroll or SpecFlow project, whose step definitions the Step Library lists.</summary>
     public static ToolWindowServes StepDefinitions { get; } = new(FolderHolds.StepDefinitions, Refusals.NoStepDefinitions);
 
@@ -95,10 +88,8 @@ public static class FolderHolding
     private static readonly string[] StepPackages = ["Reqnroll", "SpecFlow"];
 
     /// <summary>What a folder's projects and files hold: its <paramref name="projects"/> as evaluated, the Godot projects of
-    /// GDScript alone its walk found, whether it holds a single-file AppHost and an .http or .rest file, and whether a project's
-    /// restore holds EF Core though no evaluation names it (<see cref="EfProjects.ReachedByRestore"/>, read off the window's
-    /// thread). An app inspected now is the session's to add (<see cref="FolderHolds.InspectedApp"/>).</summary>
-    public static FolderHolds Of(IReadOnlyList<ProjectModel> projects, IReadOnlyList<string> godotGames, bool appHostFiles, bool httpFiles, bool efRestored)
+    /// GDScript alone its walk found and whether it holds a single-file AppHost or a request file. An app inspected now is the session's to add (<see cref="FolderHolds.InspectedApp"/>).</summary>
+    public static FolderHolds Of(IReadOnlyList<ProjectModel> projects, IReadOnlyList<string> godotGames, bool appHostFiles, bool httpFiles)
     {
         FolderHolds holds = FolderHolds.None;
         if (godotGames.Count > 0 || projects.Any(p => p.GodotFolder is not null))
@@ -116,10 +107,6 @@ public static class FolderHolding
         if (httpFiles)
         {
             holds |= FolderHolds.HttpFile;
-        }
-        if (efRestored || projects.Any(EfTargets.UsesEf))
-        {
-            holds |= FolderHolds.EfCore;
         }
         if (projects.Any(p => p.Packages.Any(package => StepPackages.Any(family => Of(package.Name, family)))))
         {

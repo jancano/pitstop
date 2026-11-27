@@ -514,7 +514,7 @@ public sealed class NuGetTests : IDisposable
         Ui.Landed(() => !nuget.IsBusy && nuget.Rows.Count == 0, $"all packages updated: {nuget.Status}\n{nuget.Log}");
         Assert.True(File.ReadAllText(lib).Contains("Version=\"[1.1.0, 2.0.0)\"", StringComparison.Ordinal), $"Lib was not updated within its range: {nuget.Status}\n{nuget.Log}");
         Assert.Contains("1.2.0", File.ReadAllText(app), StringComparison.Ordinal);
-        MigrationsTests.UndoFromExplorer(window, lib);
+        Ui.UndoFromExplorer(window, lib);
         Assert.Equal(beforeLib, File.ReadAllText(lib));
         Assert.Equal(beforeApp, File.ReadAllText(app));
         window.Close();
@@ -550,7 +550,7 @@ public sealed class NuGetTests : IDisposable
         Assert.True(File.ReadAllText(props).Contains("Version=\"[1.1.0, 2.0.0)\"", StringComparison.Ordinal),
             $"Central version was not updated within its range: {nuget.Status}\n{nuget.Log}\n{File.ReadAllText(props)}");
         Assert.Empty(nuget.Rows);
-        MigrationsTests.UndoFromExplorer(window, lib);
+        Ui.UndoFromExplorer(window, lib);
         Assert.Equal(original, File.ReadAllText(props));
         window.Close();
     }
@@ -570,7 +570,7 @@ public sealed class NuGetTests : IDisposable
         Assert.True(File.ReadAllText(app).Contains("1.1.0", StringComparison.Ordinal), $"App was not updated: {nuget.Status}\n{nuget.Log}");
         Assert.Equal(originalLib, File.ReadAllText(lib));
         Assert.Contains("Lib could not be saved", nuget.Status, StringComparison.Ordinal);
-        MigrationsTests.UndoFromExplorer(window, app);
+        Ui.UndoFromExplorer(window, app);
         Assert.Equal(originalApp, File.ReadAllText(app));
         window.Close();
     }
@@ -727,7 +727,7 @@ public sealed class NuGetTests : IDisposable
         string assets = Path.Combine(folder, "Lib", "obj", "project.assets.json");
         Assert.True(File.Exists(assets) && File.ReadAllText(assets).Contains("Microsoft.EntityFrameworkCore.Relational/11.0.0", StringComparison.Ordinal),
             $"Lib, whose EF Core packages App's change moved, was {(File.Exists(assets) ? "restored, but not with them" : "never restored")}, so a break would show only at the next build:\n{nuget.Log}");
-        MigrationsTests.UndoFromExplorer(window, lib);
+        Ui.UndoFromExplorer(window, lib);
         Assert.True(File.ReadAllText(root) == rootBefore && File.ReadAllText(examples) == examplesBefore,
             $"One Undo of Update All left the central files as:\n{File.ReadAllText(root)}\n{File.ReadAllText(examples)}");
         window.Close();
@@ -899,7 +899,7 @@ public sealed class NuGetTests : IDisposable
         window.Close();
     }
 
-    /// <summary>While another asker's change of Lib (an agent's, Migrations') runs, the NuGet window's Install on App is
+    /// <summary>While another asker's change of Lib (an agent's) runs, the NuGet window's Install on App is
     /// disabled, and a change the window asks for meanwhile is refused saying what is under way, not dropped unsaid; once
     /// the first change ends, App's Install is enabled again.</summary>
     private void While_a_package_change_runs_the_projects_actions_are_disabled_and_one_asked_meanwhile_is_refused_saying_why()

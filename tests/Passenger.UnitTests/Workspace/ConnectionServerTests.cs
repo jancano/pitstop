@@ -4,7 +4,7 @@ using Passenger.Workspace;
 namespace Passenger.UnitTests.Workspace;
 
 /// <summary>A connection string a compose run gives its app, read for the server it names and given again at the host and
-/// port this machine reaches that server on (the Migrations window's dotnet ef), nothing else in it changed.</summary>
+/// port this machine reaches that server on, nothing else in it changed.</summary>
 public class ConnectionServerTests
 {
     [Fact]

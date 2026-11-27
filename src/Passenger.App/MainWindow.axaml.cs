@@ -127,7 +127,6 @@ public partial class MainWindow : IdeWindow
         AddStepLibrary();
         AddRequestMarks();
         AddRequests();
-        AddMigrations();
         AddContainers();
         AddRunMarks();
         AddRunHere();
@@ -362,7 +361,7 @@ public partial class MainWindow : IdeWindow
         assist.AnnotationCard = (annotation, card) => Editors.Active is { } annotated && godotValues is { } live && live.Card(annotated, annotation, card);
         // Passenger's own fixes: bindings, compose names, Aspire, configuration and localized keys, Godot's checks; each language's own come from its assist.
         assist.EditorFixes = (file, offset) => [.. Passenger.App.LiveTree.BindingErrors.Fixes(file, offset, session.FailedBindings.Select(b => b.Failure)),
-            .. session.Web?.Checks.Fixes(file, offset) ?? [], .. assist.AspireFixes(file, offset), .. assist.ComposeReadFixes(file, offset), .. MigrationFixes(file, offset),
+            .. session.Web?.Checks.Fixes(file, offset) ?? [], .. assist.AspireFixes(file, offset), .. assist.ComposeReadFixes(file, offset),
             .. assist.ConfigurationFixes(file, offset), .. assist.LocalizationFixes(file, offset), .. assist.GodotFixes(file, offset, session.GodotMarks),
             .. MobileFixes(file, offset), .. PackageFixes(file, offset)];
         assist.AskValue = AskValueAsync;
@@ -1060,8 +1059,6 @@ public partial class MainWindow : IdeWindow
         RecentFiles = [.. session.RecentFiles],
         UnloadedProjects = [.. session.KeptUnloaded],
         TargetFrameworks = session.Frameworks.Kept,
-        MigrationEnvironments = session.MigrationEnvironments.Kept,
-        MigrationFolders = session.MigrationFolders.Kept,
         RunTargets = session.Targets.Kept,
         Build = session.BuildChoices.Kept,
         Folds = session.Folds.Capture(Editors.Documents),

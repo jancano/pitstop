@@ -51,7 +51,6 @@ public static class MainMenu
         new("Edit/Find", 3, 0),
         new("Navigate/Bookmarks", 4, 0),
         new("Run/" + AvaloniaOverlays, 3, 1),
-        new("Tools/Migrations", 1, 0),
         new("Code/Code Completion", 0, 0),
         new("Code/Folding", 3, 0),
         new("Code/Folding/Expand to Level", 0, 3),

@@ -235,8 +235,6 @@ public sealed class ProjectSession : IAsyncDisposable
             Commands = setup.Editors.Commands,
             History = () => LocalHistory,
         };
-        EfProjects = new Migrations.EfProjects(Packages.RestoredSince);
-        EfProjects.Landed += (_, _) => FollowHolds(projects: true);
         MSBuild = new MSBuild.MSBuildService(() => Folder, () => Workspace)
         {
             Feed = () => Packages.FeedAsync(null),
@@ -776,12 +774,6 @@ public sealed class ProjectSession : IAsyncDisposable
     /// <summary>The target framework chosen for each multi-targeted project, which its XAML, its preview and its C# follow.</summary>
     public TargetFrameworkChoices Frameworks { get; } = new();
 
-    /// <summary>The environment the Migrations window runs dotnet ef in for each startup project.</summary>
-    public Migrations.EfEnvironmentChoices MigrationEnvironments { get; } = new();
-
-    /// <summary>The folder Add Migration was last given for each context.</summary>
-    public Migrations.EfFolderChoices MigrationFolders { get; } = new();
-
     /// <summary>Where each project of devices, emulators or simulators runs, and each one's targets as last listed.</summary>
     public Run.Devices.DeviceChoices Targets { get; } = new();
 
@@ -872,10 +864,6 @@ public sealed class ProjectSession : IAsyncDisposable
     /// <summary>What the folder's .editorconfig files set over Settings' rows.</summary>
     public Settings.FolderEditorConfigs EditorConfigs { get; }
 
-    /// <summary>What the folder's projects declare for dotnet ef, as the Migrations window asks: its projects, and whether the
-    /// folder holds one it serves where no evaluation says so.</summary>
-    public Migrations.EfProjects EfProjects { get; }
-
     /// <summary>What the folder holds of the kinds of project tool windows serve (<see cref="FolderHolding"/>), as its run
     /// configurations were last made from its projects, the files its index lists and the apps inspected say.</summary>
     public FolderHolds Holds { get; private set; }
@@ -902,8 +890,7 @@ public sealed class ProjectSession : IAsyncDisposable
         }
         if (projects)
         {
-            projectsHold = FolderHolding.Of(Projects, Workspace?.GodotGames ?? [], Configurations.SingleFileAppHosts.Count > 0, holdsRequests,
-                EfProjects.ReachedByRestore);
+            projectsHold = FolderHolding.Of(Projects, Workspace?.GodotGames ?? [], Configurations.SingleFileAppHosts.Count > 0, holdsRequests);
         }
         FolderHolds now = projectsHold | (LiveSource is not null || Inspecting.Count > 0 ? FolderHolds.InspectedApp : FolderHolds.None)
             | (Xmake is { IsXmake: true } ? FolderHolds.XmakeProject : FolderHolds.None);
@@ -1558,7 +1545,7 @@ public sealed class ProjectSession : IAsyncDisposable
     internal Bdd.FeatureChecks Features => field ??= new Bdd.FeatureChecks(this);
 
     /// <summary>The folder's NuGet: its package sources, feeds and known vulnerabilities, and the one way its projects'
-    /// packages change, which the NuGet window, MSBuild files' code help, Migrations and an agent all use.</summary>
+    /// packages change, which the NuGet window, MSBuild files' code help and an agent all use.</summary>
     public FolderPackages Packages { get; }
 
     /// <summary>JavaScript, TypeScript, HTML, CSS and JSON for the folder's files, each kind's language server started as
@@ -1811,8 +1798,6 @@ public sealed class ProjectSession : IAsyncDisposable
         }
         State = kept;
         Frameworks.Keep(kept.Workspace);
-        MigrationEnvironments.Keep(kept.Workspace);
-        MigrationFolders.Keep(kept.Workspace);
         Targets.Keep(kept.Workspace);
         BuildChoices.Keep(kept.Workspace);
         Configurations.Keep(kept.RunConfigurations, Projects);

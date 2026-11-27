@@ -282,7 +282,7 @@ public sealed class ContainerPublishTests : IClassFixture<StandInAppHost>, IDisp
             Assert.True(text.AsSpan().SequenceEqual(File.ReadAllBytes(notes)), $"The publisher's text landed as {Convert.ToHexString(File.ReadAllBytes(notes))}");
             Assert.Equal($"Publish {StandInAppHost.Name}", window.EditorArea.Commands.ToUndo(null)?.Name);
 
-            MigrationsTests.UndoFromExplorer(window, host);
+            Ui.UndoFromExplorer(window, host);
             Ui.WaitFor(() => !File.Exists(compose), () => $"Undo to take away what the publish made: {window.Status}");
             Assert.False(File.Exists(notes), $"Undo left a file the publish made: {window.Status}");
             Assert.True(File.Exists(certificate) && had.AsSpan().SequenceEqual(File.ReadAllBytes(certificate)),

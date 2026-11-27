@@ -12,7 +12,6 @@ using Passenger.App.Debugging;
 using Passenger.App.Docking;
 using Passenger.App.Editors;
 using Passenger.App.Explorer;
-using Passenger.App.Migrations;
 using Passenger.App.Packages;
 using Passenger.App.Settings;
 using Passenger.App.Vcs;
@@ -581,7 +580,6 @@ public sealed class AccessibilityTests : IDisposable
     {
         ConfigFile config = new(Path.Combine(folder, "nuget.config"), ConfigPlace.Folder, [], [], false, null, null, null);
         Named(new FeedDialog(config, null), "Name", "URL", "User", "Password", "Enabled", "Allow insecure connections");
-        Named(new MigrationScriptDialog([new MigrationRow("1", "Initial", true)], "ShopContext"), "From", "To");
         Named(new GitQuestionDialog(new GitQuestion(GitQuestionKind.User, "Username for 'https://example.com': ", "https://example.com"), null), "User", "Password");
         Named(new GitQuestionDialog(new GitQuestion(GitQuestionKind.Passphrase, "Enter passphrase for key '/keys/id': ", "/keys/id"), null), "Passphrase");
         Named(new CommitSigningDialog(new SigningSetup(false, SigningFormat.Ssh, null), null, Path.Combine(folder, "allowed_signers")), "Key");

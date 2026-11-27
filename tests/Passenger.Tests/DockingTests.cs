@@ -554,7 +554,7 @@ public sealed class DockingTests
         window.KeepLayout();
         DockHost dock = window.DockHost;
         string[] built = [ToolWindowIds.Structure, ToolWindowIds.Find, ToolWindowIds.Hierarchy, ToolWindowIds.Bookmarks, ToolWindowIds.LocalHistory, ToolWindowIds.Endpoints, ToolWindowIds.NuGet, ToolWindowIds.Containers, ToolWindowIds.Terminal, ToolWindowIds.Git, ToolWindowIds.Commit,
-            ToolWindowIds.Problems, ToolWindowIds.Debug, ToolWindowIds.LiveTree, ToolWindowIds.Profiler, ToolWindowIds.Aspire, ToolWindowIds.Requests, ToolWindowIds.Migrations, ToolWindowIds.StepLibrary];
+            ToolWindowIds.Problems, ToolWindowIds.Debug, ToolWindowIds.LiveTree, ToolWindowIds.Profiler, ToolWindowIds.Aspire, ToolWindowIds.Requests, ToolWindowIds.StepLibrary];
         foreach (string id in built)
         {
             Assert.False(dock[id].IsBuilt, $"The {dock[id].Title} window's view was made as the window started, though it is hidden");
@@ -608,7 +608,7 @@ public sealed class DockingTests
         window.RequestLog.Hear(new Passenger.Profiler.RequestBegan("heard", DateTime.UtcNow, "heard", "GET", "/orders/2", string.Empty), "Shop", null);
         window.RequestLog.Hear(new Passenger.Profiler.RequestEnded("heard", DateTime.UtcNow, "heard", 200), "Shop", null);
         Ui.Settle();
-        Assert.All((string[])[ToolWindowIds.Aspire, ToolWindowIds.Requests, ToolWindowIds.Migrations],
+        Assert.All((string[])[ToolWindowIds.Aspire, ToolWindowIds.Requests],
             id => Assert.False(dock[id].IsBuilt, $"What the IDE wrote to the hidden {dock[id].Title} window built its view"));
         dock.Show(ToolWindowIds.Aspire);
         Ui.Settle();
@@ -625,13 +625,6 @@ public sealed class DockingTests
         Assert.Equal("/orders/2", Assert.IsType<Passenger.App.Endpoints.LiveRequest>(Assert.Single(window.Requests.Rows)).Path);
         Assert.Contains(window.Requests.GetVisualDescendants().OfType<TextBlock>(), t => t.IsEffectivelyVisible && t.Text == "/orders/2");
         dock.Hide(ToolWindowIds.Requests);
-        dock.Show(ToolWindowIds.Migrations);
-        Ui.Settle();
-        Assert.Contains(window.MigrationsView, dock.GetVisualDescendants());
-        Assert.Contains(window.MigrationsView.GetVisualDescendants().OfType<TextBlock>(), t => t.IsEffectivelyVisible && t.Text == Refusals.NoEfCore);
-        dock.Hide(ToolWindowIds.Migrations);
-        Ui.Settle();
-
         dock.Show(ToolWindowIds.LiveTree);
         Ui.Settle();
         Assert.Contains(window.LiveTree, dock.GetVisualDescendants());
@@ -640,7 +633,7 @@ public sealed class DockingTests
         Ui.Settle();
 
         MainWindow profiled = Ui.OpenFolder(TestFolders.Create("profiled-"), languageServer: false);
-        string[] followers = [ToolWindowIds.Profiler, ToolWindowIds.LiveTree, ToolWindowIds.Aspire, ToolWindowIds.Requests, ToolWindowIds.Migrations];
+        string[] followers = [ToolWindowIds.Profiler, ToolWindowIds.LiveTree, ToolWindowIds.Aspire, ToolWindowIds.Requests];
         Assert.All(followers, id => Assert.False(profiled.DockHost[id].IsBuilt, $"A folder's start built the {profiled.DockHost[id].Title} window's view, though it is hidden"));
         profiled.OpenFolder(TestFolders.Create("profiled-second-"));
         Ui.Settle();

@@ -608,7 +608,7 @@ public sealed class SolutionViewTests : IDisposable
         Heard(window, app, () => Assert.Null(Ui.Await(window.SetReferencesAsync(app, [core]), "the reference added")));
         Assert.Contains("Shop.Core.csproj", File.ReadAllText(app), StringComparison.Ordinal);
         Assert.Equal("Change Shop.App's References", window.EditorArea.Commands.ToUndo(null)?.Name);
-        Heard(window, app, () => MigrationsTests.UndoFromExplorer(window, app));
+        Heard(window, app, () => Ui.UndoFromExplorer(window, app));
         Assert.True(original.AsSpan().SequenceEqual(File.ReadAllBytes(app)),
             $"Undo of Add Reference left the project file changed:\n{Encoding.UTF8.GetString(File.ReadAllBytes(app))}");
         window.Close();

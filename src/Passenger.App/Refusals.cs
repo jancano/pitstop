@@ -651,9 +651,6 @@ public static class Refusals
     /// <summary>An AppHost run whose resource connection (<see cref="Aspire.AspireAppRun.Interactions"/>) is not made yet.</summary>
     public const string AppHostStarting = "The AppHost resource connection is still starting";
 
-    /// <summary>The Migrations window, or an EF Core action, in a folder none of whose projects references EF Core.</summary>
-    public const string NoEfCore = "No project here uses EF Core";
-
     /// <summary>A publish asked for with no folder chosen to publish into.</summary>
     public const string NoOutputFolder = "An output folder is needed";
 

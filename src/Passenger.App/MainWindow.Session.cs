@@ -408,7 +408,6 @@ public partial class MainWindow
         BindStepRuns(next);
         BindEndpoints(next);
         BindStepLibrary(next);
-        BindMigrations(next);
         BindPackages(next);
         BindContainers(next);
         // The Explorer's filter shows the files the index has, so it follows them as they are walked, come and go.

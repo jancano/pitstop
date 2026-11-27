@@ -19,6 +19,6 @@ public sealed class BackingImageTests
     private static void ReadsAs(string image, string service)
     {
         Assert.True(BackingService.OfImage(image)?.Service == service,
-            $"{image} was read as {BackingService.OfImage(image)?.Service ?? "no backing service"}, so the Migrations window and the app's connections would not know it for {service}");
+            $"{image} was read as {BackingService.OfImage(image)?.Service ?? "no backing service"}, so the app's connections would not know it for {service}");
     }
 }

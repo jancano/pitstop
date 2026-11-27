@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ModelContextProtocol.Client;
+using Passenger.App;
 using Passenger.App.Mcp;
 using Passenger.Core;
 using Pitstop.Xmake;
@@ -24,6 +25,12 @@ public sealed class McpNativeProductTests : McpRig
         Assert.Contains(tools, tool => tool.Name == McpTools.ModuleWorkspace);
         Assert.Contains(tools, tool => tool.Name == McpTools.Build);
         Assert.DoesNotContain(tools, tool => tool.Name is McpTools.DebugStart or McpTools.NugetInstall or McpTools.TestsRun);
+        var managedAction = await Result(client, McpTools.IdeAction, new()
+        {
+            ["action"] = AppActions.SaveAsLaunchProfile,
+        });
+        Assert.True(managedAction.IsError);
+        Assert.Contains("managed development profile", Text(managedAction), StringComparison.Ordinal);
         string status = Text(await Result(client, McpTools.ModuleWorkspace));
         Assert.Contains("trusted Xmake workspace", status, StringComparison.Ordinal);
         Assert.DoesNotContain("this project must not be evaluated", status, StringComparison.Ordinal);

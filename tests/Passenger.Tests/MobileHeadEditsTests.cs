@@ -70,7 +70,7 @@ public sealed partial class MobileHeadEditsTests
             Assert.True(window.MobileSaid?.Contains($"{head} needs", StringComparison.Ordinal) != true, $"Once made, the banner still names {head}'s edits: {window.MobileSaid}");
 
             Assert.Equal($"Make the Mobile Edits of {named}", window.EditorArea.Commands.ToUndo(null)?.Name);
-            MigrationsTests.UndoFromExplorer(window, project);
+            Ui.UndoFromExplorer(window, project);
             Ui.WaitFor(() => File.ReadAllText(project) == projectMade && File.ReadAllText(manifest) == manifestMade,
                 () => $"one Undo to put back the project and Info.plist as the template made them: {window.Status}\n{File.ReadAllText(project)}\n{File.ReadAllText(manifest)}");
             Redo(window, head);
@@ -117,7 +117,7 @@ public sealed partial class MobileHeadEditsTests
                 Assert.Contains("public class SceneDelegate : MauiUISceneDelegate", File.ReadAllText(Path.Combine(app, "Platforms", platform, "SceneDelegate.cs")), StringComparison.Ordinal);
             }
 
-            MigrationsTests.UndoFromExplorer(window, project);
+            Ui.UndoFromExplorer(window, project);
             Ui.WaitFor(() => File.ReadAllText(project) == projectMade && !File.Exists(Path.Combine(app, "Platforms", "iOS", "SceneDelegate.cs")),
                 () => $"one Undo to put back the project and take out the SceneDelegates written: {window.Status}");
             Redo(window, "M10");

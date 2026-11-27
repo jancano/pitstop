@@ -201,7 +201,7 @@ public sealed class PackagesTests : IDisposable
         string shown = window.EditorArea.Find(lockFile)?.Text.Snapshot.ToString() ?? "(no editor)";
         Assert.True(shown == File.ReadAllText(lockFile), $"The open lock file still shows the text from before the update:\n{shown}");
 
-        MigrationsTests.UndoFromExplorer(window, project);
+        Ui.UndoFromExplorer(window, project);
         Ui.Landed(() => File.ReadAllText(project) == projectBefore, "the project back at 1.0.0");
         shown = window.EditorArea.Find(lockFile)?.Text.Snapshot.ToString() ?? "(no editor)";
         Assert.True(shown == lockBefore, $"Undo of the update took the project back but left the open lock file at:\n{shown}");

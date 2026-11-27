@@ -234,13 +234,12 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
     /// <summary>The login shell's environment as one flow, every step off Windows alone (a Windows program gets the
     /// person's whole environment), each in an instance of its own: a login shell that fails without a terminal logged
     /// in its words and one that skips it giving its path, the environment read from the shell the terminal runs with
-    /// no SHELL, and a global dotnet-ef under the DOTNET_CLI_HOME a login profile sets found.</summary>
+    /// no SHELL.</summary>
     [Fact]
     public async Task The_IDEs_environment_is_the_login_shells_however_it_starts_or_fails()
     {
         await Flow.StepApartAsync("a login shell that fails without a terminal is logged in its words and one that skips it while read gives its path", () => new McpTests(restored), t => t.A_login_shell_that_fails_without_a_terminal_is_logged_in_its_words_and_one_that_skips_it_while_read_gives_its_path());
         await Flow.StepApartAsync("with no SHELL the IDEs environment is read from the login shell its terminal runs", () => new McpTests(restored), t => t.With_no_SHELL_the_IDEs_environment_is_read_from_the_login_shell_its_terminal_runs());
-        await Flow.StepApartAsync("a global dotnet ef under the DOTNET CLI HOME a login profile sets is found", () => new McpTests(restored), t => t.A_global_dotnet_ef_under_the_DOTNET_CLI_HOME_a_login_profile_sets_is_found());
     }
 
     private async Task An_agent_that_lists_the_tests_as_it_starts_gets_those_the_test_projects_code_declares()
@@ -2858,41 +2857,6 @@ public sealed class McpTests : McpRig, IClassFixture<RestoredFolders>
             + $"a PATH or variable set in one is not what the other finds. The terminal answered:\n{answer}");
     }
 
-    /// <summary>Started as the Finder starts it, over a login profile that takes a while to set DOTNET_CLI_HOME, Passenger
-    /// finds the global dotnet-ef under that home, as the dotnet it starts would: Migrations names it.</summary>
-    private async Task A_global_dotnet_ef_under_the_DOTNET_CLI_HOME_a_login_profile_sets_is_found()
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            Assert.Skip("A Windows program gets the person's whole environment, and reads no login profile");
-            return;
-        }
-        string folder = await ShopApp.MakeAsync(design: true, tool: null);
-        string home = TestFolders.Create("home-");
-        DeleteAtEnd(folder);
-        DeleteAtEnd(home);
-        string cli = Directory.CreateDirectory(Path.Combine(home, "cli")).FullName;
-        // A global tool as dotnet tool install -g leaves it, of a major other than the project's EF Core, so Migrations refuses it by name.
-        string tools = Directory.CreateDirectory(Path.Combine(cli, ".dotnet", "tools")).FullName;
-        Executable(Path.Combine(tools, "dotnet-ef"), "#!/bin/sh\nexit 1\n");
-        Directory.CreateDirectory(Path.Combine(tools, ".store", "dotnet-ef", "1.0.0"));
-        // NuGet takes its settings from DOTNET_CLI_HOME too: the run's, so nothing is restored anew.
-        string settings = Path.Combine(Environment.GetEnvironmentVariable("DOTNET_CLI_HOME")!, ".nuget", "NuGet", "NuGet.Config");
-        File.Copy(settings, Path.Combine(Directory.CreateDirectory(Path.Combine(cli, ".nuget", "NuGet")).FullName, "NuGet.Config"));
-        foreach (string profile in (string[])[".profile", ".bash_profile", ".zprofile"])
-        {
-            File.WriteAllText(Path.Combine(home, profile), $"sleep 3\nexport DOTNET_CLI_HOME=\"{cli}\"\n");
-        }
-        Dictionary<string, string?> environment = Launchd(home);
-        environment["DOTNET_CLI_HOME"] = null;
-        await using McpClient client = await Start(["--mcp", folder], languageServer: false, environment: environment);
-        string found = Text(await Result(client, McpTools.IdeAction, new() { ["action"] = AppActions.AddMigration, ["input"] = "Initial" }));
-        Assert.True(found.Contains("the global dotnet-ef 1.0.0", StringComparison.OrdinalIgnoreCase),
-            $"Add Migration did not name the global dotnet-ef under the DOTNET_CLI_HOME the login profile sets ({cli}), answering: {found}");
-    }
-
-    /// <summary>A script at <paramref name="path"/> that only its owner may change, as a shell or a tool on the PATH is.</summary>
-    [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
     private static void Executable(string path, string script)
     {
         File.WriteAllText(path, script);

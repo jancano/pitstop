@@ -1,5 +1,4 @@
 using Passenger.App.Editors;
-using Passenger.App.Migrations;
 using Passenger.App.MSBuild;
 using Passenger.App.Workspace;
 using Passenger.Core;
@@ -285,9 +284,11 @@ public sealed partial class FolderPackages
     /// of it in one change, so a stop between projects never leaves the set half moved (its central versions are the
     /// folder's, whichever project references each); none otherwise.</summary>
     private static IReadOnlyList<(string Id, string Version)> Alongside(ProjectModel project, IReadOnlyList<(string Id, string Version)> moves, IReadOnlyList<PackageUpdate> updates) =>
-        CentralPackages.PropsOf(project) is not null && moves.Any(m => EfProviders.InSet(m.Id))
-            ? [.. updates.Where(u => EfProviders.InSet(u.Id) && !moves.Any(m => m.Id.Equals(u.Id, StringComparison.OrdinalIgnoreCase))).Select(u => (u.Id, u.Version))]
+        CentralPackages.PropsOf(project) is not null && moves.Any(m => IsEntityFrameworkPackage(m.Id))
+            ? [.. updates.Where(u => IsEntityFrameworkPackage(u.Id) && !moves.Any(m => m.Id.Equals(u.Id, StringComparison.OrdinalIgnoreCase))).Select(u => (u.Id, u.Version))]
             : [];
+
+    private static bool IsEntityFrameworkPackage(string id) => id.StartsWith("Microsoft.EntityFrameworkCore", StringComparison.OrdinalIgnoreCase);
 
     private async Task<ProjectModel> FreshAsync(ProjectModel project, CancellationToken cancel)
     {

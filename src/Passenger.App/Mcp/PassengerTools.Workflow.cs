@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using ModelContextProtocol.Server;
-using Passenger.App.Migrations;
 using Passenger.App.Packages;
 using Passenger.App.Profiling;
 using Passenger.App.Vcs;
@@ -575,8 +574,7 @@ public sealed partial class PassengerTools
         "nuget.config feeds; with remove, takes it out through dotnet remove package. Answers the version installed, the " +
         "files it changed (the project, its packages.lock.json, and Directory.Packages.props under central package management), " +
         "and as nuget_search says them whether that version is vulnerable, with the version that fixes it, or deprecated. " +
-        "Moving one of EF Core's packages moves the project's others with it (with); another maker's provider it leaves behind " +
-        "stays as it is, said with the version that fits. With framework, a reference in that framework alone, as fixing a " +
+        "With framework, a reference in that framework alone, as fixing a " +
         "vulnerable version it gets through other packages does, the others' references as they were.")]
     public Task<PackageChange> NuGetInstall(string project, string id, string? version = null, bool remove = false,
         [Description("A framework the project builds for, or several separated by ;")] string? framework = null, CancellationToken cancel = default) => OnUi(cancel, async () =>
@@ -606,11 +604,7 @@ public sealed partial class PassengerTools
         {
             return await WarnedAsync(new PackageChange(id, at, chosen.Name, Changed(await Session.Packages.InstallAsync(chosen, id, at, frameworks: frameworks))), feeds, offered, cancel);
         }
-        EfUpdate weighed = await window.Migrations.UpdateAsync(chosen, id, at, null, cancel);
-        PackageChange done = weighed.AsAsked
-            ? new PackageChange(id, at, chosen.Name, Changed(await Session.Packages.InstallAsync(chosen, id, at))) { Said = weighed.Said }
-            : weighed.Outcome is { } made ? new PackageChange(id, at, chosen.Name, Changed(made)) { With = weighed.With.Count > 0 ? weighed.With : null, Said = weighed.Said }
-            : throw new InvalidOperationException(weighed.Said ?? Refusals.SolutionClosed);
+        PackageChange done = new(id, at, chosen.Name, Changed(await Session.Packages.InstallAsync(chosen, id, at)));
         return await WarnedAsync(done, feeds, offered, cancel);
     });
 

@@ -1219,6 +1219,26 @@ public static class TestFolders
 
 public static class Ui
 {
+    internal static void UndoFromExplorer(Passenger.App.MainWindow window, string path, Func<string>? opened = null)
+    {
+        List<string> asked = [];
+        window.Confirm = (_, question, _) =>
+        {
+            asked.Add(question);
+            return Task.FromResult(true);
+        };
+        window.ExplorerView.Reveal(path);
+        Ui.Settle();
+        Ui.ClickRow(window, window.ExplorerView.Tree.Rows.First(r => r.Name.StartsWith(Path.GetFileNameWithoutExtension(path), StringComparison.Ordinal)));
+        string? next = window.EditorArea.Commands.ToUndo(null)?.Name;
+        string open = string.Join(", ", window.EditorArea.Documents.Select(d => Path.GetFileName(d.Path)));
+        string? active = window.EditorArea.Active?.Path is { } shown ? Path.GetFileName(shown) : null;
+        string? focused = window.FocusManager?.GetFocusedElement()?.GetType().Name;
+        Ui.Run(window, Passenger.Editor.EditorActions.Undo);
+        Assert.True(asked.Count == 1, $"Undo asked {asked.Count} questions: {string.Join(" | ", asked)} (the command to undo was {next ?? "none"}; "
+            + $"open: {open}; active: {active ?? "none"}; the keys with: {focused ?? "nothing"}; the status bar said {window.Status}){(opened is null ? "" : $"\n{opened()}")}");
+    }
+
     /// <summary>A key, or a chord ("control M , control S"), pressed as a person presses it, then what it ran let land
     /// unless <paramref name="settle"/> is false: a chord's second key comes right after its first, as a person's does
     /// within the two seconds the window waits for it, never after background work that may take longer.</summary>

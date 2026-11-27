@@ -8,7 +8,7 @@ using Passenger.Workspace;
 namespace Passenger.App;
 
 /// <summary>A project as a list or a drop-down names it wherever one is chosen (Find in Files' scope, a run configuration's
-/// project, Add Reference and the other check rows of projects, the NuGet and Migrations windows'): the icon of what it
+/// project, Add Reference and the other check rows of projects, the NuGet window's): the icon of what it
 /// builds in its project file's tint, then its name, cut short with an ellipsis where it has no more room, a screen reader
 /// hearing its kind after it, as the Solution view draws and names its row (<see cref="FileIcons.ForProject"/>,
 /// <see cref="ProjectKinds.Said"/>); a row it sits in is named by it. Made once with its row and shown another project, or

@@ -40,7 +40,6 @@ public sealed class ToolWindowServesTests
         [ToolWindowIds.LiveTree] = ToolWindowServes.InspectedApps,
         [ToolWindowIds.Game] = ToolWindowServes.GodotProjects,
         [ToolWindowIds.Aspire] = ToolWindowServes.AppHosts,
-        [ToolWindowIds.Migrations] = ToolWindowServes.EfCore,
         [ToolWindowIds.StepLibrary] = ToolWindowServes.StepDefinitions,
     };
 
@@ -53,7 +52,6 @@ public sealed class ToolWindowServesTests
         (ToolWindowIds.StepLibrary, Refusals.NoStepDefinitions),
         (ToolWindowIds.Endpoints, Refusals.NoWebRequests),
         (ToolWindowIds.Requests, Refusals.NoWebApp),
-        (ToolWindowIds.Migrations, Refusals.NoEfCore),
         (ToolWindowIds.LiveTree, Refusals.NoInspectedApp),
     ];
 

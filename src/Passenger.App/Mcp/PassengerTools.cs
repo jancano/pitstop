@@ -2918,16 +2918,16 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
 
     [McpServerTool(Name = McpTools.IdeAction, Title = "Run an IDE action", Destructive = true), Description(
         "Runs an IDE action by its id (app.build, app.debug.stepOver...; ide_actions lists them) as its shortcut would, waits " +
-        "for the work it begins and says what it came to, or says why it cannot. input: app.migrations.add's name (then its output folder, else the context's last), updateTo's " +
-        "target, environment's name; app.saveAsLaunchProfile's configuration (else the chosen one); app.targetFramework's framework, as " +
+        "for the work it begins and says what it came to, or says why it cannot. input: app.saveAsLaunchProfile's configuration (else the chosen one); app.targetFramework's framework, as " +
         "Project:net9.0 where several projects target several; app.chooseRunTarget's device, emulator or simulator by name " +
         "(Configuration:name for another configuration's), app.chooseBuildConfiguration's configuration (Release, or " +
         "Release|x64; none lists them for either).")]
     public Task<string> IdeAction(string action, string? input = null, CancellationToken cancel = default) => OnUi(cancel, async () =>
     {
-        if (action.StartsWith("app.migrations.", StringComparison.Ordinal) && window.Actions[action] is not null)
+        IdeAction? named = window.Actions[action];
+        if (!window.ManagedDevelopment && named is not null && !NativeProduct.Offers(named))
         {
-            return await window.MigrationsForAgentAsync(action, input, cancel);
+            throw new InvalidOperationException($"{action} is available in the managed development profile.");
         }
         if (action == AppActions.SaveAsLaunchProfile)
         {
@@ -2949,7 +2949,6 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
         {
             throw new InvalidOperationException($"{action} takes no input");
         }
-        IdeAction? named = window.Actions[action];
         if (named is null && window.Actions[AppActions.Now(action)] is null)
         {
             throw new ArgumentException($"No action is called {action}: ide_actions lists them, a query narrowing it to those whose id, name or group holds it", nameof(action));

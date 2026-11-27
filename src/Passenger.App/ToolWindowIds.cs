@@ -28,7 +28,6 @@ public static class ToolWindowIds
     public const string LiveTree = "liveTree";
     public const string Game = "game";
     public const string Aspire = "aspire";
-    public const string Migrations = "migrations";
     public const string StepLibrary = "stepLibrary";
 
     /// <summary>Every id above, which a theme's layout names windows by.</summary>
