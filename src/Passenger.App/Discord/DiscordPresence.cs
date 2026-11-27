@@ -22,13 +22,13 @@ public sealed class DiscordPresence(DiscordIpc ipc, Action<string> log)
     // Passenger's own words, wherever the activity names nothing of the work.
 
     /// <summary>The icon's hover text, whatever the activity names.</summary>
-    public const string LargeText = "Pitstop: an IDE for C# and .NET, open to your coding agent";
+    public const string LargeText = "Pitstop, the modules-first C++ IDE";
 
     /// <summary>The details line of an activity that names nothing of the work (Passenger only, or idle).</summary>
-    public const string OwnDetails = "An IDE for C# and .NET";
+    public const string OwnDetails = "The modules-first C++ IDE";
 
     /// <summary>The state line of an activity that names nothing of the work.</summary>
-    public const string OwnState = "Open source · Windows, macOS and Linux";
+    public const string OwnState = "Open-source C and C++ development";
 
     public const string ButtonLabel = "Get Pitstop";
     public const string ButtonUrl = "https://github.com/jancano/pitstop";

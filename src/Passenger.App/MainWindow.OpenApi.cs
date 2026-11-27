@@ -1,5 +1,7 @@
 using Passenger.App.Endpoints;
+using Passenger.App.Workspace;
 using Passenger.Core;
+using Passenger.Text;
 using Passenger.Workspace;
 
 namespace Passenger.App;
@@ -9,6 +11,58 @@ namespace Passenger.App;
 /// each operation none of its requests calls yet, as one command of Undo.</summary>
 public partial class MainWindow
 {
+    private string? NativeOpenApiFile(OpenDocument? document) =>
+        Folder is { } root && document is not null && PathNames.Within(document.Path, root)
+        && PathNames.HasExtension(document.Path, [".json"]) ? null : "Open an OpenAPI JSON document in the workspace.";
+
+    private async Task GenerateFromOpenApiFileAsync(OpenDocument source)
+    {
+        ProjectSession current = session;
+        if (work.Begin(AppActions.GenerateOpenApiRequests, $"Reading {source.Name}…") is not { } working)
+        {
+            return;
+        }
+        using (working)
+        {
+            TextSnapshot text = source.Text.Snapshot;
+            OpenApiDocument? document = await BackgroundWork.Run(() => OpenApiDocument.Parse(text.ToString()), working.Stopping);
+            if (session != current || current.IsEnded || working.IsStopped)
+            {
+                return;
+            }
+            if (document is null)
+            {
+                string said = $"{source.Name} is not an OpenAPI JSON document.";
+                status.Text = said;
+                working.Tell(false, said);
+                return;
+            }
+            if (text != source.Text.Snapshot)
+            {
+                string said = $"{source.Name} changed while it was being read. Generate requests again.";
+                status.Text = said;
+                working.Tell(false, said);
+                return;
+            }
+            string path = Path.ChangeExtension(source.Path, ".http");
+            int count = 0;
+            (string? written, _, string? refused) = await AppendRequestsAsync(path, existing =>
+            {
+                IReadOnlyList<OpenApiOperation> pending = OpenApiRequests.Uncalled(document, existing);
+                count = pending.Count;
+                return count == 0 ? string.Empty : OpenApiRequests.Entries(document, pending, existing, "base", null);
+            }, "Generate Requests from OpenAPI");
+            if (session == current && !current.IsEnded && !working.IsStopped)
+            {
+                string said = written is null ? refused ?? "No requests could be written."
+                    : count == 0 ? "The OpenAPI document has no new requests."
+                    : $"Wrote {Plural.Of(count, "request")} to {Path.GetFileName(path)}.";
+                status.Text = said;
+                working.Tell(written is not null, said);
+            }
+        }
+    }
+
     /// <summary>The web project whose requests Generate Requests from OpenAPI writes: the Endpoints window's row's, else the
     /// folder's one web project.</summary>
     private string? OpenApiProject() => endpoints?.ChosenProject

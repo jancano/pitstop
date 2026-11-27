@@ -68,6 +68,8 @@ public sealed class ToolWindowServes
     /// <summary>An ASP.NET Core app's routes, or an .http file's requests, which the Endpoints window sends.</summary>
     public static ToolWindowServes WebRequests { get; } = new(FolderHolds.WebApp | FolderHolds.HttpFile, Refusals.NoWebRequests);
 
+    public static ToolWindowServes RequestFiles { get; } = new(FolderHolds.HttpFile, "Open a folder containing an .http or .rest request file.");
+
     /// <summary>An EF Core project, whose migrations the Migrations window lists.</summary>
     public static ToolWindowServes EfCore { get; } = new(FolderHolds.EfCore, Refusals.NoEfCore);
 

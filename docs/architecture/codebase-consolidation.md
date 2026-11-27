@@ -41,3 +41,21 @@ The first-party dependency graph remains in the solution and project references.
 ## Upstream integration
 
 Keep Passenger as an upstream reference and preserve the original history and attribution. Select changes for shared editor, terminal, Git, protocol, performance, accessibility and general-purpose tooling. Review dependency and test changes against the retained scope. Keep managed backend developments out of Pitstop after their consumers have been removed, and preserve Pitstop product identifiers, temporary folders and release boundaries when reconciling equivalent code.
+
+## Preview backends
+
+The WPF and MAUI preview projects, child hosts, linked request protocols and their exclusive tests have been removed. Windows packages already excluded those binaries in Phase 7. Avalonia preview in the repository's managed verification profile still uses Avalonia's previewer. WPF and MAUI runtime inspection, XAML code intelligence and the fixtures that exercise those separate implementations remain. Generic HTML, Markdown, SVG, image and audio preview code is independent of the removed hosts. The `Avalonia.Controls.Maui` central package pin was exclusive to the MAUI previewer. MAUI dependencies used by retained inspection and fixtures remain.
+
+## Solution identity
+
+`Pitstop.slnx` is the entry point for restore, builds and toolchain probes. CI and repository-root discovery use that name. Inherited project assemblies and namespaces remain pending dedicated migrations. The solution file change leaves persisted JSON fields and application IPC identifiers intact.
+
+## Discord Rich Presence
+
+The built-in activity uses Pitstop's C++ description and defaults to showing Pitstop alone. The project-name and active-file options keep the existing persisted values so older settings retain their privacy preferences. Pitstop needs a numeric application ID to enable the integration.
+
+Create a Pitstop application in Discord's Developer Portal, copy its Application ID, and upload Pitstop's image as the Rich Presence asset `pitstop-1024`. Export the ID as `PITSTOP_DISCORD_APPLICATION_ID` before starting Pitstop. Settings → Discord controls whether activity is shared and which names are included. The local IPC implementation needs only the application ID. [Discord Rich Presence documentation](https://docs.discord.com/developers/discord-social-sdk/development-guides/setting-rich-presence)
+
+## Native HTTP Client
+
+The native Endpoints window serves `.http` and `.rest` files. It uses the existing request editor, environment choices and grants, and response presentation. With an OpenAPI JSON document open in the workspace, **Generate Requests from OpenAPI** appends missing requests to the adjacent `.http` file. Review its `base` variable before sending a request. Generation reads the editor buffer and uses the existing file change and undo mechanism. Managed route discovery and build-based OpenAPI input remain confined to the verification profile.

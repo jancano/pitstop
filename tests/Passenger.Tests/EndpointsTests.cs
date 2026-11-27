@@ -519,7 +519,8 @@ public sealed class EndpointsTests : IDisposable
 
     private static MainWindow Open(string folder, string? settings = null)
     {
-        MainWindow window = settings is null ? new() { Width = 1200, Height = 800 } : new() { Width = 1200, Height = 800, StateFolder = settings };
+        MainWindow window = settings is null ? new(managedDevelopment: false) { Width = 1200, Height = 800 }
+            : new(managedDevelopment: false) { Width = 1200, Height = 800, StateFolder = settings };
         window.Show();
         if (settings is not null)
         {

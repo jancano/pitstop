@@ -53,11 +53,11 @@ public sealed class DiscordTests : DiscordFolders
         Frame command = discord.Frames.Last(f => f.Op == 1);
         Assert.Equal("SET_ACTIVITY", (string?)command.Json["cmd"]);
         Assert.True((int?)command.Json["args"]?["pid"] == Environment.ProcessId, $"The activity names process {command.Json["args"]?["pid"]}, not Pitstop's own, {Environment.ProcessId}");
-        Assert.True(((string?)activity["details"], (string?)activity["state"]) == ("An IDE for C# and .NET", "Open source · Windows, macOS and Linux"),
+        Assert.True(((string?)activity["details"], (string?)activity["state"]) == ("The modules-first C++ IDE", "Open-source C and C++ development"),
             $"A fresh Pitstop's activity is not Pitstop's own words alone: {activity.ToJsonString()}");
         Assert.DoesNotContain("Shop", activity.ToJsonString(), StringComparison.Ordinal);
         Assert.Equal("pitstop-1024", (string?)activity["assets"]?["large_image"]);
-        Assert.Equal("Pitstop: an IDE for C# and .NET, open to your coding agent", (string?)activity["assets"]?["large_text"]);
+        Assert.Equal("Pitstop, the modules-first C++ IDE", (string?)activity["assets"]?["large_text"]);
         Assert.True(activity["assets"]!.AsObject().Count == 2, $"The activity carries more art than Pitstop's icon: {activity["assets"]!.ToJsonString()}");
         Assert.Equal("""[{"label":"Get Pitstop","url":"https://github.com/jancano/pitstop"}]""", activity["buttons"]?.ToJsonString());
         long start = (long)activity["timestamps"]!["start"]!;
@@ -89,7 +89,7 @@ public sealed class DiscordTests : DiscordFolders
         Assert.True(Activities().All(a => a is null || !a.ToJsonString().Contains("One.cs", StringComparison.Ordinal)),
             "Discord was told the file open before the person chose to name it");
 
-        Choose(window, "The solution and the file");
+        Choose(window, "The project and the active file");
         WaitForActivity(a => (string?)a?["state"] == "Editing One.cs", "the activity to name One.cs, the file open");
         window.OpenFile(Path.Combine(solution, "Two.cs"));
         WaitForActivity(a => (string?)a?["state"] == "Editing Two.cs", "the activity to follow the switch to Two.cs");
@@ -97,7 +97,7 @@ public sealed class DiscordTests : DiscordFolders
         JsonObject one = WaitForActivity(a => (string?)a?["state"] == "Editing One.cs", "the activity to follow the switch back to One.cs");
         Assert.Equal("Shop", (string?)one["details"]);
 
-        Choose(window, "The solution");
+        Choose(window, "The project");
         WaitForActivity(a => a?["details"] is not null && a["state"] is null, "the activity to name the solution alone");
         int sent = Activities().Count;
         window.OpenFile(Path.Combine(solution, "Two.cs"));
@@ -107,8 +107,8 @@ public sealed class DiscordTests : DiscordFolders
         Assert.True(Activities().Skip(sent).All(a => a?["state"] is null), "With the solution alone chosen, switching files still named one in Discord");
 
         Choose(window, "Pitstop only");
-        JsonObject only = WaitForActivity(a => (string?)a?["details"] == "An IDE for C# and .NET", "the activity to name nothing but Pitstop");
-        Assert.True((string?)only["state"] == "Open source · Windows, macOS and Linux" && only["timestamps"] is not null
+        JsonObject only = WaitForActivity(a => (string?)a?["details"] == "The modules-first C++ IDE", "the activity to name nothing but Pitstop");
+        Assert.True((string?)only["state"] == "Open-source C and C++ development" && only["timestamps"] is not null
             && (string?)only["assets"]?["large_image"] == "pitstop-1024", $"Pitstop only showed {only.ToJsonString()}");
         window.Close();
     }
@@ -119,7 +119,7 @@ public sealed class DiscordTests : DiscordFolders
         string bank = Directory.CreateDirectory(Path.Combine(folder, "Bank")).FullName;
         File.WriteAllText(Path.Combine(bank, "Three.cs"), "class Three { }\n");
         MainWindow window = Started();
-        Choose(window, "The solution");
+        Choose(window, "The project");
         WaitForActivity(a => (string?)a?["details"] == "Shop", "the first window's solution");
 
         window.ApplySettings(window.Settings with { OpenProjectIn = OpenProjectIn.NewWindow });
@@ -143,7 +143,7 @@ public sealed class DiscordTests : DiscordFolders
     {
         discord.Start();
         MainWindow window = Started();
-        Choose(window, "The solution");
+        Choose(window, "The project");
         long first = (long)WaitForActivity(a => (string?)a?["details"] == "Shop", "the activity")["timestamps"]!["start"]!;
         Assert.Null(window.CloseSolution());
         Ui.WaitFor(() => discord.Ended == 1, "Discord to be let go of once the solution closed");
@@ -161,7 +161,7 @@ public sealed class DiscordTests : DiscordFolders
     private void Without_Discord_one_line_is_logged_and_Passenger_finds_Discord_when_it_starts_and_again_when_it_comes_back()
     {
         MainWindow window = Started();
-        Choose(window, "The solution");
+        Choose(window, "The project");
         Ui.PumpUntil(() => Discords().Length > 0, "a line saying Discord is not running", TimeSpan.FromSeconds(10));
         // Ten looks or so: the test's window looks for Discord every 200 ms.
         Wait(TimeSpan.FromSeconds(2));
@@ -282,9 +282,9 @@ public sealed class DiscordResponsivenessTests : DiscordFolders
         // At work in the editor, however long the window took to start.
         Ui.Press(window, "right");
         WaitForActivity(a => (string?)a?["state"] == "Editing One.cs", "the activity naming the file");
-        JsonObject idle = WaitForActivity(a => (string?)a?["details"] == "An IDE for C# and .NET" && a["timestamps"] is null, "only Pitstop once the person was idle");
+        JsonObject idle = WaitForActivity(a => (string?)a?["details"] == "The modules-first C++ IDE" && a["timestamps"] is null, "only Pitstop once the person was idle");
         string[] keys = [.. idle.Select(p => p.Key).Order(StringComparer.Ordinal)];
-        Assert.True(keys.SequenceEqual(["assets", "buttons", "details", "state"]) && (string?)idle["state"] == "Open source · Windows, macOS and Linux",
+        Assert.True(keys.SequenceEqual(["assets", "buttons", "details", "state"]) && (string?)idle["state"] == "Open-source C and C++ development",
             $"Idle, the activity names more than Pitstop: {idle.ToJsonString()}");
         Ui.Press(window, "right");
         WaitForActivity(a => (string?)a?["state"] == "Editing One.cs", "the solution and the file once a key was pressed");

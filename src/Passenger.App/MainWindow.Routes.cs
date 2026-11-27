@@ -390,13 +390,22 @@ public partial class MainWindow
                     return (null, string.Empty, readOnly);
                 }
                 string before = document.Text.Snapshot.ToString();
-                TextEdit[] edits = [new TextEdit(before.Length, 0, LineEndings.In(added(before.Replace("\r\n", "\n", StringComparison.Ordinal)), document.Text.LineEnding))];
+                string insert = added(before.Replace("\r\n", "\n", StringComparison.Ordinal));
+                if (insert.Length == 0)
+                {
+                    return (before, before, null);
+                }
+                TextEdit[] edits = [new TextEdit(before.Length, 0, LineEndings.In(insert, document.Text.LineEnding))];
                 document.Text.Edit(edits, document.Selections, TextEditing.MapThrough(document.Selections, edits));
                 return (document.Text.Snapshot.ToString(), before, null);
             }
             FileText? had = File.Exists(path) ? FileText.Load(path) : null;
             string existing = had?.Text ?? string.Empty;
             string entries = added(existing.Replace("\r\n", "\n", StringComparison.Ordinal));
+            if (entries.Length == 0)
+            {
+                return (existing, existing, null);
+            }
             string text = string.Empty;
             if (await ChangeFileAsync(command, [path], () =>
             {

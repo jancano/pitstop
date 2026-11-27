@@ -17,6 +17,33 @@ namespace Passenger.Tests;
 /// Microsoft.Extensions.ApiDescription.Server's from the AspireGraphs restore.</summary>
 public sealed class OpenApiEndpointsTests
 {
+    [AvaloniaFact]
+    public void Native_workspace_generates_requests_from_an_openapi_file()
+    {
+        string folder = TestFolders.Create("native-openapi-");
+        string source = TestFolders.Write(folder, "schema.json",
+            """{"openapi":"3.1.0","paths":{"/items":{"get":{"operationId":"listItems"}}}}""");
+        string requests = Path.Combine(folder, "schema.http");
+        MainWindow window = new(managedDevelopment: false) { Autosaves = false };
+        window.Show();
+        try
+        {
+            Ui.Await(window.OpenFolder(folder), "the request workspace");
+            Assert.Null(window.Open(source));
+            Assert.True(window.Perform(AppActions.GenerateOpenApiRequests));
+            Ui.WaitFor(() => File.Exists(requests) && window.Status?.Contains("Wrote 1 request", StringComparison.Ordinal) == true, "the generated request");
+            string generated = File.ReadAllText(requests);
+            Assert.Contains("GET {{base}}/items", generated, StringComparison.Ordinal);
+            Assert.True(window.Perform(AppActions.GenerateOpenApiRequests));
+            Ui.WaitFor(() => window.Status == "The OpenAPI document has no new requests.", "the duplicate check");
+            Assert.Equal(generated, File.ReadAllText(requests));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     /// <summary>An app's OpenAPI document, running or built, makes its requests and holds its answers to their
     /// schemas.</summary>
     [AvaloniaFact]

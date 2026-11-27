@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Passenger.App.Discord;
 
 /// <summary>Where Passenger looks for the Discord app on this computer and how often: the places Discord's own libraries
@@ -7,6 +9,9 @@ public sealed record DiscordIpc(IReadOnlyList<string> Places)
 {
     [IdentifierHome]
     public const string Variable = "PITSTOP_DISCORD_IPC";
+
+    [IdentifierHome]
+    public const string ApplicationIdVariable = "PITSTOP_DISCORD_APPLICATION_ID";
 
     /// <summary>How long Passenger waits before looking for Discord again.</summary>
     public TimeSpan Retry { get; init; } = TimeSpan.FromSeconds(20);
@@ -18,15 +23,23 @@ public sealed record DiscordIpc(IReadOnlyList<string> Places)
     /// <summary>How long Discord has to answer the handshake, or to take the last update as Passenger closes.</summary>
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(3);
 
-    internal static bool Configured => Environment.GetEnvironmentVariable(Variable) is { Length: > 0 };
+    internal static bool Configured => ReadApplicationId() is not null || Environment.GetEnvironmentVariable(Variable) is { Length: > 0 };
 
     public string? ApplicationId { get; init; }
 
     /// <summary>The system's places, or the one <c>PITSTOP_DISCORD_IPC</c> names; a value there that is no absolute
     /// path (a pipe's name with no backslash, on Windows) is fatal.</summary>
-    public static DiscordIpc Default => Environment.GetEnvironmentVariable(Variable) is { Length: > 0 } named
-        ? new DiscordIpc([Parse(named)])
-        : new DiscordIpc(SystemPlaces());
+    public static DiscordIpc Default => new(Environment.GetEnvironmentVariable(Variable) is { Length: > 0 } named
+        ? [Parse(named)] : SystemPlaces())
+    {
+        ApplicationId = ReadApplicationId(),
+    };
+
+    private static string? ReadApplicationId()
+    {
+        string? value = Environment.GetEnvironmentVariable(ApplicationIdVariable)?.Trim();
+        return ulong.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out ulong id) && id > 0 ? value : null;
+    }
 
     /// <summary>The endpoints to try, in order: each number from 0, in each place.</summary>
     public IEnumerable<string> Endpoints() =>

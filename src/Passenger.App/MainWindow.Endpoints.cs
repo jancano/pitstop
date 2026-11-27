@@ -33,7 +33,7 @@ public partial class MainWindow
             return view;
         }, Docking.ToolAnchor.RightTop)
         {
-            Serves = ToolWindowServes.WebRequests,
+            Serves = ManagedDevelopment ? ToolWindowServes.WebRequests : ToolWindowServes.RequestFiles,
             Action = AppActions.ShowEndpoints,
             Menus = [new MenuPlace("Tools", 0, 3)],
             Chosen = () => endpoints?.Chosen,
@@ -59,9 +59,11 @@ public partial class MainWindow
             TitleIn = c => c.Request is { Request: var request } ? request.Name.Length > 0 ? $"Send '{request.Name}'" : $"Send {request.Method} {request.Url}" : "Test Request",
             Words = ["HTTP Client", "Send Request"],
         });
-        actions.Add(new IdeAction(AppActions.GenerateOpenApiRequests, "Generate Requests from OpenAPI", "Endpoints", _ => IdeErrors.Observe(GenerateFromOpenApiAsync(OpenApiProject()!)))
+        actions.Add(new IdeAction(AppActions.GenerateOpenApiRequests, "Generate Requests from OpenAPI", "Endpoints", c =>
+            IdeErrors.Observe(ManagedDevelopment ? GenerateFromOpenApiAsync(OpenApiProject()!) : GenerateFromOpenApiFileAsync(c.File!)))
         {
-            WhyNot = _ => OpenApiProject() is null ? "No web project is chosen in the Endpoints window" : null,
+            WhyNot = c => ManagedDevelopment ? OpenApiProject() is null ? "No web project is chosen in the Endpoints window" : null
+                : NativeOpenApiFile(c.File),
             Works = AppActions.GenerateOpenApiRequests,
             Words = ["OpenAPI", "Swagger", "HTTP Client"],
         });

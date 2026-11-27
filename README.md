@@ -30,6 +30,7 @@ Choose **New Project** from the welcome screen or **File → New Project**. Pick
 - clangd completion, diagnostics, hover, navigation, reference search, and formatting. Saved interface changes trigger semantic recovery with open buffers preserved.
 - A Module Explorer and dependency graph built from compiler evidence. Follow providers, navigate partitions, inspect direct consumers and potential transitive impact, and create module source files with an editable Xmake membership suggestion when needed.
 - Native build, rebuild, clean, cancellation, and run with compiler diagnostics, executable arguments, environment, working directory, console input and output, stop, and rerun.
+- An HTTP client for workspace request files. Open a folder with `.http` or `.rest` files and use **Tools → Endpoints** to send requests and inspect responses.
 - Read-only module intelligence for MCP clients. Enable MCP in Pitstop and configure a client to run `Pitstop.exe --mcp-attach`. The `module_workspace` tool queries the current trusted snapshot and accepts optional module name, target and result limit filters.
 
 The editor, Git, terminal and shared debugger infrastructure come from Passenger. See the [Passenger repository](https://github.com/Zaneris/passenger) and the architecture guides for [Xmake](docs/architecture/xmake-workspaces.md), [clangd](docs/architecture/cpp-language-intelligence.md), [Build and Run](docs/architecture/native-build-run.md), and [module intelligence](docs/architecture/module-intelligence.md).

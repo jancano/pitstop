@@ -56,7 +56,7 @@ public sealed partial class SettingsDialog : IdeWindow
         [(OpenProjectIn.NewWindow, "New window"), (OpenProjectIn.CurrentWindow, "Current window"), (OpenProjectIn.Ask, "Ask")];
 
     /// <summary>The names of <see cref="DiscordShown"/>'s choices, in its order.</summary>
-    public static readonly string[] DiscordChoices = ["Pitstop only", "The solution", "The solution and the file"];
+    public static readonly string[] DiscordChoices = ["Pitstop only", "The project", "The project and the active file"];
 
     private static readonly string[] Order = [Appearance, SystemPage, AccessibilityPage, TrustPage, UpdatesPage, ExplorerPage, EditorPage, CodeFoldingPage, PostfixPage, XamlCodeStylePage, GDScriptCodeStylePage, LiveTemplatesPage,
         VersionControlPage, NativeToolchainsPage, BuildPage, RunPage, HotReloadPage, NodePage, EslintPage, PrettierPage, SchemasPage, StylesheetsPage, DockerPage, GodotPage, TerminalPage, McpPage, DiscordPage, DiagnosticsPage, KeymapPage];
@@ -480,17 +480,25 @@ public sealed partial class SettingsDialog : IdeWindow
             });
             const string Discord = "discord rich presence activity status playing";
             Add(DiscordPage, "Show activity in Discord", discord, $"{Discord} friends share game",
-                "Discord shows Playing Pitstop with its icon, what is chosen below and how long the solution has been open, to "
+                "Discord shows Playing Pitstop with its icon, what is chosen below and how long the project has been open, to "
                 + "whoever can see your activity. Pitstop tells the Discord app on this computer alone. Off, it tells Discord nothing.");
             Add(DiscordPage, "Show", shows, $"{Discord} solution project file name details visibility privacy",
-                "Pitstop only: that you are using Pitstop, and nothing of your work. The solution: its name too. The solution and "
-                + "the file: the name of the file you are editing as well. Whoever can see your Discord activity sees these names.");
+                "Pitstop only shares that you are using Pitstop. Choose the project or active file to share their names. "
+                + "Whoever can see your Discord activity sees the names you choose to share.");
             Add(DiscordPage, "Only Pitstop when idle for", new StackPanel
             {
                 Orientation = Orientation.Horizontal,
                 Spacing = Gaps.Normal,
                 Children = { whenIdle, NumberSetting.WithUnit(idleMinutes, "minutes") },
             }, $"{Discord} idle inactive away timeout minutes");
+        }
+        else
+        {
+            Add(DiscordPage, "Rich Presence", new TextBlock
+            {
+                Text = $"Set {Discord.DiscordIpc.ApplicationIdVariable} to a Pitstop Discord application ID and restart Pitstop.",
+                TextWrapping = TextWrapping.Wrap,
+            }, "discord rich presence application identity");
         }
 
         Add(Declared.TraceProtocols);
