@@ -33,6 +33,7 @@
     <Project Path="src/Pitstop.Cpp/Pitstop.Cpp.csproj" />
     <Project Path="src/Pitstop.Modules/Pitstop.Modules.csproj" />
     <Project Path="src/Pitstop.ProjectSystem/Pitstop.ProjectSystem.csproj" />
+    <Project Path="src/Pitstop.Templates/Pitstop.Templates.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Passenger.Tests/Passenger.Tests.csproj" />

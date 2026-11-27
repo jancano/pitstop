@@ -1,0 +1,12 @@
+[
+  { "id": "c99", "label": "C99", "language": "c", "revision": 1999, "order": 1999 },
+  { "id": "c11", "label": "C11", "language": "c", "revision": 2011, "order": 2011 },
+  { "id": "c17", "label": "C17", "language": "c", "revision": 2017, "order": 2017, "recommended": true },
+  { "id": "c23", "label": "C23", "language": "c", "revision": 2023, "order": 2023 },
+  { "id": "c++11", "label": "C++11", "language": "cpp", "revision": 2011, "order": 2011 },
+  { "id": "c++14", "label": "C++14", "language": "cpp", "revision": 2014, "order": 2014 },
+  { "id": "c++17", "label": "C++17", "language": "cpp", "revision": 2017, "order": 2017 },
+  { "id": "c++20", "label": "C++20", "language": "cpp", "revision": 2020, "order": 2020, "capabilities": ["cpp.modules"] },
+  { "id": "c++23", "label": "C++23", "language": "cpp", "revision": 2023, "order": 2023, "recommended": true, "capabilities": ["cpp.modules", "cpp.std-module"] },
+  { "id": "c++26", "label": "C++26", "language": "cpp", "revision": 2026, "order": 2026, "experimental": true, "capabilities": ["cpp.modules", "cpp.std-module"] }
+]
