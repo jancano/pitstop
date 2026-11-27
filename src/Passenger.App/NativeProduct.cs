@@ -21,6 +21,7 @@ internal static class NativeProduct
             or A.ShowLiveTree or A.ShowGame or A.ShowStepLibrary or A.ViewBreakpoints or A.AttachToProcess
             or A.NameOpenApiDocument
             or A.SaveAsLaunchProfile or A.ApplyHotReloadChanges or A.Publish or A.PublishAgain or A.ToggleSolutionAnalysis or A.RestartCSharpServer
+            or A.ManageUserSecrets or A.InstallWorkloads or A.InstallAndroidDependencies or A.MakeMobileEdits or A.KeepAssembliesWhole
             or A.XamlPreview or A.BuildForPreview or A.OverlayFps or A.OverlayDirtyRects or A.OverlayLayoutTimeGraph or A.OverlayRenderTimeGraph
             or A.TargetFramework or A.NewType or A.NewItem or A.NewSolutionFolder or A.AddExistingProject or A.AddExistingItem or A.AddReference
             or A.AddAspireOrchestration or A.AddDockerSupport or A.AddDockerCompose

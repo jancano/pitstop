@@ -39,6 +39,9 @@ public sealed class XmakeWorkspaceLifecycleTests
             Assert.NotNull(window.Actions[AppActions.NewNativeProject]);
             Assert.Equal("Close Project", window.Actions[AppActions.CloseSolution]?.Title);
             Assert.DoesNotContain(window.Actions.All, action => action.Id is AppActions.AttachToProcess or AppActions.RunTests or AppActions.ManageNuGet);
+            Assert.DoesNotContain(window.Actions.All, action => action.Id is AppActions.ManageUserSecrets or AppActions.InstallWorkloads
+                or AppActions.InstallAndroidDependencies or AppActions.MakeMobileEdits or AppActions.KeepAssembliesWhole);
+            Assert.False(window.Perform(AppActions.InstallWorkloads));
             Assert.False(window.Perform(AppActions.AttachToProcess));
             Assert.False(window.DockHost.IsShown(ToolWindowIds.Debug));
             Passenger.App.Settings.SettingsDialog settings = window.ShowSettings();
