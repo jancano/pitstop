@@ -24,6 +24,9 @@ public static class AppActions
     /// <summary>Rider's New Solution (RiderNewSolution), which its keymaps give no keys.</summary>
     public const string NewSolution = "app.newSolution";
 
+    public const string NewNativeProject = "app.native.newProject";
+    public const string OpenNativeProject = "app.native.openProject";
+
     /// <summary>Rider's New Project (NewRiderProject), a project added to the open solution.</summary>
     public const string NewProject = "app.newProject";
     public const string Exit = "app.exit";

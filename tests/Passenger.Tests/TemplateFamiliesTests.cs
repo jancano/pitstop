@@ -140,7 +140,7 @@ public sealed class TemplateFamiliesTests : IDisposable
         MainWindow window = Started();
         // Read ahead, so the dialog chooses a row before its own read of the templates lists them again.
         Ui.WaitFor(() => ProjectTemplates.Ready(place) is not null, "the templates to be read ahead of New Solution", TimeSpan.FromMinutes(2));
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         NewProjectDialog dialog = Opened(window);
         dialog.Folder = place;
         Assert.Equal(["Recent", "Console App", "xUnit Test Project", "All templates", "Console"], dialog.Rows.Take(5).Select(Said));
@@ -187,7 +187,7 @@ public sealed class TemplateFamiliesTests : IDisposable
         // Restores take the run's own feed alone, so a project made never reaches nuget.org for its packages.
         AvaloniaApp.UseFeed(place);
         MainWindow window = Started();
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         NewProjectDialog dialog = Opened(window);
         dialog.Folder = place;
 
@@ -259,7 +259,7 @@ public sealed class TemplateFamiliesTests : IDisposable
         try
         {
             MainWindow window = Started();
-            Ui.Click(window.Welcome.NewSolutionButton);
+            Assert.True(window.Perform(AppActions.NewSolution));
             NewProjectDialog dialog = Opened(window);
             Assert.True(Family(dialog, "Aspire").NotInstalled, "The test's own template home has Aspire's templates");
             NewServiceSetupTests.Choose(dialog, "web");
@@ -343,7 +343,7 @@ public sealed class TemplateFamiliesTests : IDisposable
             installed = true;
             ProjectTemplates.Forget();
             MainWindow window = Started();
-            Ui.Click(window.Welcome.NewSolutionButton);
+            Assert.True(window.Perform(AppActions.NewSolution));
             NewProjectDialog dialog = Opened(window);
             Search(dialog, "probehost");
             Assert.Equal("probehost", dialog.Chosen?.ShortName);

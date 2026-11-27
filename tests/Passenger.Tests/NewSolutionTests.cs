@@ -93,7 +93,7 @@ public sealed class NewSolutionTests : IDisposable
     {
         Write("Pinned/global.json", "{ \"sdk\": { \"version\": \"1.0.100\", \"rollForward\": \"disable\" } }\n");
         MainWindow window = Started();
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         NewProjectDialog dialog = Templates(window);
         int listed = dialog.Templates.Count;
 
@@ -116,7 +116,7 @@ public sealed class NewSolutionTests : IDisposable
         using IDisposable theme = TestsTheme();
         Write("Taken/notes.txt", "kept\n");
         MainWindow window = Started();
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         NewProjectDialog dialog = Templates(window);
         TemplatesListedAsDotnetNewLists(dialog);
 
@@ -141,7 +141,7 @@ public sealed class NewSolutionTests : IDisposable
         Assert.Null(window.Folder);
         Assert.Equal(["Taken"], Directory.EnumerateFileSystemEntries(place).Select(Path.GetFileName));
 
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         dialog = Templates(window);
         Assert.Equal("Console App", dialog.Chosen?.Name);
         dialog.Folder = place;
@@ -207,7 +207,7 @@ public sealed class NewSolutionTests : IDisposable
         using IDisposable theme = TestsTheme();
         WpfApp.UseFeed(place);
         MainWindow window = Started();
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         NewProjectDialog dialog = Templates(window);
         dialog.Folder = place;
         NewServiceSetupTests.Choose(dialog, "wpf");
@@ -236,7 +236,7 @@ public sealed class NewSolutionTests : IDisposable
     {
         using IDisposable theme = TestsTheme();
         MainWindow window = Started();
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         NewProjectDialog dialog = Templates(window);
         dialog.Folder = place;
         Type(dialog, "Shop");
@@ -319,7 +319,7 @@ public sealed class NewSolutionTests : IDisposable
         AvaloniaApp.UseFeed(place);
         RunsHeadless("Gallery");
         MainWindow window = Started();
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         NewProjectDialog dialog = Templates(window);
 
         TemplateFamily avalonia = dialog.Families.Single(f => f.Name == "Avalonia");

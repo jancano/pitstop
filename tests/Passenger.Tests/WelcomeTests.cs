@@ -419,12 +419,14 @@ public sealed class WelcomeTests : IClassFixture<WelcomeTests.Workspaces>, IDisp
     {
         using IDisposable theme = TestsTheme();
         string folder = Solutions();
-        string a = PathNames.Canonical(Path.Combine(folder, "A.sln"));
+        string native = TestFolders.Create("welcome-native-");
+        string xmake = TestFolders.Write(native, "xmake.lua", "set_project(\"welcome\")");
+        using IDisposable asking = WorkspaceTrust.Ask(native);
         string tool = PathNames.Canonical(Path.Combine(folder, "Tool.csproj"));
         File.WriteAllText(Path.Combine(alpha, "One.cs"), "class One { }\n");
         (string Tile, string Panel, string Title, string Types, string Picked, Action<MainWindow> Opened)[] tiles =
         [
-            ("Open Solution", "file", "Open Solution", "Solutions and Projects: *.sln *.slnx *.slnf *.csproj", a, w => OpenedAs(w, a, "A", ["AppA"])),
+            ("Open Project", "file", "Open Project", "Xmake project: xmake.lua", xmake, w => Assert.Equal(PathNames.Canonical(native), w.Folder)),
             ("Open Folder", "folder", "Open Folder", "", alpha, w => Assert.Equal(PathNames.Canonical(alpha), w.Folder)),
             ("Open File", "file", "Open File", "", tool, w => Assert.True(w.EditorArea.Active?.Path == tool && w.Folder is null,
                 $"Tool.csproj was to open in the editor on its own; the editor shows {w.EditorArea.Active?.Path ?? "nothing"}, the folder open is {w.Folder ?? "none"}")),
@@ -437,7 +439,7 @@ public sealed class WelcomeTests : IClassFixture<WelcomeTests.Workspaces>, IDisp
             try
             {
                 Button[] shown = [.. window.Welcome.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains(StyleClasses.WelcomeAction))];
-                Assert.Equal(["New Solution", "Open Solution", "Open Folder", "Open File", "Clone Repository"], shown.Select(TileName));
+                Assert.Equal(["New Project", "Open Project", "Open Folder", "Open File", "Clone Repository"], shown.Select(TileName));
                 Ui.Click(shown.Single(b => TileName(b) == tile));
                 Ui.Settle();
                 Assert.Equal((panel, title, types), Assert.Single(panels.Asked));

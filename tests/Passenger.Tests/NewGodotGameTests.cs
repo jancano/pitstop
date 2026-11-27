@@ -225,7 +225,7 @@ public sealed class NewGodotGameTests : IDisposable
     /// <summary>New Solution from the Welcome screen, the Godot 4 Game chosen in a language and named Spinner, in the test's folder.</summary>
     private NewProjectDialog Chosen(MainWindow window, string language)
     {
-        Ui.Click(window.Welcome.NewSolutionButton);
+        Assert.True(window.Perform(AppActions.NewSolution));
         Ui.Settle();
         NewProjectDialog dialog = Assert.Single(window.OwnedWindows.OfType<NewProjectDialog>());
         Ui.WaitFor(() => dialog.TemplatesRead.IsCompleted, "dotnet new's templates to be read", TimeSpan.FromMinutes(3));

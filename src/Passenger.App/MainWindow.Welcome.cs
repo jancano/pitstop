@@ -19,9 +19,6 @@ public partial class MainWindow
     /// <summary>What the Welcome screen says (a recent one gone, a file that would not open), kept while it is not made.</summary>
     private string? welcomeSays;
 
-    /// <summary>Why the Welcome screen's New Solution greys, as the action does; null where it runs. Kept while it is not made.</summary>
-    private string? newSolutionWhyNot;
-
     /// <summary>What Open Solution's panel offers, and all it offers: the files that open as the workspace.</summary>
     private static readonly FilePickerFileType SolutionsAndProjects = new("Solutions and Projects") { Patterns = [.. WorkspaceModel.OpenedExtensions.Select(e => "*" + e)] };
 
@@ -45,6 +42,11 @@ public partial class MainWindow
         AddNewProjectActions();
         // The system's panels ask the person, never an agent.
         Func<ActionContext, string?> persons = c => c.ByAgent ? Refusals.AsksThePerson : null;
+        actions!.Add(new IdeAction(AppActions.OpenNativeProject, "Open Project…", "IDE", _ => IdeErrors.Observe(PickNativeProjectAsync()))
+        {
+            WhyNot = persons,
+            Menus = [new MenuPlace("File", 0, 4)],
+        });
         actions!.Add(new IdeAction(AppActions.OpenSolution, "Open Solution…", "IDE", _ => IdeErrors.Observe(PickSolutionAsync()))
         {
             WhyNot = persons,
@@ -73,8 +75,8 @@ public partial class MainWindow
     private WelcomeView MadeWelcome()
     {
         WelcomeView made = new();
-        made.NewSolutionRequested += (_, _) => Request(AppActions.NewSolution);
-        made.OpenSolutionRequested += (_, _) => Request(AppActions.OpenSolution);
+        made.NewSolutionRequested += (_, _) => Request(AppActions.NewNativeProject);
+        made.OpenSolutionRequested += (_, _) => Request(AppActions.OpenNativeProject);
         made.OpenFolderRequested += (_, _) => Request(AppActions.OpenFolder);
         made.OpenFileRequested += (_, _) => Request(AppActions.OpenFile);
         made.CloneRequested += (_, _) => Request(AppActions.CloneRepository);
@@ -83,7 +85,6 @@ public partial class MainWindow
         made.RevealRequested += (_, row) => ShowInFileManager(row.Path);
         made.Show(RecentSolutions);
         made.Say(welcomeSays);
-        GreyNewSolution(made);
         return made;
     }
 
@@ -92,12 +93,6 @@ public partial class MainWindow
     {
         welcomeSays = text;
         welcome?.Say(text);
-    }
-
-    /// <summary>The Welcome screen's New Solution greys as the action does, saying why on its tip.</summary>
-    private void GreyNewSolution(WelcomeView shown)
-    {
-        ToolButtons.Grey(shown.NewSolutionButton, newSolutionWhyNot);
     }
 
     /// <summary>Opens what File, Open Solution or Open Folder chose (a recent one, the system's, a new solution, a clone): a
@@ -143,6 +138,15 @@ public partial class MainWindow
         if ((await PickFiles("Open Solution", [SolutionsAndProjects], false)) is [{ } path])
         {
             Open(path);
+        }
+    }
+
+    private async Task PickNativeProjectAsync()
+    {
+        if ((await PickFiles("Open Project", [new FilePickerFileType("Xmake project") { Patterns = ["xmake.lua"] }], false)) is [{ } path]
+            && Path.GetFileName(path).Equals(Pitstop.Xmake.XmakeService.ProjectFile, StringComparison.OrdinalIgnoreCase))
+        {
+            Open(Path.GetDirectoryName(path)!);
         }
     }
 
@@ -195,7 +199,8 @@ public partial class MainWindow
     public ContextMenu ShowProjectMenu()
     {
         ActionContext context = actions!.Context();
-        List<Control> items = [.. ((string[])[AppActions.NewSolution, AppActions.OpenSolution, AppActions.OpenFolder, AppActions.OpenFile, AppActions.CloneRepository])
+        List<Control> items = [.. ((string[])[AppActions.NewSolution, AppActions.OpenSolution, AppActions.OpenFolder, AppActions.OpenFile, AppActions.CloneRepository,
+            AppActions.NewNativeProject, AppActions.OpenNativeProject])
             .Select(id => FlyoutEntry(new MenuEntry(id), context))];
         IReadOnlyList<ListedItem> windows = SolutionWindows();
         if (windows.Count > 1)

@@ -14,6 +14,8 @@ The Windows installer is `Pitstop-windows-x64.exe`. The portable package is `Pit
 
 ## Quick start
 
+In a current source build, choose **New Project** from the welcome screen or **File → New C/C++ Project**. Pick an Xmake template and a compiler-verified language standard. Review the generated files, then create the project in a new directory. Pitstop opens the generated folder through normal workspace trust. For the Windows reference toolchain, configure the new project with the documented Xmake options if Xmake cannot select the toolchain on its own. [Native project setup](docs/architecture/xmake-workspaces.md) · [Local templates](docs/templates/authoring.md)
+
 1. Configure the [Hello Modules example](examples/hello-modules) with the reference tools. Open the folder containing its `xmake.lua` in Pitstop and grant trust after reviewing the script.
 2. Select **Xmake: hello-modules** in the toolbar and choose **Build** or **Run**. The executable prints `Hello, modules!`.
 3. Open **View → Show Modules in Explorer** and **View → Module Dependencies**. Open `greetings.cppm` and invoke completion after `export import :` to see its interface partition.

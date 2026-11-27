@@ -35,7 +35,7 @@ public sealed class WelcomeView : UserControl
         TextBlock subtitle = new()
         {
             Classes = { StyleClasses.WelcomeSubtitle },
-            Text = $"Version {Product.Version}. Start a new solution, open a solution, project, folder or file, or clone a repository.",
+            Text = $"Version {Product.Version}. Modules-first C and C++ development with Xmake and clangd.",
             TextWrapping = TextWrapping.Wrap,
         };
         Grid hero = new() { Classes = { StyleClasses.WelcomeHero }, ColumnDefinitions = new ColumnDefinitions("Auto,*") };
@@ -44,9 +44,9 @@ public sealed class WelcomeView : UserControl
         hero.Children.Add(mark);
         hero.Children.Add(new StackPanel { [Grid.ColumnProperty] = 1, VerticalAlignment = VerticalAlignment.Center, Children = { title, subtitle } });
 
-        NewSolutionButton = Action(IconKeys.Add, "New Solution", "From a template");
+        NewSolutionButton = Action(IconKeys.Add, "New Project", "From a native template");
         NewSolutionButton.Click += (_, _) => NewSolutionRequested?.Invoke(this, EventArgs.Empty);
-        Button openSolution = Action(IconKeys.Solution, "Open Solution", "A solution or project");
+        Button openSolution = Action(IconKeys.Solution, "Open Project", "An Xmake project");
         openSolution.Click += (_, _) => OpenSolutionRequested?.Invoke(this, EventArgs.Empty);
         Button openFolder = Action(IconKeys.FolderOpen, "Open Folder", "A folder of code");
         openFolder.Click += (_, _) => OpenFolderRequested?.Invoke(this, EventArgs.Empty);
@@ -65,8 +65,8 @@ public sealed class WelcomeView : UserControl
             actions.ItemWidth = Math.Floor((e.NewSize.Width - (across - 1) * gap) / across);
         };
 
-        TextBlock recent = new() { Classes = { StyleClasses.WelcomeSection }, Text = "Recent solutions", VerticalAlignment = VerticalAlignment.Center };
-        search = SearchBox.Of("Search recent solutions");
+        TextBlock recent = new() { Classes = { StyleClasses.WelcomeSection }, Text = "Recent projects", VerticalAlignment = VerticalAlignment.Center };
+        search = SearchBox.Of("Search recent projects");
         search.Classes.Add(StyleClasses.WelcomeSearch);
         Grid.SetColumn(search, 1);
         search.TextChanged += (_, _) => Filter();

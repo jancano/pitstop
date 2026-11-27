@@ -20,6 +20,11 @@ public partial class MainWindow
 {
     private void AddNewProjectActions()
     {
+        actions!.Add(new IdeAction(AppActions.NewNativeProject, "New C/C++ Project…", "IDE", _ => ShowNativeProject())
+        {
+            WhyNot = context => context.ByAgent ? Refusals.AsksThePerson : null,
+            Menus = [new MenuPlace("File", 0, 3)],
+        });
         actions!.Add(new IdeAction(AppActions.NewSolution, "New Solution…", "IDE", _ => ShowNewSolution())
         {
             WhyNot = _ => WithoutAnySdk(),
@@ -32,13 +37,28 @@ public partial class MainWindow
         Activated += (_, _) => ProjectTemplates.LookAgain();
     }
 
+    public NativeProjectDialog ShowNativeProject(Func<CancellationToken, Task<NativeTemplateSetup>>? load = null)
+    {
+        NativeProjectDialog dialog = new(BesideLast(), PickFolder, plan => Open(plan.Destination, window =>
+        {
+            string? source = plan.Files.Select(file => file.RelativePath).FirstOrDefault(path =>
+                Path.GetExtension(path) is ".c" or ".cpp" or ".cppm");
+            if (source is not null)
+            {
+                window.OpenFile(Path.Combine(plan.Destination, source));
+            }
+        }), load);
+        IdeErrors.Observe(dialog.ShowDialog(this));
+        return dialog;
+    }
+
     /// <summary>dotnet new's templates read ahead of New Solution (where it puts a solution) once a person's window is up,
     /// so the dialog opens with them; a process reads them once for each template home and keeps them fresh
     /// (<see cref="ProjectTemplates.Preload"/>). An agent's headless IDE and a screenshot, which keep no settings, read
     /// them only when their dialog opens.</summary>
     private void PreloadTemplates()
     {
-        if (KeepsSettings)
+        if (KeepsSettings && Folder is not null && session.Xmake?.IsXmake != true)
         {
             ProjectTemplates.Preload(BesideLast());
         }

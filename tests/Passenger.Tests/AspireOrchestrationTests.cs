@@ -299,7 +299,7 @@ public sealed class AspireOrchestrationTests : IClassFixture<AspireOrchestration
         window.KeepLayout();
         try
         {
-            Ui.Click(window.Welcome.NewSolutionButton);
+            Assert.True(window.Perform(AppActions.NewSolution));
             NewProjectDialog dialog = NewServiceSetupTests.Opened(window);
             dialog.Folder = place;
             NewServiceSetupTests.Choose(dialog, "web");
@@ -346,7 +346,7 @@ public sealed class AspireOrchestrationTests : IClassFixture<AspireOrchestration
         TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
         try
         {
-            Ui.Click(window.Welcome.NewSolutionButton);
+            Assert.True(window.Perform(AppActions.NewSolution));
             NewProjectDialog dialog = NewServiceSetupTests.Opened(window);
             dialog.Folder = place;
             NewServiceSetupTests.Choose(dialog, "web");

@@ -1,6 +1,6 @@
 # Authoring project templates
 
-The `Pitstop.Templates` library discovers directories containing a `template.json` manifest. Callers supply the catalog roots in precedence order. The first valid manifest for an ID owns that ID. Duplicate IDs, invalid metadata and missing source files are reported alongside the catalog. This library boundary is available to the IDE integration. The New Project wizard and installed local template location are subsequent work.
+The `Pitstop.Templates` library discovers directories containing a `template.json` manifest. Callers supply the catalog roots in precedence order. The first valid manifest for an ID owns that ID. Duplicate IDs, invalid metadata and missing source files are reported alongside the catalog. The New Project wizard checks bundled Xmake templates first and then the `templates` subdirectory of the Pitstop state root. Put each local manifest and its resources in its own subdirectory and reopen the wizard to discover it.
 
 Use the [version 1 JSON schema](../../templates/schemas/template.schema.json) when writing a manifest. `files` lists source paths relative to the manifest directory and destination paths relative to the generated project. Keep source files beside the manifest and use `binary: true` to copy bytes verbatim. Text inputs use UTF-8. Generated text uses UTF-8 without a BOM and keeps the template's line endings.
 

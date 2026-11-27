@@ -111,6 +111,7 @@
     <ProjectReference Include="../Pitstop.Xmake/Pitstop.Xmake.csproj" />
     <ProjectReference Include="../Pitstop.Cpp/Pitstop.Cpp.csproj" />
     <ProjectReference Include="../Pitstop.Modules/Pitstop.Modules.csproj" />
+    <ProjectReference Include="../Pitstop.Templates/Pitstop.Templates.csproj" />
     <ProjectReference Include="../Passenger.Profiler/Passenger.Profiler.csproj" />
     <ProjectReference Include="../Passenger.Dap/Passenger.Dap.csproj" />
     <!-- Built first and carried, never linked: the adapter runs in its own process, on the runtime Passenger runs on (the
@@ -190,6 +191,7 @@
     <ProjectReference Include="../../tools/Passenger.Notices/Passenger.Notices.csproj" ReferenceOutputAssembly="false" Private="false"
                       GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun" />
     <None Include="../../LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="../../templates/**/*" Link="native-templates/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 
   <!-- Every version's release notes beside the app (release-notes/X.Y.Z.md), for What's New: carried, never fetched. -->

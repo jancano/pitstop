@@ -8,6 +8,8 @@ Repository and architecture guidance for Pitstop. See [AGENTS.md](AGENTS.md) for
 
 Keep Passenger solution, project and namespace names during this stage. The app executable, shell command, settings, caches, logs, temporary paths and IPC identify Pitstop. The project is MIT licensed with Passenger's original copyright and third-party attribution.
 
+`Pitstop.ProjectSystem` defines the evaluated compilation workspace used by clangd and the module index. `Pitstop.Templates` discovers declarative manifests and plans output bytes independently of the IDE. The native project wizard consumes this plan and opens the resulting folder through workspace trust. [Migration plan](docs/architecture/native-first-ide.md) · [Template engine](docs/architecture/template-engine.md)
+
 **Consistency is key.** Each thing is done one way, IDE-wide: what several places share is one mechanism, declared
 once and applied the same everywhere (a shared helper, base style, token or declaration, held by a rule test), never
 written again per place.

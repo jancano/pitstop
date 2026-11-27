@@ -644,6 +644,7 @@
           "Passenger.Xaml": "[0.1.0, )",
           "Pitstop.Cpp": "[0.1.0, )",
           "Pitstop.Modules": "[0.1.0, )",
+          "Pitstop.Templates": "[0.1.0, )",
           "Pitstop.Xmake": "[0.1.0, )",
           "SkiaSharp": "[4.157.0, )",
           "SkiaSharp.NativeAssets.Linux": "[4.157.0, )",

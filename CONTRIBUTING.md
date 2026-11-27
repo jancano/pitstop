@@ -28,6 +28,8 @@ keyboard shortcuts follow Rider's keymaps.
 
 ## Setting up
 
+See the [native project-system boundary](docs/architecture/native-project-system.md) before adding provider behavior and the [template authoring reference](docs/templates/authoring.md) before changing the bundled Xmake templates.
+
 You need the .NET 11 SDK (11.0.100 or a later 11.0 SDK, as `global.json` asks),
 [just](https://github.com/casey/just) and Git, and for the tests the .NET 10 SDK too, which the programs they debug and
 most projects they write run on (on Linux also the X11 and fontconfig libraries). Node.js runs the web languages' tests and a container

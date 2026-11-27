@@ -174,14 +174,6 @@ public partial class MainWindow
             said = $"{said}. {Refusals.LooseWithoutSdk(loose)}";
         }
         DotnetBanner.Say(said);
-        if (actions![AppActions.NewSolution] is not null)
-        {
-            newSolutionWhyNot = actions.WhyNot(AppActions.NewSolution, actions.Context());
-            if (welcome is { } shown)
-            {
-                GreyNewSolution(shown);
-            }
-        }
         installLink!.IsVisible = DotnetWant.Installs is not null;
         downloadLink!.IsVisible = DotnetWant.Install is not null;
         systemsOwnLink!.IsVisible = DotnetWant.Lack == DotnetLack.OtherProcessor;

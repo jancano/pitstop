@@ -9,6 +9,7 @@ Pitstop is an open-source, modules-first C++ IDE. Trusted Xmake workspaces suppl
 - Keep application updates and release publishing disabled. CI can build, test and upload workflow artifacts. Deployment needs a separate Pitstop release design.
 - Preserve the original MIT license and attribution in `THIRD_PARTY_NOTICES.md`. Use open-source dependencies and follow the repository's dependency and attribution conventions.
 - Reuse existing editor, workspace, background work, process and settings mechanisms. Keep .NET features working as the C++ roadmap proceeds.
+- Keep provider-specific compilation ownership in the provider. Project templates use versioned manifests and produce an inspectable generation plan before writing. [Native project system](docs/architecture/native-project-system.md) · [Template authoring](docs/templates/authoring.md)
 - Run `just build` and the relevant `just test <FILTER>` suites. Keep warnings as errors. For direct `dotnet` or IDE builds set `AVALONIA_TELEMETRY_OPTOUT=1`.
 
 [CLAUDE.md](CLAUDE.md) describes subsystem conventions and test infrastructure in more detail.

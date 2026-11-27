@@ -675,7 +675,7 @@ public sealed class NewServiceSetupTests : IDisposable
         window.KeepLayout();
         try
         {
-            Ui.Click(window.Welcome.NewSolutionButton);
+            Assert.True(window.Perform(AppActions.NewSolution));
             NewProjectDialog dialog = Opened(window);
             dialog.Folder = place;
             Choose(dialog, "webapi");

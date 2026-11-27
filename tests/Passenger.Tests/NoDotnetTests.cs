@@ -190,8 +190,7 @@ public sealed class NoDotnetTests : IAsyncDisposable
         Assert.True(window.DotnetSaid == Refusals.NoDotnet, $"With no .NET, the Welcome screen's banner said: {window.DotnetSaid}");
         Assert.Equal(DotnetLack.NoDotnet, window.DotnetWant.Lack);
 
-        Assert.True(!window.Welcome.NewSolutionButton.IsEnabled && ToolTip.GetTip(window.Welcome.NewSolutionButton) as string == Refusals.NoDotnet,
-            $"The Welcome screen's New Solution is {(window.Welcome.NewSolutionButton.IsEnabled ? "not greyed" : "greyed")}, its tip saying {ToolTip.GetTip(window.Welcome.NewSolutionButton)}");
+        Assert.True(window.Welcome.NewSolutionButton.IsEnabled, "Native project creation is available with no .NET SDK.");
         bool ran = window.Perform(AppActions.NewSolution);
         Ui.Settle();
         Assert.True(!ran && window.Actions.WhyNot(AppActions.NewSolution, window.Actions.Context()) == Refusals.NoDotnet && !window.OwnedWindows.OfType<NewProjectDialog>().Any(),

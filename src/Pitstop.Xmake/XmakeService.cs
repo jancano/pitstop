@@ -33,7 +33,7 @@ public sealed class XmakeService(string? executable = null)
         }
     }
 
-    private async Task<XmakeInstallation> DiscoverAsync(string scratch, CancellationToken cancel)
+    public async Task<XmakeInstallation> DiscoverAsync(string scratch, CancellationToken cancel)
     {
         string? named = executable ?? Environment.GetEnvironmentVariable(ExecutableVariable);
         string? program = string.IsNullOrWhiteSpace(named)

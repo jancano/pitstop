@@ -8,7 +8,7 @@ namespace Pitstop.Templates;
 public sealed record TemplateEnvironment(LanguageStandards Standards, IReadOnlySet<string> VerifiedStandards,
     IReadOnlySet<string> Capabilities, IReadOnlySet<string> Toolchains);
 
-public sealed record PlannedFile(string RelativePath, ImmutableArray<byte> Contents);
+public sealed record PlannedFile(string RelativePath, ImmutableArray<byte> Contents, bool Binary = false);
 
 public sealed record GenerationPlan(string Destination, ImmutableArray<PlannedFile> Files)
 {
@@ -95,7 +95,7 @@ public static class TemplateGeneration
                 string content = Utf8.GetString(bytes.AsSpan().StartsWith(Utf8Bom) ? bytes.AsSpan(3) : bytes);
                 bytes = Utf8.GetBytes(TemplateRenderer.Render(content, values, filename: false));
             }
-            files.Add(new(relative, [.. bytes]));
+            files.Add(new(relative, [.. bytes], file.Binary));
         }
         return new(absolute, [.. files]);
     }

@@ -13,3 +13,11 @@ Keep the .NET and Avalonia application runtime, text engine, editor, file operat
 | Distribution | Compare the installed inventory and package sizes after managed runtime payloads are removed. Preserve source licensing, state paths and the Windows installer workflow. | Locked restore, full applicable regression suites, Windows installer and portable smoke tests |
 
 Implement the project-system boundary first. Add the template engine and buildable catalog before replacing welcome and project creation. Add project editing and toolchain settings before removing managed product entry points. Perform mechanical consolidation after dependency removal, then verify and package the result.
+
+## Native onboarding
+
+The welcome screen uses the existing window and project-opening flow for a generated project, an existing `xmake.lua`, a folder, a file or a clone. Creating a project applies the declarative preview before asking the normal workspace trust question. The wizard inspects installed tools from a directory outside the selected project and does not launch the generated workspace's program.
+
+The wizard offers the registered Xmake templates and loads their parameters from the manifest. On the Windows reference profile, it checks Xmake and LLVM versions, probes the compiler's supported standard flags and checks for libc++'s standard module source. Templates without an available compiler capability explain their requirements. The empty workspace template remains available without a detected compiler. Xmake evaluates the project's active build toolchain after the workspace opens. The detected template profile does not change a user's Xmake configuration.
+
+The legacy managed project commands remain available during the migration. Package inventory, toolchain configuration UI and the removal of managed product entry points are later migration steps.
