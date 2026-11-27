@@ -630,7 +630,10 @@
         "type": "Project"
       },
       "pitstop.templates": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Pitstop.Core": "[0.1.0, )"
+        }
       },
       "pitstop.terminal": {
         "type": "Project",

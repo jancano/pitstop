@@ -439,7 +439,7 @@ public sealed class WindowArrangementTests : IDisposable
             DockHost dock = window.DockHost;
             Assert.True(Unnamed(window).Length == 0 && StripeButtons(window).Length == 0,
                 $"Under titled tabs {string.Join(", ", Unnamed(window))} are named by no tab or header, {StripeButtons(window).Length} stripe icons standing");
-            Assert.True(EdgeTab(window, ToolWindowIds.Bookmarks) is not null && Header(window, "Explorer") is not null,
+            Assert.True(EdgeTab(window, ToolWindowIds.Bookmarks) is not null && Header(window, "Project Explorer") is not null,
                 "Bookmarks, hidden, has no tab along the left edge, or the Explorer, alone in its place, no header naming it");
 
             Ui.Drag(window, Ui.Centre(EdgeTab(window, ToolWindowIds.Bookmarks)!, window), new Point(Placed(window, dock[ToolWindowIds.Explorer].Content).X + 60, 80));
@@ -604,7 +604,7 @@ public sealed class WindowArrangementTests : IDisposable
             window.ApplySettings(window.Settings with { Look = SourcedTheme.BuiltIn("Cubicle") });
             Ui.Settle();
             DockHost dock = window.DockHost;
-            Button pin = HideButton(window, "Explorer")!;
+            Button pin = HideButton(window, "Project Explorer")!;
             Assert.True(ToolTip.GetTip(pin) is string tip && tip.StartsWith("Auto Hide", StringComparison.Ordinal) && pin.Content is PathIcon { RenderTransform: RotateTransform },
                 $"Cubicle's docked Explorer header offers {ToolTip.GetTip(pin)}, not Auto Hide's pin");
             Ui.Click(pin);
@@ -612,15 +612,15 @@ public sealed class WindowArrangementTests : IDisposable
                 $"Auto Hide left the Explorer shown {dock.IsShown(ToolWindowIds.Explorer)}, or it and Commit with no tab along the edge");
 
             Ui.Click(EdgeTab(window, ToolWindowIds.Explorer)!);
-            Assert.True(dock.Peeked == dock[ToolWindowIds.Explorer] && HideButton(window, "Explorer") is null, "Over the editors the Explorer's header still offers Hide beside its pin");
+            Assert.True(dock.Peeked == dock[ToolWindowIds.Explorer] && HideButton(window, "Project Explorer") is null, "Over the editors the Explorer's header still offers Hide beside its pin");
             Ui.Click(dock.GetVisualDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) is "Dock" && b.IsEffectivelyVisible));
-            Assert.True(dock.Peeked is null && dock.IsShown(ToolWindowIds.Explorer) && HideButton(window, "Explorer") is { } again && ToolTip.GetTip(again) is string pinned && pinned.StartsWith("Auto Hide", StringComparison.Ordinal),
+            Assert.True(dock.Peeked is null && dock.IsShown(ToolWindowIds.Explorer) && HideButton(window, "Project Explorer") is { } again && ToolTip.GetTip(again) is string pinned && pinned.StartsWith("Auto Hide", StringComparison.Ordinal),
                 $"The pin over the editors left the Explorer over them {dock.Peeked?.Id}, docked {dock.IsShown(ToolWindowIds.Explorer)}");
 
             window.ApplySettings(new AppSettings());
             Ui.Settle();
-            Assert.True(HideButton(window, "Explorer") is { } hide && ToolTip.GetTip(hide) is string plain && plain.StartsWith("Hide", StringComparison.Ordinal) && hide.Content is PathIcon { RenderTransform: null },
-                $"Under stripe icons the Explorer's header offers {(HideButton(window, "Explorer") is { } shown ? ToolTip.GetTip(shown) : "nothing")}, not Hide");
+            Assert.True(HideButton(window, "Project Explorer") is { } hide && ToolTip.GetTip(hide) is string plain && plain.StartsWith("Hide", StringComparison.Ordinal) && hide.Content is PathIcon { RenderTransform: null },
+                $"Under stripe icons the Explorer's header offers {(HideButton(window, "Project Explorer") is { } shown ? ToolTip.GetTip(shown) : "nothing")}, not Hide");
         }
         finally
         {

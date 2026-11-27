@@ -1,3 +1,5 @@
+using Pitstop.Core;
+
 namespace Pitstop.Templates;
 
 internal static class TemplatePaths
@@ -44,7 +46,7 @@ internal static class TemplatePaths
     {
         for (string? part = Path.GetFullPath(path); part is not null; part = Path.GetDirectoryName(part))
         {
-            if (Attributes(part) is { } found && (found & FileAttributes.ReparsePoint) != 0)
+            if (FileLinks.Is(new FileInfo(part)))
             {
                 throw new IOException($"Template paths must not pass through a symbolic link or junction: '{part}'.");
             }

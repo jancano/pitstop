@@ -357,7 +357,7 @@ public sealed class NativeProjectDialog : IdeWindow
     private void ShowFile()
     {
         text.Text = plan?.Files.FirstOrDefault(file => file.RelativePath == (string?)files.SelectedItem) is { } file
-            ? file.Binary ? $"Binary file ({file.Contents.Length} bytes)" : Encoding.UTF8.GetString(file.Contents.AsSpan())
+            ? file.Binary ? $"Binary file ({Plural.Of(file.Contents.Length, "byte")})" : Encoding.UTF8.GetString(file.Contents.AsSpan())
             : "";
     }
 

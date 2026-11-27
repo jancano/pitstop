@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
+using System.IO.Enumeration;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Pitstop.Core;
 
 namespace Pitstop.Templates;
 
@@ -47,8 +49,15 @@ public sealed record TemplateCatalog(ImmutableArray<ProjectTemplate> Templates, 
             try
             {
                 TemplatePaths.CheckAncestors(root);
-                EnumerationOptions search = new() { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
-                foreach (string manifest in Directory.EnumerateFiles(root, "template.json", search).Order(StringComparer.Ordinal))
+                StringComparison casing = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                FileSystemEnumerable<string> manifests = new(root, (ref FileSystemEntry entry) => entry.ToFullPath(),
+                    new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0 })
+                {
+                    ShouldRecursePredicate = (ref FileSystemEntry entry) => !FileLinks.Is(ref entry),
+                    ShouldIncludePredicate = (ref FileSystemEntry entry) => !entry.IsDirectory
+                        && entry.FileName.Equals("template.json", casing) && !FileLinks.Is(ref entry),
+                };
+                foreach (string manifest in manifests.Order(StringComparer.Ordinal))
                 {
                     cancel.ThrowIfCancellationRequested();
                     try

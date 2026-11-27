@@ -22,6 +22,9 @@ public sealed class DebuggerRulesTests
             .Where(field => field.IsLiteral && field.FieldType == typeof(string)).Select(field => (string)field.GetRawConstantValue()!)];
         List<string> found = Written(["src"], "src/Pitstop.Dap/DapNames.cs", node => node switch
         {
+            // The TRX parser reads the Results XML element from the test platform's schema.
+            LiteralExpressionSyntax { Parent: BinaryExpressionSyntax } xml when xml.Token.ValueText == "Results"
+                && xml.SyntaxTree.FilePath == "src/Pitstop.App/Testing/TrxResults.cs" => null,
             LiteralExpressionSyntax plain when plain.IsKind(SyntaxKind.StringLiteralExpression) && names.Contains(plain.Token.ValueText) => plain.Token.ValueText,
             // A name numbered after its row's ($ReturnValue1 on), made by a hole after the name.
             InterpolatedStringExpressionSyntax { Contents: [InterpolatedStringTextSyntax text, InterpolationSyntax, ..] } when names.Contains(text.TextToken.ValueText) =>
@@ -85,7 +88,7 @@ public sealed class DebuggerRulesTests
             {
                 continue;
             }
-            SyntaxTree tree = CSharpSyntaxTree.ParseText(File.ReadAllText(file), cancellationToken: TestContext.Current.CancellationToken);
+            SyntaxTree tree = CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: relative, cancellationToken: TestContext.Current.CancellationToken);
             foreach (SyntaxNode node in tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes())
             {
                 if (written(node) is { } said)
