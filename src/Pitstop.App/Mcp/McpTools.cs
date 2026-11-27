@@ -33,6 +33,8 @@ public static class McpTools
     public const string Definition = "definition";
     public const string Diagnostics = "diagnostics";
     public const string ModuleWorkspace = "module_workspace";
+    public const string NativeDebugInspect = "native_debug_inspect";
+    public const string NativeDebugControl = "native_debug_control";
     public const string Edit = "edit";
     public const string EditorText = "editor_text";
     public const string FindInFiles = "find_in_files";
@@ -90,6 +92,7 @@ public static class McpTools
         [Build] = Refusals.Untrusted,
         [Run] = Refusals.Untrusted,
         [DebugStart] = Refusals.Untrusted,
+        [NativeDebugControl] = Refusals.Untrusted,
         [TestsRun] = Refusals.Untrusted,
         [Profile] = Refusals.Untrusted,
         [HotReload] = Refusals.Untrusted,

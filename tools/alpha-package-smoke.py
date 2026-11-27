@@ -120,6 +120,41 @@ def exercise(client, missing_tool, version, native_product):
         raise RuntimeError('Sample run did not print the greeting and exit zero')
 
 
+def debug_modules(client):
+    inspect = 'native_debug_inspect'
+    control = 'native_debug_control'
+    available = client.call(control, operation='validate')
+    if available.get('status') != 'available':
+        raise RuntimeError(f'Packaged LLDB discovery failed: {available}')
+    placed = client.call(control, operation='set_breakpoint', path='greetings-implementation.cpp', line=4)
+    if placed.get('status') != 'set':
+        raise RuntimeError('The packaged debugger did not accept the source breakpoint')
+    started_at = time.perf_counter()
+    started = client.call(control, operation='start', configuration='Xmake: hello-modules')
+    session = started.get('sessionId')
+    if not session:
+        raise RuntimeError(f'The packaged debugger did not start: {started}')
+    try:
+        stopped = client.call(inspect, operation='wait', sessionId=session, waitSeconds=30)
+        if stopped.get('state') != 'Paused':
+            raise RuntimeError(f'The packaged debugger did not reach the source breakpoint: {stopped}')
+        first_stop_ms = round((time.perf_counter() - started_at) * 1000)
+        frames = client.call(inspect, operation='frames', sessionId=session, limit=20).get('frames', [])
+        if not any(frame.get('source') == 'greetings-implementation.cpp' for frame in frames):
+            raise RuntimeError('The packaged debugger did not report the module implementation source')
+        current = client.call(inspect, operation='state', sessionId=session)
+        scopes = client.call(inspect, operation='scopes', sessionId=session, stop=current['stop'], reference=frames[0]['id']).get('scopes', [])
+        if not scopes:
+            raise RuntimeError('The packaged debugger did not report scopes')
+        stopped_at = time.perf_counter()
+    finally:
+        ended = client.call(control, operation='stop', sessionId=session)
+        if ended.get('state') != 'Ended':
+            raise RuntimeError(f'The packaged debugger did not release its session: {ended}')
+    print(json.dumps({'nativeDebug': 'passed', 'adapter': available['adapter'], 'firstStopMs': first_stop_ms,
+                      'shutdownMs': round((time.perf_counter() - stopped_at) * 1000)}), flush=True)
+
+
 def measure_index(client, state, count, version):
     hello = client.send('initialize', {'protocolVersion': '2025-11-25', 'capabilities': {},
                                        'clientInfo': {'name': 'pitstop-alpha-index', 'version': '1'}})
@@ -195,6 +230,7 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--missing-tool', action='store_true', help='expect an unavailable Xmake executable')
     mode.add_argument('--scale-index', type=int, help='measure clangd indexing of a generated scale workspace with this many modules and no partitions')
+    mode.add_argument('--native-debug', action='store_true', help='debug the configured Hello Modules copy using the installed reference lldb-dap')
     args = parser.parse_args()
     if args.scale_index is not None and args.scale_index < 1:
         parser.error('--scale-index requires a positive module count')
@@ -211,6 +247,8 @@ def main():
                 print(json.dumps(measure_index(client, state, args.scale_index, args.version), indent=2), flush=True)
             else:
                 exercise(client, args.missing_tool, args.version, args.native_product)
+                if args.native_debug:
+                    debug_modules(client)
         finally:
             client.close()
 
