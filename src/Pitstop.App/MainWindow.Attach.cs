@@ -34,7 +34,8 @@ public partial class MainWindow
     /// <summary>Attach to Process and Reattach to Process, in the Run menu before Edit Configurations.</summary>
     private void AddAttaching()
     {
-        Add(A.AttachToProcess, "Attach to Process…", "Debug", _ => ShowAttachToProcess(), menu: ("Run", 0, 3));
+        Add(A.AttachToProcess, "Attach to Process…", "Debug", _ => ShowAttachToProcess(),
+            _ => NativeAttach ? buildRun.WhyNotDebugXmake(null, attaching: true) : null, menu: ("Run", 0, 3));
         Add(A.ReattachToProcess, "Reattach to Process…", "Debug", context => IdeErrors.Observe(Reattach()),
             _ => attachedTo.Count == 0 ? "Nothing has been attached to in this window: Attach to Process chooses a program" : null, ("Run", 0, 4));
     }
@@ -65,7 +66,11 @@ public partial class MainWindow
     /// <summary>The dialog over the window, searched for what is given; the program chosen there is attached to.</summary>
     public AttachToProcessDialog ShowAttachToProcess(string search = "")
     {
-        AttachToProcessDialog dialog = new(AttachableAsync, WasAttached, search, scope: attachScope);
+        bool native = NativeAttach;
+        ProjectSession opened = session;
+        AttachToProcessDialog dialog = native
+            ? new(NativeAttachableAsync, _ => false, search, AttachPurpose.NativeDebugger, new(AttachWhere.ThisMachine))
+            : new(AttachableAsync, WasAttached, search, scope: attachScope);
         dialog.ScopeChanged += (_, chosen) =>
         {
             attachScope = chosen;
@@ -84,10 +89,69 @@ public partial class MainWindow
 
         async Task Chosen()
         {
-            if (await dialog.ShowDialog<DotnetProcess?>(this) is { } chosen && await AttachAsync(chosen) is { } problem)
+            if (await dialog.ShowDialog<DotnetProcess?>(this) is not { } chosen || opened != session)
+            {
+                return;
+            }
+            string? problem = native ? await AttachNativeAsync(chosen) : await AttachAsync(chosen);
+            if (problem is not null)
             {
                 status.Text = problem;
             }
+        }
+    }
+
+    private bool NativeAttach => !ManagedDevelopment || session.Xmake is { IsXmake: true };
+
+    private static Task<IReadOnlyList<DotnetProcess>> NativeAttachableAsync() => BackgroundWork.Run(() =>
+    {
+        List<DotnetProcess> found = [];
+        foreach (System.Diagnostics.Process process in System.Diagnostics.Process.GetProcesses())
+        {
+            using (process)
+            {
+                try
+                {
+                    int pid = process.Id;
+                    if (pid == Environment.ProcessId || pid <= 4)
+                    {
+                        continue;
+                    }
+                    string? file = process.MainModule?.FileName;
+                    string? refusal = file is null ? "The executable is inaccessible." : DotnetProcesses.Runs32Bit(pid) ? "The reference LLDB profile attaches to x64 processes." : null;
+                    found.Add(new(pid, process.ProcessName, file ?? string.Empty, refusal is null ? "x64" : string.Empty, false)
+                    {
+                        ObservedStart = process.StartTime,
+                        WhyNot = refusal,
+                    });
+                }
+                catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException)
+                {
+                    // Windows can deny process details or the program can leave during enumeration.
+                }
+            }
+        }
+        return (IReadOnlyList<DotnetProcess>)[.. found.OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ThenBy(item => item.Id)];
+    });
+
+    private async Task<string?> AttachNativeAsync(DotnetProcess picked)
+    {
+        if (picked.WhyNot is not null || picked.ObservedStart is null || picked.Container is not null)
+        {
+            return "Choose a local process accessible to LLDB.";
+        }
+        try
+        {
+            using System.Diagnostics.Process process = System.Diagnostics.Process.GetProcessById(picked.Id);
+            if (process.SafeHandle.IsInvalid || process.StartTime != picked.ObservedStart)
+            {
+                return "That process has exited. Refresh the list before attaching.";
+            }
+            return await buildRun.AttachNativeAsync(picked.Id, picked.Name);
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return "That process is no longer available. Refresh the list and check its permissions.";
         }
     }
 

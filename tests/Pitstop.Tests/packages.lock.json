@@ -541,6 +541,7 @@
           "Pitstop.Languages": "[0.1.0, )",
           "Pitstop.Lsp": "[0.1.0, )",
           "Pitstop.Modules": "[0.1.0, )",
+          "Pitstop.NativeDebug": "[0.1.0, )",
           "Pitstop.Packages": "[0.1.0, )",
           "Pitstop.Profiler": "[0.1.0, )",
           "Pitstop.Templates": "[0.1.0, )",

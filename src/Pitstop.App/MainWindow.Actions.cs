@@ -420,7 +420,7 @@ public partial class MainWindow
 
         Add(A.RunProgram, "Run", "Run", _ => RunSelected(), _ => Unconfigured("run"), ("Run", 0, 0));
         Add(A.Debug, "Debug", "Run", _ => DebugSelected(), _ => Untrusted() ?? (Configuration is { IsScript: true } script ? Refusals.ScriptOnlyRuns(script.Name)
-            : Configuration?.IsXmake == true ? BuildRunController.XmakeDebugUnavailable : Unconfigured("debug")),
+            : Configuration?.IsXmake == true || !ManagedDevelopment ? buildRun.WhyNotDebugXmake(Configuration) : Unconfigured("debug")),
             ("Run", 0, 1));
         Add(A.RunCurrentScene, "Run Current Scene", "Run", _ => IdeErrors.Observe(buildRun.RunCurrentSceneAsync()), _ => Untrusted() ?? buildRun.WhyNotRunScene(), ("Run", 0, 2));
         Add(A.RunAnotherCopy, "Run Another Copy", "Run", _ => IdeErrors.Observe(buildRun.RunAnotherCopyAsync()),
@@ -441,7 +441,11 @@ public partial class MainWindow
         // Rerun runs the last session again, as it ran; one still running is stopped first.
         Add(A.Rerun, "Rerun", "Run", c =>
         {
-            if (session.Debug.Session is { } debugged && debugged == attachSession)
+            if (session.Debug.Session is { Engine: Debugging.DebugEngine.Native, Attached: false })
+            {
+                IdeErrors.Observe(buildRun.RestartNativeDebugAsync());
+            }
+            else if (session.Debug.Session is { } debugged && debugged == attachSession)
             {
                 actions!.Run(A.ReattachToProcess, c);
             }
@@ -488,7 +492,7 @@ public partial class MainWindow
             }
             ShowBreakpointPopup(editing);
         }, Refusals.NeedsFile, ("Run", 2, 2));
-        Add(A.ViewBreakpoints, "View Breakpoints and Exceptions…", "Debug", _ => ShowBreakpoints(null), menu: ("Run", 2, 3));
+        Add(A.ViewBreakpoints, ManagedDevelopment ? "View Breakpoints and Exceptions…" : "View Breakpoints…", "Debug", _ => ShowBreakpoints(null), menu: ("Run", 2, 3));
 
         string? Unbuildable() => !ManagedDevelopment ? Refusals.NoXmakeProject : Folder is null ? Refusals.NoFolderTo("build") : Untrusted() is { } untrusted ? untrusted : IsBuilding ? Refusals.Building
             : session.Workspace is { Solution: null, Projects.Count: 0, GodotGames.Count: > 0 } ? Refusals.NothingToBuildOfScripts : WithoutSdk();

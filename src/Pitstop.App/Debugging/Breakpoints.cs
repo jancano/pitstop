@@ -213,6 +213,9 @@ public enum BreakpointStatus
 public sealed record BreakpointsState : IStateDocument<BreakpointsState>
 {
     public List<KeptBreakpoint> Breakpoints { get; init; } = [];
+    public List<KeptNativeFunctionBreakpoint> NativeFunctions { get; init; } = [];
+    public bool BreakOnNativeCppThrow { get; init; }
+    public List<string> NativeWatches { get; init; } = [];
 
     /// <summary>The CLR exception breakpoints, "Any exception" (no type) among them; none kept is "Any exception" as it
     /// starts.</summary>
@@ -232,6 +235,8 @@ public sealed record BreakpointsState : IStateDocument<BreakpointsState>
     {
         Breakpoints = [.. (Breakpoints ?? []).Where(b => b is { Path.Length: > 0 }).Select(b => b with { Line = Math.Max(0, b.Line), Column = b.Column is >= 0 ? b.Column : null })],
         Exceptions = Exceptions is null ? null : [.. Exceptions.Where(e => e is not null && e.Type is null or { Length: > 0 }).DistinctBy(e => e.Type ?? string.Empty)],
+        NativeFunctions = [.. (NativeFunctions ?? []).Where(point => point is { Name.Length: > 0 }).DistinctBy(point => point.Name)],
+        NativeWatches = [.. (NativeWatches ?? []).Where(expression => !string.IsNullOrWhiteSpace(expression)).Distinct(StringComparer.Ordinal)],
     };
 }
 
@@ -290,7 +295,7 @@ public sealed record KeptScriptErrorBreakpoint
 /// so an edit above it leaves it on its line; one whose line is deleted lands where the deletion did, and two on one line
 /// become one.
 /// Muted, none of them stops the program, though each keeps whether it is on.</summary>
-public sealed class BreakpointStore
+public sealed partial class BreakpointStore
 {
     private readonly Dictionary<string, List<LineBreakpoint>> byPath = new(StringComparer.Ordinal);
     private readonly List<ExceptionBreakpoint> exceptions = [new(null)];
@@ -344,6 +349,9 @@ public sealed class BreakpointStore
     /// <summary>Every breakpoint as the folder keeps it.</summary>
     public BreakpointsState Capture() => new()
     {
+        NativeFunctions = [.. nativeFunctions.Select(point => new KeptNativeFunctionBreakpoint(point.Name, point.Enabled))],
+        BreakOnNativeCppThrow = NativeCppThrow.Enabled,
+        NativeWatches = [.. NativeWatchExpressions],
         Breakpoints = [.. All.Select(b => new KeptBreakpoint(b.Path, b.Line)
         {
             Attribute = b.Attribute,
@@ -389,6 +397,11 @@ public sealed class BreakpointStore
     /// breakpoints are the folder's own.</summary>
     public void Restore(BreakpointsState kept)
     {
+        nativeFunctions.Clear();
+        nativeFunctions.AddRange(kept.NativeFunctions.Select(point => new NativeFunctionBreakpoint(point.Name) { Enabled = point.Enabled }));
+        NativeCppThrow.Enabled = kept.BreakOnNativeCppThrow;
+        NativeWatchExpressions.Clear();
+        NativeWatchExpressions.AddRange(kept.NativeWatches);
         foreach (IGrouping<string, KeptBreakpoint> file in kept.Breakpoints.GroupBy(b => b.Path))
         {
             List<LineBreakpoint> list = For(file.Key);
@@ -466,6 +479,9 @@ public sealed class BreakpointStore
     /// starts and XAML Binding Errors off until the folder says otherwise, and none muted.</summary>
     public void Clear()
     {
+        nativeFunctions.Clear();
+        NativeCppThrow.Enabled = false;
+        NativeWatchExpressions.Clear();
         Muted = false;
         foreach (string path in Files.ToList())
         {
@@ -489,6 +505,7 @@ public sealed class BreakpointStore
             return;
         }
         Muted = muted;
+        NotifyNativeBreakpoints();
         foreach (string path in Files.ToList())
         {
             Changed?.Invoke(this, path);
@@ -526,6 +543,11 @@ public sealed class BreakpointStore
     /// objects and its app's elements.</summary>
     public void Leave(object session)
     {
+        foreach (NativeFunctionBreakpoint function in nativeFunctions)
+        {
+            function.Forget(session);
+        }
+        NativeCppThrow.Forget(session);
         sessions.Remove(session);
         foreach ((string path, List<LineBreakpoint> list) in byPath)
         {
@@ -798,6 +820,10 @@ public sealed class BreakpointStore
         {
             PropertiesChanged?.Invoke(this, EventArgs.Empty);
         }
+        else if (breakpoint is NativeFunctionBreakpoint function && nativeFunctions.Remove(function))
+        {
+            NativeBreakpointsChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>Records what a session's debugger said of a file's breakpoints, in the order they were sent.</summary>
@@ -986,6 +1012,10 @@ public sealed class BreakpointStore
         if (breakpoint is LineBreakpoint line)
         {
             Changed?.Invoke(this, line.Path);
+        }
+        else if (breakpoint is NativeFunctionBreakpoint or NativeCppThrowBreakpoint)
+        {
+            NotifyNativeBreakpoints();
         }
         else if (breakpoint is DataBreakpoint)
         {

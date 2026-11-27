@@ -628,6 +628,13 @@ public partial class MainWindow
     {
         Debugging.DebugController debugger = next.Debug;
         BindHotReload(next);
+        debugger.RevealNativeModule += (_, source) =>
+        {
+            if (session == next)
+            {
+                ShowModules(source);
+            }
+        };
         // Problems' Breakpoints follows what the debuggers say of each breakpoint, and the sessions coming and going.
         void ListBreakpoints()
         {

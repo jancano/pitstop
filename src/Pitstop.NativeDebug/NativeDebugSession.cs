@@ -268,10 +268,13 @@ public sealed class NativeDebugSession : IAsyncDisposable
         }
     }
 
-    public async Task<NativeDebugEvent> ReadEventAsync(CancellationToken cancel = default)
+    public async Task<NativeDebugEvent> ReadEventAsync(CancellationToken cancel = default, bool waitIndefinitely = false)
     {
         using CancellationTokenSource bound = CancellationTokenSource.CreateLinkedTokenSource(active, cancel);
-        bound.CancelAfter(requestLimit);
+        if (!waitIndefinitely)
+        {
+            bound.CancelAfter(requestLimit);
+        }
         try
         {
             bound.Token.ThrowIfCancellationRequested();

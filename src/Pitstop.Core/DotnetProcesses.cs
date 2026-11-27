@@ -13,6 +13,7 @@ namespace Pitstop.Core;
 /// runs as, <see cref="IsMine"/> when that is the person running Passenger.</summary>
 public sealed record DotnetProcess(int Id, string Name, string CommandLine, string User, bool IsMine)
 {
+    public DateTime? ObservedStart { get; init; }
     /// <summary>The container it runs in, by name, or null for a program of this machine. Its <see cref="Id"/> is then the
     /// container's own, and 0 until Passenger's tools in the container have said which it is.</summary>
     public string? Container { get; init; }

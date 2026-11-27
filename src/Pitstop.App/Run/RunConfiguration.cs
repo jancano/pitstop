@@ -79,6 +79,8 @@ public sealed record RunConfiguration
     public string Script { get; init; } = string.Empty;
 
     public string XmakeTarget { get; init; } = string.Empty;
+    public bool NativeStopOnEntry { get; init; }
+    public string NativeSourceMapText { get; init; } = string.Empty;
 
     /// <summary>Whether Passenger coordinates this AppHost and its project resources.</summary>
     public bool Aspire { get; init; }

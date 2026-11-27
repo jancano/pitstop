@@ -22,7 +22,7 @@ namespace Pitstop.App.Debugging;
 /// a value when the pointer rests on an expression while paused. Several programs may be debugged at once, a session and a
 /// tab of the Debug window each: every breakpoint goes to each, and the window shows the chosen tab's, a stop in any program
 /// choosing its tab. A UI-thread object.</summary>
-public sealed class DebugController : IDisposable
+public sealed partial class DebugController : IDisposable
 {
     /// <summary>The words in the console of a program attached to, whose output goes where it always went.</summary>
     public const string AttachedConsole = "Console output is not available when the debugger is attached to a running process";
@@ -141,7 +141,17 @@ public sealed class DebugController : IDisposable
         EventHandler<DebugTab> tabClosed = (_, tab) => IdeErrors.Observe(CloseTabAsync(tab));
         EventHandler<string> unwatched = (_, expression) =>
         {
-            watches.Remove(expression);
+            if (Session?.Engine == DebugEngine.Native)
+            {
+                if (Breakpoints.NativeWatchExpressions.Remove(expression))
+                {
+                    Breakpoints.NativeWatchesEdited();
+                }
+            }
+            else
+            {
+                watches.Remove(expression);
+            }
             IdeErrors.Observe(ShowVariables());
         };
         view.ActionRequested += asked;
@@ -151,6 +161,11 @@ public sealed class DebugController : IDisposable
         view.SetValueRequested += set;
         view.DataWatch = DataWatchAsync;
         view.PlaceOf = PlaceOf;
+        view.ModuleOf = frame => NativeModuleName(frame.Source?.Path);
+        view.CanInspectFrame = () => Session?.Engine != DebugEngine.Native || frame is not null;
+        view.ThreadStateOf = thread => Session is { Engine: DebugEngine.Native, State: DebugState.Paused } nativeSession
+            && (nativeSession.AllThreadsStopped == true || nativeSession.StoppedThread == thread.Id) ? "stopped" : null;
+        view.ModuleRequested += RevealFrameModule;
         view.DataBreakpointRequested += watchData;
         view.RunWithThreadsRequested += ranAgain;
         view.ReadAgainRequested += readAgain;
@@ -166,6 +181,7 @@ public sealed class DebugController : IDisposable
             view.ActionRequested -= asked;
             view.FrameChosen -= framed;
             view.ThreadChosen -= threaded;
+            view.ModuleRequested -= RevealFrameModule;
             view.EvaluateRequested -= evaluated;
             view.SetValueRequested -= set;
             view.DataBreakpointRequested -= watchData;
@@ -1059,7 +1075,7 @@ public sealed class DebugController : IDisposable
         Run.LaunchPlan? plan = null, BuiltEdits? edits = null, UpdateHandlerHook? hook = null, DebugTab? companion = null, string? attachedWords = null,
         BrowserRefresh? browser = null, string? unkept = null, (IReadOnlyList<string> Projects, string Program)? inBrowser = null, bool copy = false,
         bool stopLetsGo = false, (Func<System.Diagnostics.ProcessStartInfo> Start, Action<System.Diagnostics.Process> Started)? starts = null,
-        ProgramBuild? builds = null, string? inputFrom = null)
+        ProgramBuild? builds = null, string? inputFrom = null, bool nativeDebug = false)
     {
         UiThread.Check();
         // A start that opens no session lets go of its update handlers' hook and its pages' refresh with it.
@@ -1135,7 +1151,10 @@ public sealed class DebugController : IDisposable
         own.Take();
         tab.Lines = built;
         tab.HotReload = reload;
-        await FollowClosedLambdasAsync();
+        if (!nativeDebug)
+        {
+            await FollowClosedLambdasAsync();
+        }
         // A companion's tab is chosen once its program stops there, its program's own staying in front until then.
         if (companion is null)
         {
@@ -1216,7 +1235,9 @@ public sealed class DebugController : IDisposable
                 }
                 if (tab == chosen)
                 {
+                    view.Native = made.Engine == DebugEngine.Native;
                     view.Tree.Load = reference => MembersAsync(made, reference);
+                    view.Tree.LoadPage = made.Engine == DebugEngine.Native ? (reference, start) => NativeMembersAsync(made, reference, start) : null;
                 }
                 // The toolbar's Stop shows, and Stop runs, while the debugger waits for the program.
                 StateChanged?.Invoke(this, EventArgs.Empty);
@@ -1232,7 +1253,7 @@ public sealed class DebugController : IDisposable
             }
             reload?.Opened(session);
             tab.HotReload = reload;
-            if (launched && !inTerminal)
+            if (launched && !inTerminal && !nativeDebug)
             {
                 shown.Input = new ConsoleInput(text => Send(session.InputAsync(text)), () => Send(session.CloseInputAsync()));
             }
@@ -1240,13 +1261,14 @@ public sealed class DebugController : IDisposable
             await OnStateChanged(tab);
             return null;
         }
-        catch (Exception error) when (error is DapException or IOException or InvalidOperationException or TimeoutException)
+        catch (Exception error) when (error is DapException or IOException or InvalidOperationException or TimeoutException
+            || nativeDebug && error is NativeDebug.NativeDebugException or OperationCanceledException)
         {
-            bool stopped = starting is not null && stoppedStarting.Remove(starting);
+            bool stopped = error is OperationCanceledException || starting is not null && stoppedStarting.Remove(starting);
             reload?.End();
             string failed = stopped
                 ? launched ? $"Debugging {name} was stopped as it started" : $"Debugging {name} was stopped as the debugger attached, and it runs on"
-                : $"Could not debug {name}: {(error is DapException dap ? dap.Reason : error.Message)}";
+                : $"Could not debug {name}: {(error is DapException dap ? nativeDebug ? NativeRequestProblem(dap) : dap.Reason : error.Message)}";
             // Its output followed from outside (a container's log) ends with the start, whichever tab is the window's.
             StopFollowing(tab);
             if (disposed || !view.Sessions.Contains(tab))
@@ -1259,7 +1281,7 @@ public sealed class DebugController : IDisposable
             tab.Lines = null;
             tab.HasEnded = true;
             tab.OnStateChanged();
-            if (stopped)
+            if (stopped || nativeDebug)
             {
                 shown.Append($"{failed}\n");
             }
@@ -1619,6 +1641,8 @@ public sealed class DebugController : IDisposable
         if (tab.Session is { } session)
         {
             view.Tree.Load = reference => MembersAsync(session, reference);
+            view.Native = session.Engine == DebugEngine.Native;
+            view.Tree.LoadPage = session.Engine == DebugEngine.Native ? (reference, start) => NativeMembersAsync(session, reference, start) : null;
             return Show(tab, say);
         }
         view.SetState(tab.HasEnded ? DebugState.Ended : DebugState.Starting);
@@ -1895,7 +1919,8 @@ public sealed class DebugController : IDisposable
         Add(AppActions.SmartStepInto, "Smart Step Into", (d, c) => IdeErrors.Observe(d.SmartStepIntoAsync()), (d, _) => d.NotSteppable(), new("Run", 1, 4));
         Add(AppActions.StepOut, "Step Out", (d, c) => IdeErrors.Observe(d.ResumeAsync(session => session.StepOutAsync(), "step out")), (d, _) => d.NotSteppable(), new("Run", 1, 5));
         Add(AppActions.RunToCursor, "Run to Cursor", (d, c) => IdeErrors.Observe(d.ResumeAsync(session => session.RunToCursorAsync(c.File!.Path, c.Caret.Line), "run to the cursor")),
-            (d, c) => Refusals.NeedsLines(c) ?? d.NotPaused(), new("Run", 1, 6));
+            (d, c) => Refusals.NeedsLines(c) ?? d.NotPaused() ?? (d.Session is { Engine: DebugEngine.Native } session
+                && !session.Takes(c.File!.Path) ? "Choose native source in the debugged workspace." : null), new("Run", 1, 6));
         Add(AppActions.SetNextStatement, "Set Next Statement", (d, c) => IdeErrors.Observe(d.SetNextStatementAsync(d.Session!, c.File!.Path, c.Caret.Line)),
             (d, c) => Refusals.NeedsLines(c) ?? d.NotPaused() ?? (d.Session!.MovesNextStatement ? null : Refusals.NoNextStatement), new("Run", 1, 7));
         Add(AppActions.ShowExecutionPoint, "Show Execution Point", (d, _) =>
@@ -2325,6 +2350,10 @@ public sealed class DebugController : IDisposable
     public async Task<CSharp.DebuggerHover?> HoverAt(int offset, CancellationToken cancellation)
     {
         UiThread.Check();
+        if (Session?.Engine == DebugEngine.Native)
+        {
+            return NativeHover(offset);
+        }
         if (Session is not { State: DebugState.Paused } session || frame is not { } at || editors.Active is not { } file
             || (Bdd.FeatureChecks.IsFeature(file.Path) ? PlaceholderAt(editors.CodeEditor.Document.Snapshot, offset) : ExpressionAt(editors.CodeEditor.Document.Snapshot, offset))
                 is not { } expression)
@@ -2856,6 +2885,10 @@ public sealed class DebugController : IDisposable
     /// compiler's line, at the editor's (<see cref="BindingStop.Xaml"/>).</summary>
     public async Task<IReadOnlyList<DapVariable>> MembersAsync(DebugSession session, int reference)
     {
+        if (session.Engine == DebugEngine.Native)
+        {
+            return await NativeMembersAsync(session, reference, 0);
+        }
         IReadOnlyList<DapVariable> members = await session.VariablesAsync(reference);
         return bindingStop is { Xaml: { } xaml } failed && failed.Reference == reference && session == Session
             ? [.. members.Select(m => m.Name == "Xaml" && m.Value.StartsWith('"') ? m with { Value = SymbolDisplay.FormatLiteral(xaml, quote: true) } : m)]
@@ -2889,6 +2922,13 @@ public sealed class DebugController : IDisposable
         if (Session is not { State: DebugState.Paused } session)
         {
             return;
+        }
+        if (session.Engine == DebugEngine.Native)
+        {
+            NextShown();
+            frame = null;
+            view.Tree.Show([]);
+            ClearInlineValues();
         }
         int stop = shown;
         IReadOnlyList<DapThread> threads = await session.ThreadsAsync();
@@ -2934,7 +2974,17 @@ public sealed class DebugController : IDisposable
         {
             return;
         }
+        if (Session.Engine == DebugEngine.Native && frame != chosen)
+        {
+            NextShown();
+            view.Tree.Show([]);
+            ClearInlineValues();
+        }
         frame = chosen;
+        if (Session.Engine == DebugEngine.Native)
+        {
+            view.SetState(DebugState.Paused);
+        }
         if (navigate && chosen.Source?.Path is { } path && File.Exists(path))
         {
             Navigate?.Invoke(this, (path, Current(path, chosen)));
@@ -2952,6 +3002,11 @@ public sealed class DebugController : IDisposable
             return;
         }
         int stop = shown;
+        if (session.Engine == DebugEngine.Native)
+        {
+            await ShowNativeVariablesAsync(session, current, stop);
+            return;
+        }
         List<VariableNode> rows = [];
         if (bindingStop is { } failed && Stop is { } stopped && stopped.Frames.Any(f => f.Id == current.Id))
         {
@@ -3062,7 +3117,9 @@ public sealed class DebugController : IDisposable
                 continue;
             }
             int line = Current(document.Path, current.Line - 1);
-            IReadOnlyList<LineAnnotation> inline = document.Syntax is { } syntax ? InlineValues.For(syntax.Current, line, values) : [];
+            IReadOnlyList<LineAnnotation> inline = Session?.Engine == DebugEngine.Native
+                ? NativeInlineValues(document.Text.Snapshot, line, values)
+                : document.Syntax is { } syntax ? InlineValues.For(syntax.Current, line, values) : [];
             document.LineAnnotations = stopException is { } thrown && thrown.FrameId == current.Id
                 ? [new LineAnnotation(line, thrown.Text, LineAnnotationLook.ErrorOnGround), .. inline]
                 : bindingStop is { } failed && bindingFrame == current.Id
@@ -3092,12 +3149,14 @@ public sealed class DebugController : IDisposable
     {
         try
         {
-            EvaluateResponse value = await session.EvaluateAsync(expression, frame.Id, role == VariableRole.Watch ? EvaluateContexts.Watch : EvaluateContexts.Repl);
+            EvaluateResponse value = await session.EvaluateAsync(expression, frame.Id,
+                role == VariableRole.Watch || session.Engine == DebugEngine.Native ? EvaluateContexts.Watch : EvaluateContexts.Repl);
             return new VariableNode(expression, value.Result, value.Type, value.VariablesReference, 0, role) { NeedsThreads = VariableNode.SaysNeedsThreads(value.PresentationHint) };
         }
         catch (DapException error)
         {
-            return new VariableNode(expression, error.Reason, null, 0, 0, role == VariableRole.Watch ? VariableRole.Watch : VariableRole.Error);
+            return new VariableNode(expression, session.Engine == DebugEngine.Native ? NativeRequestProblem(error) : error.Reason, null, 0, 0,
+                role == VariableRole.Watch ? VariableRole.Watch : VariableRole.Error);
         }
     }
 
@@ -3283,7 +3342,8 @@ public sealed class DebugController : IDisposable
     {
         UiThread.Check();
         node.IsEditing = false;
-        if (Session is not { State: DebugState.Paused } session || (within ?? frame) is not { } current || node.Settable is not { } expression)
+        if (Session is not { State: DebugState.Paused } session || session.Engine == DebugEngine.Native
+            || (within ?? frame) is not { } current || node.Settable is not { } expression)
         {
             return false;
         }
@@ -3305,6 +3365,8 @@ public sealed class DebugController : IDisposable
     private void NextShown()
     {
         shown++;
+        nativeValues.Clear();
+        lastResult = Session?.Engine == DebugEngine.Native ? null : lastResult;
         CancellationTokenSource gone = stopShown;
         stopShown = new CancellationTokenSource();
         gone.Cancel();
@@ -3316,9 +3378,14 @@ public sealed class DebugController : IDisposable
     {
         if (watch)
         {
-            if (!watches.Contains(expression))
+            List<string> expressions = Session?.Engine == DebugEngine.Native ? Breakpoints.NativeWatchExpressions : watches;
+            if (!expressions.Contains(expression))
             {
-                watches.Add(expression);
+                expressions.Add(expression);
+                if (Session?.Engine == DebugEngine.Native)
+                {
+                    Breakpoints.NativeWatchesEdited();
+                }
             }
         }
         else if (Session is { State: DebugState.Paused } session && frame is { } current)

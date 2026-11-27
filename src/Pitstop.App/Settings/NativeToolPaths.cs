@@ -2,6 +2,7 @@ using System.Text.Json;
 using Pitstop.Core;
 using Pitstop.Cpp;
 using Pitstop.Modules;
+using Pitstop.NativeDebug;
 using Pitstop.Xmake;
 
 namespace Pitstop.App.Settings;
@@ -16,6 +17,7 @@ public sealed record NativeToolPaths
     public string? ScanDeps { get; init; }
     public string? Format { get; init; }
     public string? Tidy { get; init; }
+    public string? LldbDap { get; init; }
 
     internal static string Tool(string name) => OperatingSystem.IsWindows() ? name + ".exe" : name;
 
@@ -95,6 +97,12 @@ public sealed record NativeToolPaths
             }).ConfigureAwait(false);
             await Examine("clang-format", () => BannerAsync("clang-format", Format, bin)).ConfigureAwait(false);
             await Examine("clang-tidy", () => BannerAsync("clang-tidy", Tidy, bin)).ConfigureAwait(false);
+            await Examine("lldb-dap", async () =>
+            {
+                LldbInstallation installation = await LldbDiscovery.DiscoverAsync(LldbDap, bin, cancel, allowed).ConfigureAwait(false);
+                return $"adapter {installation.AdapterVersion} · LLDB {installation.LldbVersion} · {installation.AdapterArchitecture} · {installation.Adapter}\n"
+                    + "Verified profile: Windows x64 with LLVM-MinGW 23.1.6, libc++ and Xmake 3.1.2.";
+            }).ConfigureAwait(false);
             if (bin is not null && Path.GetDirectoryName(bin) is { } install)
             {
                 report.Add($"LLVM installation: {install}");
@@ -145,7 +153,7 @@ public sealed record NativeToolPaths
             {
                 report.Add($"{name}: {await read().ConfigureAwait(false)}");
             }
-            catch (Exception error) when (error is IOException or XmakeException or ClangdException or TimeoutException
+            catch (Exception error) when (error is IOException or XmakeException or ClangdException or NativeDebugException or TimeoutException
                 or UnauthorizedAccessException or System.ComponentModel.Win32Exception or ArgumentException or JsonException)
             {
                 report.Add($"{name}: {error.Message}");

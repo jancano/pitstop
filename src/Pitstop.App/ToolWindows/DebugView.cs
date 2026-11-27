@@ -64,7 +64,8 @@ public sealed class DebugView : DockPanel, IOwnKeys
         ReusedRows.Use(threads, () =>
         {
             TextBlock label = new();
-            return label.Showing<DapThread>(thread => label.Text = ThreadLabel(thread));
+            return label.Showing<DapThread>(thread =>
+                label.Text = model.ThreadStateOf?.Invoke(thread) is { } state ? $"{ThreadLabel(thread)} · {state}" : ThreadLabel(thread));
         });
         threads.SelectionChanged += (_, _) =>
         {
@@ -186,7 +187,7 @@ public sealed class DebugView : DockPanel, IOwnKeys
             Tool(AppActions.Detach, IconKeys.Detach, "Detach"),
             HotReloadTool(),
             ToolBars.Gap(),
-            Tool(AppActions.ViewBreakpoints, IconKeys.Breakpoints, "View Breakpoints and Exceptions"),
+            Tool(AppActions.ViewBreakpoints, IconKeys.Breakpoints, "View Breakpoints"),
             mute);
 
         Children.Add(leftBar);
@@ -275,13 +276,15 @@ public sealed class DebugView : DockPanel, IOwnKeys
         {
             tools[action].IsEnabled = paused;
         }
+        tools[AppActions.SmartStepInto].IsVisible = !model.Native;
+        tools[AppActions.Evaluate].IsEnabled = paused && (model.CanInspectFrame?.Invoke() ?? true);
         tools[AppActions.Pause].IsEnabled = state == DebugState.Running;
         tools[AppActions.Stop].IsEnabled = state is DebugState.Running or DebugState.Paused or DebugState.Starting;
         tools[AppActions.Detach].IsEnabled = model.Detachable;
         tools[AppActions.ApplyHotReloadChanges].IsVisible = model.HotReloadShown.On;
         tools[AppActions.ApplyHotReloadChanges].IsEnabled = model.HotReloadShown.CanApply;
         mute.IsChecked = model.ShowsMuted;
-        evaluate.IsEnabled = paused;
+        evaluate.IsEnabled = tools[AppActions.Evaluate].IsEnabled;
         placeholder.IsVisible = state == DebugState.Ended && model.Frames.Count == 0;
     }
 
@@ -356,6 +359,8 @@ public sealed class DebugView : DockPanel, IOwnKeys
         [
             ListMenus.Item("Copy Stack", () => IdeErrors.Observe(ListMenus.CopyAsync(this, string.Join('\n', model.Frames.Select(f => f.Source?.Path is { } path ? $"{f.Name} in {path}:{model.LineOf(f)}" : f.Name))))),
             ListMenus.Source(() => model.GoToFrame(chosen!), chosen is null ? Refusals.NoFrameChosen : chosen.Source is null ? Refusals.FrameUnplaced : null),
+            .. chosen is not null && model.ModuleOf?.Invoke(chosen) is not null
+                ? new[] { ListMenus.Item("Reveal Module in Explorer", () => model.RevealModule(chosen)) } : [],
         ];
     }
 
@@ -383,7 +388,7 @@ public sealed class DebugView : DockPanel, IOwnKeys
         {
             if (where.Tag is DapStackFrame { Source.Name: { } file } frame)
             {
-                where.Text = $"{file}:{model.LineOf(frame)}";
+                where.Text = FrameLocation(frame, file);
             }
         }
     }
@@ -407,15 +412,19 @@ public sealed class DebugView : DockPanel, IOwnKeys
             // A frame shows as its method, its module after: the module tells user code from the framework's.
             string name = frame.Name;
             string module = string.Empty;
-            if (name.IndexOf('!', StringComparison.Ordinal) is int bang and > 0)
+            if (!model.Native && name.IndexOf('!', StringComparison.Ordinal) is int bang and > 0)
             {
                 module = name[..bang];
                 name = name[(bang + 1)..];
             }
             method.Text = name;
             where.Tag = frame;
-            where.Text = frame.Source?.Name is { } file ? $"{file}:{model.LineOf(frame)}" : module;
+            where.Text = frame.Source?.Name is { } file ? FrameLocation(frame, file) : module;
             ListRow.Dim(row, frame.PresentationHint == FrameHints.Subtle);
         });
     }
+
+    private string FrameLocation(DapStackFrame frame, string file) => model.ModuleOf?.Invoke(frame) is { } module
+        ? $"{file}:{model.LineOf(frame)} · {module}"
+        : $"{file}:{model.LineOf(frame)}";
 }

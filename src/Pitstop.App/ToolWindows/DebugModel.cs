@@ -223,6 +223,19 @@ public sealed class DebugModel
     /// <summary>Where a frame is in its file now, from zero, as the editor counts lines (the debugger's are its build's
     /// compiler's), the debugger asked: the line a frame's row and Copy Stack name.</summary>
     public Func<DapStackFrame, TextPosition?>? PlaceOf { get; set; }
+    internal Func<DapStackFrame, string?>? ModuleOf { get; set; }
+    internal Func<DapThread, string?>? ThreadStateOf { get; set; }
+    internal bool Native { get; set; }
+    internal Func<bool>? CanInspectFrame { get; set; }
+    internal event EventHandler<DapStackFrame>? ModuleRequested;
+
+    internal void RevealModule(DapStackFrame frame) => ModuleRequested?.Invoke(this, frame);
+
+    internal void SelectNativeFrame(DapStackFrame frame)
+    {
+        SelectedFrame = frame;
+        FramesShown?.Invoke(this, EventArgs.Empty);
+    }
 
     public VariablesTree Tree { get; } = new();
 

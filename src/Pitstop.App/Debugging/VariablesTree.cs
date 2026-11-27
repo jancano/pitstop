@@ -16,6 +16,7 @@ public sealed class VariableNode(string name, string value, string? type, int re
 
     /// <summary>The row this one opened from, if any.</summary>
     public VariableNode? Parent { get; init; }
+    internal int PageStart { get; init; }
 
     /// <summary>The C# the debugger says reaches the value from the frame: a local's name, a call's value ("Count()
     /// returned") $ReturnValue, a member's after its owner's. Null where none does.</summary>
@@ -185,10 +186,12 @@ public enum VariableRole
 /// what is open so a virtualizing list draws only what is on screen; a node's children are fetched when it first opens.</summary>
 public sealed class VariablesTree
 {
+    internal const int PageSize = 100;
     public TreeRows<VariableNode> Rows { get; } = [];
 
     /// <summary>Asks the debugger for a reference's children: the session's, while one runs.</summary>
     public Func<int, Task<IReadOnlyList<DapVariable>>>? Load { get; set; }
+    internal Func<int, int, Task<IReadOnlyList<DapVariable>>>? LoadPage { get; set; }
 
     public void Show(IEnumerable<VariableNode> top)
     {
@@ -201,12 +204,12 @@ public sealed class VariablesTree
 
     /// <summary>Shows rows read again in place of these, those open opened again by the names that reach them: what the
     /// person had open is what they asked to see, each asked of the debugger once more.</summary>
-    public async Task ShowAgain(IEnumerable<VariableNode> top)
+    public async Task ShowAgain(IEnumerable<VariableNode> top, Func<bool>? current = null)
     {
         HashSet<string> open = [.. Rows.Where(r => r.IsExpanded || r.WasRead).Select(PathOf)];
         Show(top);
         // Rows open in order, so a row's children, inserted after it, are reached after it.
-        for (int at = 0; at < Rows.Count && open.Count > 0; at++)
+        for (int at = 0; at < Rows.Count && open.Count > 0 && current?.Invoke() != false; at++)
         {
             VariableNode row = Rows[at];
             if (open.Remove(PathOf(row)))
@@ -238,7 +241,15 @@ public sealed class VariablesTree
             using IDisposable held = Pitstop.Core.BackgroundWork.Scope();
             try
             {
-                node.Children = [.. (await Load!(node.Reference)).Select(v => VariableNode.From(v, node.Depth + 1, node))];
+                IReadOnlyList<DapVariable> values = LoadPage is { } page && !node.IsVirtual
+                    ? await page(node.Reference, node.PageStart)
+                    : await Load!(node.Reference);
+                node.Children = [.. values.Select(value => VariableNode.From(value, node.Depth + 1, node))];
+                if (LoadPage is not null && !node.IsVirtual && values.Count == PageSize)
+                {
+                    int next = node.PageStart + PageSize;
+                    node.Children.Add(NextPage(node.Reference, node.Depth + 1, next, node));
+                }
             }
             catch (DapException error)
             {
@@ -307,6 +318,9 @@ public sealed class VariablesTree
 
     /// <summary>The lazy rows being read now, each read once.</summary>
     private readonly HashSet<VariableNode> reading = [];
+
+    internal static VariableNode NextPage(int reference, int depth, int start, VariableNode? parent = null) =>
+        new($"Next {PageSize} values", string.Empty, null, reference, depth, VariableRole.Scope) { PageStart = start, Parent = parent };
 
     public Task Collapse(VariableNode node)
     {

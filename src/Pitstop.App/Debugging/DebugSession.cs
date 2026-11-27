@@ -23,13 +23,14 @@ public enum DebugEngine
     Managed,
     GDScript,
     WebAssembly,
+    Native,
 }
 
 /// <summary>One program under the debugger: the adapter's process (debugger/ beside the app), the
 /// conversation with it, and what the program is doing. A UI-thread object: every event and state change
 /// lands on the UI thread. A file's breakpoints go to the adapter whenever what they ask of it changes, while it
 /// runs (those changed while it starts once it does), at their lines in the build it runs (<see cref="BuiltLines"/>).</summary>
-public sealed class DebugSession
+public sealed partial class DebugSession
 {
     /// <summary>How many of the adapter's last lines on standard error go to the IDE's log when it dies.</summary>
     private const int ErrorLines = 40;
@@ -50,8 +51,10 @@ public sealed class DebugSession
     private string? BrowserProjectOf(string path) =>
         InBrowser?.Projects.FirstOrDefault(p => ProjectFolders.Holds(System.IO.Path.GetDirectoryName(p)!, path));
 
-    private readonly AdapterEnd adapter;
-    private readonly DapConnection connection;
+    private readonly AdapterEnd? managedAdapter;
+    private readonly DapConnection? managedConnection;
+    private AdapterEnd adapter => managedAdapter!;
+    private DapConnection connection => managedConnection!;
 
     /// <summary>Where the adapter runs when not beside the app, whose path map paths cross at the protocol's edge.</summary>
     private readonly AdapterPlace? place;
@@ -182,7 +185,7 @@ public sealed class DebugSession
         this.columns = columns ?? ((_, _, _, column) => column + 1);
         // The log is called from the adapter's error stream and the connection's own threads: each line lands on the UI's.
         log = UiThread.Marshal(log);
-        this.adapter = adapter;
+        managedAdapter = adapter;
         // What the adapter and the conversation say goes to the debugger's log as well as the console, so it outlives the session.
         string name = adapter.Name;
         Action<string> console = log;
@@ -205,7 +208,7 @@ public sealed class DebugSession
         });
         IdeErrors.Observe(errorsHeard);
         IdeErrors.Observe(HearEndAsync(log));
-        connection = new DapConnection(adapter.FromAdapter, adapter.ToAdapter, log) { Name = name };
+        managedConnection = new DapConnection(adapter.FromAdapter, adapter.ToAdapter, log) { Name = name };
         connection.EventReceived += (name, body) =>
         {
             if (name == DapEvents.Output)
@@ -298,6 +301,7 @@ public sealed class DebugSession
     /// components its server prerenders) to Passenger's engine.</summary>
     public bool Takes(string path) => Engine switch
     {
+        DebugEngine.Native => NativeTakes(path),
         DebugEngine.GDScript => Godot.GodotScriptAdapter.Takes(path),
         DebugEngine.WebAssembly => InBrowser is { } inBrowser && WebAssemblyAdapter.Takes(inBrowser.Projects, path),
         _ => !Godot.GodotScriptAdapter.Takes(path),
@@ -384,7 +388,7 @@ public sealed class DebugSession
     public bool Detached { get; private set; }
 
     /// <summary>The adapter's process id.</summary>
-    public int AdapterProcessId => adapter.Id;
+    public int AdapterProcessId => native?.AdapterId ?? adapter.Id;
 
     /// <summary>What Passenger carries into a program it debugs, by assembly name: its inspectors and its Hot Reload and
     /// test hooks, which the debugger never takes for the user's code, however they were built.</summary>
@@ -610,6 +614,15 @@ public sealed class DebugSession
         if (State == DebugState.Running && disconnected is null)
         {
             AgentDrives = AgentsFlow;
+            if (native is not null)
+            {
+                IReadOnlyList<DapThread> threads = await ThreadsAsync();
+                if (State == DebugState.Running && threads.FirstOrDefault() is { } thread)
+                {
+                    await AskAsync(DapCommands.Pause, new ThreadArguments(thread.Id));
+                }
+                return;
+            }
             await connection.RequestAsync(DapCommands.Pause, new ThreadArguments(0));
         }
     }
@@ -620,6 +633,11 @@ public sealed class DebugSession
     public async Task StopAsync()
     {
         UiThread.Check();
+        if (native is not null)
+        {
+            await StopNativeAsync();
+            return;
+        }
         if (State == DebugState.Ended)
         {
             return;
@@ -714,6 +732,14 @@ public sealed class DebugSession
     public async Task DetachAsync()
     {
         UiThread.Check();
+        if (native is not null)
+        {
+            if (Attached)
+            {
+                await StopNativeAsync();
+            }
+            return;
+        }
         if (State == DebugState.Ended || disconnected is not null)
         {
             return;
@@ -759,6 +785,10 @@ public sealed class DebugSession
     public Task CloseAsync(bool letGo = true)
     {
         UiThread.Check();
+        if (native is not null)
+        {
+            return native.DisposeAsync().AsTask();
+        }
         return closed ? Task.CompletedTask
             : Attached && letGo && State != DebugState.Ended ? EndProcessesAsync(ClosingLetGo + TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1.5), terminate: false, letGoWithin: ClosingLetGo)
             : EndProcessesAsync(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
@@ -965,7 +995,7 @@ public sealed class DebugSession
     }
 
     public async Task<IReadOnlyList<DapThread>> ThreadsAsync() =>
-        (await connection.RequestAsync<ThreadsResponse>(DapCommands.Threads, new DapEmpty())).Threads;
+        (await AskAsync<ThreadsResponse>(DapCommands.Threads, new DapEmpty())).Threads;
 
     /// <summary>A thread's frames, each source on this disk named as the IDE names its files: a PDB records a file as the
     /// build was given it (another letter case, an 8.3 name, a container's path the session's map names back), and its
@@ -973,21 +1003,21 @@ public sealed class DebugSession
     /// with a source, a hundred and more of them in an app's stack. A source a PDB names on a share or a device has no
     /// path, so neither this nor anything shown from the frame asks for it.</summary>
     public async Task<IReadOnlyList<DapStackFrame>> StackTraceAsync(int threadId) =>
-        [.. (await connection.RequestAsync<StackTraceResponse>(DapCommands.StackTrace, new StackTraceArguments(threadId)).ConfigureAwait(false)).StackFrames.Select(f =>
+        [.. (await AskAsync<StackTraceResponse>(DapCommands.StackTrace, new StackTraceArguments(threadId, Levels: native is null ? null : 64)).ConfigureAwait(false)).StackFrames.Select(f =>
             f.Source is not { Path: { } named } source ? f
                 : ToIde(named) is var path && !FoundPaths.Askable(path) ? f with { Source = source with { Path = null } }
                 : Path.IsPathFullyQualified(path) && File.Exists(path) ? f with { Source = source with { Path = PathNames.Canonical(path) } }
                 : f)];
 
     public async Task<IReadOnlyList<DapScope>> ScopesAsync(int frameId) =>
-        (await connection.RequestAsync<ScopesResponse>(DapCommands.Scopes, new ScopesArguments(frameId))).Scopes;
+        (await AskAsync<ScopesResponse>(DapCommands.Scopes, new ScopesArguments(frameId))).Scopes;
 
     public async Task<IReadOnlyList<DapVariable>> VariablesAsync(int reference) =>
-        (await connection.RequestAsync<VariablesResponse>(DapCommands.Variables, new VariablesArguments(reference))).Variables;
+        (await AskAsync<VariablesResponse>(DapCommands.Variables, new VariablesArguments(reference, Count: native is null ? null : VariablesTree.PageSize))).Variables;
 
     /// <summary>The exception a thread stopped on: its type, message and inner exceptions.</summary>
     public Task<ExceptionInfoResponse> ExceptionInfoAsync(int threadId) =>
-        connection.RequestAsync<ExceptionInfoResponse>(DapCommands.ExceptionInfo, new ThreadArguments(threadId));
+        AskAsync<ExceptionInfoResponse>(DapCommands.ExceptionInfo, new ThreadArguments(threadId));
 
     /// <summary>Assigns a value (a C# expression) to what an expression names, in a frame.</summary>
     public Task<SetExpressionResponse> SetExpressionAsync(string expression, string value, int frameId) =>
@@ -1049,7 +1079,7 @@ public sealed class DebugSession
     /// <summary>An expression's value in a frame; with <paramref name="letThreadsRun"/>, run with every thread of the program
     /// let go, which only the person asks for.</summary>
     public Task<EvaluateResponse> EvaluateAsync(string expression, int? frameId, [IdentifierOf(typeof(EvaluateContexts))] string context, bool letThreadsRun = false) =>
-        connection.RequestAsync<EvaluateResponse>(DapCommands.Evaluate, new EvaluateArguments(expression, frameId, context, letThreadsRun ? true : null));
+        AskAsync<EvaluateResponse>(DapCommands.Evaluate, new EvaluateArguments(expression, frameId, context, letThreadsRun ? true : null));
 
     /// <summary>Sets the paused program going (a continue or a step), saying it runs at once, as the adapter takes it ahead
     /// of what the stop still reads: a request it refuses throws its reason, and the stop is shown again as it was, the
@@ -1070,7 +1100,11 @@ public sealed class DebugSession
         UnawaitedWork.Dismiss(placed);
         try
         {
-            await connection.RequestAsync(command, arguments?.Invoke(thread) ?? new ThreadArguments(thread));
+            if (native is not null)
+            {
+                await placed;
+            }
+            await AskAsync(command, arguments?.Invoke(thread) ?? new ThreadArguments(thread));
         }
         catch (DapException) when (stops == stop && State == DebugState.Running && disconnected is null)
         {
@@ -1092,6 +1126,18 @@ public sealed class DebugSession
         string? neverHit = browser is not null && InBrowser is { } inBrowser && PathNames.Same(browser, inBrowser.Program) ? Run.LaunchPlan.NeverHitInBrowser(browser) : null;
         List<LineBreakpoint> built = [.. sending.Where(b => neverHit is null && lines.IsBuilt(path, b.Line))];
         List<LineBreakpoint> unbuilt = [.. sending.Where(b => neverHit is not null || !lines.IsBuilt(path, b.Line))];
+        List<(LineBreakpoint Point, string Reason)> unsupported = [];
+        if (native is not null)
+        {
+            foreach (LineBreakpoint point in built)
+            {
+                if (WhyNotNativeBreakpoint(point) is { } reason)
+                {
+                    unsupported.Add((point, reason));
+                }
+            }
+            built.RemoveAll(point => unsupported.Any(item => item.Point == point));
+        }
         List<DapSourceBreakpoint> requests = [.. built.Select(b => Request(path, b))];
         if (runToCursor is { } target && target.Path == path)
         {
@@ -1102,7 +1148,7 @@ public sealed class DebugSession
                 if (requests[i].Line == target.At.Line && built[i].Column is null)
                 {
                     // Held until the stop, which Run to Cursor makes whatever its condition, hit count or going on say.
-                    requests[i] = requests[i] with { RunTo = true };
+                    requests[i] = native is null ? requests[i] with { RunTo = true } : target.At;
                     held = true;
                 }
             }
@@ -1112,8 +1158,13 @@ public sealed class DebugSession
             }
         }
         sent[path] = Signature(path);
-        SetBreakpointsResponse response = await connection.RequestAsync<SetBreakpointsResponse>(
+        int version = native is null ? 0 : (nativeBreakpointRequests[path] = nativeBreakpointRequests.GetValueOrDefault(path) + 1);
+        SetBreakpointsResponse response = await AskAsync<SetBreakpointsResponse>(
             DapCommands.SetBreakpoints, new SetBreakpointsArguments(new DapSource { Path = ToProgram(path), Name = Path.GetFileName(path) }, requests));
+        if (native is not null && (State == DebugState.Ended || disconnected is not null || nativeBreakpointRequests.GetValueOrDefault(path) != version))
+        {
+            return;
+        }
         foreach (int id in byId.Where(p => p.Value.Path == path).Select(p => p.Key).ToList())
         {
             byId.Remove(id);
@@ -1132,8 +1183,10 @@ public sealed class DebugSession
         }
         string unbuiltWhy = neverHit ?? (Engine == DebugEngine.GDScript ? NotLoaded : NotBuilt);
         breakpoints.Report(this, path,
-            [.. response.Breakpoints.Take(built.Count).Select(b => Status(path, b)), .. unbuilt.Select(_ => (BreakpointStatus.Invalid, (string?)unbuiltWhy, (int?)null))],
-            [.. built.Take(response.Breakpoints.Count), .. unbuilt]);
+            [.. response.Breakpoints.Take(built.Count).Select(b => Status(path, b)),
+                .. unbuilt.Select(_ => (BreakpointStatus.Invalid, (string?)unbuiltWhy, (int?)null)),
+                .. unsupported.Select(item => (BreakpointStatus.Invalid, (string?)item.Reason, (int?)null))],
+            [.. built.Take(response.Breakpoints.Count), .. unbuilt, .. unsupported.Select(item => item.Point)]);
     }
 
     /// <summary>A breakpoint as the debugger is asked for it (<see cref="Asked"/>).</summary>
@@ -1142,8 +1195,8 @@ public sealed class DebugSession
         {
             Condition = breakpoint.Condition,
             HitCondition = breakpoint.HitCondition,
-            LogMessage = breakpoint.LogMessage,
-            Suspend = breakpoint.Suspend,
+            LogMessage = native is not null && !breakpoint.Suspend ? breakpoint.LogMessage ?? "Breakpoint reached" : breakpoint.LogMessage,
+            Suspend = native is null ? breakpoint.Suspend : null,
         };
 
     /// <summary>A line (from zero) of a file, or a lambda's or an attribute's column (from zero) on it, as the debugger is
@@ -1168,15 +1221,19 @@ public sealed class DebugSession
                 await SendBreakpointsAsync(path);
             }
         }
-        if (Open() && exceptionsSent != ExceptionSignature())
+        if (native is null && Open() && exceptionsSent != ExceptionSignature())
         {
             await SendExceptionBreakpointsAsync();
+        }
+        if (native is not null && Open())
+        {
+            await SendNativeBreakpointsAsync();
         }
         if (Open() && Engine == DebugEngine.Managed && functionsSent != FunctionSignature())
         {
             await (functionsAnswered = SendFunctionBreakpointsAsync());
         }
-        if (Open() && DataBreakpointsUnavailable is null && (dataSent ?? string.Empty) != DataSignature())
+        if (native is null && Open() && DataBreakpointsUnavailable is null && (dataSent ?? string.Empty) != DataSignature())
         {
             await SendDataBreakpointsAsync();
         }
@@ -1443,6 +1500,7 @@ public sealed class DebugSession
         StoppedThread = stopped.ThreadId;
         StopReason = stopped.Reason;
         NoSteps = stopped.NoSteps;
+        AllThreadsStopped = stopped.AllThreadsStopped;
         DataStop = stopped.Reason == StopReasons.DataBreakpoint && stopped.HitBreakpointIds?.Select(id => dataById.GetValueOrDefault(id)).FirstOrDefault(d => d is not null) is { } watched
             ? (watched, stopped.Text)
             : null;
@@ -1494,6 +1552,11 @@ public sealed class DebugSession
                 {
                     breakpoints.Report(this, breakpoint.Path, [Status(breakpoint.Path, changed.Breakpoint)], [breakpoint]);
                 }
+                else if (changed.Breakpoint.Id is int nativeId && nativeFunctionsById.TryGetValue(nativeId, out NativeFunctionBreakpoint? function))
+                {
+                    (BreakpointStatus status, string? message, _) = Status(changed.Breakpoint);
+                    function.Tell(this, status, message);
+                }
                 else if (changed.Breakpoint.Id is int functionId && propertyById.TryGetValue(functionId, out PropertyBreakpoint? property))
                 {
                     (BreakpointStatus status, string? message, _) = Status(changed.Breakpoint);
@@ -1520,7 +1583,7 @@ public sealed class DebugSession
                 {
                     processLocal = started.IsLocalProcess != false;
                     // A program elsewhere has an id of its machine's: holding this machine's process by it could kill another.
-                    if (started.StartMethod == DapCommands.Launch && IsLocal)
+                    if (native is null && started.StartMethod == DapCommands.Launch && IsLocal)
                     {
                         launched ??= Hold(processId);
                     }
@@ -1568,6 +1631,7 @@ public sealed class DebugSession
         if (state != DebugState.Paused)
         {
             StoppedThread = null;
+            AllThreadsStopped = null;
             StopReason = null;
             NoSteps = null;
             DataStop = null;
@@ -1597,8 +1661,10 @@ public sealed class DebugSession
             return;
         }
         ExitCode = exitCode ?? ExitCode ?? (Terminal?.Ended is { IsCompletedSuccessfully: true } inTerminal ? inTerminal.Result : null);
-        IdeLog.Write(IdeLog.Debugger, $"[{connection.Name}] Ended debugging {Program}{(ExitCode is { } code ? $": {ExitCodes.Said(code)}" : string.Empty)}{(Failure is { } failed ? $": {failed}" : string.Empty)}");
+        string source = native is null ? connection.Name : "LLDB";
+        IdeLog.Write(IdeLog.Debugger, $"[{source}] Ended debugging {Program}{(ExitCode is { } code ? $": {ExitCodes.Said(code)}" : string.Empty)}{(Failure is { } failed ? $": {failed}" : string.Empty)}");
         breakpoints.Changed -= OnBreakpointsChanged;
+        breakpoints.NativeBreakpointsChanged -= OnNativeBreakpointsChanged;
         breakpoints.ExceptionsChanged -= OnExceptionsChanged;
         breakpoints.DataChanged -= OnDataChanged;
         breakpoints.PropertiesChanged -= OnFunctionsChanged;

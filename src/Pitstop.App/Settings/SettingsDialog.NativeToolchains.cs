@@ -3,6 +3,7 @@ using Avalonia.Media;
 using Pitstop.Core;
 using Pitstop.Cpp;
 using Pitstop.Modules;
+using Pitstop.NativeDebug;
 using Pitstop.Xmake;
 
 namespace Pitstop.App.Settings;
@@ -23,6 +24,7 @@ public sealed partial class SettingsDialog
         Field("clang-scan-deps executable", paths.ScanDeps, (p, v) => p with { ScanDeps = v }, ModuleScanner.ExecutableVariable);
         Field("clang-format executable", paths.Format, (p, v) => p with { Format = v });
         Field("clang-tidy executable", paths.Tidy, (p, v) => p with { Tidy = v });
+        Field("lldb-dap executable", paths.LldbDap, (p, v) => p with { LldbDap = v }, LldbDiscovery.AdapterVariable);
 
         TextBlock result = new() { Name = "NativeToolchainReport", TextWrapping = TextWrapping.Wrap };
         Button discover = new() { Content = "Detect Toolchains", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left };

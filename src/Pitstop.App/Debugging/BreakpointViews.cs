@@ -28,10 +28,11 @@ public sealed class BreakpointProperties : UserControl
     private readonly CheckBox unhandled = new() { Content = "Unhandled" };
     private readonly TextBlock inactive = new() { TextWrapping = TextWrapping.Wrap, IsVisible = false };
     private readonly StackPanel suspendIf;
+    private readonly StackPanel fields;
 
     public BreakpointProperties()
     {
-        StackPanel fields = new()
+        fields = new()
         {
             Spacing = Gaps.Small,
             Children =
@@ -95,6 +96,11 @@ public sealed class BreakpointProperties : UserControl
     {
         Breakpoint = breakpoint;
         enabled.IsChecked = breakpoint.Enabled;
+        bool native = breakpoint is NativeFunctionBreakpoint or NativeCppThrowBreakpoint
+            || breakpoint is LineBreakpoint source && Languages.Language.ForPath(source.Path) is var language
+                && (language == Languages.Language.Cpp || language == Languages.Language.C);
+        fields.IsVisible = breakpoint is not (NativeFunctionBreakpoint or NativeCppThrowBreakpoint);
+        suspend.IsVisible = fields.IsVisible && !native;
         suspend.IsChecked = breakpoint.Suspend;
         condition.Text = breakpoint.Condition ?? string.Empty;
         // A property breakpoint's condition reads the change it stops at, and XAML Binding Errors' the failed binding.
@@ -104,9 +110,15 @@ public sealed class BreakpointProperties : UserControl
             BindingErrorBreakpoint => $"A C# condition: {BindingStop.Name}.Path == \"Name\"",
             ScriptErrorBreakpoint => "A GDScript condition: counter > 2",
             LineBreakpoint line when Godot.GodotScriptAdapter.Takes(line.Path) => "A GDScript condition: counter > 2",
+            _ when native => "A C/C++ condition: count > 2",
             _ => "A C# condition: count > 2",
         };
         log.PlaceholderText = breakpoint is BindingErrorBreakpoint ? $"Logged on each hit: {{{BindingStop.Name}.Description,nq}}" : "Logged on each hit: count is {count}";
+        hitCount.PlaceholderText = native ? "Stop on this hit, for example 3" : "Stop on hits: ==3, >=2, %2";
+        if (native)
+        {
+            log.PlaceholderText = "A log message continues execution";
+        }
         hitCount.Text = breakpoint.HitCondition ?? string.Empty;
         log.Text = breakpoint.LogMessage ?? string.Empty;
         suspendIf.IsVisible = breakpoint is ExceptionBreakpoint;
@@ -129,7 +141,7 @@ public sealed class BreakpointProperties : UserControl
             return;
         }
         bool on = enabled.IsChecked == true;
-        bool stops = suspend.IsChecked == true;
+        bool stops = suspend.IsVisible ? suspend.IsChecked == true : string.IsNullOrWhiteSpace(log.Text);
         string? Blank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text;
         if (on != breakpoint.Enabled || stops != breakpoint.Suspend || Blank(condition.Text)?.Trim() != breakpoint.Condition
             || Blank(hitCount.Text)?.Trim() != breakpoint.HitCondition || Blank(log.Text) != breakpoint.LogMessage)
@@ -270,6 +282,8 @@ public sealed class BreakpointsWindow : UserControl
 {
     private readonly BreakpointStore store;
     private readonly Func<Task<IReadOnlyList<string>>> exceptionTypes;
+    private readonly bool native;
+    private readonly Func<string, string?>? moduleOf;
     private readonly ListBox list = new() { Classes = { StyleClasses.Tree } };
     private readonly BreakpointProperties properties = new();
     private readonly TextBlock title = new() { Classes = { StyleClasses.PaneTitle } };
@@ -282,11 +296,18 @@ public sealed class BreakpointsWindow : UserControl
     private readonly ListBox found = new() { Classes = { StyleClasses.Tree }, Height = 210 };
     private IReadOnlyList<string> known = [];
 
-    public BreakpointsWindow(BreakpointStore store, Breakpoint? chosen, Func<Task<IReadOnlyList<string>>> exceptionTypes)
+    public BreakpointsWindow(BreakpointStore store, Breakpoint? chosen, Func<Task<IReadOnlyList<string>>> exceptionTypes,
+        bool native = false, Func<string, string?>? moduleOf = null)
     {
         this.store = store;
         this.exceptionTypes = exceptionTypes;
-        Button add = ToolButtons.Of(IconKeys.Add, "Add CLR Exception Breakpoints");
+        this.native = native;
+        this.moduleOf = moduleOf;
+        if (native)
+        {
+            typed.PlaceholderText = "Function name, for example inspect";
+        }
+        Button add = ToolButtons.Of(IconKeys.Add, native ? "Add Function Breakpoint" : "Add CLR Exception Breakpoints");
         Button done = new() { Content = "Done", Classes = { StyleClasses.Primary } };
         add.Click += (_, _) => ShowAdd();
         removeTool.Click += (_, _) => RemoveChosen();
@@ -347,9 +368,9 @@ public sealed class BreakpointsWindow : UserControl
             IsVisible = false,
             Children =
             {
-                new TextBlock { Classes = { StyleClasses.PaneTitle }, Text = "Add CLR Exception Breakpoints" },
+                new TextBlock { Classes = { StyleClasses.PaneTitle }, Text = native ? "Add Function Breakpoint" : "Add CLR Exception Breakpoints" },
                 typed,
-                Framed(found),
+                Framed(found, !native),
                 answers,
             },
         };
@@ -421,7 +442,10 @@ public sealed class BreakpointsWindow : UserControl
         addPane.IsVisible = true;
         typed.Text = string.Empty;
         ShowFound();
-        IdeErrors.Observe(LoadTypes());
+        if (!native)
+        {
+            IdeErrors.Observe(LoadTypes());
+        }
         Avalonia.Threading.Dispatcher.UIThread.Post(() => typed.Focus(), Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
@@ -469,7 +493,7 @@ public sealed class BreakpointsWindow : UserControl
         {
             return;
         }
-        ExceptionBreakpoint added = store.AddException(type);
+        Breakpoint added = native ? store.AddNativeFunction(type) : store.AddException(type);
         addPane.IsVisible = false;
         Fill(added);
         ListKeys.Hold(list);
@@ -533,7 +557,7 @@ public sealed class BreakpointsWindow : UserControl
     }
 
     /// <summary>Every breakpoint but the folder's own three, "Any exception", XAML Binding Errors and GDScript Errors, turned off instead.</summary>
-    private static bool Removable(Breakpoint breakpoint) => breakpoint is not (ExceptionBreakpoint { IsAny: true } or BindingErrorBreakpoint or ScriptErrorBreakpoint);
+    private static bool Removable(Breakpoint breakpoint) => breakpoint is not (ExceptionBreakpoint { IsAny: true } or BindingErrorBreakpoint or ScriptErrorBreakpoint or NativeCppThrowBreakpoint);
 
     private void GoTo()
     {
@@ -548,6 +572,26 @@ public sealed class BreakpointsWindow : UserControl
     {
         list.Items.Clear();
         List<LineBreakpoint> all = [.. store.All.OrderBy(b => Path.GetFileName(b.Path), StringComparer.OrdinalIgnoreCase).ThenBy(b => b.Line)];
+        if (native)
+        {
+            list.Items.Add(Group("Source Breakpoints"));
+            foreach (LineBreakpoint point in all.Where(point => Languages.Language.ForPath(point.Path) is var language
+                && (language == Languages.Language.Cpp || language == Languages.Language.C)))
+            {
+                list.Items.Add(Item(point));
+            }
+            list.Items.Add(Group("Function Breakpoints"));
+            foreach (NativeFunctionBreakpoint function in store.NativeFunctions)
+            {
+                list.Items.Add(Item(function));
+            }
+            list.Items.Add(Group("Exception Breakpoints"));
+            list.Items.Add(Item(store.NativeCppThrow));
+            list.SelectedItem = list.Items.OfType<ListBoxItem>().FirstOrDefault(item => item.Tag == chosen)
+                ?? list.Items.OfType<ListBoxItem>().FirstOrDefault(item => item.Tag is Breakpoint);
+            ShowChosen();
+            return;
+        }
         foreach ((string group, List<LineBreakpoint> lines) in new[] { (".NET Line Breakpoints", all.Where(b => !Godot.GodotScriptAdapter.Takes(b.Path)).ToList()),
             ("GDScript Line Breakpoints", all.Where(b => Godot.GodotScriptAdapter.Takes(b.Path)).ToList()) })
         {
@@ -613,6 +657,14 @@ public sealed class BreakpointsWindow : UserControl
             }
         };
         string what = breakpoint.LogMessage is { } message ? $"logs {message}" : breakpoint.Condition is { } condition ? $"when {condition}" : breakpoint.Suspend ? string.Empty : "does not stop";
+        if (native)
+        {
+            string context = breakpoint is LineBreakpoint source && moduleOf?.Invoke(source.Path) is { } module ? $" · {module}" : string.Empty;
+            string state = breakpoint.Status == BreakpointStatus.Unknown && breakpoint.Message is null ? string.Empty
+                : BreakpointStates.StateOf(breakpoint, debugging: true, store.Muted);
+            what = string.Join(" · ", new[] { state, what, breakpoint.HitCondition is { } count ? $"hit {count}" : null }
+                .Where(value => !string.IsNullOrWhiteSpace(value))) + context;
+        }
         return new ListBoxItem
         {
             Tag = breakpoint,
@@ -630,9 +682,9 @@ public sealed class BreakpointsWindow : UserControl
         };
     }
 
-    private static Border Framed(Control content)
+    private static Border Framed(Control content, bool visible = true)
     {
-        Border frame = new() { Classes = { StyleClasses.Framed }, Child = content };
+        Border frame = new() { Classes = { StyleClasses.Framed }, Child = content, IsVisible = visible };
         return frame;
     }
 

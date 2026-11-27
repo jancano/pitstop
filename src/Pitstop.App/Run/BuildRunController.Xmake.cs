@@ -8,7 +8,6 @@ namespace Pitstop.App.Run;
 
 public sealed partial class BuildRunController
 {
-    internal const string XmakeDebugUnavailable = "Native debugging is unavailable. Use Run for Xmake targets.";
     internal const string XmakeProfileUnavailable = "Native profiling is unavailable for Xmake targets.";
 
     private (BuildKind Kind, IReadOnlyList<string> Targets)? lastXmakeBuild;
@@ -33,6 +32,12 @@ public sealed partial class BuildRunController
 
     private void XmakeChanged(XmakeWorkspaceSession native)
     {
+        if (native.Snapshot is { } current && session.Debug.Session is { Engine: Debugging.DebugEngine.Native, State: not Debugging.DebugState.Ended } debugger
+            && debugger.NativeWorkspace is { } debugged && ((ProjectSystem.INativeWorkspace)current).Configuration != debugged.Configuration)
+        {
+            parts.Say("Stopping native debugging because the active Xmake configuration changed.");
+            IdeErrors.Observe(debugger.StopAsync());
+        }
         if (!session.IsEnded && xmakeProblems is { } previous && (native.IsEvaluating || native.Snapshot != previous))
         {
             xmakeProblems = null;

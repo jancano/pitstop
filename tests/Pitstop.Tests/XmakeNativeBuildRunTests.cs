@@ -35,7 +35,7 @@ public sealed class XmakeNativeBuildRunTests
             Workspace(window);
             Assert.DoesNotContain(window.Configurations, config => config.XmakeTarget == "runtime");
             Assert.True(window.SelectConfiguration("Xmake: interactive"));
-            Assert.Contains("Native debugging", window.Actions.WhyNot(AppActions.Debug, window.Actions.Context()), StringComparison.Ordinal);
+            Assert.Null(window.Actions.WhyNot(AppActions.Debug, window.Actions.Context()));
             Assert.Contains("Native profiling", window.Actions.WhyNot(AppActions.Profile, window.Actions.Context()), StringComparison.Ordinal);
             BuildOutcome built = BuildSelected(window);
             Assert.True(built.Succeeded, string.Join('\n', built.Output));

@@ -27,7 +27,7 @@ public static class LldbDiscovery
     public const string LlvmBinVariable = "PITSTOP_LLVM_BIN";
 
     public static async Task<LldbInstallation> DiscoverAsync(string? executable = null, string? llvmBin = null,
-        CancellationToken cancel = default)
+        CancellationToken cancel = default, Func<string, bool>? mayRun = null)
     {
         string suffix = OperatingSystem.IsWindows() ? ".exe" : "";
         string tool = "lldb-dap" + suffix;
@@ -36,6 +36,10 @@ public static class LldbDiscovery
             : null;
         string path = Select(executable ?? Environment.GetEnvironmentVariable(AdapterVariable),
             llvmBin ?? Environment.GetEnvironmentVariable(LlvmBinVariable), tool, Programs.OnPath(tool), stock);
+        if (mayRun?.Invoke(path) == false)
+        {
+            throw new NativeDebugException(NativeDebugFailure.InvalidTool, "Trust this workspace before inspecting its LLDB installation.");
+        }
         Architecture? architecture = ReadArchitecture(path);
         if (architecture is { } found && found != RuntimeInformation.OSArchitecture)
         {

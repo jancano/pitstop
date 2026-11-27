@@ -111,6 +111,7 @@
     <ProjectReference Include="../Pitstop.Xmake/Pitstop.Xmake.csproj" />
     <ProjectReference Include="../Pitstop.Cpp/Pitstop.Cpp.csproj" />
     <ProjectReference Include="../Pitstop.Modules/Pitstop.Modules.csproj" />
+    <ProjectReference Include="../Pitstop.NativeDebug/Pitstop.NativeDebug.csproj" />
     <ProjectReference Include="../Pitstop.Templates/Pitstop.Templates.csproj" />
     <ProjectReference Include="../Pitstop.Profiler/Pitstop.Profiler.csproj" />
     <ProjectReference Include="../Pitstop.Dap/Pitstop.Dap.csproj" />

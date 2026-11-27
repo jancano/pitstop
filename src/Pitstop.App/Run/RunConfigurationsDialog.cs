@@ -58,6 +58,8 @@ public sealed class RunConfigurationsDialog : IdeWindow
 
     /// <summary>The rows of how Passenger starts the program, which a game Godot's editor plays takes none of.</summary>
     private readonly Control[] launchRows = new Control[5];
+    private readonly CheckBox nativeEntry = new() { Content = "Stop on entry in LLDB" };
+    private readonly TextBox nativeSourceMaps = new() { AcceptsReturn = true, PlaceholderText = "Build directory => local source directory" };
     private readonly CancellationTokenSource aspireLifetime = new();
     private int aspireReading;
     private bool aspireClosed;
@@ -195,6 +197,8 @@ public sealed class RunConfigurationsDialog : IdeWindow
         ArgumentsBox.TextChanged += (_, _) => Edit(c => c with { Arguments = ArgumentsBox.Text ?? string.Empty });
         WorkingDirectoryBox.TextChanged += (_, _) => Edit(c => c with { WorkingDirectory = WorkingDirectoryBox.Text?.Trim() ?? string.Empty });
         BuildBox.IsCheckedChanged += (_, _) => Edit(c => c with { BuildBeforeLaunch = BuildBox.IsChecked == true });
+        nativeEntry.IsCheckedChanged += (_, _) => Edit(c => c with { NativeStopOnEntry = nativeEntry.IsChecked == true });
+        nativeSourceMaps.TextChanged += (_, _) => Edit(c => c with { NativeSourceMapText = nativeSourceMaps.Text ?? string.Empty });
         // Shown again, as the note says why a drawing program runs in the terminal while it does.
         ConsoleBox.IsCheckedChanged += (_, _) => Edit(c => c with { Console = ConsoleBox.IsChecked == true ? ConsoleKind.Terminal : ConsoleKind.Internal }, reshow: true);
         BrowserBox.IsCheckedChanged += (_, _) => Edit(c => c with { LaunchBrowser = BrowserBox.IsChecked == true });
@@ -314,6 +318,8 @@ public sealed class RunConfigurationsDialog : IdeWindow
             (browserRows[2], [RunKind.Project, RunKind.Compose, RunKind.Dockerfile, RunKind.SdkContainer]),
             (Row("Launched service", LaunchServiceBox, fields: ["launchService"]), [RunKind.Compose]),
             (builtRows[2] = Row("Before launch", BuildBox, fields: ["buildBeforeLaunch"]), [RunKind.Project, RunKind.Xmake]),
+            (Row("Debug", nativeEntry), [RunKind.Xmake]),
+            (Row("Debug source mappings", nativeSourceMaps), [RunKind.Xmake]),
             (Row("Projects", StartsTable, top: true), [RunKind.Projects]),
             (Row(string.Empty, SharedBox), [RunKind.Projects]),
         ];
@@ -1283,6 +1289,8 @@ public sealed class RunConfigurationsDialog : IdeWindow
             WorkingDirectoryBox.Text = shown.WorkingDirectory;
             BuildBox.IsChecked = shown.BuildBeforeLaunch;
             BuildBox.Content = shown.IsXmake ? "Build the target first" : "Build the project first";
+            nativeEntry.IsChecked = shown.NativeStopOnEntry;
+            nativeSourceMaps.Text = shown.NativeSourceMapText;
             ConsoleBox.IsChecked = shown.Console == ConsoleKind.Terminal;
             BrowserBox.IsChecked = shown.LaunchBrowser;
             BrowserUrlBox.Text = shown.BrowserUrl;

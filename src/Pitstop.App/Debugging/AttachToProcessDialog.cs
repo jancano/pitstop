@@ -54,6 +54,7 @@ public enum AttachPurpose
 {
     Debugger,
     Profiler,
+    NativeDebugger,
 }
 
 /// <summary>Attach to Process: the .NET programs running on this machine that the debugger can attach to, each by its
@@ -105,10 +106,14 @@ public sealed class AttachToProcessDialog : IdeWindow
         DockPanel.SetDock(refresh, Dock.Right);
         Places = new ToolWindows.FilterMenu("Show Processes Running…", PlaceItems);
         Places.Narrowed = this.scope.Where != AttachWhere.Anywhere;
-        Places.Inside(Search);
+        if (purpose != AttachPurpose.NativeDebugger)
+        {
+            Places.Inside(Search);
+        }
         DockPanel top = new() { [DockPanel.DockProperty] = Dock.Top, Margin = new Thickness(0, 0, 0, Gaps.Wide), Children = { refresh, Search } };
 
-        ColumnTitles titles = ColumnTitles.Of(Columns, ["Executable", "Process ID", "User", "Command Line"], ColumnTitles.OverList, CellInset);
+        ColumnTitles titles = ColumnTitles.Of(Columns, ["Executable", "Process ID", purpose == AttachPurpose.NativeDebugger ? "Architecture" : "User",
+            purpose == AttachPurpose.NativeDebugger ? "Executable Path" : "Command Line"], ColumnTitles.OverList, CellInset);
 
         rows = new ListBox { Classes = { StyleClasses.Tree } };
         ReusedRows.Use(rows, Row);
@@ -123,7 +128,17 @@ public sealed class AttachToProcessDialog : IdeWindow
             Child = new DockPanel { Children = { titles, new Panel { Children = { rows, empty } } } },
         };
 
-        attach = new Button { Content = purpose == AttachPurpose.Profiler ? "Attach Profiler" : "Attach with .NET Debugger", Classes = { StyleClasses.Primary }, IsEnabled = false };
+        attach = new Button
+        {
+            Content = purpose switch
+            {
+                AttachPurpose.Profiler => "Attach Profiler",
+                AttachPurpose.NativeDebugger => "Attach with LLDB",
+                _ => "Attach with .NET Debugger",
+            },
+            Classes = { StyleClasses.Primary },
+            IsEnabled = false,
+        };
         attach.Click += (_, _) => Attach();
         Content = DialogFooter.Page(new DockPanel { [DialogFooter.InsetProperty] = true, Children = { top, table } }, DialogFooter.OkCancel(attach, () => Close(null)));
         Opened += (_, _) => Dispatcher.UIThread.Post(() =>
@@ -235,11 +250,13 @@ public sealed class AttachToProcessDialog : IdeWindow
         }
         DotnetProcess? kept = Chosen;
         rows.ItemsSource = shown;
-        rows.SelectedItem = shown.FirstOrDefault(r => r.Process is { } p && kept is not null && p.Id == kept.Id && p.Container == kept.Container && p.CommandLine == kept.CommandLine)
-            ?? shown.FirstOrDefault(r => r.Process is { WhyNot: null });
+        rows.SelectedItem = shown.FirstOrDefault(r => r.Process is { } p && kept is not null && p.Id == kept.Id && p.Container == kept.Container
+            && p.CommandLine == kept.CommandLine && p.ObservedStart == kept.ObservedStart)
+            ?? (Purpose == AttachPurpose.NativeDebugger ? null : shown.FirstOrDefault(r => r.Process is { WhyNot: null }));
         attach.IsEnabled = Chosen is { WhyNot: null };
         bool there = listed.Any(scope.Holds);
-        empty.Text = there && typed.Length > 0 ? $"No .NET process {(scope.Where == AttachWhere.Anywhere ? string.Empty : scope.Said + " ")}matches '{typed}'"
+        empty.Text = Purpose == AttachPurpose.NativeDebugger ? typed.Length > 0 ? $"No local process matches '{typed}'" : "No local processes to attach to"
+            : there && typed.Length > 0 ? $"No .NET process {(scope.Where == AttachWhere.Anywhere ? string.Empty : scope.Said + " ")}matches '{typed}'"
             : listed.Count > 0 ? $"No .NET process runs {scope.Said}"
             : Purpose == AttachPurpose.Profiler ? "Nothing of the folder's runs, and no .NET program runs in a container, to profile"
             : "No .NET processes to attach to";

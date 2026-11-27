@@ -76,7 +76,7 @@ public partial class MainWindow : IdeWindow
         ManagedDevelopment = managedDevelopment && NativeProduct.ManagedPayloadAvailable;
         UiThread.Own();
         InitializeComponent();
-        DebugButton.IsVisible = ProfileButton.IsVisible = ManagedDevelopment;
+        ProfileButton.IsVisible = ManagedDevelopment;
         GiveToolbarButtons();
         session = ProjectSession.None(Setup());
         announcer = new Announcer(this, Root);
@@ -1305,7 +1305,9 @@ public partial class MainWindow : IdeWindow
     /// <summary>The Breakpoints window, a breakpoint chosen in it.</summary>
     public void ShowBreakpoints(Debugging.Breakpoint? chosen)
     {
-        Debugging.BreakpointsWindow window = new(session.Debug.Breakpoints, chosen, ExceptionTypesAsync);
+        Debugging.BreakpointsWindow window = new(session.Debug.Breakpoints, chosen, ExceptionTypesAsync,
+            !ManagedDevelopment || session.Debug.Session?.Engine == Debugging.DebugEngine.Native,
+            session.Debug.NativeModuleName);
         window.Closed += (_, show) =>
         {
             popups.Close();

@@ -2582,7 +2582,7 @@ public sealed partial class BuildRunController
     {
         if (chosen.IsXmake)
         {
-            return Said(XmakeDebugUnavailable);
+            return await DebugXmakeAsync(chosen, arguments, cancellation);
         }
         if (chosen.IsScript)
         {
