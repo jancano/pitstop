@@ -48,7 +48,7 @@ The WPF and MAUI preview projects, child hosts, linked request protocols and the
 
 ## Solution identity
 
-`Pitstop.slnx` is the entry point for restore, builds and toolchain probes. CI and repository-root discovery use that name. Inherited project assemblies and namespaces remain pending dedicated migrations. The solution file change leaves persisted JSON fields and application IPC identifiers intact.
+`Pitstop.slnx` is the entry point for restore, builds and toolchain probes. CI and repository-root discovery use that name. `Pitstop.Dap` contains the shared debugger protocol and CDP types, including `HitCondition`, which the retained inspector projects compile from the same source. DAP and CDP wire names, persisted JSON fields and application IPC identifiers keep their existing values. Other inherited assembly names and namespaces remain pending dedicated migrations. Stable theme keys such as `Passenger.Text` still appear in the theme format and its mappings. Godot probe resources retain their inherited logical names. `site/` is the upstream Passenger website source and remains outside Pitstop publication.
 
 ## Discord Rich Presence
 
@@ -63,3 +63,41 @@ The native Endpoints window serves `.http` and `.rest` files. It uses the existi
 ## EF Core migrations
 
 The Migrations window, managed tool invocation, MCP actions, configuration keys, diagnostics and exclusive regression tests were removed. Older workspace state can still be read, with the retired migration fields ignored. NuGet grouping for EF Core package-family upgrades and the managed launch, HTTP and SQL tests still use EF Core test dependencies. The HTTP Client's data and permissions, runtime console and shared service connection-string logic remain in place.
+
+## Measurements after pruning
+
+Measured at `03ae4a8de` with the baseline's counting rules. The removed preview projects were already excluded from the Windows native packaging profile. Source reductions and package size changes measure different effects.
+
+| Tree | Projects | C# and AXAML files | Physical lines | Change in lines |
+| --- | ---: | ---: | ---: | ---: |
+| `src/` | 32 | 2,200 | 563,698 | −7,954 |
+| `tests/` | 46 | 1,133 | 268,576 | −3,088 |
+
+## Validation
+
+Locked restore and the complete Debug solution build at `daf2a8427` passed on Windows x64 with .NET SDK 11.0.100, six MSBuild workers, shared compilation disabled and zero warnings or errors. The build step took 2 minutes 57 seconds. The full unit suite passed 618 tests, with five skips for the optional scale capture, unavailable symlink creation and a Unix-only path case. No unit tests failed.
+
+The focused headless run passed 12 cases, including Discord IPC, native OpenAPI generation, HTTP and SQL presentation, managed launch and native MCP trust. Its 24 toolchain-dependent cases skipped before the reference profile was supplied. A separate run with `PITSTOP_XMAKE`, `PITSTOP_CLANGD`, `PITSTOP_CLANG_SCAN_DEPS` and `PITSTOP_TEST_LLVM_MINGW` set passed all 12 native project template cases.
+
+Thirteen integration tests passed with the reference toolchain. They exercised C++23 and C++26 module completion and navigation, `import std`, module interface refresh, Xmake evaluation, rebuild and incremental build, interactive execution, diagnostics, and the real MCP module API. The tests include missing and ambiguous providers, request cancellation, configuration isolation and workspace trust revocation.
+
+The complete Windows CI gate at `daf2a8427` ran in four shards, with 711 passed, two failed, seven skipped and no timeouts. The managed parallel-loop debugger case stopped at a breakpoint before the expected exception. Its isolated rerun passed, and the same test passed in a clean checkout of the baseline. The cause under parallel load remains unresolved. The UI rule flagged the native template dialog creating item-template rows. The dialog now uses the shared `ReusedRows` implementation and resets each row's icon, label, opacity and tooltip when it receives another template. The separate CI report lane remains unverified.
+
+At `03ae4a8de` the complete solution build passed again with zero warnings or errors. Five targeted tests passed, including the previously failing reusable-row rule, wizard creation and native command isolation across desktop and MCP. Two toolchain cases skipped in that run. A second run with the reference tools passed all three wizard cases, including standards detection and executable overrides.
+
+Light and dark captures were taken from both the headless tests and the Windows package. The captures cover the welcome screen, project creation, toolchain settings, project and module views, graph, editor completion and diagnostics, Build and Run, HTTP Client, Containers, and Discord settings. This machine has no Docker command and no production Discord application registration. Containers' missing-tool presentation and the configuration path for Discord were visible. The Discord IPC tests use a local peer.
+
+## Windows x64 package
+
+`tools/package-win.sh win-x64` created the unsigned `0.3.0-alpha.1` candidate from a clean checkout of `03ae4a8de`. The archive contains 306 DLLs and five EXEs. `Pitstop.Dap.dll` replaces `Passenger.Dap.dll` and the native payload has no managed child-tool folders. The Phase 7 baseline already excluded the removed preview hosts. The portable ZIP and installer are each about 0.34 MB smaller than the respective Phase 7 packages.
+
+The portable and installed application both opened the isolated Hello Modules fixture, reported the module index through MCP, navigated to a provider, saved an edit, built the project and printed `Hello, modules!` with exit code zero. The portable also produced the missing-Xmake guidance. Installation and uninstall checks covered Open With associations, the user `PATH`, and the existing Pitstop and Passenger settings roots. The native child payload and installed trust checks passed.
+
+| Package | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `Pitstop-windows-x64-portable.zip` | 143,252,905 | `0728030f71d182ff015a5569224dd35d9f3f82422f3d71388c7295c19e213c25` |
+| `Pitstop-windows-x64.exe` | 157,174,269 | `50c871d3f29c189ff36dd8e72fce508d637a351862f17658a47971988e17eb1f` |
+
+## Remaining extraction
+
+The source still compiles managed MSBuild, Roslyn, CoreCLR debugging, NuGet, Aspire, mobile and runtime XAML inspection services for the repository verification profile. The native package excludes their dedicated executables and retains assemblies that still contain shared services and legacy code. The next extraction boundaries are the generic debugger views from managed launch and Hot Reload, Compose and telemetry from Aspire resource discovery, and template and package presentation from managed project discovery. Linux and macOS native distribution remain unverified.

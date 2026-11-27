@@ -84,7 +84,9 @@ def exercise(client, missing_tool, version, native_product):
         available_action = 'app.native.newProject'
         if available_action not in str(client.call('ide_actions', query=available_action)):
             raise RuntimeError('The native New Project action is missing')
-        for action in ('app.restartCSharpServer', 'app.debug.applyHotReloadChanges', 'app.tests.run'):
+        for action in ('app.restartCSharpServer', 'app.debug.applyHotReloadChanges', 'app.tests.run',
+                       'app.explorer.manageUserSecrets', 'app.dotnet.installWorkloads', 'app.android.install',
+                       'app.mobile.makeEdits', 'app.mobile.keepAssembliesWhole'):
             if action in str(client.call('ide_actions', query=action)):
                 raise RuntimeError(f'The native product exposes the managed action {action}')
         print('Native action isolation verified', flush=True)
