@@ -247,9 +247,11 @@ internal static class Program
     /// <summary>Avalonia on the headless platform (<see cref="HeadlessPlatform"/>), the command line's theme over the one in
     /// force, for a Passenger nobody sees (<c>--mcp</c>, <c>--headless</c>, a screenshot), the process first taken as
     /// headless (<see cref="PassengerApp.RunsHeadless"/>) where it was not already.</summary>
-    internal static void SetUpHeadless(LaunchOptions launch)
+    internal static void SetUpHeadless(LaunchOptions launch) => SetUpHeadless(launch, trustAll: true);
+
+    internal static void SetUpHeadless(LaunchOptions launch, bool trustAll)
     {
-        PassengerApp.RunsHeadless();
+        PassengerApp.RunsHeadless(trustAll);
         AppBuilder.Configure<App>()
             .UseHeadlessPlatform()
             .Checked()

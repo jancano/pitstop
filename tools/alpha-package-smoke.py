@@ -178,7 +178,7 @@ def working_set(pid):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('executable', type=Path)
-    parser.add_argument('sample', type=Path, help='disposable or preconfigured Hello Modules copy')
+    parser.add_argument('sample', type=Path, help='disposable, configured Hello Modules copy outside Git worktrees')
     parser.add_argument('state', type=Path, help='new state folder')
     parser.add_argument('--version', help='expected version from MCP initialization')
     mode = parser.add_mutually_exclusive_group()
@@ -188,9 +188,13 @@ def main():
     if args.scale_index is not None and args.scale_index < 1:
         parser.error('--scale-index requires a positive module count')
     state = args.state.resolve()
+    sample = args.sample.resolve()
+    if any((directory / '.git').exists() for directory in (sample, *sample.parents)):
+        parser.error('configure a disposable sample copy outside Git worktrees so the smoke test trusts only that copy')
     state.mkdir(parents=True)
+    (state / 'trust.json').write_text(json.dumps({'version': 1, 'trusted': [str(sample)]}), encoding='utf-8')
     with (state / 'smoke-stderr.log').open('w', encoding='utf-8') as errors:
-        client = Client(args.executable.resolve(), args.sample.resolve(), state, errors)
+        client = Client(args.executable.resolve(), sample, state, errors)
         try:
             if args.scale_index is not None:
                 print(json.dumps(measure_index(client, state, args.scale_index, args.version), indent=2), flush=True)

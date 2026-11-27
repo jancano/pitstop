@@ -22,6 +22,32 @@ public sealed class StateStore
 {
     /// <summary>The settings' file at the store's top.</summary>
     public const string SettingsFile = "settings.json";
+    private const string TrustFile = "trust.json";
+
+    internal static WatchedFile WatchKeptTrust()
+    {
+        StateDocument<TrustState> document = new(Path.Combine(DefaultRoot, TrustFile));
+        HashSet<string> previous = new(PathNames.Comparer);
+        WatchedFile watched = new(document.Path, "Workspace trust", _ =>
+        {
+            UiThread.Post(Read);
+            return true;
+        });
+        Read();
+        return watched;
+
+        void Read()
+        {
+            IReadOnlyList<string> saved = document.KeptNow()?.Trusted ?? [];
+            HashSet<string> current = new(saved.Where(folder => PathNames.Same(folder, WorkspaceTrust.FolderToTrust(folder))), PathNames.Comparer);
+            foreach (string folder in previous.Where(folder => !current.Contains(folder)))
+            {
+                WorkspaceTrust.TakeBack(folder);
+            }
+            WorkspaceTrust.Trust(current.Where(folder => !previous.Contains(folder)));
+            previous = current;
+        }
+    }
 
     /// <summary>The file of the templates New Solution and New Project made something from lately (<see cref="Templates"/>).</summary>
     public const string TemplatesFile = "recentTemplates.json";
@@ -52,7 +78,7 @@ public sealed class StateStore
         Previews = new(Path.Combine(root, "previews.json"));
         LiveTree = new(Path.Combine(root, "liveTree.json"));
         Dotnet = new(Path.Combine(root, "dotnet.json"));
-        Trust = new(Path.Combine(root, "trust.json"));
+        Trust = new(Path.Combine(root, TrustFile));
         Templates = new(Path.Combine(root, TemplatesFile));
         NewSolution = new(Path.Combine(root, NewSolutionFile));
         // Before this process writes any: a change is written a moment after it is made, and only through this store.

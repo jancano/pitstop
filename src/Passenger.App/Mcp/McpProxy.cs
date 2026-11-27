@@ -139,7 +139,8 @@ public sealed partial class McpProxy
         IdeLog.TakeConsole();
         McpProxy proxy = new(processId, PathNames.Canonical(folder ?? Environment.CurrentDirectory));
         ToolList tools = [];
-        foreach (McpServerTool tool in McpHost.Tools)
+        bool managed = McpHost.ManagedVerification;
+        foreach (McpServerTool tool in McpHost.ToolsFor(managed))
         {
             // Never called: each call goes on to the window's own tool of the name.
             tools.Add(new ForwardedTool(tool, proxy));
@@ -147,7 +148,7 @@ public sealed partial class McpProxy
         McpServerOptions options = new()
         {
             ServerInfo = McpHost.ServerInfo,
-            ServerInstructions = McpHost.Instructions,
+            ServerInstructions = McpHost.InstructionsFor(managed),
             ToolCollection = tools,
         };
         using CancellationTokenSource gone = new();

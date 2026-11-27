@@ -75,6 +75,12 @@ public static class McpTools
     public const string VcsStatus = "vcs_status";
     public const string Workspace = "workspace";
 
+    internal static IReadOnlySet<string> ManagedOnly { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        BreakpointSet, DebugAttach, DebugContinue, DebugEvaluate, DebugInput, DebugPause, DebugSetNextStatement,
+        DebugStart, DebugState, DebugStep, GodotEditor, HotReload, NugetInstall, NugetSearch, Profile, Refactor, TestsList, TestsRun,
+    };
+
     /// <summary>The tools a window whose folder is not trusted refuses, each with why: those that run the open folder's code
     /// (build it, run, debug, test or profile its programs, restore its packages, apply Hot Reload to them,
     /// <see cref="Refusals.Untrusted"/>), and nuget_search, which asks the feeds the folder's nuget.config names

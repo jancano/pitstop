@@ -141,6 +141,7 @@ public abstract class McpRig : IDisposable
     {
         ProcessStartInfo start = ChildProcesses.Command(executable ?? Passenger, arguments, workingDirectory);
         start.Environment[StateStore.Variable] = arguments.Contains("--mcp-attach") ? TestRun.Settings : OwnState;
+        start.Environment[McpHost.ManagedVerificationVariable] = "1";
         start.Environment[global::Passenger.Dap.AdapterEnvironment.EngineLogVariable] = EngineLog;
         if (!languageServer)
         {

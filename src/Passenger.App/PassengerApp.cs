@@ -80,11 +80,16 @@ public static class PassengerApp
     /// <summary>The process runs on the headless platform, as <c>--mcp</c>, <c>--headless</c> and a screenshot choose it
     /// before their window is made, and nothing it starts has a display to reach (<see cref="NoDisplay"/>). Nobody is here
     /// to ask whether a folder is trusted: whoever started it chose the folder, so every one is (<see cref="WorkspaceTrust"/>).</summary>
-    internal static void RunsHeadless()
+    internal static void RunsHeadless() => RunsHeadless(trustAll: true);
+
+    internal static void RunsHeadless(bool trustAll)
     {
         headless = true;
         NoDisplay.Take();
-        WorkspaceTrust.TrustEverything();
+        if (trustAll)
+        {
+            WorkspaceTrust.TrustEverything();
+        }
     }
 
     /// <summary>A window came in front, or one closed: Discord follows the front one.</summary>

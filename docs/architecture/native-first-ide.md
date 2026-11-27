@@ -44,4 +44,14 @@ For supported edits, Pitstop previews the Lua to append to the provider's existi
 
 The application project currently stages Roslyn and managed project, debug, test, inspector and preview payloads. Some of its notice-generation inputs are collected from those same targets. The packaging migration must update the payload and its notices together. Keep CI's repository build projects and native validation fixtures when isolating distributable executables.
 
-Desktop windows use native project loading. A folder with both `xmake.lua` and a solution opens its evaluated Xmake targets. The desktop leaves C# and solution files available as documents, and skips SDK discovery, managed workspace discovery, the MSBuild project host and Roslyn startup. Child desktop windows inherit this mode. The legacy window constructor remains for regression coverage. The inherited standalone headless and MCP launch paths, the remaining managed command surfaces, and their bundled tooling are still part of the migration.
+Desktop windows use native project loading. A folder with both `xmake.lua` and a solution opens its evaluated Xmake targets. The desktop leaves C# and solution files available as documents, and skips SDK discovery, managed workspace discovery, the MSBuild project host and Roslyn startup. Child desktop windows inherit this mode. The legacy window constructor remains for regression coverage.
+
+Native MCP connections advertise workspace, module, editor, build and run operations. The managed debugger, NuGet, profiler, Hot Reload, Godot and test operations are reserved for the inherited verification profile. Native standalone and headless modes follow saved workspace trust. Trust changes during an attached connection are handled by the desktop's session. The remaining managed UI command surfaces and bundled tooling are still part of the migration.
+
+## Validation status
+
+The Windows x64 reference checks built and executed twelve generated template cases with Xmake 3.1.2 and LLVM-MinGW 23.1.6. Selected tests also exercised the compilation workspace boundary, template safety, preview and generation, trust, Xmake project editing, native tool detection, and the mixed-folder desktop workflow. The wizard and Explorer were rendered and inspected in both themes. Screenshots were generated under `artifacts/phase7-wizard-shots` and `artifacts/phase7-explorer-shots`.
+
+Four real MCP tests covered the native tool list, trust grant and revocation in a standalone process, the attached module snapshot and its limits, unresolved and ambiguous imports, and cancellation. The package smoke script now records trust for its disposable sample in the isolated state directory.
+
+Phase 7 release verification still needs the remaining managed UI and packaging isolation, full applicable regression, the rest of the visual checklist, and clean Windows installer and portable verification. Check the Windows reference compatibility and package inventory before changing the release version.

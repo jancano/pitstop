@@ -53,15 +53,15 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
 
     // Workspace and editor
 
-    [McpServerTool(Name = McpTools.Open, Title = "Open a folder, solution, project or file", Destructive = false), Description(
-        "Opens a folder, solution or project (a directory, .sln, .slnx or .csproj) as the workspace, or a file in the editor " +
-        "(its folder first if none is open; with line, a project or solution file too), its caret at line and column if given, " +
-        "before that column's character. Returns the workspace.")]
+    [McpServerTool(Name = McpTools.Open, Title = "Open a folder, project or file", Destructive = false), Description(
+        "Opens a folder or xmake.lua as the workspace, or a file in the editor. Specify line and column to position the caret. Returns the workspace.")]
     public Task<Workspace> Open(string path, int? line = null, int? column = null, CancellationToken cancel = default) => OnUi(cancel, async () =>
     {
         string full = Named(path);
         // Opened once what another folder ran has ended.
-        if (Directory.Exists(full) || (File.Exists(full) && WorkspaceModel.Opens(full) && line is null))
+        bool project = window.ManagedDevelopment ? WorkspaceModel.Opens(full)
+            : Path.GetFileName(full).Equals(Pitstop.Xmake.XmakeService.ProjectFile, StringComparison.OrdinalIgnoreCase);
+        if (Directory.Exists(full) || File.Exists(full) && project && line is null)
         {
             string opening = Directory.Exists(full) ? PathNames.Canonical(full) : Path.GetDirectoryName(PathNames.Canonical(full))!;
             if (Session.Folder is { } left && !PathNames.Same(left, opening) && window.WhyNotLeave($"opening {full}") is { } held)
@@ -1588,7 +1588,7 @@ public sealed partial class PassengerTools(MainWindow window, AgentConnection? c
 
     // Publish is build's, as the Build window's: a tool of its own cost every session's list more than the budget has.
     [McpServerTool(Name = McpTools.Build, Title = "Build", Destructive = true), Description(
-        "Builds the solution (or the folder's project); with publish (a project), publishes it with profile, else its last " +
+        "Builds the active Xmake workspace. In the legacy managed verification window, builds the solution or project; with publish (a project), publishes it with profile, else its last " +
         "(DefaultContainer: its container image, into the engine; an AppHost through its publishers, to its last folder or aspire-output); " +
         "with preset, exports the Godot project's game through that export_presets.cfg preset (with debug, a debug export; to exportPath, from " +
         "the project's folder, in place of its export_path), Godot's output in run's. " +

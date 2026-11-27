@@ -28,6 +28,10 @@ public static partial class McpHost
     /// (<see cref="MainWindow.StartsLanguageServer"/>), for an agent that asks nothing of C#.</summary>
     [IdentifierHome]
     public const string LanguageServerVariable = "PITSTOP_MCP_LANGUAGE_SERVER";
+    [IdentifierHome]
+    public const string ManagedVerificationVariable = "PITSTOP_MANAGED_MCP_TESTS";
+
+    internal static bool ManagedVerification => Environment.GetEnvironmentVariable(ManagedVerificationVariable) == "1";
 
     /// <summary>Whether <c>--mcp</c>'s IDE starts the C# language server: always, unless <see cref="LanguageServerVariable"/>
     /// says <c>off</c>; a value other than <c>off</c> or <c>on</c> is fatal as Passenger starts, as a malformed flag is.</summary>
@@ -54,6 +58,14 @@ public static partial class McpHost
     /// <summary>What an agent is told as it connects: how to begin and find its way, what a person's window asks, and what
     /// it refuses while its folder is not trusted (<see cref="McpTools.Untrusted"/>).</summary>
     internal static readonly string Instructions =
+        "Pitstop is a modules-first C and C++ IDE. Use workspace to inspect the open folder, its trust state and run configurations. " +
+        "Use module_workspace to list modules, providers, unresolved imports, dependencies, consumers and potential impact for the active configuration. " +
+        "Use editor_text, edit, diagnostics, outline, definition, usages and find_in_files to inspect and edit source files. " +
+        "Paths are relative to the open folder unless absolute. Lines and columns count from 1. Use build and run for trusted Xmake projects, stop to end a run, " +
+        "and output for the existing consoles. An attached window can ask the person for permission before changing files, running code or switching workspaces. " +
+        "Trust is required for project evaluation and for operations that run workspace code. The app_ tools can inspect Pitstop's own UI.";
+
+    private static readonly string LegacyInstructions =
         "Pitstop is a C# IDE (with XAML, MSBuild files and the web languages). These tools act on its open workspace as its user would. " +
         "Lines and columns count from 1; relative paths are the open folder's; a file outside it, but in a project a trusted solution or AppHost names beside it, is read only where definition and usages lead (a package's file, generated or decompiled code) and never changed. Parameters several tools share: configuration, a run " +
         "configuration (the chosen one by default); arguments, a command line in place of its own; waitSeconds, how long a call " +
@@ -182,6 +194,11 @@ public static partial class McpHost
     /// connection's tools through <see cref="Serving"/>, and <c>--mcp-attach</c> lists them.</summary>
     internal static IReadOnlyList<McpServerTool> Tools => made.Value;
 
+    internal static IEnumerable<McpServerTool> ToolsFor(bool managed) =>
+        managed ? Tools : Tools.Where(tool => !McpTools.ManagedOnly.Contains(tool.ProtocolTool.Name));
+
+    internal static string InstructionsFor(bool managed) => managed ? LegacyInstructions : Instructions;
+
     private static readonly Lazy<McpServerTool[]> made = new(() => [.. ToolMethods().Select(method =>
         Lean(McpServerTool.Create(method, _ => Serving.Value ?? throw new InvalidOperationException("A Pitstop tool ran outside an agent's call"), ToolCreateOptions())))]);
 
@@ -191,19 +208,18 @@ public static partial class McpHost
         Options(Task.FromResult(new PassengerTools(window, connection)), window, connection);
 
     /// <summary>--mcp's server, its tools' list answered at once and each call waiting for the IDE it acts on.</summary>
-    private static McpServerOptions Options(Task<PassengerTools> ready, AgentConnection connection) => Options(ready, null, connection);
-
     private static McpServerOptions Options(Task<PassengerTools> tools, MainWindow? window, AgentConnection connection)
     {
+        bool managed = window?.ManagedDevelopment ?? ManagedVerification;
         McpServerPrimitiveCollection<McpServerTool> collection = [];
-        foreach (McpServerTool tool in Tools)
+        foreach (McpServerTool tool in ToolsFor(managed))
         {
             collection.Add(new ConnectedTool(tool, window, connection, tools));
         }
         return new McpServerOptions
         {
             ServerInfo = ServerInfo,
-            ServerInstructions = Instructions,
+            ServerInstructions = InstructionsFor(managed),
             ToolCollection = collection,
         };
     }
@@ -260,7 +276,8 @@ public static partial class McpHost
     public static int RunStdio(LaunchOptions launch, Stream input)
     {
         // Before the head start, so nothing it starts finds a display.
-        PassengerApp.RunsHeadless();
+        bool managed = ManagedVerification;
+        PassengerApp.RunsHeadless(trustAll: managed);
         PassengerApp.RunsForAgent();
         Stream output = Console.OpenStandardOutput();
         // Standard output is the protocol's alone, and standard error the agent may never read: the console goes to the log.
@@ -272,7 +289,7 @@ public static partial class McpHost
             SettingsStore.LogsInForce(named);
         }
         // The folder's opening begun now, on workers, while the window that takes it up is built.
-        HeadStart? ahead = HeadStart.Begin(launch, StartsLanguageServer);
+        HeadStart? ahead = managed ? HeadStart.Begin(launch, StartsLanguageServer) : null;
 
         using CancellationTokenSource done = new();
         TaskCompletionSource<PassengerTools> ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -284,7 +301,7 @@ public static partial class McpHost
         {
             try
             {
-                McpServer server = McpServer.Create(new PeerTransport(new StreamServerTransport(input, output, "pitstop")), Options(ready.Task, connection));
+                McpServer server = McpServer.Create(new PeerTransport(new StreamServerTransport(input, output, "pitstop")), Options(ready.Task, null, connection));
                 await server.RunAsync(done.Token);
             }
             finally
@@ -294,10 +311,12 @@ public static partial class McpHost
         }));
         using System.Runtime.InteropServices.PosixSignalRegistration? terminated = EndOnSignal(() => ended.TrySetResult());
 
-        Program.SetUpHeadless(launch);
+        Program.SetUpHeadless(launch, trustAll: managed);
+        using WatchedFile? trust = managed ? null : StateStore.WatchKeptTrust();
 
         // The agent's own IDE, which no other agent joins.
-        MainWindow window = new() { Width = 1600, Height = 1000, AgentsAllowed = false, AgentsOwn = true, TakesLaunches = false, StartsLanguageServer = StartsLanguageServer, HeadStart = ahead };
+        MainWindow window = new(managed) { Width = 1600, Height = 1000, AgentsAllowed = false, AgentsOwn = true, TakesLaunches = false,
+            StartsLanguageServer = managed && StartsLanguageServer, HeadStart = ahead };
         IdeErrors.Write($"Pitstop {Product.Version} ({Product.Commit ?? "no commit"}) for an agent, with no window shown: its window built "
             + $"{Durations.Said(System.Diagnostics.Stopwatch.GetElapsedTime(Program.StartedAt))} after launch");
         window.OpenOnNamedSettings(launch, named);
@@ -323,9 +342,11 @@ public static partial class McpHost
     {
         // Its starter reads nothing of its output or error: the console goes to the log.
         IdeLog.TakeConsole();
-        Program.SetUpHeadless(launch);
+        bool managed = ManagedVerification;
+        Program.SetUpHeadless(launch, trustAll: managed);
+        using WatchedFile? trust = managed ? null : StateStore.WatchKeptTrust();
 
-        MainWindow window = new() { Width = 1600, Height = 1000, AgentsAllowed = launch.ListenForAgents };
+        MainWindow window = new(managed) { Width = 1600, Height = 1000, AgentsAllowed = launch.ListenForAgents };
         window.SetRenderScaling(2);
         window.Show();
         window.Start(launch);
