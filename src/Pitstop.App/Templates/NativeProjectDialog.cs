@@ -177,7 +177,7 @@ public sealed class NativeProjectDialog : IdeWindow
                 _ => IconKeys.Explorer,
             };
             label.Text = choice.ToString();
-            label.Opacity = choice.Problem is null ? 1 : 0.65;
+            ListRow.Dim(row, choice.Problem is not null);
             ToolTip.SetTip(row, choice.Problem);
         });
     }
@@ -243,13 +243,7 @@ public sealed class NativeProjectDialog : IdeWindow
         }
     }
 
-    private Control Browse(TextBox path)
-    {
-        Button choose = new() { Content = "Browse…" };
-        choose.Click += (_, _) => IdeErrors.Observe(BrowseAsync(path));
-        DockPanel.SetDock(choose, Dock.Right);
-        return new DockPanel { Children = { choose, path } };
-    }
+    private BrowseRow Browse(TextBox path) => BrowseRow.Of(path, () => BrowseAsync(path));
 
     private async Task BrowseAsync(TextBox path)
     {

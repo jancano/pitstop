@@ -206,7 +206,7 @@ public sealed class AccessibilityTests : IDisposable
         try
         {
             AutomationPeer top = ControlAutomationPeer.CreatePeerForElement(window);
-            foreach (string words in (string[])[.. OperatingSystem.IsMacOS() ? (string[])[] : ["Main menu"], "Build solution", "Run", "Debug", "Profile", "Stop", "Search everywhere", "Settings", "Explorer", "Terminal", "Problems"])
+            foreach (string words in (string[])[.. OperatingSystem.IsMacOS() ? (string[])[] : ["Main menu"], "Build solution", "Run", "Debug", "Profile", "Stop", "Search everywhere", "Settings", "Project Explorer", "Terminal", "Problems"])
             {
                 Assert.True(Button(top, words) is not null, $"The window has no button named {words}, only: {Heard(Walk(top).Where(IsButton))}");
             }

@@ -66,7 +66,7 @@ public partial class MainWindow
     /// them only when their dialog opens.</summary>
     private void PreloadTemplates()
     {
-        if (ManagedDevelopment && KeepsSettings && Folder is not null && session.Xmake?.IsXmake != true)
+        if (ManagedDevelopment && KeepsSettings && session.Xmake?.IsXmake != true)
         {
             ProjectTemplates.Preload(BesideLast());
         }
