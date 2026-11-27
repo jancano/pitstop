@@ -82,8 +82,4 @@ public static class RuntimeVariables
     /// pipe, as it does into a terminal: a console of Passenger's reads them.</summary>
     public const string AnsiColorRedirection = "DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION";
 
-    /// <summary>"1" has WPF record where in its XAML each object was made (VisualDiagnostics.GetXamlSourceInfo) and
-    /// raise BindingDiagnostics.BindingFailed, and .NET MAUI record its XAML's places too (Microsoft.Maui.VisualDiagnostics);
-    /// read as either first loads XAML, so it stays in the environment.</summary>
-    public const string XamlDiagnosticsSourceInfo = "ENABLE_XAML_DIAGNOSTICS_SOURCE_INFO";
 }

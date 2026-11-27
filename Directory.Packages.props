@@ -144,7 +144,6 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="4.157.0" />
     <PackageVersion Include="HarfBuzzSharp" Version="14.4.0.200" />
     <PackageVersion Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.4.0.200" />
-    <PackageVersion Include="Microsoft.Maui.Controls.Core" Version="$(MauiVersion)" />
     <PackageVersion Include="Microsoft.Maui.Controls.Xaml" Version="$(MauiVersion)" />
     <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.85.0" />

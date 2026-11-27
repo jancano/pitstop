@@ -172,7 +172,7 @@ public sealed class PropertyBreakpoint(int id, object session, long element, str
     public override string Location { get; } = $"{property} on {described}";
 }
 
-/// <summary>The XAML Binding Errors breakpoint, as an exception breakpoint is for exceptions: on, it stops an Avalonia or WPF app
+/// <summary>The XAML Binding Errors breakpoint, as an exception breakpoint is for exceptions: on, it stops an Avalonia app
 /// being debugged the moment one of its bindings fails, where the app was when it failed (the inspector in the app calls
 /// <see cref="Inspector.Wire.Failed"/> there). Every folder has the one, off until it is turned on, and none removes it.
 /// Its condition and log message read the failure as <c>$bindingError</c>.</summary>

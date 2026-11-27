@@ -78,13 +78,12 @@ public sealed class OverlaysCommands
         parts.Views.Debug.Overlays.IsVisible = DebugApp() is not null;
     }
 
-    /// <summary>The Avalonia app the Run window's console runs, while its inspector answers: Run's, else Profile's (a WPF app
-    /// has no renderer overlays).</summary>
+    /// <summary>The Avalonia app the Run window's console runs, while its inspector answers: Run's or Profile's.</summary>
     private LiveApp? RunApp() => session?.Inspecting.Where(a => a.Kind is RunningKind.Run or RunningKind.Profile).OrderBy(a => a.Kind)
-        .Select(a => a.App).FirstOrDefault(app => app is { State: LiveAppState.Connected, Kind: LiveAppKind.Avalonia });
+        .Select(a => a.App).FirstOrDefault(app => app is { State: LiveAppState.Connected });
 
     /// <summary>The Avalonia app being debugged, while its inspector answers.</summary>
-    private LiveApp? DebugApp() => session?.LiveApp is { State: LiveAppState.Connected, Kind: LiveAppKind.Avalonia } debugged ? debugged : null;
+    private LiveApp? DebugApp() => session?.LiveApp is { State: LiveAppState.Connected } debugged ? debugged : null;
 
     /// <summary>The app the Run menu's toggles set: the debugged one, else the Run window's.</summary>
     private LiveApp? Front() => DebugApp() ?? RunApp();

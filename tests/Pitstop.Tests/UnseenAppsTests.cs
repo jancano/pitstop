@@ -58,7 +58,7 @@ public sealed class UnseenAppsTests : IDisposable
     {
         string assembly = Carrying("Avalonia.Controls.dll", "App.dll");
         LaunchPlan named = Plan(Dotnet.Host()) with { Arguments = [assembly] };
-        Assert.Equal((assembly, LiveAppKind.Avalonia), LiveApp.Inspected(named) ?? default);
+        Assert.Equal(assembly, LiveApp.Inspected(named));
         Assert.Null(named.WhyNot("run"));
         Assert.Null(LiveApp.Inspected(Plan(Carrying("Plain.dll", "Tool"))));
     }

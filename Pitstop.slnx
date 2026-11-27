@@ -12,8 +12,6 @@
     <Project Path="src/Pitstop.Helper/Pitstop.Helper.csproj" />
     <Project Path="src/Pitstop.Host/Pitstop.Host.csproj" />
     <Project Path="src/Pitstop.Inspector/Pitstop.Inspector.csproj" />
-    <Project Path="src/Pitstop.Inspector.Maui/Pitstop.Inspector.Maui.csproj" />
-    <Project Path="src/Pitstop.Inspector.Wpf/Pitstop.Inspector.Wpf.csproj" />
     <Project Path="src/Pitstop.Languages/Pitstop.Languages.csproj" />
     <Project Path="src/Pitstop.Launcher/Pitstop.Launcher.csproj" />
     <Project Path="src/Pitstop.Lsp/Pitstop.Lsp.csproj" />

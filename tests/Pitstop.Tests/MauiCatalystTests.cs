@@ -5,11 +5,9 @@ using Avalonia.Headless.XUnit;
 using ModelContextProtocol.Client;
 using Pitstop.App;
 using Pitstop.App.Debugging;
-using Pitstop.App.LiveTree;
 using Pitstop.App.Mcp;
 using Pitstop.App.Run.Devices;
 using Pitstop.Core;
-using Pitstop.Inspector;
 using Pitstop.Text;
 
 namespace Pitstop.Tests;
@@ -33,9 +31,9 @@ public sealed class MauiCatalystTests : McpRig
     /// <summary>What the update handler the test adds to the app writes once Hot Reload has applied an edit.</summary>
     private const string Handled = "Update handler called for MainPage";
 
-    /// <summary>The MAUI app's Mac Catalyst head built whole, run on this Mac with Hot Reload: its tree, a tap and an edit.</summary>
+    /// <summary>The MAUI app's Mac Catalyst head built whole, run on this Mac with Hot Reload: an applied edit and process cleanup.</summary>
     [AvaloniaFact]
-    public void A_maui_apps_mac_catalyst_head_run_with_hot_reload_shows_its_tree_takes_a_tap_and_an_edit_and_ends_with_stop()
+    public void A_maui_apps_mac_catalyst_head_run_with_hot_reload_takes_an_edit_and_ends_with_stop()
     {
         using IDisposable hang = Limits.BeginHang();
         (string folder, string project) = Prepared("maui-catalyst-run", whole: true);
@@ -46,27 +44,12 @@ public sealed class MauiCatalystTests : McpRig
             Chosen(window);
             Assert.Equal(DeviceTargets.Here(TargetPlatform.MacCatalyst).Shown, window.FindControl<TextBlock>("RunTargetName")!.Text);
             Ui.Launched(window, window.RunAsync(), "the Mac Catalyst head's build and its opening with Hot Reload", Slow);
-            Ui.WaitFor(() => window.Session.RunApp is { State: LiveAppState.Connected } && window.Debugger.Running.Count == 1,
-                () => $"the app's inspector to connect and the debugger to attach for Hot Reload; the inspector is {window.Session.RunApp?.State.ToString() ?? "not made"} "
-                    + $"({window.Session.RunApp?.Problem}), the debugger runs {window.Debugger.Running.Count} quietly: {Ui.Said(window)}\n{Output(window)}", Slow);
+            Ui.WaitFor(() => window.Debugger.Running.Count == 1,
+                () => $"the debugger to attach for Hot Reload: {Ui.Said(window)}\n{Output(window)}", Slow);
             Assert.False(window.Debugger.IsDebugging, "Run with Hot Reload showed a debugging session");
             MacCatalystApp opened = Opened(window);
             string[] opening = [.. window.Session.RunPlan!.Arguments.Take(window.Session.RunPlan.Leading)];
             Assert.True(opening.Contains("-g") && opening.Contains("-j"), $"The app opened where the person sees it, though nobody sees this window: {string.Join(' ', opening)}");
-            LiveApp app = window.Session.RunApp!;
-            Assert.True(app is { Kind: LiveAppKind.Maui } && app.Framework.StartsWith("MAUI 11.", StringComparison.Ordinal), $"The app was taken for {app.Kind}, {app.Framework}");
-            AppTree tree = new([]);
-            Ui.WaitFor(() => AppTree.Walk((tree = Ui.AwaitPumped(app.TreeAsync(), "the app's tree", TimeSpan.FromMinutes(1))).Roots).Any(e => e.Element is { Type: "Button", Name: "CounterBtn" }),
-                () => $"the main page's CounterBtn in the app's tree, which holds {string.Join(", ", AppTree.Walk(tree.Roots).Select(e => $"{e.Element.Type}#{e.Element.Name}").Take(40))}",
-                TimeSpan.FromMinutes(1));
-            Element button = AppTree.Walk(tree.Roots).Select(e => e.Element).First(e => e is { Type: "Button", Name: "CounterBtn" });
-            Element placed = AppTree.Walk(Ui.AwaitPumped(app.AgentTreeAsync([]), "the app's tree with where each element is", TimeSpan.FromMinutes(1)).Roots)
-                .Select(e => e.Element).First(e => e.Id == button.Id);
-            Assert.True(placed is { Bounds: not null, OutOfView: not true }, $"The button is not where its window shows it: at {placed.Bounds}, out of view {placed.OutOfView}");
-            InputDone tapped = Ui.AwaitPumped(app.InputAsync(new InputAction(InputKinds.Click) { Element = button.Id }), "a tap on the button", TimeSpan.FromMinutes(1));
-            Assert.True(tapped.Target == button.Id && tapped.Shows == "Clicked 1 time", $"The tap reached {tapped.TargetName}, which shows \"{tapped.Shows}\", not the button counting it");
-            Assert.True(Math.Abs(tapped.X!.Value - (placed.Bounds!.X + (placed.Bounds.Width / 2))) < 1 && Math.Abs(tapped.Y!.Value - (placed.Bounds.Y + (placed.Bounds.Height / 2))) < 1,
-                $"The tap was aimed at {tapped.X},{tapped.Y}, not the centre of the button at {placed.Bounds}: the window's area and its elements' places are in different points");
             string carried = Carried(opened);
 
             window.OpenFile(Path.Combine(PathNames.Canonical(Path.GetDirectoryName(project)!), "MainPage.xaml.cs"));
@@ -76,8 +59,6 @@ public sealed class MauiCatalystTests : McpRig
             Assert.True(window.Debugger.LastApplied!.Result == HotReloadResult.Applied, $"The app did not take the edit: {window.Debugger.LastApplied.Said}\n{Output(window)}");
             Ui.WaitFor(() => Output(window).Contains(Handled, StringComparison.Ordinal),
                 () => $"the app's update handler to be called with the type the edit changed: {Ui.Said(window)}\n{Output(window)}", TimeSpan.FromMinutes(1));
-            InputDone again = Ui.AwaitPumped(app.InputAsync(new InputAction(InputKinds.Click) { Element = button.Id }), "a tap on the button after the edit", TimeSpan.FromMinutes(1));
-            Assert.True(again.Shows == "Tapped 2 times", $"The button's click ran as built, not as edited: it shows \"{again.Shows}\"");
 
             Ui.Run(window, AppActions.Stop);
             Ui.WaitFor(() => window.Runner.Ended.IsCompleted, "the run to end once stopped");

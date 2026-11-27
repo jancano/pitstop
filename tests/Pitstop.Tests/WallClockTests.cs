@@ -19,7 +19,6 @@ public sealed class WallClockTests
     /// raises are stamped as WPF stamps its own.</summary>
     private static readonly Dictionary<string, string> TheirTicks = new(StringComparer.Ordinal)
     {
-        ["src/Pitstop.Inspector.Wpf/Driver.cs"] = "Environment.TickCount",
     };
 
     [Fact]

@@ -57,7 +57,7 @@ public sealed class AvaloniaSimulatorTests
             Ui.WaitFor(() => window.Session.RunApp is { State: LiveAppState.Connected }, () => $"the inspector in the app on the simulator to say hello; it is "
                 + $"{window.Session.RunApp?.State.ToString() ?? "not made"} ({window.Session.RunApp?.Problem}): {Ui.Said(window)}\n{Output(window)}", Slow);
             LiveApp app = window.Session.RunApp!;
-            Assert.True(app is { Kind: LiveAppKind.Avalonia } && app.Framework.StartsWith("Avalonia 12.", StringComparison.Ordinal), $"The app was taken for {app.Kind}, {app.Framework}");
+            Assert.StartsWith("Avalonia 12.", app.Framework, StringComparison.Ordinal);
             string? started = Started(window);
             Assert.True(started is not null, $"simctl did not say the app's process in the Run window:\n{Output(window)}");
             string carried = Carried(window);

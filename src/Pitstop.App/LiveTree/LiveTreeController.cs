@@ -18,7 +18,7 @@ public sealed record LiveTreeParts(DockHost Dock, ActionRegistry Actions, Action
     Func<string, IReadOnlyList<Pitstop.Xaml.Features.XamlFileChange>, Task<string?>> Change, Action<Avalonia.Controls.Control, Avalonia.Controls.Control> ShowPopup,
     Action ClosePopup);
 
-/// <summary>The window's Live Visual Tree, over the session it has: it follows the Avalonia or WPF app of the Debug tab chosen,
+/// <summary>The window's Live Visual Tree, over the session it has: it follows the Avalonia app of the Debug tab chosen,
 /// else the Godot game launched last (<see cref="ProjectSession.LiveSource"/>), shows its window as the app's UI comes up,
 /// a game's monitors in its status line, and asks the app for its tree
 /// (again whenever its controls come and go), for the chosen control's details, for Select Element and for the outline over
@@ -145,7 +145,7 @@ public sealed partial class LiveTreeController
         made.GoToRequested += (_, place) => GoTo(place);
         made.BreakRequested += (_, value) => ToggleBreak(value);
         made.Watched = value => details.Details is { } shown && Debugged() is { } debugged && session!.Debug.Breakpoints.FindProperty(debugged, shown.Id, value.Name) is not null;
-        made.WhyNotBreak = () => app is not LiveApp ? "Break When Value Changes watches an Avalonia or WPF app's properties"
+        made.WhyNotBreak = () => app is not LiveApp ? "Break When Value Changes watches an Avalonia app's properties"
             : Debugged() is { State: not DebugState.Ended } ? null : "Break When Value Changes needs the app debugged";
         made.WhyNotEdit = value => app is ILiveTreeValues values && details.Details is { } shown ? values.WhyNotSet(shown.Id, value) : "Only a Godot game's properties are set here";
         made.ValueSet += (_, set) => IdeErrors.Observe(SetAsync(set.Value, set.Text));
@@ -363,7 +363,7 @@ public sealed partial class LiveTreeController
         OnPropertiesChanged(null, EventArgs.Empty);
     }
 
-    /// <summary>The running games the chooser offers, while no Avalonia or WPF app is followed: each by its configuration's
+    /// <summary>The running games the chooser offers, while no Avalonia app is followed: each by its configuration's
     /// name, with its process where two share one.</summary>
     private void ShowSources()
     {
@@ -630,7 +630,7 @@ public sealed partial class LiveTreeController
     private string? NoneChosen => app is Godot.GodotGame ? "Choose a node in the tree." : null;
 
     /// <summary>What the window says while it follows nothing.</summary>
-    public const string NothingShown = "Debug an Avalonia or WPF app to see its windows and controls here, or run a Godot game to see its nodes.";
+    public const string NothingShown = "Debug an Avalonia app to see its windows and controls here, or run a Godot game to see its nodes.";
 
     /// <summary>Whether the person asked for the game's monitors charted (<see cref="LiveTreeView.ChartsLink"/>).</summary>
     private bool charting;
@@ -972,7 +972,7 @@ public sealed partial class LiveTreeController
     /// <summary>Why the window cannot ask the app now: nothing inspected, not up yet, refused, gone, or paused.</summary>
     private string? WhyNotAsk() => app switch
     {
-        null => "No Avalonia or WPF app is being debugged, nor a Godot game running",
+        null => "No Avalonia app is being debugged, nor a Godot game running",
         { State: LiveAppState.Waiting } => $"{app.Name} has not shown its windows yet",
         { State: LiveAppState.Refused } => app.Problem,
         { State: LiveAppState.Ended } => $"{app.Name} has ended",
@@ -1039,7 +1039,7 @@ public sealed partial class LiveTreeController
     /// <summary>A control chosen in the tree: its details shown, and it outlined in the app.</summary>
     public Task ChooseAsync(long id) => ChooseAsync(id, byPerson: true);
 
-    /// <summary>The control an Avalonia or WPF app made at a place of a XAML file (where its element's name starts, as the
+    /// <summary>The control an Avalonia app made at a place of a XAML file (where its element's name starts, as the
     /// app's build counted, from one) chosen in the tree, its details shown and it outlined in the app, as a person's choice
     /// of its row would, but told to no one; of several made there, the one nearest the control chosen. False when the app
     /// made nothing there, or cannot be asked now.</summary>

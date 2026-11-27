@@ -388,8 +388,8 @@ public sealed class DebugSession
 
     /// <summary>What Passenger carries into a program it debugs, by assembly name: its inspectors and its Hot Reload and
     /// test hooks, which the debugger never takes for the user's code, however they were built.</summary>
-    private static IReadOnlyList<string> Carried { get; } = [.. ((string[])[LiveTree.LiveApp.InspectorPath, LiveTree.LiveApp.WpfInspectorPath,
-        LiveTree.LiveApp.MauiInspectorPath, UpdateHandlerHook.HookPath, Testing.TestFrames.HookPath]).Select(path => Path.GetFileNameWithoutExtension(path))];
+    private static IReadOnlyList<string> Carried { get; } = [.. ((string[])[LiveTree.LiveApp.InspectorPath,
+        UpdateHandlerHook.HookPath, Testing.TestFrames.HookPath]).Select(path => Path.GetFileNameWithoutExtension(path))];
 
     /// <summary>Where the adapter keeps symbols it decompiles for assemblies that ship none, and prunes them as it starts:
     /// under the state folder's cache/.</summary>
@@ -1406,14 +1406,14 @@ public sealed class DebugSession
     public static string EngineCondition(PropertyBreakpoint breakpoint) =>
         $"breakpoint == {breakpoint.Id}" + (breakpoint.Condition is { } condition ? $" && ({condition})" : string.Empty);
 
-    /// <summary>What the debugger said of XAML Binding Errors: until an Avalonia or WPF app's inspector has loaded, it has nowhere
+    /// <summary>What the debugger said of XAML Binding Errors: until an Avalonia app's inspector has loaded, it has nowhere
     /// to stop, which is no fault of the breakpoint.</summary>
     private void ReportBindingErrors(DapBreakpoint answer) =>
         breakpoints.ReportBindingErrors(this, answer.Verified ? BreakpointStatus.Bound : answer.Reason == BreakpointReasons.Failed ? BreakpointStatus.Invalid : BreakpointStatus.Unknown,
             answer.Verified || answer.Reason == BreakpointReasons.Failed ? answer.Message : NoInspectedApp);
 
     /// <summary>Why XAML Binding Errors has not bound in a program the debugger runs.</summary>
-    private const string NoInspectedApp = "No Avalonia or WPF app has started under the debugger with the Live Visual Tree's inspector, which tells of its failed bindings";
+    private const string NoInspectedApp = "No Avalonia app has started under the debugger with the Live Visual Tree's inspector, which tells of its failed bindings";
 
     private void OnFunctionsChanged(object? sender, EventArgs e)
     {

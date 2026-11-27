@@ -21,14 +21,8 @@ public sealed class XamlHotReload(LiveApp app, Func<string, TextSnapshot?> texts
     /// <summary>The files edited since the app last took them, each with how many edits it has had.</summary>
     private readonly Dictionary<string, int> edited = new(PathNames.Comparer);
 
-    /// <summary>Whether it is a file of the app's framework: an Avalonia app's .axaml (or .xaml), a WPF app's .xaml; none of a
-    /// MAUI app's, which XAML Hot Reload does not reach yet.</summary>
-    public bool Takes(string path) => Path.GetExtension(path).ToLowerInvariant() switch
-    {
-        ".xaml" => app.Kind != LiveAppKind.Maui,
-        ".axaml" or ".paml" => app.Kind == LiveAppKind.Avalonia,
-        _ => false,
-    };
+    /// <summary>Whether the installed inspector can reload this Avalonia XAML file.</summary>
+    private static bool Takes(string path) => PathNames.HasExtension(path, [".xaml", ".axaml", ".paml"]);
 
     /// <summary>Whether a XAML file has been edited since the app last took it.</summary>
     public bool Changed => edited.Count > 0;
@@ -134,7 +128,7 @@ public sealed class XamlHotReload(LiveApp app, Func<string, TextSnapshot?> texts
         string shown = text.ToString();
         XamlChange change = new(file, shown, held.GetValueOrDefault(file), project.AssemblyName, uri)
         {
-            CompiledBindings = app.Kind == LiveAppKind.Avalonia ? project.CompilesBindings : null,
+            CompiledBindings = project.CompilesBindings,
         };
         XamlReloaded reloaded;
         try

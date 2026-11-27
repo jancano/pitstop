@@ -199,7 +199,6 @@
   <!-- Where a MAUI app's elements are in their window, from numbers alone, compiled in since its project is the MAUI
        inspector, which an app loads. -->
   <ItemGroup>
-    <Compile Include="../../src/Pitstop.Inspector.Maui/Placing.cs" Link="Inspector/MauiPlacing.cs" />
   </ItemGroup>
 
   <!-- What the WPF previewer and Passenger say to each other, compiled in since its project is the previewer. -->

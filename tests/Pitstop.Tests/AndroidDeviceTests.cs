@@ -16,8 +16,7 @@ namespace Pitstop.Tests;
 /// and starts it there, its log in the Run window, and Stop ends it on the emulator; Debug stops at a breakpoint in its
 /// OnCreate through Passenger's relay in the app, its locals shown, and Stop ends it; Run and Debug with Hot Reload take
 /// an edit of its code through the relay, its update handler called after it, and under Debug a method the edit added is
-/// evaluated; a start whose app run-as does not know is refused as its relay or inspector goes in; MAUI's and Avalonia's
-/// heads (<see cref="MauiAndroidTests"/>, <see cref="AvaloniaAndroidTests"/>) are steps too, and the tests of the project
+/// evaluated; a start whose app run-as does not know is refused as its relay or inspector goes in; Avalonia's Android head (<see cref="AvaloniaAndroidTests"/>) is a step too, and the tests of the project
 /// <c>dotnet new androidtest</c> makes, run through its instrumentation there and debugged through the relay. The emulator is the one ANDROID_SERIAL names
 /// where several run, and every adb call names it. Skips, saying why, without the Android workload, its SDK and Java, an
 /// emulator or the relays. Debugged through the window, so run alone.</summary>
@@ -32,9 +31,8 @@ public sealed class AndroidDeviceTests
     private const string DeviceTestsPackage = "com.companyname.DeviceTests";
 
     /// <summary>A device test project's tests run on an emulator; then an app there: run and stopped at a breakpoint, its
-    /// locals shown, an edit taken by Run and by Debug with Hot Reload and its update handler called, a MAUI app's live tree
-    /// and an Avalonia app's shared code stopped in. The steps that need more than the emulator (the test project's packages,
-    /// MAUI's workload, Avalonia's packages) come first, so a skip ends the flow before any step ran.</summary>
+    /// locals shown, an edit taken by Run and by Debug with Hot Reload and its update handler called, and an Avalonia app's
+    /// shared-code breakpoint. The steps that need more than the emulator (the test project's or Avalonia's packages) come first, so a skip ends the flow before any step ran.</summary>
     [AvaloniaFact]
     public void A_device_test_projects_tests_run_on_an_emulator_and_an_app_there_runs_debugs_and_takes_hot_reload_edits_and_its_live_tree_and_shared_code_are_reached()
     {
@@ -44,8 +42,6 @@ public sealed class AndroidDeviceTests
             An_androidtest_projects_tests_debugged_from_the_tests_window_stop_at_a_breakpoint_in_one_on_the_emulator_then_each_test_is_told_and_nothing_of_it_is_left_there);
         Flow.Step("an Avalonia app's Android head runs and stops at a breakpoint in its shared code on an emulator",
             AvaloniaAndroidTests.An_avalonia_apps_android_head_runs_and_stops_at_a_breakpoint_in_its_shared_code_on_an_emulator);
-        Flow.Step("a MAUI app's Android head debugged on an emulator shows its main page's label and button in the live tree",
-            MauiAndroidTests.A_maui_apps_android_head_debugged_on_an_emulator_shows_its_main_pages_label_and_button_in_the_live_tree);
         Flow.Step("an Android app runs and stops at a breakpoint on an emulator chosen beside its configuration",
             An_android_app_runs_and_stops_at_a_breakpoint_on_an_emulator_chosen_beside_its_configuration);
         Flow.Step("an Android app run with Hot Reload on an emulator takes an edit of its code and runs its update handler",

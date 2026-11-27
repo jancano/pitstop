@@ -31,17 +31,7 @@ public sealed class BindingFailedEventArgs(BindingFailure failure, int times) : 
 /// <summary>Why the app could not answer: not connected, gone, or what the inspector in it said.</summary>
 public sealed class LiveAppException(string message) : Exception(message);
 
-/// <summary>The framework an inspected app is built on, which picks the inspector it is given.</summary>
-public enum LiveAppKind
-{
-    Avalonia,
-    Wpf,
-    Maui,
-}
-
-/// <summary>Passenger's end of its inspector inside an Avalonia app it runs or debugs (src/Pitstop.Inspector), a WPF app
-/// (src/Pitstop.Inspector.Wpf, also given ENABLE_XAML_DIAGNOSTICS_SOURCE_INFO) or a .NET MAUI app on a device or a
-/// simulator (src/Pitstop.Inspector.Maui), one protocol for all: a startup hook and a
+/// <summary>The IDE's end of the Avalonia inspector. The startup hook connects to a
 /// socket of the launch's own; from before Main it tells of failed bindings, and once the UI is up says hello and answers on
 /// the UI thread (paused under the debugger, once it runs again). One launch's alone, never in the app as built. A UI-thread
 /// object: its events come on the UI thread.</summary>
@@ -61,14 +51,13 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
     private readonly List<Reply> heard = [];
     private NetworkStream? stream;
 
-    private LiveApp(string name, string socket, Socket? listener, LaunchPlan? plan, IReadOnlyList<string> overlays, LiveAppKind kind = LiveAppKind.Avalonia,
+    private LiveApp(string name, string socket, Socket? listener, LaunchPlan? plan, IReadOnlyList<string> overlays,
         string? uninspected = null, Run.Devices.DeviceInspector? device = null)
     {
         this.listener = listener;
         SocketPath = socket;
         Name = name;
         Overlays = overlays;
-        Kind = kind;
         Device = device;
         if (device is not null)
         {
@@ -77,27 +66,18 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
         }
         else if (plan is not null)
         {
-            string inspector = kind == LiveAppKind.Wpf ? WpfInspectorPath : InspectorPath;
             // An Avalonia app nobody is to see may be started by its inspector, after every other hook, in place of its Main.
-            bool unseen = plan.Unseen && kind == LiveAppKind.Avalonia;
+            bool unseen = plan.Unseen;
             Dictionary<string, string> environment = new(plan.Environment)
             {
                 [Wire.SocketVariable] = socket,
-                [RuntimeVariables.StartupHooks] = unseen ? StartupHooks.Last(plan.Environment, inspector) : StartupHooks.First(plan.Environment, inspector),
+                [RuntimeVariables.StartupHooks] = unseen ? StartupHooks.Last(plan.Environment, InspectorPath) : StartupHooks.First(plan.Environment, InspectorPath),
             };
             if (unseen)
             {
                 environment[Wire.UnseenVariable] = plan.OnOwnDesktop ? Wire.UnseenRuns : Wire.UnseenEnds;
             }
-            if (kind == LiveAppKind.Wpf)
-            {
-                environment[RuntimeVariables.XamlDiagnosticsSourceInfo] = "1";
-                if (plan.Project is { } project)
-                {
-                    environment[Wire.ProjectVariable] = Path.GetDirectoryName(project)!;
-                }
-            }
-            else if (overlays.Count > 0)
+            if (overlays.Count > 0)
             {
                 environment[Wire.OverlaysVariable] = string.Join(',', overlays);
             }
@@ -125,15 +105,6 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
     /// <summary>The inspector beside the app, as its build carries it.</summary>
     public static string InspectorPath => Path.Combine(AppContext.BaseDirectory, "inspector", "Pitstop.Inspector.dll");
 
-    /// <summary>The WPF app's inspector, which only a Windows build carries.</summary>
-    public static string WpfInspectorPath => Path.Combine(AppContext.BaseDirectory, "inspector", "wpf", "Pitstop.Inspector.Wpf.dll");
-
-    /// <summary>A .NET MAUI app's inspector.</summary>
-    public static string MauiInspectorPath => Path.Combine(AppContext.BaseDirectory, "inspector", "maui", "Pitstop.Inspector.Maui.dll");
-
-    /// <summary>The framework the app is built on, which its inspector serves.</summary>
-    public LiveAppKind Kind { get; }
-
     /// <summary>Whether the app draws on Avalonia's headless platform, where nobody sees it, as it said in its hello.</summary>
     public bool Headless { get; private set; }
 
@@ -141,14 +112,8 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
     /// hello: an app nobody is to see whose Main would draw where people do.</summary>
     public bool MainLeftOut { get; private set; }
 
-    /// <summary>The framework and its version as the window says it, once the app has said hello: "Avalonia 12.2.0",
-    /// "WPF 10.0.1"; the framework alone before.</summary>
-    public string Framework => Kind == LiveAppKind.Wpf ? FrameworkSaid ?? "WPF"
-        : Kind == LiveAppKind.Maui ? FrameworkSaid ?? "MAUI"
-        : Avalonia is { } version ? $"Avalonia {(System.Version.TryParse(version, out Version? read) ? read.ToString(3) : version)}" : "Avalonia";
-
-    /// <summary>What a WPF or MAUI app's inspector said it runs, from its hello.</summary>
-    private string? FrameworkSaid { get; set; }
+    /// <summary>Avalonia and its version, once the inspector identifies itself.</summary>
+    public string Framework => Avalonia is { } version ? $"Avalonia {(System.Version.TryParse(version, out Version? read) ? read.ToString(3) : version)}" : "Avalonia";
 
     /// <summary>The plan as it is launched: the inspector among its startup hooks, and the socket to connect to; none for
     /// Passenger's own windows (<see cref="Own"/>).</summary>
@@ -251,10 +216,10 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
     public event EventHandler? UntoldChanged;
 
     /// <summary>The live app for a plan whose program on this machine takes an inspector (<see cref="Inspected"/>), or that runs
-    /// an Avalonia or MAUI app on a device (<see cref="OnDevice"/>), showing these renderer debug overlays from its first window; null
+    /// an Avalonia app on a device (<see cref="OnDevice"/>), showing these renderer debug overlays from its first window; null
     /// for any other plan. One whose socket could not be made is refused, saying why, its plan carrying the inspector all the
     /// same, which lets the app run on without it.</summary>
-    public static LiveApp? For(LaunchPlan plan, IReadOnlyList<string>? overlays = null, bool wpf = true)
+    public static LiveApp? For(LaunchPlan plan, IReadOnlyList<string>? overlays = null)
     {
         if (plan.Device is not null)
         {
@@ -264,27 +229,22 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
         {
             return OnMacCatalyst(plan, catalyst, overlays ?? []);
         }
-        if (Inspected(plan, wpf) is not { Kind: var kind })
+        if (Inspected(plan) is null)
         {
             return null;
         }
         (string socket, Socket? listener, string? problem) = Listen(plan.Name);
-        return new LiveApp(plan.Name, socket, listener, plan, overlays ?? [], kind, problem);
+        return new LiveApp(plan.Name, socket, listener, plan, overlays ?? [], problem);
     }
 
     /// <summary>The program a plan's start hands a startup hook to, as it runs (<see cref="LaunchPlan.DesktopApp"/>), where it is
     /// one this build of Passenger carries an inspector for: an Avalonia app (<see cref="DesktopPrograms.AvaloniaAssembly"/>
-    /// beside it), or, with <paramref name="wpf"/>, on Windows a WPF app (a WindowsDesktop app's assembly that references
-    /// WPF's); null for any other program, one taking Avalonia.Base alone too, or one its start goes past hooks for.</summary>
-    public static (string File, LiveAppKind Kind)? Inspected(LaunchPlan plan, bool wpf = true) =>
-        plan.DesktopApp() is not { PastHooks: null, File: var started } ? null
-        : DesktopPrograms.BesideAvalonia(started) && File.Exists(InspectorPath) ? (started, LiveAppKind.Avalonia)
-        : wpf && OperatingSystem.IsWindows() && File.Exists(WpfInspectorPath) && IsWpf(started) ? (started, LiveAppKind.Wpf)
-        : null;
+    /// beside it). Programs without the controls assembly or where startup hooks have already run are passed over.</summary>
+    public static string? Inspected(LaunchPlan plan) =>
+        plan.DesktopApp() is { PastHooks: null, File: var started }
+            && DesktopPrograms.BesideAvalonia(started) && File.Exists(InspectorPath) ? started : null;
 
-    /// <summary>The live app for a plan that runs an app on a device whose build deployed Avalonia or .NET MAUI (its controls'
-    /// assembly among the assemblies its Debug build deployed, Avalonia's first): the framework's inspector, with the files it
-    /// carries and, for Avalonia, its overlays, for the start to put in (<see cref="Run.Devices.DeviceLaunches"/>), listening
+    /// <summary>The live app for a plan whose device build deployed Avalonia's controls assembly: the inspector, its files and overlays, for the start to put in (<see cref="Run.Devices.DeviceLaunches"/>), listening
     /// on an abstract socket of its own for the token only this launch knows; null for any other app, one not installed yet,
     /// or a build of Passenger without that inspector.</summary>
     private static LiveApp? OnDevice(LaunchPlan plan, IReadOnlyList<string> overlays)
@@ -294,19 +254,18 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
             return null;
         }
         string assets = Path.Combine(app.Intermediate, "android", "assets");
-        if (!Directory.Exists(assets) || DeployedKind(Directory.EnumerateFiles(assets, "*.dll", SearchOption.AllDirectories)) is not { } kind)
+        if (!Directory.Exists(assets) || !HasAvalonia(Directory.EnumerateFiles(assets, "*.dll", SearchOption.AllDirectories)))
         {
             return null;
         }
-        string inspector = kind == LiveAppKind.Maui ? MauiInspectorPath : InspectorPath;
-        if (!File.Exists(inspector))
+        if (!File.Exists(InspectorPath))
         {
             return null;
         }
         string socket = $"pitstop-inspector-{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(4)).ToLowerInvariant()}";
         string token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
-        return new LiveApp(plan.Name, $"{Wire.Listens}{socket}", null, plan, kind == LiveAppKind.Avalonia ? overlays : [], kind,
-            device: new Run.Devices.DeviceInspector(socket, token, Carried(inspector), More(kind, plan, overlays)));
+        return new LiveApp(plan.Name, $"{Wire.Listens}{socket}", null, plan, overlays,
+            device: new Run.Devices.DeviceInspector(socket, token, Carried(InspectorPath), OverlayVariables(overlays)));
     }
 
     /// <summary>The files a start carries into an app on a device for an inspector: the hook first, then its folder's other
@@ -314,41 +273,39 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
     private static string[] Carried(string inspector) =>
         [inspector, .. Directory.EnumerateFiles(Path.GetDirectoryName(inspector)!, "*.dll").Where(f => !PathNames.Same(f, inspector)).Order(StringComparer.Ordinal)];
 
-    /// <summary>The live app for a plan that runs an app on an iOS simulator whose built bundle carries Avalonia or .NET MAUI: the
+    /// <summary>The live app for a plan that runs an app on an iOS simulator whose built bundle carries Avalonia: the
     /// framework's inspector, with the files the start carries into the app's data container, listening on a loopback port of
     /// its own (the simulator's .NET has no Unix sockets) for the token only this launch knows, its variables for the start to
     /// give it through simctl (<see cref="Run.Devices.SimulatorApp.Variables"/>); null for any other app, or a build of
     /// Passenger without that inspector.</summary>
     private static LiveApp? OnSimulator(LaunchPlan plan, Run.Devices.SimulatorApp app, IReadOnlyList<string> overlays)
     {
-        if (!Directory.Exists(app.Bundle) || DeployedKind(Directory.EnumerateFiles(app.Bundle, "*.dll")) is not { } kind)
+        if (!Directory.Exists(app.Bundle) || !HasAvalonia(Directory.EnumerateFiles(app.Bundle, "*.dll")))
         {
             return null;
         }
-        string inspector = kind == LiveAppKind.Maui ? MauiInspectorPath : InspectorPath;
-        if (!File.Exists(inspector) || Run.Devices.SimulatorApp.FreePort() is not { } port)
+        if (!File.Exists(InspectorPath) || Run.Devices.SimulatorApp.FreePort() is not { } port)
         {
             return null;
         }
         string listens = port.ToString(System.Globalization.CultureInfo.InvariantCulture);
         string token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
-        return new LiveApp(plan.Name, $"{Wire.Listens}{listens}", null, plan, kind == LiveAppKind.Avalonia ? overlays : [], kind,
-            device: new Run.Devices.DeviceInspector(listens, token, Carried(inspector), More(kind, plan, overlays)));
+        return new LiveApp(plan.Name, $"{Wire.Listens}{listens}", null, plan, overlays,
+            device: new Run.Devices.DeviceInspector(listens, token, Carried(InspectorPath), OverlayVariables(overlays)));
     }
 
-    /// <summary>The live app for a plan that runs a Mac Catalyst app whose bundle carries Avalonia or .NET MAUI: the framework's
+    /// <summary>The live app for a plan that runs a Mac Catalyst app whose bundle carries Avalonia: the
     /// inspector, carried into the folder the start carries into (<see cref="Run.Devices.MacCatalystApp.Carried"/>), listening
     /// on a socket there (its sandbox takes a listener only in its container) for the token only this launch knows, its
     /// variables for the start to give it through the opener; null for any other app, one whose build trims .NET's own
     /// assemblies, one whose socket's path is past what a socket's address holds, or a build of Passenger without that inspector.</summary>
     private static LiveApp? OnMacCatalyst(LaunchPlan plan, Run.Devices.MacCatalystApp app, IReadOnlyList<string> overlays)
     {
-        if (!app.Whole || !Directory.Exists(app.Assemblies) || DeployedKind(Directory.EnumerateFiles(app.Assemblies, "*.dll")) is not { } kind)
+        if (!app.Whole || !Directory.Exists(app.Assemblies) || !HasAvalonia(Directory.EnumerateFiles(app.Assemblies, "*.dll")))
         {
             return null;
         }
-        string inspector = kind == LiveAppKind.Maui ? MauiInspectorPath : InspectorPath;
-        if (!File.Exists(inspector))
+        if (!File.Exists(InspectorPath))
         {
             return null;
         }
@@ -358,35 +315,15 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
             return null;
         }
         string token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
-        return new LiveApp(plan.Name, $"{Wire.Listens}{app.InspectorSocket}", null, plan, kind == LiveAppKind.Avalonia ? overlays : [], kind,
-            device: new Run.Devices.DeviceInspector(app.InspectorSocket, token, Carried(inspector), More(kind, plan, overlays)));
+        return new LiveApp(plan.Name, $"{Wire.Listens}{app.InspectorSocket}", null, plan, overlays,
+            device: new Run.Devices.DeviceInspector(app.InspectorSocket, token, Carried(InspectorPath), OverlayVariables(overlays)));
     }
 
-    /// <summary>The variables an app on a device takes for its inspector beyond its hook, socket and token: MAUI's record of
-    /// where its XAML made each element and the project the inspector is told, or Avalonia's overlays.</summary>
-    private static KeyValuePair<string, string>[] More(LiveAppKind kind, LaunchPlan plan, IReadOnlyList<string> overlays) => kind == LiveAppKind.Maui
-        ? [new(RuntimeVariables.XamlDiagnosticsSourceInfo, "1"), .. plan.Project is { } project ? [new KeyValuePair<string, string>(Wire.ProjectVariable, Path.GetDirectoryName(project)!)] : (KeyValuePair<string, string>[])[]]
-        : overlays.Count > 0 ? [new(Wire.OverlaysVariable, string.Join(',', overlays))] : [];
+    private static KeyValuePair<string, string>[] OverlayVariables(IReadOnlyList<string> overlays) =>
+        overlays.Count > 0 ? [new(Wire.OverlaysVariable, string.Join(',', overlays))] : [];
 
-    /// <summary>The framework whose inspector an app on a device takes, by the assemblies its build deployed: Avalonia where
-    /// its controls are among them, else .NET MAUI where its controls are; null for neither.</summary>
-    public static LiveAppKind? DeployedKind(IEnumerable<string> assemblies)
-    {
-        bool maui = false;
-        foreach (string assembly in assemblies)
-        {
-            string name = Path.GetFileName(assembly);
-            if (string.Equals(name, DesktopPrograms.AvaloniaAssembly, StringComparison.OrdinalIgnoreCase))
-            {
-                return LiveAppKind.Avalonia;
-            }
-            maui |= string.Equals(name, MauiControls, StringComparison.OrdinalIgnoreCase);
-        }
-        return maui ? LiveAppKind.Maui : null;
-    }
-
-    /// <summary>The assembly of .NET MAUI's controls, which every MAUI app deploys.</summary>
-    private const string MauiControls = "Microsoft.Maui.Controls.dll";
+    private static bool HasAvalonia(IEnumerable<string> assemblies) =>
+        assemblies.Any(assembly => string.Equals(Path.GetFileName(assembly), DesktopPrograms.AvaloniaAssembly, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The inspector a XAML file's Avalonia previewer loads to say where it draws each element, and what the
     /// previewer's environment adds for it (the inspector first among its startup hooks, the socket, the file previewed);
@@ -405,24 +342,6 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
             [Wire.PreviewVariable] = file,
         };
         return (new LiveApp(name, socket, listener, null, []), added);
-    }
-
-    /// <summary>Whether an assembly is a WPF app's: it runs on the WindowsDesktop framework (its runtimeconfig.json names it)
-    /// and references WPF's assemblies, as a Windows Forms app does not.</summary>
-    private static bool IsWpf(string built)
-    {
-        try
-        {
-            if (!File.Exists(built) || RuntimeConfig.Read(built)?.OnWindowsDesktop != true)
-            {
-                return false;
-            }
-            return AssemblyFacts.Read(built)?.References.Any(r => r.Name is "PresentationFramework" or "PresentationCore") == true;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
     }
 
     /// <summary>The renderer debug overlays the app's windows show, as the launch asked or the app last said.</summary>
@@ -746,7 +665,6 @@ public sealed class LiveApp : ILiveTreeSource, IDisposable
         {
             case Wire.Hello when reply.Hello is { } hello:
                 Avalonia = hello.Avalonia;
-                FrameworkSaid = hello.Framework;
                 ProcessId = hello.ProcessId;
                 Headless = hello.Headless;
                 MainLeftOut = hello.MainLeftOut;

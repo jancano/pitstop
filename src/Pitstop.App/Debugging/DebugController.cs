@@ -1334,7 +1334,7 @@ public sealed class DebugController : IDisposable
         /// <summary>The SDK's browser refresh of its pages, a web service's; null for any other.</summary>
         internal BrowserRefresh? Browser { get; init; }
 
-        /// <summary>The Avalonia or WPF app it is, its inspector in it, whose XAML edits apply after its C#; null for any other.</summary>
+        /// <summary>The Avalonia app it is, its inspector in it, whose XAML edits apply after its C#; null for any other.</summary>
         internal LiveTree.LiveApp? App { get; init; }
 
         HotReload? IHotReloadTarget.HotReload => Reload;

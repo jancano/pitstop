@@ -1327,7 +1327,7 @@ public sealed class ProjectSession : IAsyncDisposable
     {
         UiThread.Check();
         ProfiledApp?.Dispose();
-        ProfiledApp = LiveTree.LiveApp.For(plan, Overlays, wpf: false);
+        ProfiledApp = LiveTree.LiveApp.For(plan, Overlays);
         InspectedChanged?.Invoke(this, EventArgs.Empty);
         return ProfiledApp?.Plan ?? plan;
     }

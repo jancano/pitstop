@@ -2,7 +2,7 @@ using Pitstop.Inspector;
 
 namespace Pitstop.App.LiveTree;
 
-/// <summary>What the Live Visual Tree shows a running program's tree from: an Avalonia or WPF app's inspector
+/// <summary>What the Live Visual Tree shows a running program's tree from: an Avalonia app's inspector
 /// (<see cref="LiveApp"/>), or a Godot game's remote debug connection (<see cref="Godot.GodotGame"/>). Its state, name,
 /// framework and process, its tree, and an element's details; events on the UI thread.</summary>
 public interface ILiveTreeSource

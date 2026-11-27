@@ -1,11 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-// What Passenger and its inspector inside an Avalonia app (src/Pitstop.Inspector), a WPF app
-// (src/Pitstop.Inspector.Wpf) or a .NET MAUI app (src/Pitstop.Inspector.Maui) say to each other, compiled into all
-// four: one JSON object a line over the socket Passenger names in the app's environment. The messages are the same for
-// each (a WPF dependency property or a MAUI bindable one is a property, its value sources take the same words); what one
-// framework has not (Avalonia's overlays, frames and binding values) another's inspector refuses. Passenger asks (Request) and the app answers each by its id (Reply); the app
+// The IDE and its Avalonia inspector share these JSON messages, one object per line over the launch socket.
+// The IDE asks with a Request and the app answers each by its id (Reply). The app
 // also tells without being asked (a Reply with an Event): hello once its UI runs, treeChanged as controls come and go,
 // picked when the person points at one, bindingFailed as a binding fails (from before hello), untold when it could not
 // tell all it had. While the app is paused its binding values are read through the debugger's evaluation of
@@ -37,11 +34,6 @@ public static class Wire
     /// <see cref="Request.Overlays"/> names them, joined by commas.</summary>
     [IdentifierHome]
     public const string OverlaysVariable = "PITSTOP_INSPECTOR_OVERLAYS";
-
-    /// <summary>A WPF or MAUI app's environment: the launched project's folder, where its XAML is when its build's symbols do
-    /// not say (a MAUI app's places are relative to it).</summary>
-    [IdentifierHome]
-    public const string ProjectVariable = "PITSTOP_INSPECTOR_PROJECT";
 
     /// <summary>The app's environment: the XAML file Avalonia's designer previews, whose each load the inspector has record
     /// where in the file it made each element, for <see cref="Placed"/>.</summary>

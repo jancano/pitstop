@@ -13,10 +13,6 @@ public sealed record LiveTreeState : IStateDocument<LiveTreeState>
 
     public double? Avalonia { get; init; }
 
-    public double? Wpf { get; init; }
-
-    public double? Maui { get; init; }
-
     public double? Godot { get; init; }
 
     public static IReadOnlyList<Action<JsonObject>> Upgrades { get; } = [StateStore.Unversioned];
@@ -24,8 +20,6 @@ public sealed record LiveTreeState : IStateDocument<LiveTreeState>
     /// <summary>The share dragged for a source's kind; null where none was, or for no source.</summary>
     public double? SplitOf(ILiveTreeSource? source) => source switch
     {
-        LiveApp { Kind: LiveAppKind.Wpf } => Wpf,
-        LiveApp { Kind: LiveAppKind.Maui } => Maui,
         LiveApp => Avalonia,
         Pitstop.App.Godot.GodotGame => Godot,
         _ => null,
@@ -34,14 +28,12 @@ public sealed record LiveTreeState : IStateDocument<LiveTreeState>
     /// <summary>The split dragged for a source's kind kept; as it was for no source.</summary>
     public LiveTreeState WithSplit(ILiveTreeSource? source, double share) => source switch
     {
-        LiveApp { Kind: LiveAppKind.Wpf } => this with { Wpf = Share(share) },
-        LiveApp { Kind: LiveAppKind.Maui } => this with { Maui = Share(share) },
         LiveApp => this with { Avalonia = Share(share) },
         Pitstop.App.Godot.GodotGame => this with { Godot = Share(share) },
         _ => this,
     };
 
-    public LiveTreeState Clamped() => this with { Avalonia = Share(Avalonia), Wpf = Share(Wpf), Maui = Share(Maui), Godot = Share(Godot) };
+    public LiveTreeState Clamped() => this with { Avalonia = Share(Avalonia), Godot = Share(Godot) };
 
     private static double? Share(double? share) => share is double kept && double.IsFinite(kept) ? Math.Clamp(kept, Least, 1 - Least) : null;
 }

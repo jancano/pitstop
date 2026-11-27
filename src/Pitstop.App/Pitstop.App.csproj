@@ -137,18 +137,6 @@
     <!-- The system's hotkeys on the headless platform, which Passenger's own windows drawn on no screen take as an unseen
          app does. -->
     <Compile Include="../Pitstop.Inspector/SystemHotkeys.cs" Link="HeadlessHotkeys.cs" />
-    <!-- Built first and carried under inspector/maui/, never linked: a .NET MAUI app Passenger runs on a device loads it
-         (LiveTree/LiveApp.cs). It is built once for every platform, as MAUI's cross-platform assemblies it is compiled
-         against are the same on each. -->
-    <ProjectReference Include="../Pitstop.Inspector.Maui/Pitstop.Inspector.Maui.csproj" ReferenceOutputAssembly="false" Private="false"
-                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun"
-                      Condition="'$(PitstopManagedPayload)' != 'false'" />
-    <!-- Built first on every system and carried under inspector/wpf/ by a Windows build alone, never linked: a WPF app Passenger
-         runs or debugs loads it (LiveTree/LiveApp.cs). It targets net8.0-windows, which this project's own framework is not, so
-         it is built for its own framework rather than this one's. -->
-    <ProjectReference Include="../Pitstop.Inspector.Wpf/Pitstop.Inspector.Wpf.csproj" ReferenceOutputAssembly="false" Private="false"
-                      SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishReadyToRun;TargetFramework"
-                      Condition="'$(PitstopManagedPayload)' != 'false'" />
     <!-- Built first and carried under testframes/, never linked: a test run of an Avalonia headless project loads it
          (Testing/TestFrames.cs). It is built once for every platform. -->
     <ProjectReference Include="../Pitstop.TestFrames/Pitstop.TestFrames.csproj" ReferenceOutputAssembly="false" Private="false"
@@ -270,36 +258,6 @@
     <ItemGroup>
       <InspectorFile Include="@(InspectorAssembly->'%(RootDir)%(Directory)%(Filename).dll');@(InspectorAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" />
       <None Include="@(InspectorFile)" Link="inspector/%(InspectorFile.Folder)%(InspectorFile.Filename)%(InspectorFile.Extension)"
-            CopyToOutputDirectory="PreserveNewest" Visible="false" />
-    </ItemGroup>
-  </Target>
-
-  <!-- The MAUI inspector becomes this project's output under inspector/maui/: its own assembly alone, since the app it
-       loads into brings the MAUI it uses. -->
-  <Target Name="IncludeMauiInspector" BeforeTargets="AssignTargetPaths" Condition="'$(PitstopManagedPayload)' != 'false'">
-    <MSBuild Projects="../Pitstop.Inspector.Maui/Pitstop.Inspector.Maui.csproj" Targets="GetTargetPath"
-             RemoveProperties="RuntimeIdentifier;SelfContained;PublishReadyToRun" BuildInParallel="$(BuildInParallel)">
-      <Output TaskParameter="TargetOutputs" ItemName="MauiInspectorAssembly" />
-    </MSBuild>
-    <ItemGroup>
-      <MauiInspectorFile Include="@(MauiInspectorAssembly->'%(RootDir)%(Directory)%(Filename).dll');@(MauiInspectorAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" />
-      <None Include="@(MauiInspectorFile)" Link="inspector/maui/%(MauiInspectorFile.Filename)%(MauiInspectorFile.Extension)"
-            CopyToOutputDirectory="PreserveNewest" Visible="false" />
-    </ItemGroup>
-  </Target>
-
-  <!-- The WPF inspector becomes this project's output under inspector/wpf/ where Passenger runs on Windows (a build on
-       Windows for no system, or a publish for win-x64 or win-arm64), the only place a WPF app runs: its own assembly alone,
-       since the app it loads into brings the WPF it uses. -->
-  <Target Name="IncludeWpfInspector" BeforeTargets="AssignTargetPaths"
-          Condition="'$(PitstopManagedPayload)' != 'false' And (('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows'))) Or $(RuntimeIdentifier.StartsWith('win')))">
-    <MSBuild Projects="../Pitstop.Inspector.Wpf/Pitstop.Inspector.Wpf.csproj" Targets="GetTargetPath"
-             RemoveProperties="RuntimeIdentifier;SelfContained;PublishReadyToRun;TargetFramework" BuildInParallel="$(BuildInParallel)">
-      <Output TaskParameter="TargetOutputs" ItemName="WpfInspectorAssembly" />
-    </MSBuild>
-    <ItemGroup>
-      <WpfInspectorFile Include="@(WpfInspectorAssembly->'%(RootDir)%(Directory)%(Filename).dll');@(WpfInspectorAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" />
-      <None Include="@(WpfInspectorFile)" Link="inspector/wpf/%(WpfInspectorFile.Filename)%(WpfInspectorFile.Extension)"
             CopyToOutputDirectory="PreserveNewest" Visible="false" />
     </ItemGroup>
   </Target>
