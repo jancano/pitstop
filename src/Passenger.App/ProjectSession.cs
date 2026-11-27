@@ -256,13 +256,25 @@ public sealed class ProjectSession : IAsyncDisposable
         ProjectSession session = new(setup, folder)
         {
             NamedSolution = named,
-            Xmake = new(folder, setup.EvaluateXmake),
+            Xmake = new(folder, setup.EvaluateXmake ?? ((root, output, cancel) => new XmakeService(setup.Settings().NativeTools.Xmake)
+                .EvaluateAsync(root, output, cancel))),
             LocalHistory = History.LocalHistory.Open(folder, setup.StateFolder, setup.HistoryKeeping),
             ahead = ahead,
             Trusted = trusted,
         };
-        session.Cpp = new(folder, setup.StateFolder, session.Xmake!, setup.StartClangd);
-        session.Modules = new(session.Xmake!);
+        session.Cpp = new(folder, setup.StateFolder, session.Xmake!, setup.StartClangd ?? ((root, database, logs, cancel) =>
+        {
+            Settings.NativeToolPaths paths = setup.Settings().NativeTools;
+            return Pitstop.Cpp.Clangd.StartAsync(root, database, logs, paths.Clangd, paths.LlvmBin, cancel);
+        }));
+        session.Modules = new(session.Xmake!)
+        {
+            CreateScanner = () =>
+            {
+                Settings.NativeToolPaths paths = setup.Settings().NativeTools;
+                return new Pitstop.Modules.ModuleScanner(paths.ScanDeps, paths.LlvmBin);
+            },
+        };
         session.Configurations.Xmake = session.Xmake;
         if (session.Xmake is { } native)
         {

@@ -28,6 +28,10 @@ public sealed class NewModuleDialog : IdeWindow
     private string? created;
     private string? target;
     private bool openCreated = true;
+    private XmakeScriptEdit? scriptEdit;
+    private XmakeWorkspace? evaluated;
+
+    internal Func<string, bool>? HasUnsavedScriptChanges { get; init; }
 
     internal NewModuleDialog(XmakeWorkspaceSession xmake, ModuleWorkspaceSession modules, XmakeWorkspace workspace, Action<string> open)
     {
@@ -94,17 +98,27 @@ public sealed class NewModuleDialog : IdeWindow
         preview.IsReadOnly = true;
     }
 
+    internal void SelectUnit(ModuleUnitKind kind, string? owner)
+    {
+        kinds.SelectedItem = kinds.Items.OfType<Choice>().First(choice => choice.Kind == kind);
+        if (owner is not null && targets.Items.Contains(owner))
+        {
+            targets.SelectedItem = owner;
+        }
+    }
+
     private void Create()
     {
         if (created is not null)
         {
-            Close();
+            ApplyOrClose();
             return;
         }
         try
         {
             WorkspaceTrust.Check(workspace.Root);
-            if (!ReferenceEquals(xmake.Snapshot, workspace) || xmake.IsEvaluating || targets.SelectedItem is not string owner || kinds.SelectedItem is not Choice choice)
+            if (!ReferenceEquals(xmake.Snapshot, workspace) || xmake.WhyNotOperate is not null
+                || targets.SelectedItem is not string owner || kinds.SelectedItem is not Choice choice)
             {
                 status.Text = "The Xmake configuration changed. Reopen New Module to select a current target.";
                 return;
@@ -164,22 +178,55 @@ public sealed class NewModuleDialog : IdeWindow
         {
             return;
         }
-        XmakeTarget targetInfo = workspace.Targets.First(item => item.Name == owner);
-        if (xmake.Snapshot?.Targets.Any(item => item.Name == owner && item.SourceFiles.Contains(source, PathNames.Comparer)) == true)
+        evaluated = xmake.Snapshot;
+        scriptEdit = null;
+        if (xmake.Problem is not null || evaluated?.Targets.FirstOrDefault(item => item.Name == owner) is not { } targetInfo)
+        {
+            status.Text = xmake.Problem ?? "Xmake did not return the selected target. The module file was created.";
+            return;
+        }
+        if (targetInfo.SourceFiles.Contains(source, PathNames.Comparer))
         {
             status.Text = $"Xmake includes the new source in {owner}.";
             return;
         }
-        string relative = Path.GetRelativePath(Path.GetDirectoryName(targetInfo.Script)!, source).Replace('\\', '/');
-        preview.IsReadOnly = false;
-        string delimiter = "=";
-        while (relative.Contains($"]{delimiter}]", StringComparison.Ordinal))
-        {
-            delimiter += "=";
-        }
-        preview.Text = $"add_files([{delimiter}[{relative}]{delimiter}])";
         openProject.IsVisible = true;
-        status.Text = xmake.Problem ?? $"Add the preview inside target {owner} in {Path.GetFileName(targetInfo.Script)}. Pitstop has left the project script as it was.";
+        try
+        {
+            scriptEdit = XmakeProjectEdits.AddFile(evaluated!, targetInfo, source, header: false);
+            preview.IsReadOnly = false;
+            preview.Text = scriptEdit.Addition;
+            confirm.Content = "Apply Project Change";
+            status.Text = $"Review the text to append to {Path.GetRelativePath(workspace.Root, scriptEdit.Path)}.";
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or UntrustedFolderException)
+        {
+            status.Text = error.Message;
+        }
+    }
+
+    private void ApplyOrClose()
+    {
+        if (scriptEdit is not { } plan)
+        {
+            Close();
+            return;
+        }
+        try
+        {
+            if (!ReferenceEquals(evaluated, xmake.Snapshot) || xmake.WhyNotOperate is not null || HasUnsavedScriptChanges?.Invoke(plan.Path) == true)
+            {
+                status.Text = "Review the current Xmake configuration and save any unsaved script changes before applying the module.";
+                return;
+            }
+            plan.Apply(preview.Text ?? "");
+            xmake.Refresh();
+            Close();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or UntrustedFolderException)
+        {
+            status.Text = error.Message;
+        }
     }
 
     private sealed record Choice(ModuleUnitKind Kind)

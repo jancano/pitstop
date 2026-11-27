@@ -373,7 +373,7 @@ public partial class ExplorerView : UserControl
             && (viewAsked == ExplorerViewKind.Xmake || viewAsked == ExplorerViewKind.Solution && !HasSolutionView))
         {
             Tree.LoadXmake(folder, xmake);
-            ViewName.Text = "Xmake";
+            ViewName.Text = "Targets";
         }
         else
         {

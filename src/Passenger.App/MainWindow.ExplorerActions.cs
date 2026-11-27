@@ -27,6 +27,7 @@ public partial class MainWindow
     private void AddExplorerActions()
     {
         Explorer.MenuFor = ExplorerMenu;
+        AddNativeProjectActions();
         Row(A.NewFile, "New File…", row => AskName("New File", string.Empty, name => CreateFile(NewGoesIn(row)!, name, string.Empty)), Holds);
         Row(A.NewFolder, "New Folder…", row => AskName("New Folder", string.Empty, name => CreateFolder(NewGoesIn(row)!, name)), Holds);
         // Class, Interface, Record, Struct and Enum share this place, chosen in its popup.
@@ -231,7 +232,7 @@ public partial class MainWindow
     /// is the solution's own (made in a solution folder by its own actions) and the dependencies.</summary>
     private static string? NewGoesIn(ExplorerNode row) => row.IsSolutionItem ? null : row.Kind switch
     {
-        NodeKind.Folder => row.Path,
+        NodeKind.Folder or NodeKind.XmakeWorkspace => row.Path,
         NodeKind.Project or NodeKind.Solution or NodeKind.File when row.Path is not null => Path.GetDirectoryName(row.Path),
         _ => null,
     };
@@ -347,13 +348,19 @@ public partial class MainWindow
     {
         if (node.Kind == NodeKind.XmakeWorkspace)
         {
-            return Made([Item(A.Build), Item(A.RebuildSolution), Item(A.CleanSolution), new MenuEntry(null), Item(A.ShowModules), Item(A.ModuleGraph), Item(A.NewModule)]);
+            return Made([Item(A.Build), Item(A.RebuildSolution), Item(A.CleanSolution), new MenuEntry(null), Item(A.AddNativeTarget),
+                Item(A.NewFolder), Item(A.ShowModules), Item(A.ModuleGraph), Item(A.NewModule)]);
         }
         if (node.NativeTarget is { } native)
         {
-            return Made(native.Kind == "binary"
-                ? [Item(A.BuildSelected), Item(A.RebuildSelected), Item(A.CleanSelected), new MenuEntry(null), Item(A.RunHere)]
-                : [Item(A.BuildSelected), Item(A.RebuildSelected), Item(A.CleanSelected)]);
+            List<MenuEntry> items = [Item(A.BuildSelected), Item(A.RebuildSelected), Item(A.CleanSelected)];
+            if (native.Kind == "binary")
+            {
+                items.Add(Item(A.RunHere));
+            }
+            items.AddRange([new MenuEntry(null), Item(A.AddCSource), Item(A.AddCppSource), Item(A.AddNativeHeader), Item(A.NewModule),
+                Item(A.NewPartition), Item(A.NewModuleImplementation), Item(A.NativeTargetDependencies)]);
+            return Made(items);
         }
         bool onDisk = node.Kind is NodeKind.File or NodeKind.Folder or NodeKind.Project;
         bool holds = node.Kind is NodeKind.Folder or NodeKind.Project or NodeKind.Solution or NodeKind.File && !node.IsSolutionItem;

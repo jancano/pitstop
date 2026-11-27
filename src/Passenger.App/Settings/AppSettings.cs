@@ -86,6 +86,7 @@ public sealed record AppSettings : IStateDocument<AppSettings>
     public double CaretWidth { get; init; } = Passenger.Editor.Carets.DefaultWidth;
     public bool Ligatures { get; init; }
     public bool ShowLineNumbers { get; init; } = true;
+    public NativeToolPaths NativeTools { get; init; } = new();
 
     /// <summary>The navigation bar over each editor of a file with an outline, naming where its caret is.</summary>
     public bool ShowNavigationBar { get; init; } = true;
@@ -639,6 +640,7 @@ public sealed record AppSettings : IStateDocument<AppSettings>
             IntelliJShortcuts = Readable(IntelliJShortcuts),
             LiveTemplates = (LiveTemplates ?? []).Where(t => t.Value is not null).ToDictionary(t => t.Key, t => t.Value.Clamped()),
             PostfixTemplates = PostfixTemplates ?? [],
+            NativeTools = NativeTools ?? defaults.NativeTools,
             NodeInterpreter = string.IsNullOrWhiteSpace(NodeInterpreter) ? null : NodeInterpreter.Trim(),
             EslintPackage = string.IsNullOrWhiteSpace(EslintPackage) ? null : EslintPackage.Trim(),
             EslintFiles = string.IsNullOrWhiteSpace(EslintFiles) ? defaults.EslintFiles : EslintFiles.Trim(),

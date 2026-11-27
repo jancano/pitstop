@@ -166,6 +166,17 @@ public partial class MainWindow
     {
         AppSettings before = settings;
         settings = next;
+        NativeToolPaths tools = next.NativeTools;
+        NativeToolPaths previousTools = before.NativeTools;
+        if ((tools.Xmake, tools.LlvmBin, tools.Clangd) != (previousTools.Xmake, previousTools.LlvmBin, previousTools.Clangd)
+            && session.Xmake is { IsXmake: true } native)
+        {
+            native.Refresh();
+        }
+        else if (tools.ScanDeps != previousTools.ScanDeps)
+        {
+            session.Modules?.Refresh();
+        }
         Keymap keymap = keys.Keymap;
         keys.Keymap = AppActions.Keymap();
         keys.Reset();
@@ -229,7 +240,11 @@ public partial class MainWindow
     public SettingsDialog ShowSettings()
     {
         SettingsDialog dialog = new(settings, actions!, (from, to) => settingsStore.Apply(from, to), Mcp.AgentSetup.Here(Folder, settings.TerminalShell), settingsStore.BeginPreview(),
-            session.EditorConfigs, keepsWorkspace ? new TrustAnswers(Store().Trust.Value, ApplyTrust) : null);
+            session.EditorConfigs, keepsWorkspace ? new TrustAnswers(Store().Trust.Value, ApplyTrust) : null)
+        {
+            NativeWorkspaceFolder = Folder,
+            NativeConfiguration = session.Xmake?.Snapshot?.Configuration,
+        };
         IdeErrors.Observe(dialog.ShowDialog(this));
         return dialog;
     }

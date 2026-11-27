@@ -9,6 +9,41 @@ namespace Passenger.UnitTests.Workspace;
 public sealed class XmakeOperationsTests
 {
     [Fact]
+    public void Project_edit_plans_reject_changed_scripts_cycles_and_revoked_trust()
+    {
+        string root = PathNames.Canonical(Directory.CreateTempSubdirectory("pitstop-xmake-edit-").FullName);
+        string script = Path.Combine(root, "xmake.lua");
+        File.WriteAllText(script, "set_project(\"proposed\")\r\n");
+        using IDisposable ask = WorkspaceTrust.Ask(root);
+        try
+        {
+            XmakeTarget binary = new("app", "binary", script, null, [], [], [], new([], [], null));
+            XmakeTarget library = binary with { Name = "library", Kind = "static" };
+            XmakeWorkspace workspace = new(root, new("xmake", new(3, 1, 2), "3.1.2"),
+                new("proposed", "debug", "mingw", "x86_64", root, script, "llvm"), [binary, library],
+                new(["app"], ImmutableDictionary<string, ImmutableArray<string>>.Empty.Add("app", ["library"])), [], [script], null, null);
+            Assert.Throws<UntrustedFolderException>(() => XmakeProjectEdits.AddTarget(workspace, "other", "binary"));
+            WorkspaceTrust.Trust(root);
+            Assert.Throws<ArgumentException>(() => XmakeProjectEdits.AddDependency(workspace, library, binary));
+            Assert.Throws<ArgumentException>(() => XmakeProjectEdits.NewSourcePath(workspace, "../escaped.cpp", ".cpp"));
+            XmakeScriptEdit edit = XmakeProjectEdits.AddTarget(workspace, "other", "binary");
+            Assert.Contains("\r\n    set_kind", edit.Addition, StringComparison.Ordinal);
+            File.AppendAllText(script, "-- edited while the preview was open\r\n");
+            Assert.Throws<IOException>(() => edit.Apply(edit.Addition));
+            XmakeScriptEdit valid = XmakeProjectEdits.AddTarget(workspace, "other", "binary");
+            WorkspaceTrust.TakeBack(root);
+            Assert.Throws<UntrustedFolderException>(() => valid.Apply(valid.Addition));
+            Assert.DoesNotContain("set_kind", File.ReadAllText(script), StringComparison.Ordinal);
+        }
+        finally
+        {
+            WorkspaceTrust.TakeBack(root);
+            File.Delete(script);
+            Directory.Delete(root);
+        }
+    }
+
+    [Fact]
     public void Uses_the_evaluated_target_and_leaves_configuration_intact_when_cleaning()
     {
         string root = PathNames.Canonical(Directory.CreateTempSubdirectory("pitstop-xmake-command-").FullName);

@@ -839,11 +839,12 @@ public partial class MainWindow : IdeWindow
     {
         // Each shows only while the open folder holds what it serves, every one added later too.
         Dock.WhyUnserved = window => window.Serves.WhyNot(session.Folder is null ? null : session.Holds);
-        Dock.Add(new Docking.ToolWindow(ToolWindowIds.Explorer, "Explorer", IconKeys.Explorer, Explorer, Docking.ToolAnchor.LeftTop)
+        Dock.Add(new Docking.ToolWindow(ToolWindowIds.Explorer, "Project Explorer", IconKeys.Explorer, Explorer, Docking.ToolAnchor.LeftTop)
         {
             Serves = ToolWindowServes.EveryFolder,
             Action = AppActions.FocusExplorer,
             HeaderTools = Explorer.TakeHeaderTools(),
+            PrioritizeHeaderTools = true,
             Options = ExplorerOptions,
             HeaderAction = (AppActions.SelectOpenedFile, IconKeys.Locate, SelectOpenedFileTitle),
             Chosen = () => Explorer.SelectedNodes,

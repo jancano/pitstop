@@ -43,8 +43,8 @@ public partial class MainWindow
         { WhyNot = _ => NeedsModuleWorkspace() ?? MissingProvider() });
         actions.Add(new IdeAction(AppActions.ModuleConsumers, "Find Module Consumers", "C++ Modules", _ => ShowModuleGraph(ModuleAtCaret()))
         { WhyNot = _ => NeedsModuleWorkspace() ?? MissingProvider(), Menus = [new MenuPlace("Navigate", 2, 9)] });
-        actions.Add(new IdeAction(AppActions.NewModule, "New C++ Module…", "C++ Modules", _ => ShowNewModule())
-        { WhyNot = _ => NeedsModuleWorkspace() ?? (session.Xmake?.Snapshot is null ? "Wait for Xmake evaluation." : null), Menus = [new MenuPlace("File", 0, 5)] });
+        actions.Add(new IdeAction(AppActions.NewModule, "Add C++ Module…", "C++ Modules", c => ShowNativeModule(ModuleUnitKind.PrimaryInterface, RowOf(c)?.NativeTarget))
+        { WhyNot = c => NativeEditRefusal(c, needsTarget: true), Menus = [new MenuPlace("File", 0, 5)] });
 
         string? MissingProvider() => ModuleAtCaret() is null ? "Place the caret on a module with a confirmed provider." : null;
     }
@@ -93,9 +93,11 @@ public partial class MainWindow
         moduleGraph.Show(index, session.Modules?.Status ?? "Open a trusted Xmake workspace to scan modules.", focus, document);
     }
 
-    public NewModuleDialog? ShowNewModule()
+    public NewModuleDialog? ShowNewModule() => ShowNativeModule(ModuleUnitKind.PrimaryInterface, null);
+
+    private NewModuleDialog? ShowNativeModule(ModuleUnitKind kind, Pitstop.Xmake.XmakeTarget? target)
     {
-        if (NeedsModuleWorkspace() is not null || session.Xmake is not { Snapshot: { } workspace } native || session.Modules is not { } modules)
+        if (NeedsModuleWorkspace() is not null || session.Xmake is not { WhyNotOperate: null, Snapshot: { } workspace } native || session.Modules is not { } modules)
         {
             return null;
         }
@@ -106,7 +108,8 @@ public partial class MainWindow
             {
                 OpenFile(path);
             }
-        });
+        }) { HasUnsavedScriptChanges = HasUnsavedScriptChanges };
+        dialog.SelectUnit(kind, target?.Name);
         IdeErrors.Observe(dialog.ShowDialog(this));
         return dialog;
     }

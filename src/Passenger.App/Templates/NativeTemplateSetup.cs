@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Passenger.App.Settings;
 using Passenger.App.State;
 using Passenger.Core;
 using Pitstop.Cpp;
@@ -10,7 +11,10 @@ namespace Passenger.App.Templates;
 
 public sealed record NativeTemplateSetup(NativeCatalog Catalog, TemplateEnvironment Environment, string Toolchain)
 {
-    public static async Task<NativeTemplateSetup> LoadAsync(CancellationToken cancel)
+    public static Task<NativeTemplateSetup> LoadAsync(CancellationToken cancel) =>
+        LoadAsync(new NativeToolPaths(), _ => true, cancel);
+
+    internal static async Task<NativeTemplateSetup> LoadAsync(NativeToolPaths tools, Func<string, bool> allowed, CancellationToken cancel)
     {
         string bundled = Path.Combine(AppContext.BaseDirectory, "native-templates");
         NativeCatalog catalog = NativeCatalog.Discover([Path.Combine(bundled, "xmake"), Path.Combine(StateStore.DefaultRoot, "templates")], cancel);
@@ -20,10 +24,20 @@ public sealed record NativeTemplateSetup(NativeCatalog Catalog, TemplateEnvironm
         try
         {
             string scratch = Path.GetTempPath();
-            XmakeInstallation xmake = await new XmakeService().DiscoverAsync(scratch, cancel).ConfigureAwait(false);
-            ClangdInstallation llvm = await Clangd.DiscoverAsync(scratch, cancel).ConfigureAwait(false);
+            string? xmakePath = NativeToolPaths.Find("xmake", tools.Xmake ?? System.Environment.GetEnvironmentVariable(XmakeService.ExecutableVariable));
+            string? llvmBin = tools.LlvmBin ?? System.Environment.GetEnvironmentVariable(Clangd.LlvmBinVariable);
+            string? configured = tools.Clangd ?? System.Environment.GetEnvironmentVariable(Clangd.ExecutableVariable);
+            string? stock = OperatingSystem.IsWindows()
+                ? Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles), "LLVM", "bin") : null;
+            string? clangdPath = NativeToolPaths.Find("clangd", configured ?? (llvmBin is null ? null : Path.Combine(llvmBin, NativeToolPaths.Tool("clangd"))), stock);
+            Guard(xmakePath);
+            Guard(clangdPath);
+            XmakeInstallation xmake = await new XmakeService(xmakePath).DiscoverAsync(scratch, cancel).ConfigureAwait(false);
+            ClangdInstallation llvm = await Clangd.DiscoverAsync(scratch, clangdPath, llvmBin, cancel).ConfigureAwait(false);
+            string? clang = tools.Clang is null ? llvm.Clang : NativeToolPaths.Find("clang", tools.Clang);
+            Guard(clang);
             if (!OperatingSystem.IsWindows() || xmake.Version != new Version(3, 1, 2) || llvm.Version != new Version(23, 1, 6)
-                || llvm.Clang is not { } clang || !llvm.Modules)
+                || clang is null || !llvm.Modules)
             {
                 return new(catalog, pending, "Template capabilities are unknown. Select Xmake 3.1.2 and LLVM-MinGW 23.1.6 on Windows x64.");
             }
@@ -58,6 +72,14 @@ public sealed record NativeTemplateSetup(NativeCatalog Catalog, TemplateEnvironm
         catch (Exception error) when (error is XmakeException or IOException or ClangdException or TimeoutException)
         {
             return new(catalog, pending, error.Message);
+        }
+
+        void Guard(string? tool)
+        {
+            if (tool is not null && !allowed(PathNames.Canonical(tool)))
+            {
+                throw new IOException("Trust the current workspace before probing tools it contains.");
+            }
         }
     }
 }

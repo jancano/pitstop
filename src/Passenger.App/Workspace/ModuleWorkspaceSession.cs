@@ -8,7 +8,6 @@ namespace Passenger.App.Workspace;
 public sealed class ModuleWorkspaceSession
 {
     private readonly XmakeWorkspaceSession xmake;
-    private readonly ModuleScanner scanner = new();
     private readonly Debounce refresh;
     private XmakeWorkspace? desired;
     private CancellationTokenSource? active;
@@ -23,6 +22,7 @@ public sealed class ModuleWorkspaceSession
     }
 
     public ModuleWorkspace? Snapshot { get; private set; }
+    internal Func<ModuleScanner> CreateScanner { get; init; } = () => new();
     public string Status { get; private set; } = "Waiting for Xmake configuration";
     public event EventHandler? Changed;
 
@@ -87,6 +87,7 @@ public sealed class ModuleWorkspaceSession
             {
                 return;
             }
+            ModuleScanner scanner = CreateScanner();
             worker = BackgroundWork.Run(() => scanner.ScanAsync(workspace, current.Token), current.Token);
             ModuleWorkspace snapshot = await worker;
             if (!closed && active == current && !current.IsCancellationRequested && ReferenceEquals(desired, workspace) && WorkspaceTrust.Trusts(workspace.Root))

@@ -29,6 +29,7 @@ public sealed partial class SettingsDialog : IdeWindow
     public const string TerminalPage = "Terminal";
     public const string VersionControlPage = "Version Control";
     public const string BuildPage = "Build";
+    public const string NativeToolchainsPage = "Native Toolchains";
     public const string RunPage = "Run";
     public const string HotReloadPage = "Hot Reload";
     public const string NodePage = "Node.js";
@@ -58,7 +59,7 @@ public sealed partial class SettingsDialog : IdeWindow
     public static readonly string[] DiscordChoices = ["Pitstop only", "The solution", "The solution and the file"];
 
     private static readonly string[] Order = [Appearance, SystemPage, AccessibilityPage, TrustPage, UpdatesPage, ExplorerPage, EditorPage, CodeFoldingPage, PostfixPage, XamlCodeStylePage, GDScriptCodeStylePage, LiveTemplatesPage,
-        VersionControlPage, BuildPage, RunPage, HotReloadPage, NodePage, EslintPage, PrettierPage, SchemasPage, StylesheetsPage, DockerPage, GodotPage, TerminalPage, McpPage, DiscordPage, DiagnosticsPage, KeymapPage];
+        VersionControlPage, NativeToolchainsPage, BuildPage, RunPage, HotReloadPage, NodePage, EslintPage, PrettierPage, SchemasPage, StylesheetsPage, DockerPage, GodotPage, TerminalPage, McpPage, DiscordPage, DiagnosticsPage, KeymapPage];
 
     /// <summary>The names of Attributes format's choices, in <see cref="Passenger.Xaml.Features.XamlAttributeStyle"/>'s
     /// order.</summary>
@@ -413,6 +414,7 @@ public sealed partial class SettingsDialog : IdeWindow
         Add(BuildPage, "Tool Window: open the build progress view even when the build is invoked implicitly (i.e. Run/Debug)", implicitly,
             "build tool window open progress view start implicitly run debug profile before launch toolset presentation");
         Add(Declared.ShowBuildResults);
+        AddNativeToolchains();
 
         Add(Declared.HotReloadWhileDebugging);
         Add(Declared.HotReload);

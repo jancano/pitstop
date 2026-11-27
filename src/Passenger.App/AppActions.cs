@@ -352,6 +352,13 @@ public static class AppActions
     public const string RevealModule = "app.modules.reveal";
     public const string ModuleConsumers = "app.modules.consumers";
     public const string NewModule = "app.modules.new";
+    public const string NewPartition = "app.modules.newPartition";
+    public const string NewModuleImplementation = "app.modules.newImplementation";
+    public const string AddNativeTarget = "app.native.addTarget";
+    public const string AddCSource = "app.native.addCSource";
+    public const string AddCppSource = "app.native.addCppSource";
+    public const string AddNativeHeader = "app.native.addHeader";
+    public const string NativeTargetDependencies = "app.native.targetDependencies";
     public const string RebuildSolution = "app.build.rebuildSolution";
     public const string CleanSolution = "app.build.cleanSolution";
     public const string BuildSelected = "app.build.selected";

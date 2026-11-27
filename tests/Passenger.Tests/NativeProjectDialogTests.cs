@@ -6,6 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Passenger.App;
+using Passenger.App.Settings;
 using Passenger.App.Templates;
 using Passenger.Core;
 using Pitstop.Templates;
@@ -14,6 +15,37 @@ namespace Passenger.Tests;
 
 public sealed class NativeProjectDialogTests
 {
+    [AvaloniaFact]
+    public void Native_toolchain_settings_use_explicit_paths_and_report_capabilities()
+    {
+        string? xmake = Environment.GetEnvironmentVariable("PITSTOP_XMAKE");
+        string? clangd = Environment.GetEnvironmentVariable("PITSTOP_CLANGD");
+        Assert.SkipWhen(!OperatingSystem.IsWindows() || xmake is null || clangd is null,
+            "Set PITSTOP_XMAKE and PITSTOP_CLANGD to the Windows reference tools to verify the toolchain settings.");
+        MainWindow window = new();
+        window.Show();
+        try
+        {
+            window.ApplySettings(window.Settings with { NativeTools = new() { Xmake = xmake, Clangd = clangd } });
+            SettingsDialog dialog = window.ShowSettings();
+            dialog.Page = SettingsDialog.NativeToolchainsPage;
+            Ui.Settle();
+            Ui.ClickButton(dialog, "Detect Toolchains");
+            TextBlock report = Find<TextBlock>(dialog, "NativeToolchainReport");
+            Ui.WaitFor(() => report.Text?.Contains("clang-scan-deps:", StringComparison.Ordinal) == true, "the installed toolchain report");
+            Assert.Contains("Xmake: 3.1.2", report.Text!, StringComparison.Ordinal);
+            Assert.Contains("clangd: 23.1.6", report.Text!, StringComparison.Ordinal);
+            Assert.Contains("P1689 probe succeeded", report.Text!, StringComparison.Ordinal);
+            Assert.Contains("Standard library module source:", report.Text!, StringComparison.Ordinal);
+            Assert.Contains("MinGW-w64 Windows SDK headers:", report.Text!, StringComparison.Ordinal);
+            dialog.Close();
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     [Fact]
     public async Task Discovers_verified_standards_from_the_reference_toolchain()
     {

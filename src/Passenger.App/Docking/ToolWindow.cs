@@ -142,6 +142,8 @@ public sealed class ToolWindow([IdentifierOf(typeof(ToolWindowIds))] string id, 
     /// <summary>Something in its view took the keys.</summary>
     public event EventHandler? GotKeys;
 
+    internal bool PrioritizeHeaderTools { get; init; }
+
     /// <summary>Controls of its own for its header, after its title (the Explorer's view switch).</summary>
     public Control? HeaderTools
     {

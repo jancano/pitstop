@@ -20,7 +20,18 @@ internal sealed record ScanCommand([property: JsonIgnore] TranslationUnit Unit,
 public sealed class ModuleScanner
 {
     public const string ExecutableVariable = "PITSTOP_CLANG_SCAN_DEPS";
+    public const string LlvmBinVariable = "PITSTOP_LLVM_BIN";
     private static readonly TimeSpan ScanLimit = TimeSpan.FromMinutes(2);
+    private readonly string? executableOverride;
+    private readonly string? llvmBin;
+
+    public ModuleScanner() : this(null, null) { }
+
+    public ModuleScanner(string? executableOverride, string? llvmBin)
+    {
+        this.executableOverride = executableOverride;
+        this.llvmBin = llvmBin;
+    }
 
     public async Task<ModuleWorkspace> ScanAsync(INativeWorkspace workspace, CancellationToken stop)
     {
@@ -139,16 +150,16 @@ public sealed class ModuleScanner
         return $"clang-scan-deps exited {result.ExitCode}. {detail[..Math.Min(detail.Length, 1200)]}";
     }
 
-    private static string Discover(List<ScanCommand> commands)
+    private string Discover(List<ScanCommand> commands)
     {
         string tool = OperatingSystem.IsWindows() ? "clang-scan-deps.exe" : "clang-scan-deps";
-        if (Environment.GetEnvironmentVariable(ExecutableVariable) is { Length: > 0 } configured)
+        if ((executableOverride ?? Environment.GetEnvironmentVariable(ExecutableVariable)) is { Length: > 0 } configured)
         {
             return Path.IsPathFullyQualified(configured) && File.Exists(configured) ? configured
                 : throw new IOException($"Set {ExecutableVariable} to the full path to {tool}. The configured file does not exist.");
         }
         IEnumerable<string> bins = commands.Select(command => Path.GetDirectoryName(command.Unit.Context.Compiler)).OfType<string>();
-        string? llvm = Environment.GetEnvironmentVariable("PITSTOP_LLVM_BIN");
+        string? llvm = llvmBin ?? Environment.GetEnvironmentVariable(LlvmBinVariable);
         return bins.Prepend(llvm).OfType<string>().Distinct(PathNames.Comparer).Where(Path.IsPathFullyQualified)
             .Select(bin => Path.Combine(bin, tool)).FirstOrDefault(File.Exists) ?? Programs.OnPath(tool)
             ?? throw new IOException($"Install clang-scan-deps with the configured LLVM toolchain or set {ExecutableVariable}.");

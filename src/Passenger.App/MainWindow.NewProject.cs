@@ -39,6 +39,10 @@ public partial class MainWindow
 
     public NativeProjectDialog ShowNativeProject(Func<CancellationToken, Task<NativeTemplateSetup>>? load = null)
     {
+        string? from = Folder;
+        Settings.NativeToolPaths tools = settings.NativeTools;
+        load ??= cancel => NativeTemplateSetup.LoadAsync(tools,
+            path => from is null || !PathNames.Within(path, from) || WorkspaceTrust.Trusts(from), cancel);
         NativeProjectDialog dialog = new(BesideLast(), PickFolder, plan => Open(plan.Destination, window =>
         {
             string? source = plan.Files.Select(file => file.RelativePath).FirstOrDefault(path =>

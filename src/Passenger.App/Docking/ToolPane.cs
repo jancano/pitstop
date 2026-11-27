@@ -293,6 +293,7 @@ internal sealed class ToolPane : DockPanel
             Window.PropertyChanged -= OnWindowChanged;
         }
         Window = window;
+        ShrinkingRow.SetGivesWayLast(title, window?.PrioritizeHeaderTools != true);
         body.Content = null;
         tools.Content = null;
         if (window is not null)

@@ -1,4 +1,6 @@
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using Passenger.App;
 using Passenger.App.Explorer;
 using Passenger.App.Workspace;
@@ -9,6 +11,64 @@ namespace Passenger.Tests;
 
 public sealed class XmakeWorkspaceLifecycleTests
 {
+    [AvaloniaFact]
+    public void Native_project_edits_preview_and_refresh_evaluated_membership()
+    {
+        string folder = NewWorkspace();
+        string script = Path.Combine(folder, XmakeService.ProjectFile);
+        string initial = File.ReadAllText(script);
+        string covered = Path.Combine(folder, "covered.cpp");
+        MainWindow window = OpenWindow((root, _, _) =>
+        {
+            XmakeWorkspace snapshot = Snapshot(root, "app");
+            XmakeTarget item = snapshot.Targets[0];
+            if (File.Exists(covered))
+            {
+                item = item with { SourceFiles = [covered] };
+            }
+            return Task.FromResult(snapshot with { Targets = [item] });
+        });
+        try
+        {
+            Ui.Await(window.OpenFolder(folder), "the Xmake project to open");
+            Ui.WaitFor(() => window.Session.Xmake?.Snapshot is not null, "the evaluated target");
+            NativeProjectEditDialog target = Open(AppActions.AddNativeTarget);
+            Field(target, "NativeEditName").Text = "fresh";
+            Ui.ClickButton(target, "Preview Changes");
+            TextBox preview = Field(target, "NativeEditPreview");
+            Assert.Contains("fresh", preview.Text!, StringComparison.Ordinal);
+            Assert.Equal(initial, File.ReadAllText(script));
+            preview.Text += "-- reviewed\n";
+            Ui.ClickButton(target, "Apply Project Change");
+            Assert.EndsWith("-- reviewed\n", File.ReadAllText(script), StringComparison.Ordinal);
+            Ui.WaitFor(() => window.Session.Xmake?.IsEvaluating == false, "refresh after the confirmed script edit");
+            string confirmed = File.ReadAllText(script);
+
+            NativeProjectEditDialog source = Open(AppActions.AddCppSource);
+            Field(source, "NativeEditName").Text = "covered";
+            Ui.ClickButton(source, "Create File");
+            Ui.WaitFor(() => source.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text == "Xmake includes this file in app."),
+                "the confirmed Xmake membership");
+            Assert.True(File.Exists(covered));
+            Assert.Equal(confirmed, File.ReadAllText(script));
+            Ui.ClickButton(source, "Done");
+        }
+        finally
+        {
+            window.Close();
+        }
+
+        NativeProjectEditDialog Open(string action)
+        {
+            Assert.True(window.Perform(action));
+            Ui.Settle();
+            return Assert.Single(window.OwnedWindows.OfType<NativeProjectEditDialog>());
+        }
+
+        static TextBox Field(Window dialog, string name) =>
+            Assert.Single(dialog.GetVisualDescendants().OfType<TextBox>(), text => text.Name == name);
+    }
+
     [AvaloniaFact]
     public void Xmake_recognition_keeps_scripts_behind_workspace_trust()
     {

@@ -14,11 +14,14 @@ public static class Clangd
     public const string LlvmBinVariable = "PITSTOP_LLVM_BIN";
     private static readonly JsonElement Capabilities = MakeCapabilities();
 
-    public static async Task<ClangdInstallation> DiscoverAsync(string safeDirectory, CancellationToken cancel)
+    public static Task<ClangdInstallation> DiscoverAsync(string safeDirectory, CancellationToken cancel) =>
+        DiscoverAsync(safeDirectory, null, null, cancel);
+
+    public static async Task<ClangdInstallation> DiscoverAsync(string safeDirectory, string? executableOverride, string? llvmBin, CancellationToken cancel)
     {
         string suffix = OperatingSystem.IsWindows() ? ".exe" : "";
-        string? configured = Environment.GetEnvironmentVariable(ExecutableVariable);
-        string? llvm = Environment.GetEnvironmentVariable(LlvmBinVariable);
+        string? configured = executableOverride ?? Environment.GetEnvironmentVariable(ExecutableVariable);
+        string? llvm = llvmBin ?? Environment.GetEnvironmentVariable(LlvmBinVariable);
         string? onPath = null;
         if (string.IsNullOrWhiteSpace(configured))
         {
@@ -77,11 +80,14 @@ public static class Clangd
             ? version : throw new ClangdException($"The configured executable did not report a clangd version. Check {ExecutableVariable}.");
     }
 
-    public static async Task<LanguageSession> StartAsync(string folder, string database, string logs, CancellationToken cancel)
+    public static Task<LanguageSession> StartAsync(string folder, string database, string logs, CancellationToken cancel) =>
+        StartAsync(folder, database, logs, null, null, cancel);
+
+    public static async Task<LanguageSession> StartAsync(string folder, string database, string logs, string? executableOverride, string? llvmBin, CancellationToken cancel)
     {
         WorkspaceTrust.Check(folder);
         Directory.CreateDirectory(logs);
-        ClangdInstallation installation = await DiscoverAsync(logs, cancel).ConfigureAwait(false);
+        ClangdInstallation installation = await DiscoverAsync(logs, executableOverride, llvmBin, cancel).ConfigureAwait(false);
         cancel.ThrowIfCancellationRequested();
         WorkspaceTrust.Check(folder);
         string[] args = ["--background-index", "--pch-storage=memory", "-j=2", "--enable-config=false",
