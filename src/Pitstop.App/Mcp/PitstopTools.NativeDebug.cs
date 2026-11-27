@@ -32,7 +32,12 @@ public sealed partial class PitstopTools
             if (operation == "breakpoints")
             {
                 return new { breakpoints = debugger.Breakpoints.All.Where(item => PathNames.Within(item.Path, folder)).Take(count)
-                    .Select(point => new { source = Relative(folder, point.Path), line = point.Line + 1, point.Enabled, point.Status, verifiedLine = point.MovedBy is int shift ? point.Line + shift + 1 : (int?)null }).ToArray() };
+                    .Select(point => new
+                    {
+                        source = Relative(folder, point.Path), line = point.Line + 1, point.Enabled, point.Status,
+                        state = BreakpointStates.StateOf(point, point.HasReport, debugger.Breakpoints.Muted),
+                        verifiedLine = point.MovedBy is int shift ? point.Line + shift + 1 : (int?)null,
+                    }).ToArray() };
             }
             if (debugger.Session is not { Engine: DebugEngine.Native } active || sessionId is not null && active.NativeSessionId != sessionId)
             {

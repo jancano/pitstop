@@ -1307,7 +1307,7 @@ public partial class MainWindow : IdeWindow
     {
         Debugging.BreakpointsWindow window = new(session.Debug.Breakpoints, chosen, ExceptionTypesAsync,
             !ManagedDevelopment || session.Debug.Session?.Engine == Debugging.DebugEngine.Native,
-            session.Debug.NativeModuleName);
+            session.Debug.NativeBreakpointContext);
         window.Closed += (_, show) =>
         {
             popups.Close();

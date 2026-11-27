@@ -30,6 +30,7 @@ public abstract class Breakpoint
     /// <summary>What the debuggers said of it: with several programs debugged at once, bound where any bound it, else unknown
     /// while any has yet to bind it, else refused.</summary>
     public BreakpointStatus Status { get; private set; }
+    internal bool HasReport => said.Count > 0;
 
     /// <summary>The debugger's word on a breakpoint that will not be hit ("no symbols loaded").</summary>
     public string? Message { get; private set; }

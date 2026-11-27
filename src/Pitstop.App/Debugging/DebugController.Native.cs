@@ -87,6 +87,17 @@ public sealed partial class DebugController
         return context is { Units.Length: 1, Providers.Length: 1 } ? context.Providers[0].Name : null;
     }
 
+    internal string? NativeBreakpointContext(string source)
+    {
+        string? module = NativeModuleName(source);
+        if (Session?.NativeWorkspace is { } workspace &&
+            workspace.Targets.Where(target => target.SourceFiles.Contains(source, PathNames.Comparer)).Take(2).ToArray() is [var target])
+        {
+            return module is null ? target.Name : $"{module} · {target.Name}";
+        }
+        return module;
+    }
+
     private void RevealFrameModule(object? sender, DapStackFrame frame)
     {
         if (frame.Source?.Path is { } source && NativeModuleName(source) is not null)

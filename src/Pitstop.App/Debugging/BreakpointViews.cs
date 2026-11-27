@@ -660,8 +660,7 @@ public sealed class BreakpointsWindow : UserControl
         if (native)
         {
             string context = breakpoint is LineBreakpoint source && moduleOf?.Invoke(source.Path) is { } module ? $" · {module}" : string.Empty;
-            string state = breakpoint.Status == BreakpointStatus.Unknown && breakpoint.Message is null ? string.Empty
-                : BreakpointStates.StateOf(breakpoint, debugging: true, store.Muted);
+            string state = BreakpointStates.StateOf(breakpoint, debugging: breakpoint.HasReport, store.Muted);
             what = string.Join(" · ", new[] { state, what, breakpoint.HitCondition is { } count ? $"hit {count}" : null }
                 .Where(value => !string.IsNullOrWhiteSpace(value))) + context;
         }
