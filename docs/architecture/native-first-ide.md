@@ -56,7 +56,7 @@ The initial package's MCP smoke test timed out opening a source file after succe
 
 ## Repository organization
 
-The evaluated compilation and template boundaries live in `Pitstop.ProjectSystem` and `Pitstop.Templates`. Retain the inherited solution, project, assembly and namespace names while those projects share code and build fixtures with Passenger. A dedicated rename is the appropriate point to update embedded resources, XAML, scripts, tests and CI together. Keep the current Pitstop settings, IPC and project-state identities through that change.
+The evaluated compilation and template boundaries live in `Pitstop.ProjectSystem` and `Pitstop.Templates`. Phase 7.5 consolidated first-party project, assembly and namespace names under Pitstop while preserving settings, IPC and project-state identities. See [Codebase consolidation](codebase-consolidation.md) for the remaining compatibility identifiers and verification boundaries.
 
 ## Validation status
 

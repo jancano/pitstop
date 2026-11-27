@@ -31,14 +31,14 @@ Pitstop.Cpp can consume the semantic path when connecting clangd. Pitstop.Module
 
 ```powershell
 just build
-dotnet test tests/Passenger.UnitTests --no-build --filter FullyQualifiedName~XmakeMetadataTests
-dotnet test tests/Passenger.Tests --no-build --filter FullyQualifiedName~XmakeWorkspaceLifecycleTests
+dotnet test tests/Pitstop.UnitTests --no-build --filter FullyQualifiedName~XmakeMetadataTests
+dotnet test tests/Pitstop.Tests --no-build --filter FullyQualifiedName~XmakeWorkspaceLifecycleTests
 
 $env:PITSTOP_XMAKE = '<xmake>/xmake.exe'
 $env:PITSTOP_TEST_LLVM_MINGW = '<llvm-mingw>'
 $env:Path = "$env:PITSTOP_TEST_LLVM_MINGW/bin;$env:Path"
 $env:PITSTOP_TEST_XMAKE_SHOTS = "$PWD/artifacts/xmake-explorer"
-dotnet test tests/Passenger.Tests --no-build --filter FullyQualifiedName~XmakeNativeExplorerTests
+dotnet test tests/Pitstop.Tests --no-build --filter FullyQualifiedName~XmakeNativeExplorerTests
 ```
 
 The native test is opt-in. When a screenshot directory is set, it captures light and dark frames from Pitstop's Explorer with the actual Phase 1 modules fixture open.

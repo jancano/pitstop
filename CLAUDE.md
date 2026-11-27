@@ -248,7 +248,7 @@ Projects in `src/`; `find_symbol` finds the rest from the names here. A pointer'
 - `Pitstop.Xaml`: Passenger's own XAML core (a XAML file's URI in its assembly only `XamlProject.UriOf`/`PathIn`, never a pack:// or avares:// string built elsewhere; a theme dictionary's variant only `ThemeVariants.VariantOf`) (no Avalonia; WPF shares it; not Avalonia.Ide.CompletionEngine); a
   binding's path is read once (`BindingPath`) for the check, Go to Declaration, uses and completion. MAUI's XAML is a
   dialect of it (`MauiDialect`, its implied namespaces in `XamlFile`); a `{…}` a dialect reads as a C# expression is the
-  compiler's to check (`XamlDialect.IsExpression`), its places in the value and the code mapped only through `MauiExpressionCode.CodeAt`/`WrittenOver`, never halved (an attached property's read reorders them), its hover the server's own through the extension's `MauiExpressionHover`, an agent's question in one waiting through `PitstopTools.ServerSettledAsync`, the wait every C# question takes. A MAUI expression is answered through the extension's `MauiExpressionDocument`, written from the editor's text as MAUI's generator writes it, never from its `.xsg.cs`; MAUI's runtime loader reads only the namespaces a file writes and takes a merged dictionary's Source from the build, so the preview sends both written in (`MauiPreviewText`); the live check reruns the generator in a fork (`MauiXamlChecks`), asked again as the server loads projects (`XamlService.ServerLoaded`), never only as the file opens; a namespace whose `targetPlatform=` names another platform is passed over (`XamlDialect.TargetPlatformOf`, `BuildsFor`), and a framework's reference pack is the one the SDK's `KnownFrameworkReference` names (`FrameworkDependencies.TargetingPacks`), never `<framework>.Ref` built by hand.
+  compiler's to check (`XamlDialect.IsExpression`), its places in the value and the code mapped only through `MauiExpressionCode.CodeAt`/`WrittenOver`, never halved (an attached property's read reorders them), its hover the server's own through the extension's `MauiExpressionHover`, an agent's question in one waiting through `PitstopTools.ServerSettledAsync`, the wait every C# question takes. A MAUI expression is answered through the extension's `MauiExpressionDocument`, written from the editor's text as MAUI's generator writes it, never from its `.xsg.cs`; the live check reruns the generator in a fork (`MauiXamlChecks`), asked again as the server loads projects (`XamlService.ServerLoaded`), never only as the file opens; a namespace whose `targetPlatform=` names another platform is passed over (`XamlDialect.TargetPlatformOf`, `BuildsFor`), and a framework's reference pack is the one the SDK's `KnownFrameworkReference` names (`FrameworkDependencies.TargetingPacks`), never `<framework>.Ref` built by hand.
 - `Pitstop.Lsp`: the LSP client (StreamJsonRpc, whose types never leave the project), `LspDocument` (never a change
   between a "\r\n"'s halves), Roslyn's server (`RoslynServer.targets`), the web servers under `web/` (to move a pin:
   edit `WebServers/package.json`, `npm install --package-lock-only --ignore-scripts`, the notices' "Inside web/").
@@ -724,7 +724,7 @@ Report security issues through [SECURITY.md](SECURITY.md). CI builds and tests l
 - **Avalonia's font fallback sweeps every loaded font in name order before asking the platform** (AvaloniaUI#22464), and
   never calls a `FontCollectionBase`'s own `TryMatchCharacter`: `FallbackFonts` is an `IFontCollection`. Apple's fonts
   shape by `morx`, which `CanShapeScript` doesn't count.
-- **SkiaSharp and HarfBuzzSharp are taken newer than Avalonia names** (Pitstop.App and Passenger.MauiPreview reference
+- **SkiaSharp and HarfBuzzSharp are taken newer than Avalonia names** (Pitstop.App references
   both and the Linux natives; the tests' Avalonia apps keep Avalonia's, `tests/AvaloniaGraphs/Avalonia12`): a move checks
   that every member Avalonia.Skia and Avalonia.HarfBuzz call still resolves. Svg.Skia's `SKSvg`
   disposes its picture, so a picture is never let go while a frame may still draw it.
@@ -839,7 +839,7 @@ frames sets aside the caret's blinks.
 **What a test needs, or skips saying why without:** a Linux container engine (label everything with `Docker.RunLabel`,
 remove dead runs' leftovers, never prune or start or stop Docker Desktop, pull nothing large: a test needing an image
 the engine lacks names it and skips), Node.js (web languages), Postgres's image, `PassengerAspireRuntime=true` (real
-AppHosts, about 900 MB), Windows (WPF's preview and inspector, data breakpoints on x64). A new SDK fails WpfXamlTests
+AppHosts, about 900 MB), Windows (WPF editing, data breakpoints on x64). A new SDK fails WpfXamlTests
 naming the `WindowsDesktopRefVersion` to pin.
 
 **Debuggees** (`tests/Debuggees`): tests find their lines by code (`Debuggees.Line`), so changing a line's code means

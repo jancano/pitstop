@@ -33,8 +33,8 @@ $env:PITSTOP_CLANG_SCAN_DEPS = "$env:PITSTOP_TEST_LLVM_MINGW/bin/clang-scan-deps
 $env:Path = "$env:PITSTOP_TEST_LLVM_MINGW/bin;$env:Path"
 $env:PITSTOP_TEST_MODULE_SHOTS = "$PWD/artifacts/module-intelligence-shots"
 just build
-dotnet test tests/Passenger.UnitTests --no-build --filter FullyQualifiedName~ModuleWorkspaceTests
-dotnet test tests/Passenger.Tests --no-build --filter FullyQualifiedName~ModuleIntelligenceTests
+dotnet test tests/Pitstop.UnitTests --no-build --filter FullyQualifiedName~ModuleWorkspaceTests
+dotnet test tests/Pitstop.Tests --no-build --filter FullyQualifiedName~ModuleIntelligenceTests
 ```
 
 For manual experiments, use disposable copies of the fixtures. Configure them with the [reference Xmake command](xmake-workspaces.md). `modules` exercises cross-target requirements and partitions, and `standard-library` imports `std`. `module-contexts` imports a module in Debug and omits the import in Release while keeping same-named providers in distinct targets. `module-cycle` intentionally makes Xmake reject compilation database generation. `module-generated` declares a missing generated source. Run `xmake lua generate.lua` explicitly from its disposable copy to materialize that source before retrying the scan.

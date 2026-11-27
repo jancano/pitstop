@@ -44,7 +44,7 @@ scheme file of your own.
 variants, `dark` and `light` for one each; a token goes in `tokens` or in `dark` and `light`, never both. Any of the
 three may be left out, as may `background`, `fonts`, `languages`, `layout` and `vscode` below.
 
-A token is named as its key in [Tokens.axaml](../src/Passenger.App/Theme/Tokens.axaml) without `Passenger.`:
+A token is named as its key in [Tokens.axaml](../src/Pitstop.App/Theme/Tokens.axaml) without `Passenger.`:
 `Frame`, `Editor.Background`, `Syntax.Keyword`, `SyntaxStyle.Comment`, `ControlRadius`, and the margins
 `EditorTextPadding` (between the editor's gutter and its text), `ToolHeaderHeight`, `ToolTitleMargin` and
 `DialogFooterPadding`. Tokens.axaml gives every token
@@ -389,14 +389,14 @@ until then, and one that cannot be fetched is said, never dropped from your sett
 ## Passenger's themes
 
 Passenger carries its own theme, `Tokens.axaml`, and beside it two in its built-in source
-(`src/Passenger.App/Theme/BuiltIn`): Cubicle, square, dense and calm, a blue accent on cool greys, its own default layout
+(`src/Pitstop.App/Theme/BuiltIn`): Cubicle, square, dense and calm, a blue accent on cool greys, its own default layout
 and a smaller code size, to show what a theme can set; and High Contrast, every word at WCAG AAA's 7:1 on what it is read
 on, marks and edges at 4.5:1 and stronger rules, comments in italics, which Passenger shows in the chosen theme's place,
 dark or light as the system is, while the system asks for high contrast (a Windows contrast theme, macOS's Increase
 contrast, GNOME's High Contrast) and Settings | Accessibility | Use High Contrast while the system asks for it is on;
 Settings | Accessibility | Colours of states lays a colour-blind safe palette (blue, orange, vermilion and purple, after Okabe
 and Ito) over any theme for tests' results, changes and signatures, worked out from its grounds to read as its own do. Harbour, the ten generated themes and the Reef code colour scheme live in
-Passenger's themes repository, whose copy the tests carry in `tests/Passenger.Tests/Themes`. Harbour.json and Reef.json
+Passenger's themes repository, whose copy the tests carry in `tests/Pitstop.Tests/Themes`. Harbour.json and Reef.json
 are written by hand; Cubicle, High Contrast and the ten are written by `tools/themes.py` from its palettes (`just themes
 FOLDER`, the ten into a checkout of the repository or the tests' copy, the two into the built-in source), so change a palette there rather
 than its file. The same recipe draws the repository's pictures (`tools/theme-pictures.py`, into its `pictures/`) from plain

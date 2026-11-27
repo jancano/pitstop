@@ -26,14 +26,14 @@ Cross-module changes are refreshed after saving a module input recognized in the
 
 ```powershell
 just build
-dotnet test tests/Passenger.Tests --no-build --filter 'FullyQualifiedName~CppLanguageTests|FullyQualifiedName~CppLanguageLifecycleTests'
+dotnet test tests/Pitstop.Tests --no-build --filter 'FullyQualifiedName~CppLanguageTests|FullyQualifiedName~CppLanguageLifecycleTests'
 
 $env:PITSTOP_XMAKE = '<xmake>/xmake.exe'
 $env:PITSTOP_TEST_LLVM_MINGW = '<llvm-mingw>'
 $env:PITSTOP_CLANGD = "$env:PITSTOP_TEST_LLVM_MINGW/bin/clangd.exe"
 $env:Path = "$env:PITSTOP_TEST_LLVM_MINGW/bin;$env:Path"
 $env:PITSTOP_TEST_CPP_SHOTS = "$PWD/artifacts/cpp-language-shots"
-dotnet test tests/Passenger.Tests --no-build --filter FullyQualifiedName~CppNativeLanguageTests
+dotnet test tests/Pitstop.Tests --no-build --filter FullyQualifiedName~CppNativeLanguageTests
 ```
 
 Native tests report why they skip if the reference installation is missing. They operate on copies of the Phase 1 fixtures. The optional capture directory receives light and dark frames for exported-symbol completion, navigation to the exported partition, and the undeclared-export diagnostic.

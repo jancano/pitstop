@@ -48,8 +48,8 @@ $env:PITSTOP_TEST_LLVM_MINGW = '<llvm-mingw>'
 $env:Path = "$env:PITSTOP_TEST_LLVM_MINGW/bin;$env:Path"
 $env:PITSTOP_TEST_NATIVE_SHOTS = "$PWD/artifacts/native-build-run-shots"
 just build
-dotnet test tests/Passenger.UnitTests --no-build --filter FullyQualifiedName~Xmake
-dotnet test tests/Passenger.Tests --no-build --filter FullyQualifiedName~XmakeNativeBuildRunTests
+dotnet test tests/Pitstop.UnitTests --no-build --filter FullyQualifiedName~Xmake
+dotnet test tests/Pitstop.Tests --no-build --filter FullyQualifiedName~XmakeNativeBuildRunTests
 ```
 
 For a manual run, copy `tests/CppWorkspaces/native-run` to a working folder and configure it with `xmake f -m debug -p mingw --toolchain=llvm --mingw=<llvm-mingw> --sdk=<llvm-mingw> --require=no`. The `interactive` target accepts any line to echo, `spawn` to start an owned child, `quit` to exit successfully, and `fail` to return 7. The `compile-error` and `link-error` targets produce separate Clang and LLD failures. The automated suite also copies the Phase 1 named-module and `import std` fixtures into scratch workspaces.

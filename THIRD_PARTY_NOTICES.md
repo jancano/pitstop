@@ -108,7 +108,7 @@ renames, code actions and fixes, formatting, inlay hints), by reading Roslyn's s
 (dotnet/roslyn dc1db3e7, the 5.11.0 package's), and by running those tests without each; the 5.13.0-1.26514.10 package
 (d82b7f7d) carries the same six.
 
-Left out of `roslyn/` (`RoslynServerLeftOut` in `src/Passenger.Lsp/RoslynServer.targets`, with their satellite
+Left out of `roslyn/` (`RoslynServerLeftOut` in `src/Pitstop.Lsp/RoslynServer.targets`, with their satellite
 resources; the build fails if the package stops carrying one, and a test checks that none is beside the server and that
 the server never looks for one), since no path Passenger takes loads them:
 
@@ -132,7 +132,7 @@ At `initialized` Razor's in-process services create Visual Studio Telemetry's de
 Utilities.Internal; nothing in the server starts that session, which it must be to send anything (`--telemetryLevel off`
 governs only Roslyn's own telemetry, which goes nowhere without C# Dev Kit).
 
-Changed: `Microsoft.CodeAnalysis.LanguageServer.dll`, the server's own (MIT), is carried as `tools/Passenger.RoslynPatch`
+Changed: `Microsoft.CodeAnalysis.LanguageServer.dll`, the server's own (MIT), is carried as `tools/Pitstop.RoslynPatch`
 writes it at build: its `LanguageServerTelemetry.CreateSession` returns no session, as it does when the server is given no
 telemetry level, and the assembly is IL alone, without its ReadyToRun code. Every server from 5.12.0-1.26475.2 until one
 carrying dotnet/roslyn#86130 makes Visual Studio Telemetry's default session and starts it from its `Main` whatever
@@ -143,9 +143,9 @@ server never runs, and Razor's reporter, whose session nothing starts.
 ### Inside `web/`
 
 The language servers of JavaScript, TypeScript, HTML, CSS, JSON, Dockerfiles and YAML, npm packages of plain JavaScript
-that run on the machine's Node.js, one copy for every system. `src/Passenger.Lsp/WebServers/package.json` pins the servers and
+that run on the machine's Node.js, one copy for every system. `src/Pitstop.Lsp/WebServers/package.json` pins the servers and
 `package-lock.json` every package they bring, each with its tarball's sha512, which the build checks as it unpacks them
-(`tools/Passenger.NodePackages`, run by `src/Passenger.Lsp/WebServers.targets`); nothing is downloaded as the app runs.
+(`tools/Pitstop.NodePackages`, run by `src/Pitstop.Lsp/WebServers.targets`); nothing is downloaded as the app runs.
 They are carried as their tarballs hold them, less the HTML server's own TypeScript's tsserver, tsc and translated
 messages, which it never loads. Each package is named here by its npm name, with the licence its package.json states and
 the copyright line its licence file carries (else its author); the app's notices carry each one's licence file whole,
@@ -182,10 +182,10 @@ carry of their own. `tools/check-notices.py` fails naming any package the lock f
 ## In the container tools
 
 What `just container-tools` makes and each release carries as `Passenger-container-tools-<rid>.tar.gz`
-(`src/Passenger.ContainerTools`, for linux-x64, linux-arm64, linux-musl-x64 and linux-musl-arm64): `passenger-tools`,
+(`src/Pitstop.ContainerTools`, for linux-x64, linux-arm64, linux-musl-x64 and linux-musl-arm64): `passenger-tools`,
 which Passenger copies into or mounts in a Linux container to debug and profile the .NET programs there, self-contained,
 with `LICENSE.txt` and notices of its own beside it, `THIRD-PARTY-NOTICES.txt`, written at its build by
-`tools/Passenger.Notices` from the packages its `.deps.json` names (each one's copyright, licence text and own notices),
+`tools/Pitstop.Notices` from the packages its `.deps.json` names (each one's copyright, licence text and own notices),
 then the debugger's copied source below (SharpDbg and ICorDebugSharp, ILSpy's and ClrDebug's code). The app never
 carries them. `tools/check-notices.py` fails naming any package they carry on one of their systems that is not named
 here.
@@ -213,9 +213,9 @@ Packages the build or the tests use that no app carries.
 | `Avalonia.BuildServices` | Avalonia's build task, whose telemetry `AVALONIA_TELEMETRY_OPTOUT` turns off (the README says how) | MIT | Copyright 2023-2026 © The AvaloniaUI Project |
 | `Microsoft.CodeAnalysis.Analyzers` | Roslyn's analyzers, which come with Microsoft.CodeAnalysis.Common | MIT | © Microsoft Corporation. All rights reserved. |
 | `Krafs.Publicizer` | the debugger's build | MIT | © Krafs 2024 |
-| `Microsoft.Build`, `Microsoft.Build.Framework`, `Microsoft.NET.StringTools`, `System.Configuration.ConfigurationManager`, `System.Diagnostics.EventLog`, `System.Reflection.MetadataLoadContext`, `System.Security.Cryptography.ProtectedData` | the project host's build: MSBuild's API and what it depends on, compiled against and never carried, since the host runs the installed SDK's own MSBuild (`src/Passenger.Host`) | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Build`, `Microsoft.Build.Framework`, `Microsoft.NET.StringTools`, `System.Configuration.ConfigurationManager`, `System.Diagnostics.EventLog`, `System.Reflection.MetadataLoadContext`, `System.Security.Cryptography.ProtectedData` | the project host's build: MSBuild's API and what it depends on, compiled against and never carried, since the host runs the installed SDK's own MSBuild (`src/Pitstop.Host`) | MIT | © Microsoft Corporation. All rights reserved. |
 | `Microsoft.CodeAnalysis.BannedApiAnalyzers` | the build: the calls Passenger's own code may not make, and the entry points a test may not call | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.NETCore.Platforms`, `System.Buffers`, `System.Collections.Immutable`, `System.Memory`, `System.Numerics.Vectors`, `System.Reflection.Metadata`, `System.Runtime.CompilerServices.Unsafe`, `System.Text.Encoding.CodePages`, `System.Threading.Tasks.Extensions` | the build: what Passenger's own analyzers (src/Passenger.Analyzers), compiled for netstandard2.0 against Roslyn, depend on | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.NETCore.Platforms`, `System.Buffers`, `System.Collections.Immutable`, `System.Memory`, `System.Numerics.Vectors`, `System.Reflection.Metadata`, `System.Runtime.CompilerServices.Unsafe`, `System.Text.Encoding.CodePages`, `System.Threading.Tasks.Extensions` | the build: what Passenger's own analyzers (src/Pitstop.Analyzers), compiled for netstandard2.0 against Roslyn, depend on | MIT | © Microsoft Corporation. All rights reserved. |
 | `NETStandard.Library` | the build: netstandard2.0's library, which Passenger's own analyzers are compiled against | MIT | Copyright (c) .NET Foundation and Contributors |
 | `xunit.v3`, `xunit.v3.assert`, `xunit.v3.common`, `xunit.v3.core.mtp-v1`, `xunit.v3.extensibility.core`, `xunit.v3.mtp-v1`, `xunit.v3.runner.common`, `xunit.v3.runner.inproc.console`, `xunit.analyzers`, `xunit.runner.visualstudio` | the tests | Apache-2.0 | Copyright (C) .NET Foundation |
 | `Avalonia.Headless.XUnit` | the tests on Avalonia's headless platform | MIT | Copyright 2013-2026 © The AvaloniaUI Project |
@@ -256,7 +256,7 @@ Packages the build or the tests use that no app carries.
 | `Chickensoft.GoDotTest` | GoDotTest, the test runner inside a Godot C# game, which the Godot tests write into a game: downloaded for the tests' package cache (tests/GodotGraphs); Passenger never carries it | MIT | © 2023 Chickensoft |
 | `Chickensoft.Log`, `Chickensoft.Collections` | GoDotTest's dependencies, downloaded for the tests' package cache (tests/GodotGraphs) | MIT | © 2025 Chickensoft |
 | `JetBrains.Annotations` | GoDotTest's dependency, downloaded for the tests' package cache (tests/GodotGraphs) | MIT | Copyright (c) 2016-2025 JetBrains s.r.o. |
-| `Mono.Cecil` | the build: Roslyn's server's own assembly written again without Visual Studio Telemetry's session (`tools/Passenger.RoslynPatch`); and GdUnit4's dependency, downloaded for the tests' package cache (tests/GodotGraphs) | MIT | no copyright line; its author: Jb Evain |
+| `Mono.Cecil` | the build: Roslyn's server's own assembly written again without Visual Studio Telemetry's session (`tools/Pitstop.RoslynPatch`); and GdUnit4's dependency, downloaded for the tests' package cache (tests/GodotGraphs) | MIT | no copyright line; its author: Jb Evain |
 | `Microsoft.TestPlatform.AdapterUtilities` | GdUnit4's adapter's dependency, and MSTest's and NUnit's adapters', downloaded for the tests' package cache (tests/GodotGraphs, tests/UnitTestGraphs) | MIT | © Microsoft Corporation. All rights reserved. |
 | `xunit`, `xunit.assert`, `xunit.core`, `xunit.extensibility.core`, `xunit.extensibility.execution` | xunit v2, which the unit testing tests write into the test projects they make: downloaded for the tests' package cache (tests/UnitTestGraphs); Passenger never carries it | Apache-2.0 | Copyright (C) .NET Foundation |
 | `xunit.abstractions` | xunit v2's dependency, downloaded for the tests' package cache (tests/UnitTestGraphs) | Apache-2.0 (the license.txt its nuspec's licenseUrl names) | no copyright line; its authors: James Newkirk, Brad Wilson |
@@ -284,8 +284,8 @@ Packages the build or the tests use that no app carries.
 The npm packages `EslintPrettierTests` put in a test folder's node_modules as a project's own ESLint, Prettier, Oxlint,
 Oxfmt and Biome, the Yarn it lays a Plug'n'Play project out with, and the terminal `TerminalEmulationTests` holds
 Passenger's terminal to:
-`tests/Passenger.Tests/NodePackages/package.json` pins them and `package-lock.json` everything they bring, each with
-its tarball's sha512, which the tests' build checks as `tools/Passenger.NodePackages` puts them in the tests' output
+`tests/Pitstop.Tests/NodePackages/package.json` pins them and `package-lock.json` everything they bring, each with
+its tarball's sha512, which the tests' build checks as `tools/Pitstop.NodePackages` puts them in the tests' output
 (`node-packages/`), of a package for some systems only the one for the system it builds on. No app carries them, and no
 test fetches them from npm. Each is named by its npm name, with the
 licence its package.json states and the copyright line its licence file (else its source) carries, else its author.
@@ -346,7 +346,7 @@ licence its package.json states and the copyright line its licence file (else it
 
 ## Licence texts
 
-`tools/Passenger.Notices/Licenses/` holds the texts of the licences packages name by SPDX identifier (`MIT.txt`,
+`tools/Pitstop.Notices/Licenses/` holds the texts of the licences packages name by SPDX identifier (`MIT.txt`,
 `Apache-2.0.txt`, `ISC.txt`, `BSD-3-Clause.txt`, `MS-PL.txt`), from the SPDX License List 3.29.0 (https://github.com/spdx/license-list-data), unchanged; its README
 says where each came from. The app's notices, `THIRD-PARTY-NOTICES.txt` beside it, are written from them, from the
 packages themselves and from this file: Roslyn's server's table above, and everything below; the container tools' carry
@@ -356,7 +356,7 @@ the debugger's two sections below.
 
 ## Aspire dashboard protocol
 
-`src/Passenger.App/Aspire/Protocol/dashboard_service.proto` is copied from
+`src/Pitstop.App/Aspire/Protocol/dashboard_service.proto` is copied from
 https://github.com/microsoft/aspire, tag v13.6.2, commit af07e33,
 `src/Aspire.Hosting/Dashboard/proto/dashboard_service.proto`. Only the generated C# namespace is changed. The C# protoc
 generates from it, `DashboardService.cs` and `DashboardServiceGrpc.cs` beside it (`just aspire-protocol`), is under its
@@ -390,7 +390,7 @@ SOFTWARE.
 
 ## The debug relay's linked objects
 
-The debug relay under `debugger/relay/<rid>/` (`libpassenger-debug.so`, Passenger's own `src/Passenger.DebugRelay`,
+The debug relay under `debugger/relay/<rid>/` (`libpassenger-debug.so`, Passenger's own `src/Pitstop.DebugRelay`,
 which a Debug app on an Android device loads) is linked by `tools/debug-relay.sh` with objects from .NET's Android
 workload, its runtime packs `Microsoft.Android.Runtime.CoreCLR.37.android-arm64` and
 `Microsoft.Android.Runtime.CoreCLR.37.android-x64` (MIT, © Microsoft Corporation. All rights reserved.), which carry
@@ -407,10 +407,10 @@ them under their own notices:
 Passenger's debugger began as a copy of two MIT-licensed projects by Matthew Parker (MattParkerDev), and is
 Passenger's own from there:
 
-- `src/Passenger.Debugger` (the engine), `src/Passenger.DebugAdapter` (its adapter), `tests/Debuggees` and the tests
-  under `tests/Passenger.Tests/Debugging` started from SharpDbg, https://github.com/MattParkerDev/sharpdbg, at commit
+- `src/Pitstop.Debugger` (the engine), `src/Pitstop.DebugAdapter` (its adapter), `tests/Debuggees` and the tests
+  under `tests/Pitstop.Tests/Debugging` started from SharpDbg, https://github.com/MattParkerDev/sharpdbg, at commit
   93b25ac (September 15, 2026).
-- `src/Passenger.Debugger.Interop` (the ICorDebug, IMetaDataImport and dbgshim declarations) started from ICorDebugSharp
+- `src/Pitstop.Debugger.Interop` (the ICorDebug, IMetaDataImport and dbgshim declarations) started from ICorDebugSharp
   0.1.8, whose package declares the MIT licence. Its source is not published, so this copy was recovered from the
   package's assembly with ILSpy, keeping only what its author wrote: the source generators' output was dropped, since
   the build generates it again. It has since been cut to what Passenger's debugger uses: the declarations the engine
@@ -448,11 +448,11 @@ SOFTWARE.
 
 Two of the debugger's files came with SharpDbg from projects of their own:
 
-- `src/Passenger.Debugger/Decompilation/PortablePdbWriter2.cs` is ILSpy's `PortablePdbWriter`
+- `src/Pitstop.Debugger/Decompilation/PortablePdbWriter2.cs` is ILSpy's `PortablePdbWriter`
   (`ICSharpCode.Decompiler/DebugInfo/PortablePdbWriter.cs`, https://github.com/icsharpcode/ILSpy), changed to decompile
   its files in parallel and return their text: MIT, Copyright (c) 2018 Siegfried Pammer, as the file's header in ILSpy
   says.
-- `src/Passenger.Debugger/ClrDebugExtensions.cs` began as ClrDebug's .NET Core sample (`Samples/NetCore/Program.cs` at
+- `src/Pitstop.Debugger/ClrDebugExtensions.cs` began as ClrDebug's .NET Core sample (`Samples/NetCore/Program.cs` at
   commit 5f46218, https://github.com/lordmilko/ClrDebug): its automatic attach, and its manual one kept in comments.
   MIT, Copyright (c) 2022 lordmilko.
 
@@ -502,7 +502,7 @@ SOFTWARE.
 
 ## Godot's GDScript tokenizer, parser and analyzer
 
-`src/Passenger.Workspace/GDScript/` (`GDScriptToken.cs`, `GDScriptTokenizer.cs`, `GDScriptNodes.cs` and the
+`src/Pitstop.Workspace/GDScript/` (`GDScriptToken.cs`, `GDScriptTokenizer.cs`, `GDScriptNodes.cs` and the
 `GDScriptParser` files) is a port to C# of the Godot Engine's GDScript tokenizer and parser,
 `modules/gdscript/gdscript_tokenizer.cpp`, `gdscript_tokenizer.h`, `gdscript_parser.cpp` and `gdscript_parser.h` at
 commit a661dfdbccc664ccca57ad76c2bb5dcd8f3fc768 (4.8 beta 5) of https://github.com/godotengine/godot: their tokens,
@@ -528,7 +528,7 @@ with `Variant::can_convert`'s for a cast's errors, and the Object rows of `core/
 which the API's dump leaves out, beside the dump's own operators for an operand's errors; `GDScriptAnalyzer.Operations.cs`
 also takes `Variant::is_type_shared`'s types from `variant.cpp` and its evaluators' failure words (division and modulo by
 zero, a negative shift) from `core/variant/variant_op.h`.
-The scripts of the parser's and warnings' unit tests (`tests/Passenger.UnitTests/Godot/GDScriptParserTests.cs`,
+The scripts of the parser's and warnings' unit tests (`tests/Pitstop.UnitTests/Godot/GDScriptParserTests.cs`,
 `GDScriptWarningsTests.cs`) are in part Godot's own, `modules/gdscript/tests/scripts/parser/errors`, `parser/warnings`
 and `analyzer/warnings`, at the same commit.
 
@@ -557,7 +557,7 @@ SOFTWARE.
 
 ## Reqnroll's step matching
 
-`src/Passenger.Workspace/Gherkin/StepExpressions.cs` is a port to C# of how Reqnroll makes a step definition's expression
+`src/Pitstop.Workspace/Gherkin/StepExpressions.cs` is a port to C# of how Reqnroll makes a step definition's expression
 into the regular expression it matches a step with, from https://github.com/reqnroll/Reqnroll at its tag v3.3.4 (commit
 33eeea2298e62d53355ecc36e487b1fcbc0d9270): `Reqnroll/Bindings/CucumberExpressions/CucumberExpressionDetector.cs` (whether an
 expression is a Cucumber Expression), `ReqnrollCucumberExpression.cs` (its `{string}`),
@@ -613,11 +613,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Reqnroll for Visual Studio's table layout
 
-`src/Passenger.Workspace/Gherkin/GherkinFormatter.cs` keeps the text a table's row holds after its last bar after its
+`src/Pitstop.Workspace/Gherkin/GherkinFormatter.cs` keeps the text a table's row holds after its last bar after its
 aligned cells, trimmed and one cell padding from the bar, as `GetUnfinishedTableCell` and `FormatTable` of
 `Reqnroll.VisualStudio/Editor/Services/Formatting/GherkinDocumentFormatter.cs` keep it, from
 https://github.com/reqnroll/Reqnroll.VisualStudio at its tag v2026.1.477 (commit
-fb6134a5d5ebe8a98b681d7669a51f40c73e3ab6); `tests/Passenger.UnitTests/Gherkin/GherkinFormatterTests.cs` takes its rows
+fb6134a5d5ebe8a98b681d7669a51f40c73e3ab6); `tests/Pitstop.UnitTests/Gherkin/GherkinFormatterTests.cs` takes its rows
 for that from `Should_not_remove_unfinished_cells_when_formatting_table` in
 `Tests/Reqnroll.VisualStudio.Tests/Editor/Services/GherkinDocumentFormatterTests.cs` at the same commit.
 
@@ -655,7 +655,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## .NET MAUI's SceneDelegate
 
 The SceneDelegate Make the Mobile Edits writes beside a .NET MAUI app's Apple head's Info.plist
-(`MobileHeads.DelegateText` in `src/Passenger.App/Mobile/MobileHeads.cs`), and the scene configuration it names there, are
+(`MobileHeads.DelegateText` in `src/Pitstop.App/Mobile/MobileHeads.cs`), and the scene configuration it names there, are
 those of .NET MAUI's own templates, `content/templates/maui-mobile/Platforms/iOS/SceneDelegate.cs` and its `Info.plist` in
 Microsoft.Maui.Templates.net11 11.0.0, from https://github.com/dotnet/maui (commit
 4e6582f7397a5736bc85984228c549d09a85a1de), under the MIT License below.
@@ -688,13 +688,13 @@ SOFTWARE.
 
 ## JetBrains Mono
 
-`src/Passenger.Editor/Fonts/` holds JetBrains Mono 2.304 (Regular, Bold, Italic, Bold Italic), the
+`src/Pitstop.Editor/Fonts/` holds JetBrains Mono 2.304 (Regular, Bold, Italic, Bold Italic), the
 editor's font, from https://github.com/JetBrains/JetBrainsMono under the SIL Open Font License 1.1,
 whose full text is beside the fonts (`OFL.txt`). The fonts are unmodified.
 
 ## Inter
 
-`src/Passenger.App/Fonts/` holds Inter 4.1's hinted faces, the window's font, from `extras/ttf/` of
+`src/Pitstop.App/Fonts/` holds Inter 4.1's hinted faces, the window's font, from `extras/ttf/` of
 `Inter-4.1.zip` (https://github.com/rsms/inter/releases/tag/v4.1), Copyright (c) 2016 The Inter Project
 Authors, under the SIL Open Font License 1.1, whose full text is beside the fonts (`OFL.txt`, the release's
 `LICENSE.txt`). The fonts are unmodified; their SHA-256:
@@ -708,7 +708,7 @@ Authors, under the SIL Open Font License 1.1, whose full text is beside the font
 
 ## Fluent UI System Icons
 
-`src/Passenger.App/Theme/Icons.axaml` holds path data from Microsoft's Fluent UI System Icons
+`src/Pitstop.App/Theme/Icons.axaml` holds path data from Microsoft's Fluent UI System Icons
 (https://github.com/microsoft/fluentui-system-icons), written by `tools/icons.py`, which lists every
 icon used. A project's web root folder is drawn with Folder Globe, and its Properties folder with Folder
 Globe's folder and Calendar Settings' gear, put together by the script.
@@ -739,18 +739,18 @@ SOFTWARE.
 
 ## Codicons
 
-`src/Passenger.App/Theme/Icons.axaml`'s `Icon.Preview` and `Icon.Selection` are the path data of the `open-preview` and
+`src/Pitstop.App/Theme/Icons.axaml`'s `Icon.Preview` and `Icon.Selection` are the path data of the `open-preview` and
 `list-selection` icons from Visual Studio Code's Codicons (https://github.com/microsoft/vscode-codicons, `src/icons/` at
 commit 8d1826a9), unchanged, written by `tools/icons.py`. Copyright (c) Microsoft Corporation. It is licensed under the Creative Commons
 Attribution 4.0 International License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/).
 
 ## File Icons
 
-`src/Passenger.App/Theme/FileIconSet.axaml` holds path data written by `tools/file-icons.py`, which lists every
+`src/Pitstop.App/Theme/FileIconSet.axaml` holds path data written by `tools/file-icons.py`, which lists every
 icon used, from three sets the file-icons package (https://github.com/file-icons) draws with: file-icons' own icons
 (https://github.com/file-icons/icons, ISC), MFixx, its fork of Font Mfizz (https://github.com/file-icons/MFixx, MIT),
 and GitHub's Octicons (https://github.com/primer/octicons, MIT). Which file takes which icon and colour family
-(`src/Passenger.App/Explorer/FileIconSet.cs`) follows the file-icons package's own rules
+(`src/Pitstop.App/Explorer/FileIconSet.cs`) follows the file-icons package's own rules
 (https://github.com/file-icons/atom, MIT). The F#, Visual Basic, Rust, Swift, Dart, npm, Racket and Haxe icons are
 Passenger's own, and the script draws the sets' solid badges (dotenv, Markdown, HTML, PowerShell and the like) as
 outlines.
@@ -853,15 +853,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Unicode Character Database
 
-`src/Passenger.Text/WideCharacters.cs`, the characters the terminal and Vim mode count two columns wide, is derived from the
+`src/Pitstop.Text/WideCharacters.cs`, the characters the terminal and Vim mode count two columns wide, is derived from the
 Unicode Character Database 16.0.0's `EastAsianWidth.txt` and `emoji/emoji-data.txt`
 (https://www.unicode.org/Public/16.0.0/ucd/), written by `tools/unicode-widths.py`.
-`src/Passenger.Workspace/GDScript/UnicodeIdentifiers.cs`, the characters a GDScript identifier is made of and what its
+`src/Pitstop.Workspace/GDScript/UnicodeIdentifiers.cs`, the characters a GDScript identifier is made of and what its
 spoof check reads, is derived from Unicode 17.0.0's `security/IdentifierStatus.txt` and `security/confusables.txt` (UTS
 #39) and its Character Database's `Scripts.txt`, `ScriptExtensions.txt`, `PropertyValueAliases.txt`, `UnicodeData.txt`,
 `PropList.txt` and `DerivedCoreProperties.txt` (https://www.unicode.org/Public/17.0.0/), written by
 `tools/unicode-identifiers.py`.
-`src/Passenger.Workspace/GDScript/IdentifierSpoofing.cs` is a port to C# of International Components for Unicode (ICU)
+`src/Pitstop.Workspace/GDScript/IdentifierSpoofing.cs` is a port to C# of International Components for Unicode (ICU)
 78.3's spoof check, `icu4c/source/i18n/uspoof.cpp` (`checkImpl`) and `uspoof_impl.cpp` (its script sets, restriction
 level, numerics and hidden overlay) of https://github.com/unicode-org/icu at tag release-78.3, under the same licence.
 
@@ -910,14 +910,14 @@ authorization of the copyright holder.
 ## XAML Styler
 
 The attribute ordering rule groups Reformat Code puts XAML's attributes in when asked
-(`XamlFormatSettings.DefaultAttributeOrder` in `src/Passenger.Xaml/Features/XamlFormatSettings.cs`) are XAML Styler's
+(`XamlFormatSettings.DefaultAttributeOrder` in `src/Pitstop.Xaml/Features/XamlFormatSettings.cs`) are XAML Styler's
 defaults, its `AttributeOrderingRuleGroups` in `src/XamlStyler/Options/StylerOptions.cs`
 (https://github.com/Xavalon/XamlStyler), as are the names of the options Passenger shares with it (Enable attribute
 reordering, Remove ending tag of empty element); (c) Xavalon. All rights reserved., under the Apache License 2.0 below.
 
 ## Rust's batch file command line
 
-How `WindowsCommandLine.ThroughCmd` (`src/Passenger.Core/WindowsCommandLine.cs`) runs a .cmd or .bat through cmd.exe
+How `WindowsCommandLine.ThroughCmd` (`src/Pitstop.Core/WindowsCommandLine.cs`) runs a .cmd or .bat through cmd.exe
 follows the Rust standard library's `make_bat_command_line` (https://github.com/rust-lang/rust): cmd's switches, a word
 quoted where cmd would read it, a quote in it doubled, each `%` followed by `%cd:~,%`, and a line break refused.
 Under the MIT licence (Rust's is MIT or Apache 2.0, at one's choice):
@@ -944,7 +944,7 @@ DEALINGS IN THE SOFTWARE.
 
 ## MSBuild's schemas
 
-`src/Passenger.App/MSBuild/Schemas/` holds `Microsoft.Build.Core.xsd` and `Microsoft.Build.CommonTypes.xsd`, MSBuild's own
+`src/Pitstop.App/MSBuild/Schemas/` holds `Microsoft.Build.Core.xsd` and `Microsoft.Build.CommonTypes.xsd`, MSBuild's own
 schemas of its elements, properties, items, metadata and tasks (`src/MSBuild/MSBuild/` of https://github.com/dotnet/msbuild
 at commit c749ea6, November 3, 2026), unchanged but for `AnalysisLevel` in `Microsoft.Build.CommonTypes.xsd`, which also
 lists the levels of .NET 7 to 11 (`7.0` to `11.0`, each with `-minimum`, `-recommended` and `-all`) that the SDKs take.
@@ -979,7 +979,7 @@ SOFTWARE.
 
 ## Godot's shading language
 
-`src/Passenger.Workspace/GodotShaderTypes.json` is a table of Godot's shading language, written by `just godot-shader-types`
+`src/Pitstop.Workspace/GodotShaderTypes.json` is a table of Godot's shading language, written by `just godot-shader-types`
 (`tools/godot-shader-types.py`) from two files of the Godot Engine (https://github.com/godotengine/godot) at commit
 a661dfdbccc664ccca57ad76c2bb5dcd8f3fc768, which Godot 4.8 beta 5 was built from: `servers/rendering/shader_types.cpp`
 (each shader type's processor functions, the built-ins each offers, the stage functions each may call, its render and
@@ -988,14 +988,14 @@ functions with their arguments' names, and every entry of its built-in function 
 app embeds it for completion, the hover card and the compiler's port in shaders, each candidate offered only where the
 Godot found takes it.
 
-`src/Passenger.Workspace/GodotDefaultTheme.json` is a table of Godot's default theme, written by `just godot-theme`
+`src/Pitstop.Workspace/GodotDefaultTheme.json` is a table of Godot's default theme, written by `just godot-theme`
 (`tools/godot-theme.py`) from files of the Godot Engine at the same commit: `scene/theme/default_theme.cpp` (each theme
 type's items by their kind, and its type variations), `scene/scene_string_names.h` and `core/core_string_names.h` (the
 names its constants stand for), the headers of `scene/gui` and `scene/main` (each control's and window's base class),
 and `doc/classes` (the class reference's description of each theme item a class documents). The app embeds it to
 complete, check and describe the theme items a Godot game's C# names.
 
-`src/Passenger.Workspace/GodotShader/` is a port to C# of the Godot Engine's shader language front end, by which
+`src/Pitstop.Workspace/GodotShader/` is a port to C# of the Godot Engine's shader language front end, by which
 Passenger checks a shader as Godot reads it: `GodotShaderPreprocessor.cs` ports `servers/rendering/shader_preprocessor.cpp`
 and `shader_preprocessor.h` (its directives, macro expansion, includes and error messages, with 4.7.2-stable's reading of
 line continuations, at commit ed1daf0bf001b61586d9930840f2f1394092c079, beside 4.8 beta 5's); `GodotShaderExpression.cs`
@@ -1006,7 +1006,7 @@ on; `GodotPathStrings.cs` ports `simplify_path`, `is_absolute_path`, `get_base_d
 names, calls and assignments, constant folding, built-in function tables and messages); `GodotShaderWarnings.cs`
 ports `servers/rendering/shader_warnings.cpp` and `shader_warnings.h`; `GodotShaderCheck.cs` follows
 `editor/shader/shader_text_editor.cpp`'s validation of a shader and an include; and
-`src/Passenger.App/Godot/GodotShaderChecker.cs` ports `uniform_to_property_info` of `shader_language.cpp` and `rtos`'s
+`src/Pitstop.App/Godot/GodotShaderChecker.cs` ports `uniform_to_property_info` of `shader_language.cpp` and `rtos`'s
 writing of a number (`String::num` of `core/string/ustring.cpp`); all at commit
 a661dfdbccc664ccca57ad76c2bb5dcd8f3fc768 (4.8 beta 5), their words kept as Godot words them.
 
@@ -1035,7 +1035,7 @@ SOFTWARE.
 
 ## TextMate grammars
 
-`src/Passenger.Languages/TextMate/Grammars/` holds the TextMate grammars that colour the files beside the C#, each a
+`src/Pitstop.Languages/TextMate/Grammars/` holds the TextMate grammars that colour the files beside the C#, each a
 file of Visual Studio Code's own extensions (https://github.com/microsoft/vscode, MIT, Copyright (c) 2015 - present
 Microsoft Corporation), unchanged, from the project its header names:
 
@@ -1265,7 +1265,7 @@ limitations under the License.
 
 ## SchemaStore's JSON schemas
 
-`src/Passenger.Lsp/WebServers/schemas/` holds JSON schemas of the JSON Schema Store
+`src/Pitstop.Lsp/WebServers/schemas/` holds JSON schemas of the JSON Schema Store
 (https://github.com/SchemaStore/schemastore, `src/schemas/json/` at commit 5decc3eb), modified as listed below (each
 changed file saying so in its top-level `$comment`), carried
 under `web/schemas/`: those the JSON language server checks and completes package.json, tsconfig.json, jsconfig.json,
@@ -1306,7 +1306,7 @@ Passenger's changes, each where a schema refused what the tool it describes take
 
 ## The Compose specification's schema
 
-`src/Passenger.Lsp/WebServers/schemas/compose-spec.json` is the Compose specification's JSON schema
+`src/Pitstop.Lsp/WebServers/schemas/compose-spec.json` is the Compose specification's JSON schema
 (https://github.com/compose-spec/compose-spec, `schema/compose-spec.json` at commit 3a4a6995), modified as below (the
 file saying so in its top-level `$comment`),
 carried under `web/schemas/`: the YAML language server checks and completes compose files (`compose.yaml`,
