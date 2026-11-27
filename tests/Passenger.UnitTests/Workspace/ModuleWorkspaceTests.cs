@@ -41,7 +41,7 @@ public sealed class ModuleWorkspaceTests
     [Fact]
     public void Reads_the_captured_compiler_and_Xmake_scans_and_distinguishes_partitions()
     {
-        string repo = FoldersUp.From(AppContext.BaseDirectory).First(path => File.Exists(Path.Combine(path, "Passenger.slnx")));
+        string repo = FoldersUp.From(AppContext.BaseDirectory).First(path => File.Exists(Path.Combine(path, "Pitstop.slnx")));
         string samples = Path.Combine(repo, "docs", "architecture", "cpp-toolchain-samples");
         ImmutableArray<P1689.Rule> capture = P1689.Read(File.ReadAllText(Path.Combine(samples, "p1689.json")));
         Assert.Contains(capture.SelectMany(rule => rule.Provides.IsDefault ? [] : rule.Provides), entry => entry is { Name: "arithmetic:detail", Interface: false });
@@ -96,7 +96,7 @@ public sealed class ModuleWorkspaceTests
     [Fact]
     public void Keeps_a_shared_translation_unit_in_each_evaluated_target_and_honors_cancellation()
     {
-        string repo = FoldersUp.From(AppContext.BaseDirectory).First(path => File.Exists(Path.Combine(path, "Passenger.slnx")));
+        string repo = FoldersUp.From(AppContext.BaseDirectory).First(path => File.Exists(Path.Combine(path, "Pitstop.slnx")));
         string root = PathNames.Canonical(Path.Combine(repo, "tests", "CppWorkspaces", "module-contexts"));
         string source = PathNames.Canonical(Path.Combine(root, "selection.cpp"));
         string script = Path.Combine(root, "xmake.lua");
@@ -120,7 +120,7 @@ public sealed class ModuleWorkspaceTests
     [Fact]
     public void Uses_the_providers_output_ownership_without_requiring_Xmake_paths()
     {
-        string repo = FoldersUp.From(AppContext.BaseDirectory).First(path => File.Exists(Path.Combine(path, "Passenger.slnx")));
+        string repo = FoldersUp.From(AppContext.BaseDirectory).First(path => File.Exists(Path.Combine(path, "Pitstop.slnx")));
         string root = PathNames.Canonical(Path.Combine(repo, "tests", "CppWorkspaces", "module-contexts"));
         string source = PathNames.Canonical(Path.Combine(root, "selection.cpp"));
         FixtureWorkspace workspace = new(root, [new FixtureTarget("first", [source]), new FixtureTarget("second", [source])]);

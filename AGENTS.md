@@ -4,7 +4,7 @@ Pitstop is an open-source, modules-first C++ IDE. Trusted Xmake workspaces suppl
 
 ## Working in this repository
 
-- Keep the existing `Passenger.slnx`, project names and namespaces until a dedicated rename. Use Pitstop for product UI, application metadata, help, registration and distribution.
+- Build `Pitstop.slnx`. Keep project and namespace migrations separate from functional changes. Use Pitstop for product UI, application metadata, help, registration and distribution.
 - Keep product data under the Pitstop state root and use `PITSTOP_*` for product-owned environment overrides. Keep Pitstop's caches, logs, temporary files, sockets and registrations isolated from Passenger's.
 - Keep application updates and release publishing disabled. CI can build, test and upload workflow artifacts. Deployment needs a separate Pitstop release design.
 - Preserve the original MIT license and attribution in `THIRD_PARTY_NOTICES.md`. Use open-source dependencies and follow the repository's dependency and attribution conventions.

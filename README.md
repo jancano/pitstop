@@ -45,7 +45,7 @@ Report problems with the Pitstop version, toolchain versions, and a small reprod
 Install the .NET 11 SDK specified in [`global.json`](global.json), [just](https://github.com/casey/just), and Git. On Linux, install X11 and fontconfig libraries. Tests also use Python 3 and the .NET 10 SDK. Web language and container tests use Node.js and a Linux container engine, respectively.
 
 ```sh
-just build                  # Debug build of Passenger.slnx
+just build                  # Debug build of Pitstop.slnx
 just run                    # Open Pitstop
 just test [FILTER]          # Run the test suite or matching tests
 just screenshot pitstop.png # Render the window off-screen

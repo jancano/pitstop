@@ -61,7 +61,7 @@ git fetch -q https://github.com/jancano/pitstop.git main || exit /b 1
 git fetch -q $shared\\head.bundle HEAD || exit /b 1
 git checkout -q --detach $(git -C "$repo" rev-parse HEAD) || exit /b 1
 set AVALONIA_TELEMETRY_OPTOUT=1
-dotnet build Passenger.slnx -v quiet -nologo > $shared\\build.log 2>&1 || exit /b 1
+dotnet build Pitstop.slnx -v quiet -nologo > $shared\\build.log 2>&1 || exit /b 1
 BATCH
     rm -f "$share/build.log"
     in_vm 1800 cmd /c "$shared\\build.cmd" || true

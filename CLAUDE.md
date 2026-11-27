@@ -6,7 +6,7 @@ Repository and architecture guidance for Pitstop. See [AGENTS.md](AGENTS.md) for
 
 **Pitstop** is an open-source, modules-first C++ IDE. The alpha's native reference profile is Windows x64. The application retains Passenger's editor and shared IDE infrastructure on its C# and .NET 11 foundation with Avalonia 12. The desktop and native MCP use Xmake project loading. Inherited .NET project and debugger integrations remain available to the legacy verification profile. A trusted Xmake workspace supplies clangd, native build and run, and the module workspace. Native debugging and the Xrepo package installation UI are future work. [Xmake](docs/architecture/xmake-workspaces.md) · [clangd](docs/architecture/cpp-language-intelligence.md) · [Build and Run](docs/architecture/native-build-run.md) · [Modules](docs/architecture/module-intelligence.md)
 
-Keep Passenger solution, project and namespace names during this stage. The app executable, shell command, settings, caches, logs, temporary paths and IPC identify Pitstop. The project is MIT licensed with Passenger's original copyright and third-party attribution.
+The solution is `Pitstop.slnx`. Migrate inherited project and namespace names in dedicated commits. The app executable, shell command, settings, caches, logs, temporary paths and IPC identify Pitstop. The project is MIT licensed with Passenger's original copyright and third-party attribution.
 
 `Pitstop.ProjectSystem` defines the evaluated compilation workspace used by clangd and the module index. `Pitstop.Templates` discovers declarative manifests and plans output bytes independently of the IDE. The native project wizard consumes this plan and opens the resulting folder through workspace trust. [Migration plan](docs/architecture/native-first-ide.md) · [Template engine](docs/architecture/template-engine.md)
 
@@ -19,7 +19,7 @@ written again per place.
 ## Commands
 
 ```sh
-just build                 # Debug build of Passenger.slnx; warnings are errors
+just build                 # Debug build of Pitstop.slnx; warnings are errors
 just run [PATH] [args]     # the IDE on a folder or file (--file F, --caret L:C, --theme T, --run|--debug [NAME])
 just screenshot X.png ...  # the main window drawn off-screen to a PNG, after the steps given
 just test [filter] [N] [--gate|--report]  # tests whose name matches (one lane, or both), in N processes, then the

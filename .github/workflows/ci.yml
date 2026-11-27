@@ -374,7 +374,7 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        run: dotnet restore Passenger.slnx --locked-mode
+        run: dotnet restore Pitstop.slnx --locked-mode
 
       - name: Every package in the notices
         run: python3 -I tools/check-notices.py

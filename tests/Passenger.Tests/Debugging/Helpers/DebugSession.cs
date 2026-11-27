@@ -764,18 +764,18 @@ public static class Debuggees
     {
         for (DirectoryInfo? folder = new(AppContext.BaseDirectory); folder is not null; folder = folder.Parent)
         {
-            if (File.Exists(Path.Combine(folder.FullName, "Passenger.slnx")))
+            if (File.Exists(Path.Combine(folder.FullName, "Pitstop.slnx")))
             {
                 return folder.FullName;
             }
         }
-        throw new DirectoryNotFoundException($"No Passenger.slnx above {AppContext.BaseDirectory}");
+        throw new DirectoryNotFoundException($"No Pitstop.slnx above {AppContext.BaseDirectory}");
     });
 
     /// <summary>DebuggableConsoleApp's MyClass.MyMethod's last line, its empty statement once every local is set.</summary>
     public static readonly int MyMethodEnd = Line("DebuggableConsoleApp", "MyClass.cs", "string anotherVar = \"asdf\";") + 1;
 
-    /// <summary>The repository the tests were built from, its Passenger.slnx at the top.</summary>
+    /// <summary>The repository the tests were built from, its Pitstop.slnx at the top.</summary>
     public static string Root => Repository.Value;
 
     public static string Source(params string[] path) => Path.Combine([Repository.Value, "tests", "Debuggees", .. path]);

@@ -2731,12 +2731,12 @@ public sealed class XamlTests : IClassFixture<XamlTests.Gallery>
         {
             for (DirectoryInfo? at = new(AppContext.BaseDirectory); at is not null; at = at.Parent)
             {
-                if (File.Exists(Path.Combine(at.FullName, "Passenger.slnx")))
+                if (File.Exists(Path.Combine(at.FullName, "Pitstop.slnx")))
                 {
                     return at.FullName;
                 }
             }
-            throw new DirectoryNotFoundException($"No folder above {AppContext.BaseDirectory} holds Passenger.slnx");
+            throw new DirectoryNotFoundException($"No folder above {AppContext.BaseDirectory} holds Pitstop.slnx");
         }
     }
 

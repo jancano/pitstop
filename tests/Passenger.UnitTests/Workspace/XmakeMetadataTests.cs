@@ -98,7 +98,7 @@ public sealed class XmakeMetadataTests
 
     private static string Sample(string name)
     {
-        string repository = FoldersUp.From(AppContext.BaseDirectory).First(at => File.Exists(Path.Combine(at, "Passenger.slnx")));
+        string repository = FoldersUp.From(AppContext.BaseDirectory).First(at => File.Exists(Path.Combine(at, "Pitstop.slnx")));
         return File.ReadAllText(Path.Combine(repository, "docs", "architecture", "cpp-toolchain-samples", name));
     }
 }

@@ -41,7 +41,7 @@ def dotnet(*args):
 
 def solution_packages():
     """Each package id the solution's projects use, with the projects that use it."""
-    listed = json.loads(dotnet("list", "Passenger.slnx", "package", "--include-transitive", "--format", "json", "--no-restore"))
+    listed = json.loads(dotnet("list", "Pitstop.slnx", "package", "--include-transitive", "--format", "json", "--no-restore"))
     used = {}
     for project in listed.get("projects", []):
         name = os.path.splitext(os.path.basename(project["path"]))[0]

@@ -80,7 +80,7 @@ internal sealed record ProbeOptions(string Repository, string? Xmake, string? Ll
         }
 
         string repository = Path.GetFullPath(".");
-        if (!File.Exists(Path.Combine(repository, "Passenger.slnx")))
+        if (!File.Exists(Path.Combine(repository, "Pitstop.slnx")))
         {
             throw new ArgumentException("Run the probe from the Pitstop repository root.");
         }

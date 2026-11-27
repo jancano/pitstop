@@ -66,7 +66,7 @@ internal static class WpfApp
         string needed = AvaloniaApp.Metadata("SdkWindowsDesktopRefVersion");
         Assert.True(pinned == needed, $"This SDK's WPF for {Framework} takes Microsoft.WindowsDesktop.App.Ref {needed}, but Directory.Packages.props "
             + $"pins WindowsDesktopRefVersion {pinned}, so the WPF app's restore would find no pack in the run's local feed: pin {needed} and restore "
-            + "(dotnet restore Passenger.slnx --force-evaluate)");
+            + "(dotnet restore Pitstop.slnx --force-evaluate)");
         return pinned;
     }
 

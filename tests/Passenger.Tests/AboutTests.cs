@@ -197,19 +197,19 @@ public sealed partial class AboutTests : IDisposable
         return [.. reached.Where(r => libraries.EnumerateObject().Any(l => string.Equals(l.Name, r, StringComparison.OrdinalIgnoreCase) && l.Value.GetProperty("type").GetString() == "package"))];
     }
 
-    /// <summary>The repository the tests were built from: the folder above them with Passenger.slnx.</summary>
+    /// <summary>The repository the tests were built from: the folder above them with Pitstop.slnx.</summary>
     private static string Repository
     {
         get
         {
             for (DirectoryInfo? at = new(AppContext.BaseDirectory); at is not null; at = at.Parent)
             {
-                if (File.Exists(Path.Combine(at.FullName, "Passenger.slnx")))
+                if (File.Exists(Path.Combine(at.FullName, "Pitstop.slnx")))
                 {
                     return at.FullName;
                 }
             }
-            throw new DirectoryNotFoundException($"No folder above {AppContext.BaseDirectory} holds Passenger.slnx");
+            throw new DirectoryNotFoundException($"No folder above {AppContext.BaseDirectory} holds Pitstop.slnx");
         }
     }
 
