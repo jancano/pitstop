@@ -58,7 +58,8 @@ public sealed class TestController : IAsyncDisposable
         this.projects = projects;
         this.workspaceModel = workspaceModel;
         this.log = log;
-        this.startRunner = startRunner ?? ((workspace, _) => Task.FromResult<ITestRunner>(new TestRunners(workspace, declared: Declared, goDotStart: GoDotStartAsync)));
+        this.startRunner = startRunner
+            ?? ((workspace, _) => Task.FromResult<ITestRunner>(new TestRunners(workspace, declared: Declared, goDotStart: GoDotStartAsync, devices: Devices)));
         Finder.Changed += (_, found) =>
         {
             code = found;
@@ -204,6 +205,10 @@ public sealed class TestController : IAsyncDisposable
     /// (<see cref="ITestDebugLauncher.DebugGameAsync"/>).</summary>
     public Func<TestHostStart, string, int, bool, Action<string>?, Task<Task>>? DebugGame { get; set; }
 
+    /// <summary>A device test project's app to debug where it runs: the debugger starts it as Debug starts an app on its
+    /// device (<see cref="ITestDebugLauncher.DebugOnDeviceAsync"/>).</summary>
+    public Func<Run.LaunchPlan, Action<string>?, Task<Task>>? DebugOnDevice { get; set; }
+
     /// <summary>A test to debug in a test host the runner started itself: the debugger attaches to it (with Hot Reload and
     /// its hook where the host was started for them), true once it has.</summary>
     public Func<int, TestHostReload?, Task<bool>>? AttachDebugger { get; set; }
@@ -217,6 +222,10 @@ public sealed class TestController : IAsyncDisposable
 
     /// <summary>Ends only the test hosts debugged by this run.</summary>
     public Func<Task>? EndDebugging { get; set; }
+
+    /// <summary>Where a device test project's tests run, on the target its project runs on; null, where .NET starts every
+    /// test host here. Given before the first run, which makes the runner.</summary>
+    public DeviceTestHosts? Devices { get; init; }
 
     internal CancellationToken RunCancellation => stopping?.Token ?? CancellationToken.None;
 
@@ -262,6 +271,7 @@ public sealed class TestController : IAsyncDisposable
         IsBusy = true;
         BackgroundWork.Begin();
         using CancellationTokenSource stop = Begin();
+        Devices?.Begin(projects(), _ => { });
         try
         {
             return await DiscoverCore(workspace, build: true, stop.Token);
@@ -363,6 +373,7 @@ public sealed class TestController : IAsyncDisposable
         using CancellationTokenSource stop = Begin();
         working = Work?.Begin(AppActions.RunTests, build ? "Building the test projects…" : "Finding the tests…");
         using CancellationTokenRegistration stopped = working?.Stopping.Register(stop.Cancel) ?? default;
+        Devices?.Begin(projects(), UiThread.Marshal<string>(stage => working?.Say(stage)));
         // What the run came to, told as its work ends: the tally, or why it did not run.
         (bool Ran, string Said)? came = null;
         string? Came(string? problem)
@@ -979,6 +990,19 @@ public sealed class TestController : IAsyncDisposable
                     return debug(start, folder, leading, csharp, heard);
                 })
                 : throw new InvalidOperationException("No debugger can start the game's tests");
+
+        public Task<Task> DebugOnDeviceAsync(Run.LaunchPlan plan, Action<string>? heard = null) =>
+            owner.DebugOnDevice is { } debug
+                ? UiThread.InvokeAsync<Task>(() =>
+                {
+                    if (!IsCurrent)
+                    {
+                        return Task.FromCanceled<Task>(new CancellationToken(canceled: true));
+                    }
+                    owner.ReleaseWork();
+                    return debug(plan, heard);
+                })
+                : throw new InvalidOperationException("No debugger can start the tests' app on its device");
 
         public TestHostReload? Reload(string assembly, IReadOnlyDictionary<string, string> environment) => owner.ReloadFor?.Invoke(assembly, environment);
 

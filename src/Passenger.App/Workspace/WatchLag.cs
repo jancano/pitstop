@@ -199,12 +199,17 @@ public static class WatchLag
         return stopped;
     }
 
-    /// <summary>The beat's folder taken away, or left for the system's clean-up of its temporary folder where it cannot be.</summary>
+    /// <summary>The beat's folder taken away, or left for the system's clean-up of its temporary folder where it cannot be;
+    /// one gone already (the beat ended before the process) is no failure to log.</summary>
     private static void Delete(string own)
     {
         try
         {
             Directory.Delete(own, recursive: true);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            // Taken away already.
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -289,7 +294,7 @@ public static class WatchLag
         {
             // Made again where the system's clean-up of its temporary folder took it.
             Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-            AtomicFile.Write(file, System.Text.Encoding.ASCII.GetBytes(count.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            MarkerFiles.Write(file, System.Text.Encoding.ASCII.GetBytes(count.ToString(System.Globalization.CultureInfo.InvariantCulture)));
             Interlocked.Increment(ref beats);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

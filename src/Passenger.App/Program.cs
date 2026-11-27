@@ -48,6 +48,8 @@ internal static class Program
         }
         // Before anything reads the state folder, or leaves the folder a relative PITSTOP_SETTINGS is read from.
         State.StateStore.NameWhole();
+        // What the IDE runs of the .NET SDK keeps its temporary files in the state's own folder for this process, named as first asked.
+        SdkTemporary.State = () => State.StateStore.DefaultRoot;
         // Before anything of the IDE starts, so a start that fails before its log is set up still leaves why.
         CrashFile.Watch();
         // Velopack handles installer callbacks only. Normal starts keep their own identity and logs.
@@ -167,8 +169,9 @@ internal static class Program
     }
 
     /// <summary>A screenshot keeps nothing of the person's: unless PITSTOP_SETTINGS names a folder, its state and logs
-    /// (Roslyn's server's among them) go to a temporary one, a portable copy's too, removed when it ends, and its
-    /// terminal's shell never reads or writes the person's history or startup files.</summary>
+    /// (Roslyn's server's among them) go to a temporary one, a portable copy's too, removed when it ends with the state's
+    /// own folders in the user's temporary folder (<see cref="UserTemporary.LetGoOf"/>), and its terminal's shell never
+    /// reads or writes the person's history or startup files.</summary>
     private static int Apart(Func<int> run)
     {
         string? scratch = null;
@@ -191,6 +194,7 @@ internal static class Program
             {
                 // The log is written off a queue: what it still holds would make the folder again after it went.
                 IdeLog.Flush();
+                UserTemporary.LetGoOf([scratch, CSharp.CSharpService.ServerCache]);
                 try
                 {
                     Directory.Delete(scratch, recursive: true);

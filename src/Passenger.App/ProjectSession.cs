@@ -138,6 +138,15 @@ public sealed class ProjectSession : IAsyncDisposable
             GodotVariables = cancel => BackgroundWork.Run(() => GodotTestRuns.Variables(setup.Settings().GodotExecutable,
                 setup.GodotEnvironment ?? new Dictionary<string, string>(), setup.Settings().GodotTestsWindowed && !setup.Unseen), cancel),
             GodotFolders = () => [.. Workspace?.GodotGames ?? [], .. Projects.Select(p => p.NamedGodotFolder).OfType<string>()],
+            // A device test project's app runs where Run runs its project, held there as Run's, a simulator booted shut down with the folder.
+            Devices = new DeviceTestHosts(project => Targets.InForce(project), project => ProjectModels.Properties(Workspace, project), setup.Unseen, Booted,
+                (project, platform, targets) => UiThread.Post(() =>
+                {
+                    if (!IsEnded)
+                    {
+                        Targets.List(project, platform, targets);
+                    }
+                }), (name, app) => UiThread.InvokeAsync<DeviceStart?>(() => IsEnded ? null : StartsOnDevice(name, app))),
         };
         Tests.Finder.StateFolder = setup.StateFolder;
         Containers = new Containers.FolderContainers(folder, setup.Engine());
@@ -670,7 +679,7 @@ public sealed class ProjectSession : IAsyncDisposable
 
     /// <summary>The loaded project a file or folder (a canonical path) belongs to, the nearest one holding it; null outside
     /// them all.</summary>
-    public ProjectModel? ProjectOf(string path) => Workspace is null ? null : ProjectModel.Owning(Workspace.Projects.Where(p => !Unloaded.Contains(p.Path)), path);
+    public ProjectModel? ProjectOf(string path) => Workspace is null ? null : ProjectModel.Owning(Workspace.Projects, path, Unloaded);
 
     /// <summary>The code of the project a file belongs to with the configurations of the programs that run it
     /// (<see cref="ConfiguredCode"/>); null outside them all, or where no program of the folder runs it.</summary>

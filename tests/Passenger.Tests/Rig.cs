@@ -142,6 +142,7 @@ public sealed class TestRun : IAsyncDisposable
         Passenger.Core.InFlight.Watched = true;
         // Every folder a test opens is trusted, but one it holds to the person's answer (WorkspaceTrust.Ask).
         Passenger.Core.WorkspaceTrust.TrustEverything();
+        List<string> ended = [];
         foreach (string left in TemporaryBases().Select(Path.TrimEndingDirectorySeparator).Distinct(StringComparer.Ordinal).SelectMany(under => Directory.EnumerateDirectories(under, "p*")))
         {
             // A run still going has its process; one killed has none, and only an id reused since keeps its folder.
@@ -151,8 +152,14 @@ public sealed class TestRun : IAsyncDisposable
                 : null;
             if (int.TryParse(number, out int id) && (id == Environment.ProcessId || !Processes.IsRunning(id)))
             {
-                TestFolders.Delete(left);
+                ended.Add(left);
             }
+        }
+        // A run killed before its end left its states' own folders in the user's temporary folder too.
+        UserTemporary.LetGoOf(ended.SelectMany(StatesUnder));
+        foreach (string left in ended)
+        {
+            TestFolders.Delete(left);
         }
         Directory.CreateDirectory(Settings);
         if (Temporary != PersonsTemporary)
@@ -176,6 +183,8 @@ public sealed class TestRun : IAsyncDisposable
         string gitConfig = Path.Combine(Root, "gitconfig");
         File.WriteAllText(gitConfig, string.Empty);
         Environment.SetEnvironmentVariable(StateStore.Variable, Settings);
+        // As Passenger's Main has it, which no test's window runs.
+        SdkTemporary.State = () => StateStore.DefaultRoot;
         Environment.SetEnvironmentVariable("GIT_CONFIG_GLOBAL", gitConfig);
         Environment.SetEnvironmentVariable("GIT_CONFIG_NOSYSTEM", "1");
         // Configuration git takes from the environment, over the files' or (git config's) in place of them.
@@ -430,9 +439,9 @@ public sealed class TestRun : IAsyncDisposable
     /// tries each once.</summary>
     private static void End(bool waiting)
     {
-        // The windows' agent sockets and the language servers' temporary folders are in folders named for the run's state, outside it.
-        foreach (string folder in (string[])[Root, .. Temporary == PersonsTemporary ? (string[])[] : [Temporary], Passenger.App.Mcp.McpHost.SocketFolder, AspireCli.Home,
-            .. UserTemporary.Of(Passenger.App.CSharp.CSharpService.ServerCache, Passenger.Lsp.RoslynServerFolder.TemporariesKind) is var servers && Directory.Exists(servers) ? [servers] : (string[])[]])
+        // The windows' agent sockets and the language servers' and the SDK's temporary folders are named for each state, outside the run's folder.
+        UserTemporary.LetGoOf(states ??= StatesUnder(Root));
+        foreach (string folder in (string[])[Root, .. Temporary == PersonsTemporary ? (string[])[] : [Temporary], AspireCli.Home])
         {
             try
             {
@@ -443,6 +452,24 @@ public sealed class TestRun : IAsyncDisposable
                 Console.Error.WriteLine($"The tests' folder {folder} could not be removed: {held.Message}");
             }
         }
+    }
+
+    /// <summary>The state folders the run's Passengers kept, read as its end first comes, before its folder goes.</summary>
+    private static string[]? states;
+
+    /// <summary>Every folder a Passenger of a run may have kept its state in, each a state's own folders in the user's
+    /// temporary folder are named for (<see cref="UserTemporary.Of"/>): the run's folder and those under it as deep as a
+    /// test's state lies, with each one's cache (<see cref="Passenger.App.CSharp.CSharpService.ServerCache"/>), which
+    /// names the language servers' folders whether or not it was ever made.</summary>
+    private static string[] StatesUnder(string root)
+    {
+        if (!Directory.Exists(root))
+        {
+            return [];
+        }
+        EnumerationOptions deep = new() { RecurseSubdirectories = true, MaxRecursionDepth = 2, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        string[] folders = [root, .. Directory.EnumerateDirectories(root, "*", deep)];
+        return [.. folders, .. folders.Select(folder => Path.Combine(folder, "cache"))];
     }
 }
 
@@ -885,7 +912,9 @@ public static class RunFiles
         {
             return;
         }
-        foreach (string program in Directory.EnumerateFiles(folder, "*.cs", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true }))
+        // Links passed over: one to a folder above (a test of a walk going round the tree) has the walk go round for good.
+        EnumerationOptions under = new() { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.Hidden | FileAttributes.System | FileAttributes.ReparsePoint };
+        foreach (string program in Directory.EnumerateFiles(folder, "*.cs", under))
         {
             string name = $"{Path.GetFileNameWithoutExtension(program)}-{Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(program.ToUpperInvariant())))}";
             if (made.Contains(name))
