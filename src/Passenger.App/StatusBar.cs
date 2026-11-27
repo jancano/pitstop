@@ -214,7 +214,7 @@ public sealed class StatusBar
         if (shownFile != (active, folder))
         {
             shownFile = (active, folder);
-            text.Text = active is not null ? string.Empty : folder is null ? "No solution" : Path.GetFileName(folder);
+            text.Text = active is not null ? string.Empty : folder is null ? "No project open" : Path.GetFileName(folder);
         }
         ShowStorage(active);
         OpenDocument? textual = Textual(active);

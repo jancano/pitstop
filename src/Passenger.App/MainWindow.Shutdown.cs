@@ -33,7 +33,7 @@ public partial class MainWindow
             Editors.LetGoOfFiles();
         };
         // Only the person closes the solution: an agent's ide_action or input is refused, attached or in its own Passenger.
-        actions!.Add(new IdeAction(AppActions.CloseSolution, "Close Solution", "IDE", _ =>
+        actions!.Add(new IdeAction(AppActions.CloseSolution, ManagedDevelopment ? "Close Solution" : "Close Project", "IDE", _ =>
         {
             if (!RefusedToAgentsInput(Refusals.CloseSolutionIsThePersons))
             {
@@ -114,7 +114,7 @@ public partial class MainWindow
         }
         EndSession();
         AgentsGoTo(null, null);
-        ProjectName.Text = "No solution";
+        ProjectName.Text = "No project open";
         ProjectBadge.IsVisible = false;
         SayOnWelcome(null);
         Editors.ShowWelcome(Welcome);

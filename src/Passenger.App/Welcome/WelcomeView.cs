@@ -246,7 +246,7 @@ public sealed class WelcomeView : UserControl
         list.ItemsSource = shown;
         int chosen = was is null ? -1 : shown.FindIndex(r => r.Path == was.Path);
         list.SelectedIndex = shown.Count == 0 ? -1 : chosen >= 0 ? chosen : Math.Min(at, shown.Count - 1);
-        empty.Text = all.Count == 0 ? "No recent solutions yet\nThe solutions, projects and folders you open are listed here" : "Nothing matches";
+        empty.Text = all.Count == 0 ? "No recent projects yet" : "Nothing matches";
         empty.IsVisible = shown.Count == 0;
         if (focused && list.SelectedIndex >= 0)
         {

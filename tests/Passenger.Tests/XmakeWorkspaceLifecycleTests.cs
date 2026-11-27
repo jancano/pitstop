@@ -37,6 +37,7 @@ public sealed class XmakeWorkspaceLifecycleTests
             Assert.Equal(ExplorerViewKind.Xmake, window.ExplorerView.ViewShown);
             Assert.NotNull(window.Actions[AppActions.OpenNativeProject]);
             Assert.NotNull(window.Actions[AppActions.NewNativeProject]);
+            Assert.Equal("Close Project", window.Actions[AppActions.CloseSolution]?.Title);
             Assert.Null(window.Open(source));
             Assert.Equal(source, window.EditorArea.Active?.Path);
         }

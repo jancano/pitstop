@@ -108,7 +108,7 @@
                                 <TextBlock Name="ProjectBadgeText" Classes="badgeText" />
                             </Border>
                             <PathIcon DockPanel.Dock="Right" Classes="chevron" Data="{StaticResource Icon.ChevronDown}" />
-                            <TextBlock Name="ProjectName" Classes="projectName" Text="No solution" VerticalAlignment="Center"
+                            <TextBlock Name="ProjectName" Classes="projectName" Text="No project open" VerticalAlignment="Center"
                                        MaxWidth="240" TextTrimming="CharacterEllipsis" />
                         </DockPanel>
                     </Button>
@@ -267,7 +267,7 @@
                         <DockPanel>
                             <PathIcon Name="StatusIcon" DockPanel.Dock="Left" Classes="lead" Width="14" Height="14" IsVisible="False" VerticalAlignment="Center" />
                             <app:WorkingRing Name="StatusWorking" DockPanel.Dock="Left" Classes="lead" Width="14" Height="14" IsVisible="False" VerticalAlignment="Center" />
-                            <app:LiveText Name="StatusText" Classes="status" Text="No solution" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            <app:LiveText Name="StatusText" Classes="status" Text="No project open" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                         </DockPanel>
                     </Button>
                 </app:StatusLine>
