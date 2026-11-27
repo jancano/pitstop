@@ -313,7 +313,10 @@ public sealed class ProjectSession : IAsyncDisposable
         OpenedByPerson(opening);
         session.Workspace = setup.ManagedDevelopment ? session.Models.Apply(opening) : opening;
         session.TakeFilter(session.Workspace);
-        session.TimeSolutionView();
+        if (setup.ManagedDevelopment)
+        {
+            session.TimeSolutionView();
+        }
         session.Configurations.Configure(session.Projects);
         // The single-file AppHosts are found among the files the index's walk lists, never by a walk of their own.
         if (setup.ManagedDevelopment)
@@ -848,8 +851,8 @@ public sealed class ProjectSession : IAsyncDisposable
     /// <summary>The folder's AppHosts, and what each C# file is to them.</summary>
     public AspireFiles AspireFiles { get; }
 
-    /// <summary>Done once the folder's single-file AppHosts have been read from its first walk.</summary>
-    public Task AspireFilesRead => Folder is null ? Task.CompletedTask : AspireFiles.Read;
+    /// <summary>Done once the managed profile has read the folder's single-file AppHosts.</summary>
+    public Task AspireFilesRead => Folder is null || !setup.ManagedDevelopment ? Task.CompletedTask : AspireFiles.Read;
 
     /// <summary>The folder's Node packages, whose scripts are run configurations.</summary>
     public Web.NodeFiles NodeFiles { get; }
