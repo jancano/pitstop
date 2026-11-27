@@ -143,7 +143,7 @@ public sealed class DockingTests
         MainWindow window = Open();
         window.DockHost.Show(ToolWindowIds.Run);
         Ui.Settle();
-        Control header = Header(window, "Explorer");
+        Control header = Header(window, "Project Explorer");
         Point from = Ui.Centre(header, window);
         Point to = new(window.Bounds.Width * 0.8, window.Bounds.Height * 0.85);
         Ui.Drag(window, from, to);
