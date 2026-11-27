@@ -1,13 +1,16 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Pitstop.App;
 using Pitstop.App.Debugging;
 using Pitstop.App.Run;
+using Pitstop.App.Settings;
 using Pitstop.App.ToolWindows;
 using Pitstop.Core;
 using Pitstop.Dap;
@@ -22,9 +25,28 @@ public sealed class NativeDebuggerIdeTests
     private static readonly TimeSpan Limit = TimeSpan.FromMinutes(3);
 
     [AvaloniaFact]
+    public void Native_breakpoint_settings_and_watches_round_trip_without_an_adapter()
+    {
+        BreakpointStore store = new();
+        string source = Path.Combine(TestFolders.Create("debug-settings-"), "main.cpp");
+        LineBreakpoint point = store.Set(source, 6);
+        store.SetCondition(point, "count == 4", "2");
+        store.AddNativeFunction("parse");
+        store.Restore(store.Capture() with { NativeWatches = ["count", "count + 1"] });
+        BreakpointsState saved = store.Capture();
+        Assert.Collection(saved.NativeWatches, watch => Assert.Equal("count", watch), watch => Assert.Equal("count + 1", watch));
+        Assert.Equal("parse", Assert.Single(saved.NativeFunctions).Name);
+        LineBreakpoint restored = Assert.Single(store.In(source));
+        Assert.Equal(6, restored.Line);
+        Assert.Equal("count == 4", restored.Condition);
+        Assert.Equal("2", restored.HitCondition);
+    }
+
+    [AvaloniaFact]
     public void F5_builds_a_native_target_and_opens_real_LLDB_frames_and_variables()
     {
         string root = Configure("native-debug");
+        string unused = TestFolders.Write(root, "unused.hpp", "inline int never_linked() { return -1; }");
         MainWindow window = Open(root);
         try
         {
@@ -37,7 +59,6 @@ public sealed class NativeDebuggerIdeTests
             LineBreakpoint point = Assert.Single(window.Session.Debug.Breakpoints.In(path));
             Assert.Equal(line, point.Line);
             window.Session.Debug.Breakpoints.SetCondition(point, "seed == 11", null);
-            string unused = TestFolders.Write(root, "unused.hpp", "inline int never_linked() { return -1; }");
             LineBreakpoint pending = window.Session.Debug.Breakpoints.Set(unused, 0);
             long launch = Stopwatch.GetTimestamp();
             Ui.Press(window, "F5");
@@ -50,21 +71,57 @@ public sealed class NativeDebuggerIdeTests
             Assert.NotEmpty(window.BottomPanel.Debug.Threads);
             Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(row => row is { Name: "seed", Value: "11" }),
                 "LLDB function argument in Variables", Limit);
+            StopTimes? locals = window.Session.Debug.LastStopTimes;
+            DapStackFrame caller = Assert.Single(window.BottomPanel.Debug.Frames,
+                frame => frame.Name.TrimStart(':').StartsWith("wmain(", StringComparison.Ordinal));
+            ListBox stack = window.GetVisualDescendants().OfType<ListBox>()
+                .Single(list => ReferenceEquals(list.ItemsSource, window.BottomPanel.Debug.Frames));
+            long selecting = Stopwatch.GetTimestamp();
+            stack.SelectedItem = caller;
+            Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.All(row => row.Name != "seed") && window.EditorArea.Active?.Path == path,
+                "caller frame inspection", Limit);
+            stack.SelectedItem = window.BottomPanel.Debug.Frames[0];
+            Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(row => row is { Name: "seed", Value: "11" }), "original frame inspection", Limit);
+            TimeSpan frameSelection = Stopwatch.GetElapsedTime(selecting);
             VariableNode vector = Assert.Single(window.BottomPanel.Debug.Tree.Rows, row => row.Name == "items");
             long expanding = Stopwatch.GetTimestamp();
             Ui.Await(window.BottomPanel.Debug.Tree.Expand(vector), "libc++ synthetic children", Limit);
             TimeSpan expansion = Stopwatch.GetElapsedTime(expanding);
             Assert.Contains(window.BottomPanel.Debug.Tree.Rows, row => row is { Name: "[0]", Value: "2" });
+            window.BottomPanel.Debug.FocusEvaluate("seed");
+            Ui.Press(window, "CTRL+SHIFT+ENTER");
+            Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(row => row is { Role: VariableRole.Watch, Name: "seed", Value: "11" }),
+                "a watch uses the actual frame value", TimeSpan.FromSeconds(25));
+            window.BottomPanel.Debug.FocusEvaluate("items");
+            Ui.Press(window, "CTRL+SHIFT+ENTER");
+            Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(row => row is { Role: VariableRole.Watch, Name: "items" }),
+                "the vector watch uses a debugger-supplied reference", TimeSpan.FromSeconds(25));
+            VariableNode watchedVector = Assert.Single(window.BottomPanel.Debug.Tree.Rows,
+                row => row is { Role: VariableRole.Watch, Name: "items" });
+            Ui.Await(window.BottomPanel.Debug.Tree.Expand(watchedVector), "the expanded vector watch in Variables", Limit);
+            Capture(window, "native-debug-variables");
             VariableNode large = Assert.Single(window.BottomPanel.Debug.Tree.Rows, row => row.Name == "large");
+            long expandingLarge = Stopwatch.GetTimestamp();
             Ui.Await(window.BottomPanel.Debug.Tree.Expand(large), "the first page of the large vector", Limit);
             VariableNode page = Assert.Single(window.BottomPanel.Debug.Tree.Rows, row => row.Name == "Next 100 values");
             Ui.Await(window.BottomPanel.Debug.Tree.Expand(page), "the second page of the large vector", Limit);
             Assert.Contains(window.BottomPanel.Debug.Tree.Rows, row => row is { Name: "[100]", Value: "7" });
+            TimeSpan largeExpansion = Stopwatch.GetElapsedTime(expandingLarge);
+            Ui.Await(window.BottomPanel.Debug.Tree.Collapse(large), "collapse the paged vector", Limit);
             window.BottomPanel.Debug.FocusEvaluate("seed + 2");
             Ui.Press(window, "ENTER");
             Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(row => row is { Role: VariableRole.Result, Value: "13" }),
                 "an explicit LLDB expression result", Limit);
-            Capture(window, "native-debug-variables");
+            window.BottomPanel.Debug.ShowTab(console: true);
+            TextBox console = window.GetVisualDescendants().OfType<TextBox>()
+                .Single(box => Avalonia.Automation.AutomationProperties.GetName(box) == "Native debugger console expression");
+            console.Text = "seed + 3";
+            console.Focus();
+            Ui.Press(window, "ENTER");
+            Ui.WaitFor(() => window.Session.Debug.Output().ToString().Contains("Expression result: 14", StringComparison.Ordinal),
+                "the explicit LLDB console result", Limit);
+            Capture(window, "native-debug-expression-console");
+            window.BottomPanel.Debug.ShowTab(console: false);
             window.ShowBreakpoints(point);
             Capture(window, "native-debug-breakpoints");
             Ui.Press(window, "ESCAPE");
@@ -73,6 +130,10 @@ public sealed class NativeDebuggerIdeTests
             Assert.True(window.Perform(AppActions.StepOver));
             Ui.WaitFor(() => window.Session.Debug.Session is { State: DebugState.Paused } session && session.Stops > stopped, "an LLDB step", Limit);
             TimeSpan step = Stopwatch.GetElapsedTime(stepping);
+            Ui.PlaceAfter(window.EditorArea.CodeEditor, "// shared-call");
+            Assert.True(window.Perform(AppActions.RunToCursor));
+            Ui.WaitFor(() => window.Session.Debug.Stop?.Top?.Line == Mark(path, "shared-call") + 1 &&
+                window.Session.Debug.Session?.State == DebugState.Paused, "LLDB Run to Cursor reaches the temporary breakpoint", Limit);
             long stopping = Stopwatch.GetTimestamp();
             Assert.True(window.Perform(AppActions.Stop));
             Ui.WaitFor(() => !window.Session.Debug.IsDebugging, "native debug shutdown", Limit);
@@ -83,8 +144,10 @@ public sealed class NativeDebuggerIdeTests
                 File.WriteAllText(Path.Combine(destination, "native-debug-timings.json"), System.Text.Json.JsonSerializer.Serialize(new
                 {
                     firstStopMilliseconds = firstStop.TotalMilliseconds,
-                    locals = window.Session.Debug.LastStopTimes,
+                    locals,
+                    twoFrameSelectionsMilliseconds = frameSelection.TotalMilliseconds,
                     smallVectorExpansionMilliseconds = expansion.TotalMilliseconds,
+                    pagedVectorExpansionMilliseconds = largeExpansion.TotalMilliseconds,
                     stepMilliseconds = step.TotalMilliseconds,
                     shutdownMilliseconds = shutdown.TotalMilliseconds,
                 }));
@@ -106,21 +169,23 @@ public sealed class NativeDebuggerIdeTests
         MainWindow window = Open(root);
         try
         {
-            Assert.True(window.SelectConfiguration("Xmake: debug-modules"));
+            RunConfiguration configuration = new()
+            {
+                Name = "Module debug", Kind = RunKind.Xmake, XmakeTarget = "debug-modules", NativeStopOnEntry = true,
+            };
+            window.SetConfigurations([configuration], configuration.Name);
             string path = Path.Combine(root, "partition.cppm");
             Assert.Null(window.OpenFile(path));
-            Ui.PlaceAfter(window.EditorArea.CodeEditor, "// partition-stop");
-            Assert.True(window.Perform(AppActions.ToggleBreakpoint));
+            window.Session.Debug.Breakpoints.Set(path, Mark(path, "partition-stop"));
             string main = Path.Combine(root, "main.cpp");
             Assert.Null(window.OpenFile(main));
-            Ui.PlaceAfter(window.EditorArea.CodeEditor, "// consumer-stop");
-            Assert.True(window.Perform(AppActions.ToggleBreakpoint));
-            if (standard == "cxx23")
-            {
-                Ui.WaitFor(() => window.Session.Modules?.Snapshot?.Named("debug_values:partition").Any() == true,
-                    "module partition indexing before the debugger starts", Limit);
-            }
+            window.Session.Debug.Breakpoints.Set(main, Mark(main, "consumer-stop"));
+            Ui.WaitFor(() => window.Session.Modules?.Snapshot?.Named("debug_values:partition").Any() == true,
+                "module partition indexing before the debugger starts", Limit);
             Ui.Launched(window, window.DebugAsync(), "the native module debug session", Limit);
+            Ui.WaitFor(() => window.Session.Debug.Session is { State: DebugState.Paused, StopReason: "entry" },
+                "the configured LLDB entry stop", Limit);
+            Assert.True(window.Perform(AppActions.Resume));
             WaitForStop(window, main);
             Assert.True(window.Perform(AppActions.StepInto));
             WaitForStop(window, Path.Combine(root, "facade.cppm"));
@@ -133,6 +198,8 @@ public sealed class NativeDebuggerIdeTests
                 Assert.Contains(window.Session.Debug.Session!.ModuleContext(path)!.Providers, provider => provider.Name == "debug_values:partition");
                 Capture(window, "native-debug-partition");
             }
+            Assert.True(window.Perform(AppActions.StepOut));
+            WaitForStop(window, Path.Combine(root, "implementation.cpp"));
             Assert.True(window.Perform(AppActions.Resume));
             Ui.WaitFor(() => window.Session.Debug.Session?.State == DebugState.Ended, "the module debuggee to exit", Limit);
             Assert.Equal(0, window.Session.Debug.Session!.ExitCode);
@@ -210,6 +277,10 @@ public sealed class NativeDebuggerIdeTests
             Ui.Launched(window, window.DebugAsync(), "the debuggee that creates a child", Limit);
             Pitstop.App.Debugging.DebugSession first = window.Session.Debug.Session!;
             using Process initialChild = LaunchedChild();
+            window.BottomPanel.Debug.ShowTab(console: true);
+            Capture(window, "native-debug-startup");
+            Assert.True(window.Perform(AppActions.Pause));
+            Ui.WaitFor(() => first.State == DebugState.Paused, "the running native program to pause", Limit);
             Assert.True(window.Perform(AppActions.Rerun));
             Ui.WaitFor(() => window.Session.Debug.Session is { State: DebugState.Running } current && current != first, "the replacement debug session", Limit);
             Assert.False(DotnetProcesses.Runs(initialChild));
@@ -296,9 +367,17 @@ public sealed class NativeDebuggerIdeTests
                 Ui.Await(dialog.Listed, "enumeration of local processes", Limit);
                 dialog.Choose(child.Id);
                 Assert.Equal(child.Id, dialog.Chosen?.Id);
+                Capture(dialog, "native-debug-attach");
                 dialog.Attach();
                 Ui.WaitFor(() => window.Session.Debug.Session is { Attached: true, State: DebugState.Paused }, "LLDB attaches in stopped state", Limit);
                 Ui.WaitFor(() => window.BottomPanel.Debug.Threads.Count >= 2, "the native process's worker thread", Limit);
+                ComboBox threads = window.GetVisualDescendants().OfType<ComboBox>()
+                    .Single(list => ReferenceEquals(list.ItemsSource, window.BottomPanel.Debug.Threads));
+                int previousTop = window.BottomPanel.Debug.Frames[0].Id;
+                threads.SelectedItem = window.BottomPanel.Debug.Threads.First(thread => thread.Id != window.Session.Debug.Session!.StoppedThread);
+                Ui.WaitFor(() => window.BottomPanel.Debug.Frames.FirstOrDefault() is { } top && top.Id != previousTop,
+                    "the selected worker's own stack", Limit);
+                Capture(window, "native-debug-threads");
                 Assert.True(window.Perform(AppActions.Detach));
                 Ui.WaitFor(() => !window.Session.Debug.IsDebugging, "safe native detach", Limit);
                 Assert.True(DotnetProcesses.Runs(child));
@@ -317,6 +396,40 @@ public sealed class NativeDebuggerIdeTests
         }
     }
 
+    [AvaloniaFact]
+    public void Explicit_adapter_setting_reports_the_reference_adapter_and_an_actionable_missing_path()
+    {
+        string root = Configure("native-debug");
+        MainWindow window = Open(root);
+        try
+        {
+            string llvm = Environment.GetEnvironmentVariable("PITSTOP_TEST_LLVM_MINGW")!;
+            string adapter = Environment.GetEnvironmentVariable(LldbDiscovery.AdapterVariable) ?? Path.Combine(llvm, "bin", "lldb-dap.exe");
+            Inspect(adapter, "LLDB 23.1.6", "native-debug-settings");
+            Inspect(Path.Combine(root, "missing-lldb-dap.exe"), "Set PITSTOP_LLDB_DAP", "native-debug-missing-adapter");
+        }
+        finally
+        {
+            window.Close();
+        }
+
+        void Inspect(string path, string expected, string screenshot)
+        {
+            window.ApplySettings(window.Settings with { NativeTools = window.Settings.NativeTools with { LldbDap = path } });
+            SettingsDialog dialog = window.ShowSettings();
+            dialog.Page = SettingsDialog.NativeToolchainsPage;
+            Ui.Settle();
+            Ui.ClickButton(dialog, "Detect Toolchains");
+            TextBlock report = dialog.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Name == "NativeToolchainReport");
+            Ui.WaitFor(() => report.Text?.Contains(expected, StringComparison.OrdinalIgnoreCase) == true,
+                () => report.Text ?? "native toolchain report", Limit);
+            ScrollViewer scroll = report.GetVisualAncestors().OfType<ScrollViewer>().First();
+            scroll.Offset = new Vector(0, Math.Max(0, scroll.Extent.Height - scroll.Viewport.Height));
+            Capture(dialog, screenshot);
+            dialog.Close();
+        }
+    }
+
     private static MainWindow Open(string root)
     {
         MainWindow window = new(managedDevelopment: false) { Width = 1360, Height = 900, Autosaves = false };
@@ -329,8 +442,10 @@ public sealed class NativeDebuggerIdeTests
     private static void WaitForStop(MainWindow window, string path) => Ui.WaitFor(
         () => window.Session.Debug.Session is { Engine: DebugEngine.Native, State: DebugState.Paused }
             && window.Session.Debug.Stop?.Top?.Source?.Path is { } at && PathNames.Same(path, at),
-        () => $"LLDB stop in {Path.GetFileName(path)}\n{Ui.Said(window)}\n{window.Session.Debug.Output()}",
-        Limit);
+        () => $"LLDB stop in {Path.GetFileName(path)}, actual {window.Session.Debug.Session?.State}/{window.Session.Debug.Stop?.Top?.Source?.Path}, "
+            + $"breakpoints {string.Join(", ", window.Session.Debug.Breakpoints.In(path).Select(point => $"{point.Line}: {point.Status}"))}\n"
+            + $"{Ui.Said(window)}\n{window.Session.Debug.Output()}",
+        TimeSpan.FromSeconds(50));
 
     private static int Mark(string path, string marker) => File.ReadLines(path)
         .Select((line, index) => (line, index)).Single(line => line.line.Contains("// " + marker, StringComparison.Ordinal)).index;
@@ -361,7 +476,7 @@ public sealed class NativeDebuggerIdeTests
         return root;
     }
 
-    private static void Capture(MainWindow window, string name)
+    private static void Capture(Window window, string name)
     {
         if (Environment.GetEnvironmentVariable("PITSTOP_TEST_DEBUG_SHOTS") is not { Length: > 0 } destination)
         {
