@@ -625,8 +625,8 @@ def variant(theme, p, dark):
     up = 0.07 if dark else -0.07
     t["Passenger.Terminal.Ansi0"] = mix(editor, text, 0.2) if dark else shift(text, -0.1)
     for i, name in enumerate(ansi, 1):
-        t[f"Pitstop.Terminal.Ansi{i}"] = hue(name) if dark else legible(hue(name), [editor], round(M - 0.1, 2), dark)
-        t[f"Pitstop.Terminal.Ansi{i + 8}"] = shift(t[f"Pitstop.Terminal.Ansi{i}"], up * (1 if dark else -0.6))
+        t[f"Passenger.Terminal.Ansi{i}"] = hue(name) if dark else legible(hue(name), [editor], round(M - 0.1, 2), dark)
+        t[f"Passenger.Terminal.Ansi{i + 8}"] = shift(t[f"Passenger.Terminal.Ansi{i}"], up * (1 if dark else -0.6))
     t["Passenger.Terminal.Ansi7"] = mix(muted, text, 0.3)
     t["Passenger.Terminal.Ansi8"] = mix(editor, text, 0.42)
     t["Passenger.Terminal.Ansi15"] = shift(text, 0.08) if dark else mix(editor, text, 0.32)
