@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.ExpressionEvaluator;
 using Passenger.Debugger.ExpressionEvaluator.Cil;
 using Passenger.Debugger.Interop;
@@ -907,7 +907,7 @@ public partial class ManagedDebugger
                         _exceptionStates.Remove(threadId);
                         bool told = EndsUnhandledAlready(corThread);
                         EndsUnhandled(corThread);
-                        bool unhandled = goesOn is Passenger.Dap.ExceptionScenarios.Unhandled;
+                        bool unhandled = goesOn is Pitstop.Dap.ExceptionScenarios.Unhandled;
                         shouldStop = !told && (unhandled ? _exceptionRules is null : _justMyCode && MatchesExceptionBreakpoint(ExceptionBreakpointFilter.UserUnhandled, exceptionType));
                         rules = told ? [] : MatchingRules(exceptionType, !seen || state!.ThrownInUserCode, goesOn);
                         breakMode = unhandled ? ExceptionBreakMode.Unhandled : ExceptionBreakMode.UserUnhandled;
@@ -919,7 +919,7 @@ public partial class ManagedDebugger
                     if (seen || !_justMyCode)
                     {
                         rules = MatchingRules(exceptionType, state?.ThrownInUserCode ?? true,
-                            handledInUserCode ? Passenger.Dap.ExceptionScenarios.HandledInUserCode : Passenger.Dap.ExceptionScenarios.HandledInExternalCode);
+                            handledInUserCode ? Pitstop.Dap.ExceptionScenarios.HandledInUserCode : Pitstop.Dap.ExceptionScenarios.HandledInExternalCode);
                     }
                     _exceptionStates.Remove(threadId);
                     breakMode = shouldStop || !handledInUserCode ? ExceptionBreakMode.UserUnhandled : ExceptionBreakMode.Always;
@@ -943,7 +943,7 @@ public partial class ManagedDebugger
                     // A client that gives no exception breakpoints has every unhandled exception stop; one that does, where they say.
                     shouldStop = !told && _exceptionRules is null;
                     rules = told ? [] : MatchingRules(exceptionType, seen ? state!.ThrownInUserCode : !_justMyCode || IsUserCodeFrame(exceptionEventArgs.Frame),
-                        Passenger.Dap.ExceptionScenarios.Unhandled);
+                        Pitstop.Dap.ExceptionScenarios.Unhandled);
                     breakMode = ExceptionBreakMode.Unhandled;
                     break;
                 }
@@ -998,13 +998,13 @@ public partial class ManagedDebugger
     }
 
     /// <summary>The exception breakpoints for an exception of this type thrown where it was and handled as it is (or not).</summary>
-    private List<ExceptionRule> MatchingRules(string exceptionType, bool thrownInUserCode, Passenger.Dap.ExceptionScenarios handled)
+    private List<ExceptionRule> MatchingRules(string exceptionType, bool thrownInUserCode, Pitstop.Dap.ExceptionScenarios handled)
     {
         if (_exceptionRules is not { Count: > 0 } rules)
         {
             return [];
         }
-        Passenger.Dap.ExceptionScenarios thrown = thrownInUserCode ? Passenger.Dap.ExceptionScenarios.ThrownInUserCode : Passenger.Dap.ExceptionScenarios.ThrownInExternalCode;
+        Pitstop.Dap.ExceptionScenarios thrown = thrownInUserCode ? Pitstop.Dap.ExceptionScenarios.ThrownInUserCode : Pitstop.Dap.ExceptionScenarios.ThrownInExternalCode;
         return [.. rules.Where(rule => rule.Refused is null && rule.Request.Scenarios.HasFlag(thrown) && rule.Request.Scenarios.HasFlag(handled) && rule.IsFor(exceptionType))];
     }
 

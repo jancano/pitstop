@@ -9,7 +9,7 @@ using Passenger.App;
 using Passenger.App.Debugging;
 using Passenger.App.LiveTree;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 using Passenger.Inspector;
 using Passenger.Text;

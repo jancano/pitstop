@@ -311,7 +311,7 @@ public sealed class ContainerDebuggingTests(ContainerDebuggingTests.Turns turns)
             ShownAt(window, Said);
             Assert.Equal(source, window.EditorArea.Active?.Path);
             DebugSession session = window.Debugger.Session!;
-            IReadOnlyList<Passenger.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
+            IReadOnlyList<Pitstop.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
             Assert.Equal(source, frames[0].Source?.Path);
             Assert.True(window.Perform(AppActions.Detach), "Detach could not run");
             Ui.WaitFor(() => !window.Debugger.IsDebugging, "the debugger to let go");
@@ -451,7 +451,7 @@ public sealed class ContainerDebuggingTests(ContainerDebuggingTests.Turns turns)
     /// <summary>Waits for the program to stop at its breakpoint, failing with what the status bar said when the attach failed.</summary>
     private static void StoppedAtBreakpoint(MainWindow window, string what)
     {
-        Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Paused, StopReason: Passenger.Dap.StopReasons.Breakpoint }
+        Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Paused, StopReason: Pitstop.Dap.StopReasons.Breakpoint }
             || window.Status is { } said && (said.StartsWith("Could not", StringComparison.Ordinal) || said.StartsWith("Cannot", StringComparison.Ordinal)),
             $"{what} to stop at its breakpoint");
         Assert.True(window.Debugger.Session is { State: DebugState.Paused }, $"{what} did not stop at its breakpoint: {window.Status}");
@@ -467,7 +467,7 @@ public sealed class ContainerDebuggingTests(ContainerDebuggingTests.Turns turns)
         }
         catch (TimeoutException)
         {
-            IReadOnlyList<Passenger.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
+            IReadOnlyList<Pitstop.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
             Assert.Fail("The stop did not show in the editor; its frames: "
                 + string.Join(", ", frames.Take(3).Select(f => $"{f.Name} at {f.Source?.Path}:{f.Line}")));
         }
@@ -475,8 +475,8 @@ public sealed class ContainerDebuggingTests(ContainerDebuggingTests.Turns turns)
 
     private static string Evaluate(DebugSession session, string expression)
     {
-        IReadOnlyList<Passenger.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
-        return Ui.Await(session.EvaluateAsync(expression, frames[0].Id, Dap.EvaluateContexts.Watch), $"{expression} to be evaluated").Result;
+        IReadOnlyList<Pitstop.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
+        return Ui.Await(session.EvaluateAsync(expression, frames[0].Id, Pitstop.Dap.EvaluateContexts.Watch), $"{expression} to be evaluated").Result;
     }
 
     /// <summary>The program the tests debug, built here in Debug for .NET 10 several ways (as it is, naming the container's

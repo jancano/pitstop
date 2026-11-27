@@ -146,7 +146,7 @@ public sealed class MauiSimulatorTests
             Ui.Run(window, AppActions.StepOver);
             Ui.WaitFor(() => window.Debugger.Session?.State == DebugState.Paused && Shown(window, "this") is { } shown && shown.Contains("ScrollView", StringComparison.Ordinal),
                 () => $"the step over InitializeComponent, the page's content shown made; this is {Shown(window, "this") ?? "not shown"}: {Ui.Said(window)}", Slow);
-            Dap.EvaluateResponse count = Ui.Await(window.Debugger.Session!.EvaluateAsync("count + 41", window.BottomPanel.Debug.Frames[0].Id, Dap.EvaluateContexts.Watch),
+            Pitstop.Dap.EvaluateResponse count = Ui.Await(window.Debugger.Session!.EvaluateAsync("count + 41", window.BottomPanel.Debug.Frames[0].Id, Pitstop.Dap.EvaluateContexts.Watch),
                 "the page's count, evaluated where the app stopped", Slow);
             Assert.Equal("41", count.Result);
 
@@ -155,9 +155,9 @@ public sealed class MauiSimulatorTests
             Ui.WaitFor(() => window.Debugger.LastApplied is not null, () => $"Hot Reload to say what it applied: {Ui.Said(window)}", Slow);
             Assert.True(window.Debugger.LastApplied!.Result == HotReloadResult.Applied,
                 $"The app on the simulator did not take the edit: {window.Debugger.LastApplied.Said}\n{Console(window)}");
-            Ui.Await(window.Debugger.Session!.EvaluateAsync("OnCounterClicked(null, EventArgs.Empty)", window.BottomPanel.Debug.Frames[0].Id, Dap.EvaluateContexts.Watch),
+            Ui.Await(window.Debugger.Session!.EvaluateAsync("OnCounterClicked(null, EventArgs.Empty)", window.BottomPanel.Debug.Frames[0].Id, Pitstop.Dap.EvaluateContexts.Watch),
                 "the click handler the edit changed, called where the app stopped", Slow);
-            Dap.EvaluateResponse text = Ui.Await(window.Debugger.Session!.EvaluateAsync("CounterBtn.Text", window.BottomPanel.Debug.Frames[0].Id, Dap.EvaluateContexts.Watch),
+            Pitstop.Dap.EvaluateResponse text = Ui.Await(window.Debugger.Session!.EvaluateAsync("CounterBtn.Text", window.BottomPanel.Debug.Frames[0].Id, Pitstop.Dap.EvaluateContexts.Watch),
                 "the button's text after the edited handler ran", Slow);
             Assert.True(text.Result == "\"Pressed 1 time\"", $"The click handler ran as built, not as edited: the button says {text.Result}");
 

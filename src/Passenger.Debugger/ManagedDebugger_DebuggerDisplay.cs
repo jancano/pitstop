@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Reflection.Metadata;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.ExpressionEvaluator;
 using Passenger.Debugger.ExpressionEvaluator.Cil;
 using Passenger.Debugger.Interop;

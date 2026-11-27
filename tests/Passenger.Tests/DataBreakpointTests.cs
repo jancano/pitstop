@@ -280,7 +280,7 @@ public sealed class DataBreakpointTests : IClassFixture<RestoredFolders>, IDispo
         Ui.WaitFor(() => window.Debugger.Session?.StopReason == "data breakpoint" || window.Debugger.Session?.State == DebugState.Ended, "the stop at the write");
         Ui.WaitFor(() => Value(window, "value") == "2", "the stop at Set(2), the first write that changes count");
         Ui.WaitFor(() => watched.Message is not null, () => $"the data breakpoint to say why it stopped, its condition not told (it is {watched.Status})");
-        Assert.StartsWith(Passenger.Dap.BreakpointConditions.NotEvaluated("noSuchName == 3"), watched.Message, StringComparison.Ordinal);
+        Assert.StartsWith(Pitstop.Dap.BreakpointConditions.NotEvaluated("noSuchName == 3"), watched.Message, StringComparison.Ordinal);
         Ui.Run(window, AppActions.Stop);
         Ui.WaitFor(() => !window.Debugger.IsDebugging, "the session to end");
         window.Close();

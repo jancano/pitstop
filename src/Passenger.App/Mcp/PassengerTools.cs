@@ -8,7 +8,7 @@ using Passenger.App.Run;
 using Passenger.App.Web;
 using Passenger.App.Workspace;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 using Passenger.Lsp;
 using Passenger.Text;

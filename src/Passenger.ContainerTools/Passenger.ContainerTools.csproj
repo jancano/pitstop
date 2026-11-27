@@ -77,7 +77,7 @@
   <ItemGroup>
     <Compile Include="../Passenger.DebugAdapter/AdapterProgram.cs" Link="DebugAdapter/AdapterProgram.cs" />
     <Compile Include="../Passenger.DebugAdapter/DebugAdapter.cs" Link="DebugAdapter/DebugAdapter.cs" />
-    <ProjectReference Include="../Passenger.Dap/Passenger.Dap.csproj" />
+    <ProjectReference Include="../Pitstop.Dap/Pitstop.Dap.csproj" />
     <ProjectReference Include="../Passenger.Debugger/Passenger.Debugger.csproj" />
     <ProjectReference Include="../Passenger.Profiler/Passenger.Profiler.csproj" />
   </ItemGroup>

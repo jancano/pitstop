@@ -66,6 +66,6 @@
     <!-- When a wait for the app to set itself up looks again, as both inspectors look. -->
     <Compile Include="../Passenger.Inspector/Looking.cs" Link="Looking.cs" />
     <!-- A property breakpoint's hit count is kept here, where its changes are seen, in the debugger's own words. -->
-    <Compile Include="../Passenger.Dap/HitCondition.cs" Link="HitCondition.cs" />
+    <Compile Include="../Pitstop.Dap/HitCondition.cs" Link="HitCondition.cs" />
   </ItemGroup>
 </Project>

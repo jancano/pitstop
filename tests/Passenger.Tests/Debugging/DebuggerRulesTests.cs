@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Tests.Debugging.Helpers;
 
 namespace Passenger.Tests.Debugging;
@@ -20,7 +20,7 @@ public sealed class DebuggerRulesTests
     {
         HashSet<string> names = [.. typeof(DapRows).GetFields(BindingFlags.Public | BindingFlags.Static)
             .Where(field => field.IsLiteral && field.FieldType == typeof(string)).Select(field => (string)field.GetRawConstantValue()!)];
-        List<string> found = Written(["src"], "src/Passenger.Dap/DapNames.cs", node => node switch
+        List<string> found = Written(["src"], "src/Pitstop.Dap/DapNames.cs", node => node switch
         {
             LiteralExpressionSyntax plain when plain.IsKind(SyntaxKind.StringLiteralExpression) && names.Contains(plain.Token.ValueText) => plain.Token.ValueText,
             // A name numbered after its row's ($ReturnValue1 on), made by a hole after the name.

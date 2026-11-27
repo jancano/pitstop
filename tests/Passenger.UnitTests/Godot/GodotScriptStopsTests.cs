@@ -1,5 +1,5 @@
 using Passenger.App.Godot;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Workspace;
 
 namespace Passenger.UnitTests.Godot;

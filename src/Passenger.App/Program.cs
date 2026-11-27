@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Styling;
 using Velopack;
 using Passenger.Core;
+using Pitstop.Dap;
 
 namespace Passenger.App;
 
@@ -85,7 +86,7 @@ internal static class Program
             _ = Mcp.AgentCall.Every;
             _ = Mcp.PassengerTools.ServerLimit;
             _ = Run.Devices.DeviceLaunches.EndHold;
-            _ = Dap.AdapterEnvironment.EvaluationTimeout;
+            _ = AdapterEnvironment.EvaluationTimeout;
             _ = Text.TextSearch.Apart;
             _ = Passenger.Profiler.SessionStarts.Limit;
             _ = Languages.TextMate.TextMateHighlighter.LineTime;

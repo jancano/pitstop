@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.CodeAnalysis.CSharp;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Text;
 
 namespace Passenger.App.Debugging;

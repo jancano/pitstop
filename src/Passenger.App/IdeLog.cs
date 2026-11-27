@@ -1,6 +1,6 @@
 using System.Text;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Lsp;
 
 namespace Passenger.App;

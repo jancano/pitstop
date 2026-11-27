@@ -20,6 +20,7 @@ using Passenger.Profiler;
 using Passenger.Workspace;
 using Passenger.Xaml.Projects;
 using Pitstop.Xmake;
+using Pitstop.Dap;
 
 namespace Passenger.App;
 
@@ -39,7 +40,7 @@ public sealed record SessionSetup(
     WarmServer? WarmServer,
     ToolViews Views,
     Func<IReadOnlyList<string>, CancellationToken, Task<BuildOutcome>> BuildForTests,
-    Func<string, Dap.RunInTerminalArguments, Task<TerminalRun>> RunForDebugger,
+    Func<string, RunInTerminalArguments, Task<TerminalRun>> RunForDebugger,
     Func<Settings.AppSettings> Settings,
     ActionWork Work,
     Func<Containers.ContainerEngine> Engine)

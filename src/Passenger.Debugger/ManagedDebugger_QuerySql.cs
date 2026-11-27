@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.Interop;
 using Passenger.Debugger.Models.Response;
 using Passenger.Debugger.PresentationHintModels;

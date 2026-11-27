@@ -1,6 +1,6 @@
 using Passenger.App.Debugging;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Workspace;
 
 namespace Passenger.App.Godot;

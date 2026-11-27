@@ -2,7 +2,7 @@ using System.Globalization;
 using Passenger.App.Mobile;
 using Passenger.App.Settings;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Text;
 using Passenger.Workspace;
 

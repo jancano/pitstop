@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Passenger.App.Debugging;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.UnitTests.Debugger;
 

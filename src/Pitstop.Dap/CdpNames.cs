@@ -1,4 +1,6 @@
-namespace Passenger.Dap;
+using Passenger;
+
+namespace Pitstop.Dap;
 
 /// <summary>The Chrome DevTools Protocol's commands Passenger sends a browser's page through .NET's browser debug proxy, by
 /// the protocol's names, each written once.</summary>

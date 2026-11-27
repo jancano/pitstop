@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Text;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Tests.Debugging.Helpers;
 
 namespace Passenger.Tests.Debugging;

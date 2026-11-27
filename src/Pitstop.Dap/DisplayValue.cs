@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>What an expression of a tracepoint's message or a [DebuggerDisplay] read where the program stands, as every
 /// debugger tells it (<see cref="DisplayFormat.Shown"/>): the value as its debugger shows it, and what a format specifier

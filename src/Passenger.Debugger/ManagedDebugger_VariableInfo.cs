@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.Marshalling;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.Interop;
 using Passenger.Debugger.Models.Response;
 using Passenger.Debugger.PresentationHintModels;

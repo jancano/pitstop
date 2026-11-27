@@ -1,5 +1,5 @@
 using Avalonia;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.App.Debugging;
 

@@ -156,7 +156,7 @@ public sealed class HotReloadEditsTests : IClassFixture<HotReloadEditsTests.Tick
                 {
                     // The edits Roslyn's rules allowed are those the program's own runtime says it can take.
                     Assert.Equal(DebugState.Running, window.Debugger.Session!.State);
-                    Dap.HotReloadStateResponse state = Ui.Await(window.Debugger.Session.HotReloadStateAsync(), "what the program's runtime can take");
+                    Pitstop.Dap.HotReloadStateResponse state = Ui.Await(window.Debugger.Session.HotReloadStateAsync(), "what the program's runtime can take");
                     TestContext.Current.TestOutputHelper?.WriteLine($"The runtime's capabilities: {string.Join(' ', state.Capabilities ?? [])}");
                     Assert.True(state.Capabilities is { } capabilities && capabilities.Contains("Baseline") && capabilities.Contains("AddMethodToExistingType"),
                         $"The runtime should say which edits it takes: {state.CapabilitiesUnknown}");

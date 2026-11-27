@@ -71,8 +71,8 @@ public sealed class ContainerServicesTests(ContainerRunDebuggingTests.Tools tool
         Assert.True(window.SelectConfiguration("Compose: compose.yaml"));
         string WebPublished() => Docker.Run("compose", "-p", project, "port", "web", "8080").Split('\n')[0].Trim();
         // Kept in each container, so a service that ends as the debugger lets it go has the engine's last words to tell.
-        string? engineLog = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable);
-        Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, Path.Combine(TestFolders.Create("engine-"), "engine.log"));
+        string? engineLog = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, Path.Combine(TestFolders.Create("engine-"), "engine.log"));
         try
         {
             Ui.Launched(window, window.RunAsync(), "the services to come up", TimeSpan.FromMinutes(5));
@@ -128,7 +128,7 @@ public sealed class ContainerServicesTests(ContainerRunDebuggingTests.Tools tool
         }
         finally
         {
-            Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
             Docker.Stopped(window, project, "Stop to take every container down");
         }
         Ui.WaitFor(() => !window.Debugger.IsDebugging, "the sessions to end with Stop");

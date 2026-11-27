@@ -1,4 +1,4 @@
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.UnitTests.Debugger;
 

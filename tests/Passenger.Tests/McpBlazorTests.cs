@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using ModelContextProtocol.Client;
 using Passenger.App.Mcp;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.Tests;
 

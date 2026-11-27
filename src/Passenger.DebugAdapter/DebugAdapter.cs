@@ -1,5 +1,5 @@
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger;
 using Passenger.Debugger.Models;
 using Passenger.Debugger.Models.Response;
@@ -506,7 +506,7 @@ public sealed class DebugAdapter
                 throw new InvalidOperationException($"Exception options are for CLR exceptions, not {string.Join(", ", path[0].Names)}");
             }
             DapExceptionPathSegment? types = path.Count > 1 ? path[1] : null;
-            Passenger.Dap.ExceptionScenarios scenarios = option.Scenarios is { } named
+            Pitstop.Dap.ExceptionScenarios scenarios = option.Scenarios is { } named
                 ? ExceptionScenarioNames.Parse(named)
                 : ExceptionScenarioNames.OfBreakMode(option.BreakMode);
             return new ExceptionRuleRequest([.. types?.Names ?? []], types?.Negate ?? false, scenarios,

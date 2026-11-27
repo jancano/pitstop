@@ -1,5 +1,5 @@
 using System.Text;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.App.Run;
 

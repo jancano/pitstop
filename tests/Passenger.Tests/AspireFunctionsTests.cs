@@ -8,7 +8,7 @@ using Passenger.App.Aspire;
 using Passenger.App.Debugging;
 using Passenger.App.ToolWindows;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Text;
 
 namespace Passenger.Tests;

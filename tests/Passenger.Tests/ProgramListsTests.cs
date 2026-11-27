@@ -6,7 +6,7 @@ using Avalonia.VisualTree;
 using Passenger.App;
 using Passenger.App.Debugging;
 using Passenger.App.Profiling;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Profiler;
 using Passenger.Text;
 

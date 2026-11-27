@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
+using Passenger;
 using Passenger.Core;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 // The Debug Adapter Protocol, as much of it as Passenger's debugger speaks, in the protocol's own field
 // names (serialized camelCase). Types the protocol names after things that are everywhere in .NET

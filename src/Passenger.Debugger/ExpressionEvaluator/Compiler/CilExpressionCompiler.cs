@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.ExpressionEvaluator;
 using Microsoft.CodeAnalysis.PooledObjects;
 using Microsoft.VisualStudio.Debugger.Clr;
 using Microsoft.VisualStudio.Debugger.Evaluation;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.ExpressionEvaluator.Cil;
 using Passenger.Debugger.Interop;
 using Passenger.Languages.CSharp;

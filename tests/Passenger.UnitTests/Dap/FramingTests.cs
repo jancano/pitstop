@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.UnitTests.Dap;
 

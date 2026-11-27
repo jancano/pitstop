@@ -7,7 +7,7 @@ using Avalonia.Layout;
 using Avalonia.VisualTree;
 using Passenger.App.Debugging;
 using Passenger.App.Telemetry;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 
 namespace Passenger.App.ToolWindows;

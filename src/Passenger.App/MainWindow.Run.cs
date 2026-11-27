@@ -8,6 +8,7 @@ using Passenger.Core;
 using Passenger.Editor;
 using Passenger.Text;
 using Passenger.Workspace;
+using Pitstop.Dap;
 
 namespace Passenger.App;
 
@@ -519,7 +520,7 @@ public partial class MainWindow
     /// <summary>Starts in a tab of the Terminal window, named for the configuration being debugged, the program the debugger
     /// asks for (its runInTerminal request): held at its start by the variables the debugger gives it until the debugger
     /// has hold of it.</summary>
-    private Task<TerminalRun> RunForDebugger(string name, Dap.RunInTerminalArguments arguments)
+    private Task<TerminalRun> RunForDebugger(string name, RunInTerminalArguments arguments)
     {
         if (arguments.Args is not [string program, ..])
         {

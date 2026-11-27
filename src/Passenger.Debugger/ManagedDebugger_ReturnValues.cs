@@ -1,5 +1,5 @@
 using System.Reflection.Metadata;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.Interop;
 using Passenger.Debugger.Models.Response;
 

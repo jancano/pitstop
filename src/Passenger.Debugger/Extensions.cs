@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Passenger.Core;
 using Passenger.Debugger.Interop;
+using Pitstop.Dap;
 
 namespace Passenger.Debugger;
 
@@ -216,9 +217,9 @@ public static class Extensions
 
     /// <summary>How long code the debugger runs in the program (a getter, a watch's call) may take before it is
     /// stopped, so one that never returns cannot hang the debugger. A static of the adapter's process, which sets it
-    /// from <see cref="Dap.AdapterEnvironment.EvaluationTimeout"/>; the waits for an abort to take scale with
+    /// from <see cref="AdapterEnvironment.EvaluationTimeout"/>; the waits for an abort to take scale with
     /// it.</summary>
-    public static TimeSpan EvaluationTimeout { get; set; } = Dap.AdapterEnvironment.DefaultEvaluationTimeout;
+    public static TimeSpan EvaluationTimeout { get; set; } = AdapterEnvironment.DefaultEvaluationTimeout;
 
     /// <summary>How long an evaluation past its time is looked at for a moment it runs managed code, and how long an abort
     /// asked then may take, before the evaluation is left to run on to its own end: 2 s of the 5 s, longer on a slower

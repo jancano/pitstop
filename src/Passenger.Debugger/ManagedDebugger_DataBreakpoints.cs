@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.Interop;
 
 namespace Passenger.Debugger;

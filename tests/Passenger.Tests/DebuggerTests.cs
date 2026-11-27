@@ -10,7 +10,7 @@ using Passenger.App;
 using Passenger.App.Debugging;
 using Passenger.App.ToolWindows;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 using Passenger.Text;
 
@@ -2066,8 +2066,8 @@ public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixt
     private void Continue_pressed_while_a_stops_values_are_read_shows_the_program_running_at_once_and_sets_it_going()
     {
         string engineLog = Path.Combine(Fresh(), "engine.log");
-        string? kept = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable);
-        Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+        string? kept = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
         try
         {
             ContinuePressedWhileValuesAreRead();
@@ -2078,7 +2078,7 @@ public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixt
         }
         finally
         {
-            Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, kept);
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, kept);
         }
     }
 
@@ -2301,8 +2301,8 @@ public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixt
     {
         // A folder in the engine log's place kills the adapter as it starts, its stack trace on standard error.
         string folderForLog = TestFolders.Create("engine-log-");
-        string? engineLog = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable);
-        Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, folderForLog);
+        string? engineLog = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, folderForLog);
         try
         {
             MainWindow window = Open();
@@ -2331,7 +2331,7 @@ public sealed class DebuggerTests : IClassFixture<DebuggerTests.Sum>, IClassFixt
         }
         finally
         {
-            Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
         }
     }
 

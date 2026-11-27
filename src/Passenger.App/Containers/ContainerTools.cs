@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Text.Json;
 using Passenger.App.Updates;
 using Passenger.Core;
+using Pitstop.Dap;
 
 namespace Passenger.App.Containers;
 
@@ -510,7 +511,7 @@ public static class ContainerTools
     /// <summary>The adapter's command in a container, over docker exec's standard input and output, given the IDE's
     /// evaluation limit.</summary>
     public static IReadOnlyList<string> AdapterCommand(string container, string executable, IReadOnlyList<string> adapterArguments) =>
-        ["exec", "-i", .. Unheld, .. Carried(Dap.AdapterEnvironment.EvaluationTimeoutVariable), container, executable, Profiler.ContainerToolsWords.Dap,
+        ["exec", "-i", .. Unheld, .. Carried(AdapterEnvironment.EvaluationTimeoutVariable), container, executable, Profiler.ContainerToolsWords.Dap,
             .. adapterArguments];
 
     /// <summary>A mode of the tools in a container, over docker exec's standard input and output: the profiler's

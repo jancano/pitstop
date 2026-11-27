@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>What a tracepoint's message and a type's [DebuggerDisplay] are written in, read one way by every debugger: words,
 /// and each <c>{expression}</c> read where the program stands, to its own closing brace (braces nested in it and anything

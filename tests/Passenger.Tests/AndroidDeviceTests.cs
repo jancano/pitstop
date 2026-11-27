@@ -265,7 +265,7 @@ public sealed class AndroidDeviceTests
             Ui.WaitFor(() => window.Debugger.LastApplied is not null, () => $"Hot Reload to say what it applied: {Ui.Said(window)}", Slow);
             Assert.True(window.Debugger.LastApplied!.Result == HotReloadResult.Applied,
                 $"The app on the emulator did not take the edit: {window.Debugger.LastApplied.Said}\n{Console(window)}");
-            Dap.EvaluateResponse added = Ui.Await(window.Debugger.Session!.EvaluateAsync("Added()", window.BottomPanel.Debug.Frames[0].Id, Dap.EvaluateContexts.Watch),
+            Pitstop.Dap.EvaluateResponse added = Ui.Await(window.Debugger.Session!.EvaluateAsync("Added()", window.BottomPanel.Debug.Frames[0].Id, Pitstop.Dap.EvaluateContexts.Watch),
                 "the method the edit added, evaluated where the app stopped", Slow);
             Assert.True(added.Result == "\"Added by Hot Reload\"", $"The method the edit added did not evaluate where the app stopped: {added.Result}");
 

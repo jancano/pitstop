@@ -1,4 +1,4 @@
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.ExpressionEvaluator;
 using Passenger.Debugger.ExpressionEvaluator.Cil;
 using Passenger.Debugger.Interop;

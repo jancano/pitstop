@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.App.Debugging;
 

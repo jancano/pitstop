@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.ExpressionEvaluator;
 using Passenger.Debugger.ExpressionEvaluator.Cil;
 using Passenger.Debugger.ExpressionEvaluator.Compiler;
@@ -25,7 +25,7 @@ public enum ExceptionBreakpointFilter { All, UserUnhandled }
 /// <paramref name="Excluded"/>, every one but those), the scenarios it stops in, and a condition, hit count and log
 /// message as a line breakpoint has. A type given without a namespace is any type of that name.</summary>
 public sealed record ExceptionRuleRequest(
-    IReadOnlyList<string> Types, bool Excluded, Passenger.Dap.ExceptionScenarios Scenarios, string? Condition = null, string? HitCondition = null, string? LogMessage = null, bool Suspend = true)
+    IReadOnlyList<string> Types, bool Excluded, Pitstop.Dap.ExceptionScenarios Scenarios, string? Condition = null, string? HitCondition = null, string? LogMessage = null, bool Suspend = true)
     : IAskedBreakpoint
 {
     public bool Equals(ExceptionRuleRequest? other) => other is not null && Types.SequenceEqual(other.Types) && Excluded == other.Excluded && Scenarios == other.Scenarios

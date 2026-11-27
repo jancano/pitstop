@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Passenger.App.State;
 using Passenger.App.Workspace;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Text;
 
 namespace Passenger.App.Debugging;

@@ -180,8 +180,8 @@ public sealed class HotReloadTests : IClassFixture<HotReloadTests.Greetings>, IC
     /// console, never letting the program run on unseen; a step from there goes on through the new code (#2029).</summary>
     private void A_step_whose_stepper_cannot_be_made_again_in_the_new_code_stops_where_its_thread_stands_saying_why()
     {
-        string? was = Environment.GetEnvironmentVariable(global::Passenger.Dap.AdapterEnvironment.FailHandlingVariable);
-        Environment.SetEnvironmentVariable(global::Passenger.Dap.AdapterEnvironment.FailHandlingVariable, "FunctionRemapComplete");
+        string? was = Environment.GetEnvironmentVariable(global::Pitstop.Dap.AdapterEnvironment.FailHandlingVariable);
+        Environment.SetEnvironmentVariable(global::Pitstop.Dap.AdapterEnvironment.FailHandlingVariable, "FunctionRemapComplete");
         MainWindow window = Open();
         try
         {
@@ -208,7 +208,7 @@ public sealed class HotReloadTests : IClassFixture<HotReloadTests.Greetings>, IC
         finally
         {
             End(window);
-            Environment.SetEnvironmentVariable(global::Passenger.Dap.AdapterEnvironment.FailHandlingVariable, was);
+            Environment.SetEnvironmentVariable(global::Pitstop.Dap.AdapterEnvironment.FailHandlingVariable, was);
         }
     }
 
@@ -316,7 +316,7 @@ public sealed class HotReloadTests : IClassFixture<HotReloadTests.Greetings>, IC
             Assert.Contains(new LineMark(5, LineMarkKind.BreakpointBound), editor.LineMarks);
             Ui.WaitFor(() => window.BottomPanel.Debug.Tree.Rows.Any(r => r.Name == "said" && r.Value.Contains("Howdy", StringComparison.Ordinal)),
                 "the edited method's new local in Variables");
-            Dap.EvaluateResponse length = Ui.Await(window.Debugger.Session!.EvaluateAsync("said.Substring(0, 5) + i.ToString()", window.BottomPanel.Debug.Frames[0].Id, Dap.EvaluateContexts.Watch),
+            Pitstop.Dap.EvaluateResponse length = Ui.Await(window.Debugger.Session!.EvaluateAsync("said.Substring(0, 5) + i.ToString()", window.BottomPanel.Debug.Frames[0].Id, Pitstop.Dap.EvaluateContexts.Watch),
                 "an expression in the edited method");
             Assert.StartsWith("\"Howdy", length.Result, StringComparison.Ordinal);
         }
@@ -487,8 +487,8 @@ public sealed class HotReloadTests : IClassFixture<HotReloadTests.Greetings>, IC
     {
         const int Applies = 8;
         string engineLog = Path.Combine(TestFolders.Create("hotreload-engine-"), "engine.log");
-        string? kept = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable);
-        Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+        string? kept = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
         MainWindow window = spins.Open(null);
         try
         {
@@ -524,7 +524,7 @@ public sealed class HotReloadTests : IClassFixture<HotReloadTests.Greetings>, IC
         }
         finally
         {
-            Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, kept);
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, kept);
             End(window);
         }
     }
@@ -536,8 +536,8 @@ public sealed class HotReloadTests : IClassFixture<HotReloadTests.Greetings>, IC
     private void After_a_step_an_edit_applied_as_the_program_runs_goes_on_in_the_new_code_from_the_next_iteration()
     {
         string engineLog = Path.Combine(TestFolders.Create("hotreload-engine-"), "engine.log");
-        string? kept = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable);
-        Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+        string? kept = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
         MainWindow window = Open();
         try
         {
@@ -574,7 +574,7 @@ public sealed class HotReloadTests : IClassFixture<HotReloadTests.Greetings>, IC
         }
         finally
         {
-            Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, kept);
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, kept);
             End(window);
         }
     }

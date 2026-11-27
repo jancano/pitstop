@@ -1,6 +1,6 @@
 using System.Globalization;
 using Avalonia.Media;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.App.Godot;
 

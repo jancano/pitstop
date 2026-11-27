@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Passenger.Core;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>One end of a Debug Adapter Protocol conversation over a pair of streams: each message is
 /// a <c>Content-Length</c> header and a JSON body, sent with a sequence number and answered by it.

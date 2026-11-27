@@ -3,7 +3,7 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Tests.Debugging.Helpers;
 
 namespace Passenger.Tests.Debugging;

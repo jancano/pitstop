@@ -6,7 +6,7 @@ using Passenger.App;
 using Passenger.App.Debugging;
 using Passenger.App.Workspace;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 using Passenger.Text;
 

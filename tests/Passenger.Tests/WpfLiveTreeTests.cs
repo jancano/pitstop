@@ -185,8 +185,8 @@ public sealed class WpfLiveTreeTests : IClassFixture<RestoredFolders>, IDisposab
 
         // WPF's binding engine fails the caption's binding with none of the app's code on the stack: the stop shows the XAML.
         string engineLog = Path.Combine(folder, "engine.log");
-        string? kept = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable);
-        Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
+        string? kept = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable);
+        Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, engineLog);
         DebugStop stop;
         try
         {
@@ -202,7 +202,7 @@ public sealed class WpfLiveTreeTests : IClassFixture<RestoredFolders>, IDisposab
         }
         finally
         {
-            Environment.SetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable, kept);
+            Environment.SetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable, kept);
         }
         string frames = string.Join(" < ", stop.Frames.Take(12).Select(f => $"{f.Name} {Path.GetFileName(f.Source?.Path)}:{f.Line}"));
         Assert.True(stop.Binding is { } binding && (binding.Problem.Path, binding.Problem.Position) == (Xaml, Misspelt),

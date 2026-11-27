@@ -1,6 +1,6 @@
 using System.Text;
 using Passenger.App.Debugging;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.UnitTests.Dap;
 

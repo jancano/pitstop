@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>A breakpoint of any kind as asked for: the condition and hit count its hits are tried by.</summary>
 public interface IAskedBreakpoint

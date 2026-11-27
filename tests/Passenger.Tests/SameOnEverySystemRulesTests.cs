@@ -23,7 +23,7 @@ public sealed partial class SameOnEverySystemRulesTests
         ("Passenger.Core.DotnetProcesses", "reads the system's processes"),
         ("Passenger.Terminal.", "runs the terminal"),
         ("Passenger.App.Terminal", "runs the terminal"),
-        ("Passenger.Dap.", "runs the debugger"),
+        ("Pitstop.Dap.", "runs the debugger"),
         ("Passenger.Debugger.", "runs the debugger"),
         ("Passenger.DebugAdapter.", "runs the debugger"),
         ("Passenger.App.Debugging.Debug", "runs the debugger"),

@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.Inspector.Wpf;
 

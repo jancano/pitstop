@@ -50,7 +50,7 @@ public sealed class BuildConfigurationLaunchTests : IDisposable
             window.EditorArea.CodeEditor.GoTo(new TextPosition(OptimizedLine, 0));
             Ui.Run(window, AppActions.ToggleBreakpoint);
             Ui.Launched(window, window.DebugAsync(), "the debug session's start", TimeSpan.FromMinutes(2));
-            Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Paused, StopReason: Passenger.Dap.StopReasons.Breakpoint } || window.Debugger.Session is null or { State: DebugState.Ended },
+            Ui.WaitFor(() => window.Debugger.Session is { State: DebugState.Paused, StopReason: Pitstop.Dap.StopReasons.Breakpoint } || window.Debugger.Session is null or { State: DebugState.Ended },
                 () => $"the stop at the breakpoint on the line only a Release build has code for; the debugger is {window.Debugger.Session?.State.ToString() ?? "not debugging"}: {Ui.Said(window)}",
                 TimeSpan.FromMinutes(2));
             Assert.True(window.Debugger.Session is { State: DebugState.Paused },

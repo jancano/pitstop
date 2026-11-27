@@ -10,6 +10,6 @@ public enum AttributesValue : uint
     FailedEvaluation = 128,
 
     /// <summary>A failed evaluation that timed out with every other thread held, which probably needs another thread to run:
-    /// the protocol's failedEvaluation and Passenger's own needsThreads (<see cref="Dap.DapAttributes.NeedsThreads"/>).</summary>
+    /// the protocol's failedEvaluation and Passenger's own needsThreads (<see cref="Pitstop.Dap.DapAttributes.NeedsThreads"/>).</summary>
     FailedNeedingThreads = 129,
 }

@@ -3,7 +3,7 @@ using System.Text.Json;
 using Avalonia;
 using Avalonia.Data;
 using Avalonia.Diagnostics;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.Inspector;
 

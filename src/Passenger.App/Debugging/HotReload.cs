@@ -3,7 +3,7 @@ using Passenger.App.CSharp;
 using Passenger.App.Editors;
 using Passenger.App.Run;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Lsp;
 using Passenger.Roslyn.Extension;
 using Passenger.Text;

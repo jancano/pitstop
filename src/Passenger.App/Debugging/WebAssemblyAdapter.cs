@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.App.Debugging;
 

@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Passenger.Core;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>One end of a Chrome DevTools Protocol conversation over a WebSocket: each message one text message of JSON, a
 /// command numbered and answered by its number with its result or an error, an event by its method's name. The answers are

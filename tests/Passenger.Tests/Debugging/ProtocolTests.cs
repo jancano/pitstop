@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Tests.Debugging.Helpers;
 
 namespace Passenger.Tests.Debugging;

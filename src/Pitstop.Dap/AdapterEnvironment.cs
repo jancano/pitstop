@@ -1,6 +1,7 @@
+using Passenger;
 using Passenger.Core;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>What the IDE and the debug adapter read from the environment, named once for both ends: how long the
 /// adapter lets an evaluation run, and the file the engine's log is kept in.</summary>

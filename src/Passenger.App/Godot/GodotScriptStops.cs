@@ -1,4 +1,4 @@
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Workspace;
 
 namespace Passenger.App.Godot;

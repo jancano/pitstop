@@ -4,7 +4,7 @@ using ModelContextProtocol.Client;
 using Passenger.App;
 using Passenger.App.Debugging;
 using Passenger.App.Mcp;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Text;
 
 namespace Passenger.Tests;

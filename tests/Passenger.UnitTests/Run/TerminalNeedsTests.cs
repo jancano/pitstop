@@ -1,5 +1,5 @@
 using Passenger.App.Run;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.UnitTests.Run;
 

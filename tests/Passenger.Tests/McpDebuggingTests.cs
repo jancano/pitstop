@@ -6,7 +6,7 @@ using ModelContextProtocol.Protocol;
 using Passenger.App;
 using Passenger.App.Mcp;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Lsp;
 
 namespace Passenger.Tests;
@@ -127,7 +127,7 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
                 // Waited for as long as a loaded machine takes to attach and bind; the answer comes as soon as it stops.
                 JsonElement attached = await Call(client, McpTools.DebugAttach, new() { ["processId"] = looping.Id, ["waitSeconds"] = 60 });
                 Assert.True(attached.GetProperty("state").GetString() == "paused"
-                    && attached.TryGetProperty("reason", out JsonElement reason) && reason.GetString() == Passenger.Dap.StopReasons.Breakpoint,
+                    && attached.TryGetProperty("reason", out JsonElement reason) && reason.GetString() == Pitstop.Dap.StopReasons.Breakpoint,
                     $"The attached program did not stop at its breakpoint: {attached}");
                 Assert.EndsWith($"Program.cs:{line}:5", attached.GetProperty("location").GetString(), StringComparison.Ordinal);
                 Assert.True(long.TryParse(Local(attached, "turns"), out long turns) && turns >= 0, $"The stop's locals had no count of turns: {attached}");
@@ -288,7 +288,7 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
         while (ended.GetProperty("state").GetString() == "paused" && stops.Count < 5)
         {
             stops.Add(ended.GetProperty("location").GetString()!);
-            if (ended.GetProperty("reason").GetString() == Passenger.Dap.StopReasons.Exception)
+            if (ended.GetProperty("reason").GetString() == Pitstop.Dap.StopReasons.Exception)
             {
                 // Stopped in the assertion's code, the stop shows the test's frame: an evaluation reads that frame's locals.
                 JsonElement two = await Call(client, McpTools.DebugEvaluate, new() { ["expression"] = "two" });
@@ -415,7 +415,7 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
         {
             int line = Array.FindIndex(Crashing.Split('\n'), l => l.Trim() == thrown) + 1;
             JsonElement stop = await Call(client, McpTools.DebugStart, arguments is null ? null : new() { ["arguments"] = arguments });
-            Assert.True(stop.GetProperty("state").GetString() == "paused" && stop.GetProperty("reason").GetString() == Passenger.Dap.StopReasons.Exception
+            Assert.True(stop.GetProperty("state").GetString() == "paused" && stop.GetProperty("reason").GetString() == Pitstop.Dap.StopReasons.Exception
                 && At(stop).StartsWith($"Program.cs:{line}:", StringComparison.Ordinal),
                 $"The async program{(arguments is null ? "" : $" run with {arguments}")} left its exception unhandled and did not stop at its throw on line {line}: {stop}");
             Assert.True(Local(stop, local) == value, $"Stopped at the throw on line {line}, {local} did not read {value}: {stop}");
@@ -666,7 +666,7 @@ public sealed class McpDebuggingTests : McpRig, IClassFixture<RestoredFolders>
         string folder = await WebAppAsync();
         // The engine takes the load of the app's hosting as the runtime's word that its debugging failed.
         await using McpClient client = await Start(["--mcp", folder],
-            environment: new() { [global::Passenger.Dap.AdapterEnvironment.FailAtModuleVariable] = "Microsoft.AspNetCore.Hosting.dll" }, languageServer: false);
+            environment: new() { [global::Pitstop.Dap.AdapterEnvironment.FailAtModuleVariable] = "Microsoft.AspNetCore.Hosting.dll" }, languageServer: false);
         // Far longer than the call's own limit: only the app's end can answer it.
         JsonElement started = await Call(client, McpTools.DebugStart, new() { ["configuration"] = "Web: Serve", ["waitSeconds"] = 600 });
         Assert.True(started.GetProperty("state").GetString() == "not debugging"

@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Tests.Debugging.Helpers;
 using VariableNode = Passenger.App.Debugging.VariableNode;
 

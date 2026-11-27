@@ -1,4 +1,6 @@
-namespace Passenger.Dap;
+using Passenger;
+
+namespace Pitstop.Dap;
 
 /// <summary>The requests the IDE and Passenger's debug adapter make of each other, by the protocol's names, each written once
 /// for both ends, so a name one end misspells is a build error rather than a request the other never answers. Passenger's

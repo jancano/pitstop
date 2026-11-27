@@ -4,7 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.App.Debugging;
 

@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using Passenger.App.Debugging;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 using Passenger.Text;
 

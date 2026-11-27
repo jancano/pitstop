@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>The hit count modes, as a breakpoint's hitCondition writes them.</summary>
 public enum HitConditionMode

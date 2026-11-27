@@ -170,7 +170,7 @@ public sealed class GodotScriptDebuggingTests : IClassFixture<GodotScriptDebuggi
             CodeEditor editor = window.EditorArea.CodeEditor;
             int raised = LineOf(editor, "print(missing.get_name())");
             Ui.Launched(window, window.DebugAsync(), "the game's build and start under the debugger", TimeSpan.FromMinutes(3));
-            Ui.WaitFor(() => window.Debugger.Session is { Engine: DebugEngine.GDScript, State: DebugState.Paused, StopReason: Passenger.Dap.StopReasons.Exception }
+            Ui.WaitFor(() => window.Debugger.Session is { Engine: DebugEngine.GDScript, State: DebugState.Paused, StopReason: Pitstop.Dap.StopReasons.Exception }
                 && Stopped(editor) == raised, () => $"the game to stop at its script error ({Sessions(window)}, {Ui.Said(window)})", TimeSpan.FromMinutes(2));
             Ui.WaitFor(() => (window.Status ?? string.Empty).Contains("Cannot call method 'get_name' on a null value", StringComparison.Ordinal), () => $"the error in the status bar ({window.Status})");
 

@@ -1,4 +1,4 @@
-namespace Passenger.Dap;
+namespace Pitstop.Dap;
 
 /// <summary>What Passenger's debugger answers and the IDE says alike, worded once for both ends, so the same want reads the
 /// same in the debugger's answer and in the window's refusal.</summary>

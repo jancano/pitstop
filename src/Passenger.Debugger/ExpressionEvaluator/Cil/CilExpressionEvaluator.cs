@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Debugger.ExpressionEvaluator.Compiler;
 using Passenger.Debugger.Interop;
 using Passenger.Languages.CSharp;

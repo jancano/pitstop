@@ -9,7 +9,7 @@ using Passenger.App.Settings;
 using Passenger.App.ToolWindows;
 using Passenger.App.Workspace;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 using Passenger.Inspector;
 using Passenger.Languages.CSharp;

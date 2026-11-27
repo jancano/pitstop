@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.Tests.Debugging.Helpers;
 
@@ -46,7 +46,7 @@ public sealed class DebugSession : IAsyncDisposable
             throw new FileNotFoundException("The debug adapter is not beside the tests", path);
         }
         // PITSTOP_ENGINE_LOG=FILE keeps every session's log; else one is kept for a failed wait to quote.
-        string? kept = Environment.GetEnvironmentVariable(Passenger.Dap.AdapterEnvironment.EngineLogVariable) is { Length: > 0 } named ? named : null;
+        string? kept = Environment.GetEnvironmentVariable(Pitstop.Dap.AdapterEnvironment.EngineLogVariable) is { Length: > 0 } named ? named : null;
         ownLog = kept is null;
         engineLog = kept ?? Path.Combine(TestRun.Root, $"engine-{Guid.NewGuid():N}.log");
         engineLogStart = kept is not null && File.Exists(kept) ? new FileInfo(kept).Length : 0;

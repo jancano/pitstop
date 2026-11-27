@@ -840,7 +840,7 @@ public sealed class ContainerRunDebuggingTests(ContainerRunDebuggingTests.Tools 
                 {
                     return false;
                 }
-                Passenger.Dap.DapStackFrame top = Ui.Await(session.StackTraceAsync(thread), "the stop's frames").First(f => f.Source?.Path is not null);
+                Pitstop.Dap.DapStackFrame top = Ui.Await(session.StackTraceAsync(thread), "the stop's frames").First(f => f.Source?.Path is not null);
                 at = (top.Source!.Path, top.Line - 1);
                 return true;
             }, what, TimeSpan.FromMinutes(2));
@@ -858,8 +858,8 @@ public sealed class ContainerRunDebuggingTests(ContainerRunDebuggingTests.Tools 
 
     internal static string Evaluate(DebugSession session, string expression)
     {
-        IReadOnlyList<Passenger.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
-        return Ui.Await(session.EvaluateAsync(expression, frames[0].Id, Dap.EvaluateContexts.Watch), $"{expression} to be evaluated").Result;
+        IReadOnlyList<Pitstop.Dap.DapStackFrame> frames = Ui.Await(session.StackTraceAsync(session.StoppedThread ?? 0), "the stop's frames");
+        return Ui.Await(session.EvaluateAsync(expression, frames[0].Id, Pitstop.Dap.EvaluateContexts.Watch), $"{expression} to be evaluated").Result;
     }
 
     /// <summary>Resumes a tab's program as Resume does with its tab chosen, waiting for it to run.</summary>

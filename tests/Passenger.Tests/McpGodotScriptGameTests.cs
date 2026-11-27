@@ -3,7 +3,7 @@ using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using Passenger.App.Mcp;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 
 namespace Passenger.Tests;
 

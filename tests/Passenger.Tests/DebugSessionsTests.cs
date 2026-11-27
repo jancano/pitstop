@@ -12,7 +12,7 @@ using Passenger.App.Debugging;
 using Passenger.App.Settings;
 using Passenger.App.ToolWindows;
 using Passenger.Core;
-using Passenger.Dap;
+using Pitstop.Dap;
 using Passenger.Editor;
 using Passenger.Text;
 
