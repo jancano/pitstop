@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Passenger.App.ToolWindows;
@@ -62,7 +61,7 @@ public sealed class NativeProjectDialog : IdeWindow
         templates.SelectionChanged += (_, _) => BuildForm();
         files.SelectionChanged += (_, _) => ShowFile();
         location.TextChanged += (_, _) => Changed();
-        templates.ItemTemplate = new FuncDataTemplate<TemplateChoice>((choice, _) => choice is null ? null : TemplateRow(choice));
+        ReusedRows.Use(templates, TemplateRow);
 
         Grid catalog = new() { Margin = new Thickness(Gaps.Normal), RowDefinitions = new RowDefinitions("Auto,*") };
         StackPanel filters = new() { Spacing = FormRows.Between, Children =
@@ -164,22 +163,23 @@ public sealed class NativeProjectDialog : IdeWindow
             : null;
     }
 
-    private static Control TemplateRow(TemplateChoice choice)
+    private static Control TemplateRow()
     {
-        RowIcon icon = new() { DataKey = choice.Project.Manifest.Category switch
-        {
-            "Application" => IconKeys.Terminal,
-            "Library" => IconKeys.ClassLibrary,
-            _ => IconKeys.Explorer,
-        } };
-        TextBlock label = new() { Text = choice.ToString(), TextTrimming = TextTrimming.CharacterEllipsis };
+        RowIcon icon = new();
+        TextBlock label = new() { TextTrimming = TextTrimming.CharacterEllipsis };
         StackPanel row = new() { Orientation = Orientation.Horizontal, Spacing = Gaps.Tight, Children = { icon, label } };
-        if (choice.Problem is { } reason)
+        return row.Showing<TemplateChoice>(choice =>
         {
-            label.Opacity = 0.65;
-            ToolTip.SetTip(row, reason);
-        }
-        return row;
+            icon.DataKey = choice.Project.Manifest.Category switch
+            {
+                "Application" => IconKeys.Terminal,
+                "Library" => IconKeys.ClassLibrary,
+                _ => IconKeys.Explorer,
+            };
+            label.Text = choice.ToString();
+            label.Opacity = choice.Problem is null ? 1 : 0.65;
+            ToolTip.SetTip(row, choice.Problem);
+        });
     }
 
     private void BuildForm()
