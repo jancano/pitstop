@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Passenger.Core;
-using Pitstop.Xmake;
+using Pitstop.ProjectSystem;
 
 namespace Pitstop.Modules;
 
@@ -40,7 +40,7 @@ public sealed class ModuleWorkspace
     private readonly ILookup<string, TranslationUnit> bySource;
     private readonly ILookup<string, ModuleProvider> names;
 
-    internal ModuleWorkspace(XmakeWorkspace workspace, ImmutableArray<TranslationUnit> units, ImmutableArray<ModuleProvider> providers,
+    internal ModuleWorkspace(INativeWorkspace workspace, ImmutableArray<TranslationUnit> units, ImmutableArray<ModuleProvider> providers,
         ImmutableArray<ModuleDependency> dependencies, ImmutableArray<string> missing, string? problem)
     {
         Workspace = workspace;
@@ -55,7 +55,7 @@ public sealed class ModuleWorkspace
         names = providers.ToLookup(provider => provider.Name, StringComparer.Ordinal);
     }
 
-    public XmakeWorkspace Workspace { get; }
+    public INativeWorkspace Workspace { get; }
     public ImmutableArray<TranslationUnit> Units { get; }
     public ImmutableArray<ModuleProvider> Providers { get; }
     public ImmutableArray<ModuleDependency> Dependencies { get; }
@@ -91,7 +91,7 @@ public sealed class ModuleWorkspace
     public bool IsCyclic(TranslationUnit unit) => Reachable(unit, consumers: false).Prepend(unit)
         .Any(candidate => Imports(candidate).Any(edge => edge.Provider?.Unit.Id == unit.Id));
 
-    public static ImmutableHashSet<string> VisibleTargets(XmakeWorkspace workspace, string? target)
+    public static ImmutableHashSet<string> VisibleTargets(INativeWorkspace workspace, string? target)
     {
         if (target is null)
         {
@@ -103,7 +103,7 @@ public sealed class ModuleWorkspace
         {
             if (seen.Add(next))
             {
-                foreach (string dependency in workspace.Graph.DependenciesOf(next))
+                foreach (string dependency in workspace.DependenciesOf(next))
                 {
                     pending.Push(dependency);
                 }

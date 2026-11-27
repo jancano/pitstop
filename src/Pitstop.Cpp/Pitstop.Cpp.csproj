@@ -2,7 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="../Passenger.Core/Passenger.Core.csproj" />
     <ProjectReference Include="../Passenger.Lsp/Passenger.Lsp.csproj" />
-    <ProjectReference Include="../Pitstop.Xmake/Pitstop.Xmake.csproj" />
+    <ProjectReference Include="../Pitstop.ProjectSystem/Pitstop.ProjectSystem.csproj" />
     <InternalsVisibleTo Include="Passenger.Tests" />
   </ItemGroup>
 </Project>

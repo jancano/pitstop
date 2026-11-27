@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Passenger.Core;
-using Pitstop.Xmake;
+using Pitstop.ProjectSystem;
 
 namespace Pitstop.Modules;
 
@@ -30,7 +30,7 @@ internal static class P1689
         return document.Rules;
     }
 
-    internal static ModuleWorkspace Resolve(XmakeWorkspace workspace, IReadOnlyList<ScanCommand> commands, ImmutableArray<Rule> rules,
+    internal static ModuleWorkspace Resolve(INativeWorkspace workspace, IReadOnlyList<ScanCommand> commands, ImmutableArray<Rule> rules,
         IEnumerable<string> omitted, string? problem, CancellationToken stop)
     {
         ILookup<string, ScanCommand> outputs = commands.ToLookup(command => command.Unit.Output, PathNames.Comparer);
@@ -111,7 +111,7 @@ internal static class P1689
 
     private static ImmutableArray<Entry> Items(ImmutableArray<Entry> entries) => entries.IsDefault ? [] : entries;
 
-    private static ModuleProvider Provider(XmakeWorkspace workspace, ScanCommand command, Entry entry)
+    private static ModuleProvider Provider(INativeWorkspace workspace, ScanCommand command, Entry entry)
     {
         bool partition = entry.Name.Contains(':');
         ModuleUnitKind kind = (partition, entry.Interface) switch

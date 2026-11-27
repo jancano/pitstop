@@ -2,18 +2,18 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using Passenger.Core;
 using Passenger.Lsp;
-using Pitstop.Xmake;
+using Pitstop.ProjectSystem;
 
 namespace Pitstop.Cpp;
 
-/// <summary>Compilation contexts in Xmake's semantic database, in the same order in which clangd sees them.</summary>
+/// <summary>Compilation contexts in the provider's semantic database, in the same order in which clangd sees them.</summary>
 public sealed class CppCompilation
 {
     private readonly ImmutableDictionary<string, ImmutableArray<CppCommand>> commands;
-    private readonly ImmutableDictionary<string, ImmutableArray<XmakeTarget>> owners;
+    private readonly ImmutableDictionary<string, ImmutableArray<INativeTarget>> owners;
     private readonly string database;
 
-    private CppCompilation(XmakeWorkspace workspace, string database, IEnumerable<CppCommand> entries)
+    private CppCompilation(INativeWorkspace workspace, string database, IEnumerable<CppCommand> entries)
     {
         Workspace = workspace;
         this.database = database;
@@ -24,7 +24,7 @@ public sealed class CppCompilation
             .ToImmutableDictionary(g => g.Key, g => g.Select(p => p.Target).OrderBy(t => t.Name, StringComparer.Ordinal).ToImmutableArray(), PathNames.Comparer);
     }
 
-    public XmakeWorkspace Workspace { get; }
+    public INativeWorkspace Workspace { get; }
 
     public string Database => database;
 
@@ -39,26 +39,27 @@ public sealed class CppCompilation
         {
             return named.Contains("c++", StringComparison.Ordinal) ? LanguageIds.Cpp : LanguageIds.C;
         }
-        string[] kinds = [.. owners.GetValueOrDefault(path, []).SelectMany(t => t.Toolchain.Compilers).Select(c => c.SourceKind).Distinct()];
-        return kinds is ["cxx"] ? LanguageIds.Cpp : kinds is ["cc"] ? LanguageIds.C : fallback;
+        NativeLanguage[] kinds = [.. owners.GetValueOrDefault(path, []).SelectMany(t => t.CompilerLanguages).Distinct()];
+        return kinds is [NativeLanguage.Cpp] ? LanguageIds.Cpp : kinds is [NativeLanguage.C] ? LanguageIds.C : fallback;
     }
 
     public string Context(string path)
     {
-        ImmutableArray<XmakeTarget> targets = owners.GetValueOrDefault(path, []);
+        ImmutableArray<INativeTarget> targets = owners.GetValueOrDefault(path, []);
         ImmutableArray<CppCommand> rows = CommandsFor(path);
         if (targets.Length <= 1 || rows.IsEmpty)
         {
             return targets.Length == 1 ? targets[0].Name : "";
         }
-        return rows[0].Target is { } active ? $"{active} (of {targets.Length} Xmake targets)" : "selected Xmake command";
+        return rows[0].Target is { } active ? $"{active} (of {targets.Length} {Workspace.ProviderName} targets)" : $"selected {Workspace.ProviderName} command";
     }
 
-    public static async Task<CppCompilation> ReadAsync(XmakeWorkspace workspace, CancellationToken cancel)
+    public static async Task<CppCompilation> ReadAsync(INativeWorkspace workspace, CancellationToken cancel)
     {
+        string provider = workspace.ProviderName;
         if (workspace.CompilationDatabases is not { } database)
         {
-            throw new ClangdException(workspace.CompilationDatabaseProblem ?? "Xmake has no semantic compilation database. Check the project configuration.");
+            throw new ClangdException(workspace.CompilationDatabaseProblem ?? $"{provider} has no semantic compilation database. Check the project configuration.");
         }
         await using FileStream input = File.OpenRead(database.Semantic);
         using JsonDocument json = await JsonDocument.ParseAsync(input, cancellationToken: cancel).ConfigureAwait(false);
@@ -70,28 +71,27 @@ public sealed class CppCompilation
             cancel.ThrowIfCancellationRequested();
             if (JsonMembers.Text(row, "directory") is not { } directory || JsonMembers.Text(row, "file") is not { } file)
             {
-                throw new ClangdException("An Xmake compilation command has no working directory or source file.");
+                throw new ClangdException($"A {provider} compilation command has no working directory or source file.");
             }
             string[] args = [.. JsonMembers.Texts(row, "arguments")];
             if (args.Length == 0)
             {
-                throw new ClangdException($"Xmake generated no compiler arguments for {file}.");
+                throw new ClangdException($"{provider} generated no compiler arguments for {file}.");
             }
             int language = Array.IndexOf(args, "-x") + 1;
             string? kind = language > 0 && language < args.Length ? args[language] : null;
             string path = PathNames.Canonical(Path.GetFullPath(file, Path.GetFullPath(directory, workspace.Root)));
             string? output = JsonMembers.Text(row, "output");
             string[] candidates = [.. membership[path].Distinct(StringComparer.Ordinal)];
-            string? target = candidates.Length == 1 ? candidates[0] : OutputTarget(output, candidates);
+            string? target = candidates.Length == 1 ? candidates[0] : workspace.MatchOutputTarget(output, candidates);
             entries.Add((new(path, output, kind,
                 kind == "c++-module" || args.Contains("--precompile", StringComparer.Ordinal) || args.Contains("-emit-module-interface", StringComparer.Ordinal), target), row));
         }
         if (entries.Count == 0)
         {
-            throw new ClangdException("Xmake's semantic compilation database is empty. Configure a C or C++ target in Xmake.");
+            throw new ClangdException($"{provider}'s semantic compilation database is empty. Configure a C or C++ target.");
         }
-        // Keep Xmake's source-oriented database intact. Give clangd just one target's commands for a shared source.
-        // Preserve compiler command order within a target, since Xmake may emit a BMI and an object command for one file.
+        // Give clangd one target's commands for a shared source while preserving BMI and object command order.
         HashSet<string> shared = new(membership.Where(group => group.Distinct(StringComparer.Ordinal).Count() > 1).Select(group => group.Key), PathNames.Comparer);
         if (shared.Count == 0)
         {
@@ -115,22 +115,6 @@ public sealed class CppCompilation
         return new(workspace, pathToDatabase, entries.Select(e => e.Command));
     }
 
-    private static string? OutputTarget(string? output, string[] candidates)
-    {
-        if (output is null)
-        {
-            return null;
-        }
-        string[] parts = output.Split(['/', '\\']);
-        for (int i = 0; i + 1 < parts.Length; i++)
-        {
-            if (parts[i] is ".objs" or ".gens" && candidates.Contains(parts[i + 1], StringComparer.Ordinal))
-            {
-                return parts[i + 1];
-            }
-        }
-        return null;
-    }
 }
 
 public sealed record CppCommand(string File, string? Output, string? ExplicitLanguage, bool IsModule, string? Target);

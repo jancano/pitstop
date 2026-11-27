@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Passenger.Core;
-using Pitstop.Xmake;
+using Pitstop.ProjectSystem;
 
 namespace Pitstop.Modules;
 
@@ -22,12 +22,12 @@ public sealed class ModuleScanner
     public const string ExecutableVariable = "PITSTOP_CLANG_SCAN_DEPS";
     private static readonly TimeSpan ScanLimit = TimeSpan.FromMinutes(2);
 
-    public async Task<ModuleWorkspace> ScanAsync(XmakeWorkspace workspace, CancellationToken stop)
+    public async Task<ModuleWorkspace> ScanAsync(INativeWorkspace workspace, CancellationToken stop)
     {
         WorkspaceTrust.Check(workspace.Root);
         if (workspace.CompilationDatabases is not { } databases)
         {
-            return Failed(workspace.CompilationDatabaseProblem ?? "Xmake did not export compilation commands for this configuration.");
+            return Failed(workspace.CompilationDatabaseProblem ?? $"{workspace.ProviderName} did not export compilation commands for this configuration.");
         }
 
         try
@@ -36,7 +36,7 @@ public sealed class ModuleScanner
             (List<ScanCommand> commands, List<string> omitted) = Commands(workspace, json.RootElement, stop);
             if (commands.Count == 0)
             {
-                return Failed("No supported Clang C++ commands are available in Xmake's semantic compilation database.");
+                return Failed($"No supported Clang C++ commands are available in {workspace.ProviderName}'s semantic compilation database.");
             }
             using JsonDocument authoritative = JsonDocument.Parse(await File.ReadAllTextAsync(databases.Authoritative, stop).ConfigureAwait(false));
             Dictionary<string, ImmutableDictionary<string, string>> bindings = BuildBindings(workspace.Root, authoritative.RootElement, stop);
@@ -89,7 +89,7 @@ public sealed class ModuleScanner
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or TimeoutException or Win32Exception or ArgumentException or InvalidOperationException)
         {
-            string message = $"Module scanning failed. Check the selected LLVM scanner and Xmake configuration. {error.Message}";
+            string message = $"Module scanning failed. Check the selected LLVM scanner and {workspace.ProviderName} configuration. {error.Message}";
             PassengerLog.Write(message);
             return Failed(message);
         }
@@ -154,7 +154,8 @@ public sealed class ModuleScanner
             ?? throw new IOException($"Install clang-scan-deps with the configured LLVM toolchain or set {ExecutableVariable}.");
     }
 
-    internal static (List<ScanCommand> Commands, List<string> Omitted) Commands(XmakeWorkspace workspace, JsonElement database, CancellationToken stop)
+    internal static (List<ScanCommand> Commands, List<string> Omitted) Commands(INativeWorkspace workspace,
+        JsonElement database, CancellationToken stop)
     {
         List<ScanCommand> commands = [];
         List<string> omitted = [];
@@ -162,8 +163,8 @@ public sealed class ModuleScanner
         ILookup<string, string> owners = workspace.Targets.SelectMany(target => target.SourceFiles.Select(source => (source, target.Name)))
             .ToLookup(row => row.source, row => row.Name, PathNames.Comparer);
         HashSet<string> targets = new(workspace.Targets.Select(target => target.Name), StringComparer.Ordinal);
-        XmakeConfiguration active = workspace.Configuration;
-        string configurationKey = string.Join('|', workspace.Root, active.Mode, active.Platform, active.Architecture, active.Toolchain);
+        NativeConfiguration active = workspace.Configuration;
+        string configurationKey = string.Join('|', workspace.ProviderId, workspace.Root, active.Mode, active.Platform, active.Architecture, active.Toolchain);
         foreach (JsonElement row in database.EnumerateArray())
         {
             stop.ThrowIfCancellationRequested();
@@ -188,7 +189,7 @@ public sealed class ModuleScanner
                 }
                 string output = args[outputAt];
                 string[] candidates = [.. owners[source]];
-                string? target = candidates.Length == 1 ? candidates[0] : TargetOf(output, candidates.Length > 0 ? candidates : targets);
+                string? target = candidates.Length == 1 ? candidates[0] : workspace.MatchOutputTarget(output, candidates.Length > 0 ? candidates : targets);
                 int language = Array.IndexOf(args, "-x");
                 bool moduleJob = language >= 0 && language + 1 < args.Length && args[language + 1] == "c++-module" && args.Contains("--precompile", StringComparer.Ordinal);
                 string[] signature = [.. args.Skip(1).Where((arg, index) => index + 1 != outputAt && arg is not ("-o" or "-c" or "--precompile")
@@ -216,16 +217,4 @@ public sealed class ModuleScanner
         return (commands, omitted);
     }
 
-    private static string? TargetOf(string output, IEnumerable<string> candidates)
-    {
-        string[] parts = output.Split(['/', '\\']);
-        for (int i = 0; i + 1 < parts.Length; i++)
-        {
-            if (parts[i] is ".objs" or ".gens" && candidates.Contains(parts[i + 1], StringComparer.Ordinal))
-            {
-                return parts[i + 1];
-            }
-        }
-        return null;
-    }
 }

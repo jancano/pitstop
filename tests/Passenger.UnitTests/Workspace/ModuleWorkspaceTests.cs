@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Passenger.Core;
 using Pitstop.Modules;
+using Pitstop.ProjectSystem;
 using Pitstop.Xmake;
 using Xunit;
 
@@ -114,6 +115,45 @@ public sealed class ModuleWorkspaceTests
         Assert.All(scan, command => Assert.Equal(ModuleTargetEvidence.XmakeOutputPath, command.Unit.Context.TargetEvidence));
         Assert.NotEqual(scan[0].Unit.Context.CommandKey, scan[1].Unit.Context.CommandKey);
         Assert.Throws<OperationCanceledException>(() => ModuleScanner.Commands(workspace, commands, new CancellationToken(canceled: true)));
+    }
+
+    [Fact]
+    public void Uses_the_providers_output_ownership_without_requiring_Xmake_paths()
+    {
+        string repo = FoldersUp.From(AppContext.BaseDirectory).First(path => File.Exists(Path.Combine(path, "Passenger.slnx")));
+        string root = PathNames.Canonical(Path.Combine(repo, "tests", "CppWorkspaces", "module-contexts"));
+        string source = PathNames.Canonical(Path.Combine(root, "selection.cpp"));
+        FixtureWorkspace workspace = new(root, [new FixtureTarget("first", [source]), new FixtureTarget("second", [source])]);
+        JsonElement commands = JsonSerializer.SerializeToElement(new[]
+        {
+            new { directory = root, file = source, arguments = new[] { "clang++", "-std=c++23", "-c", source, "-o", "artifacts/selection.o" } },
+        });
+        (List<ScanCommand> scan, List<string> omitted) = ModuleScanner.Commands(workspace, commands, TestContext.Current.CancellationToken);
+        Assert.Empty(omitted);
+        ModuleContext context = Assert.Single(scan).Unit.Context;
+        Assert.Equal("second", context.Target);
+        Assert.StartsWith("fixture|", context.ConfigurationKey, StringComparison.Ordinal);
+        Assert.True(ModuleWorkspace.VisibleTargets(workspace, "second").SetEquals(["first", "second"]));
+    }
+
+    private sealed record FixtureTarget(string Name, ImmutableArray<string> SourceFiles) : INativeTarget
+    {
+        public string Kind => "static";
+        public string? Output => null;
+        public ImmutableArray<string> HeaderFiles => [];
+        public IEnumerable<NativeLanguage> CompilerLanguages => [NativeLanguage.Cpp];
+    }
+
+    private sealed record FixtureWorkspace(string Root, IReadOnlyList<INativeTarget> Targets) : INativeWorkspace
+    {
+        public string ProviderId => "fixture";
+        public string ProviderName => "Fixture";
+        public NativeConfiguration Configuration => new("debug", "fixture", "x64", "llvm");
+        public NativeCompilationDatabases? CompilationDatabases => null;
+        public string? CompilationDatabaseProblem => null;
+        public ImmutableArray<string> DependenciesOf(string target) => target == "second" ? ["first"] : [];
+        public string? MatchOutputTarget(string? output, IReadOnlyCollection<string> candidates) =>
+            output == "artifacts/selection.o" && candidates.Contains("second", StringComparer.Ordinal) ? "second" : null;
     }
 
     [Fact]

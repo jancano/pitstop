@@ -14,6 +14,9 @@
           "Microsoft.Diagnostics.NETCore.Client": "[0.2.750501, )"
         }
       },
+      "pitstop.projectsystem": {
+        "type": "Project"
+      },
       "Microsoft.Diagnostics.NETCore.Client": {
         "type": "CentralTransitive",
         "requested": "[0.2.750501, )",

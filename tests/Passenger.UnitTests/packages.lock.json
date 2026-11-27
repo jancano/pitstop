@@ -618,13 +618,17 @@
         "type": "Project",
         "dependencies": {
           "Passenger.Core": "[0.1.0, )",
-          "Pitstop.Xmake": "[0.1.0, )"
+          "Pitstop.ProjectSystem": "[0.1.0, )"
         }
+      },
+      "pitstop.projectsystem": {
+        "type": "Project"
       },
       "pitstop.xmake": {
         "type": "Project",
         "dependencies": {
-          "Passenger.Core": "[0.1.0, )"
+          "Passenger.Core": "[0.1.0, )",
+          "Pitstop.ProjectSystem": "[0.1.0, )"
         }
       },
       "Avalonia": {

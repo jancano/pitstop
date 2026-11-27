@@ -80,11 +80,8 @@
           "Passenger.Core": "[0.1.0, )"
         }
       },
-      "pitstop.xmake": {
-        "type": "Project",
-        "dependencies": {
-          "Passenger.Core": "[0.1.0, )"
-        }
+      "pitstop.projectsystem": {
+        "type": "Project"
       },
       "Microsoft.Diagnostics.NETCore.Client": {
         "type": "CentralTransitive",
