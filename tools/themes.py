@@ -690,7 +690,7 @@ def variant(theme, p, dark):
     # A wash under the code gives way where the code's words would not read on it.
     for under_code in ["SelectionInactive", "SearchMatch", "SearchCurrent", "BreakpointLine", "ExceptionBack", "UsageRead", "UsageWrite",
                   "MatchedBrace", "SmartStepTarget", "SmartStepChosen"]:
-        t[f"Pitstop.Editor.{under_code}"] = legible(t[f"Pitstop.Editor.{under_code}"], [t["Passenger.Editor.Text"]], T, not dark)
+        t[f"Passenger.Editor.{under_code}"] = legible(t[f"Passenger.Editor.{under_code}"], [t["Passenger.Editor.Text"]], T, not dark)
     for name in ("Added", "Modified", "Deleted", "Conflict"):
         for key in (f"Passenger.Diff.{name}", f"Passenger.Diff.{name}Word"):
             t[key] = legible(t[key], [t["Passenger.Editor.Text"]], T, not dark)

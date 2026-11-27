@@ -2914,7 +2914,7 @@ public sealed class UiRulesTests : IClassFixture<UiRulesTests.Project>, IAsyncLi
             ResourceDictionary scheme = ThemeResources.Dictionary(read.Read);
             files.Add(($"{choice}.json", scheme));
             // The code's colours, which the scheme gives in the theme's place; the editor's ground, gutter and cards stay the theme's.
-            string[] code = [.. keys.Where(k => (k.StartsWith("Pitstop.Editor.", StringComparison.Ordinal) && k is not (TokenKeys.Editor_Background or TokenKeys.Editor_Gutter or TokenKeys.Editor_PopupBorder))
+            string[] code = [.. keys.Where(k => (k.StartsWith("Passenger.Editor.", StringComparison.Ordinal) && k is not (TokenKeys.Editor_Background or TokenKeys.Editor_Gutter or TokenKeys.Editor_PopupBorder))
                 || k.StartsWith("Passenger.Syntax.", StringComparison.Ordinal) || k.StartsWith("Passenger.SyntaxStyle.", StringComparison.Ordinal) || k.StartsWith("Passenger.Diff.", StringComparison.Ordinal))];
             Assert.Equal(code, Keys(scheme, ThemeVariant.Dark));
             Assert.Equal(code, Keys(scheme, ThemeVariant.Light));

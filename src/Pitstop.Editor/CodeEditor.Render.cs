@@ -557,7 +557,7 @@ public sealed partial class CodeEditor
     }
 
 
-    /// <summary>Every brush the editor paints with, from the look in force's <c>Pitstop.Editor.*</c>,
+    /// <summary>Every brush the editor paints with, from the look in force's <c>Passenger.Editor.*</c>,
     /// <c>Passenger.Syntax.*</c> and other tokens, never a colour of its own, so the look always draws the editor (a
     /// token the theme left out draws nothing), each taken as an immutable brush. Read again as the editor joins a
     /// window.</summary>

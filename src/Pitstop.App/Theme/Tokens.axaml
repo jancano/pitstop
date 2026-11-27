@@ -5,7 +5,7 @@
                     mc:Ignorable="read">
     <!-- Passenger's own theme, the default: every colour the IDE paints, once in Dark and once in Light, and the few shapes
          a theme may draw its own way. A control names a token, never a colour, and every other theme gives every token
-         again. Pitstop.Editor.*, Passenger.Syntax.* and Passenger.SyntaxStyle.* are read by the code editor by name; a
+         again. Passenger.Editor.*, Passenger.Syntax.* and Passenger.SyntaxStyle.* are read by the code editor by name; a
          syntax kind left out draws as plain text.
 
          The look: the app icon's blue as the window's own colour on cool blue-tinted neutrals, the icon's blue-to-teal
