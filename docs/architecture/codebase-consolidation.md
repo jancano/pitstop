@@ -97,24 +97,30 @@ The Windows CI gate at `daf2a8427` ran in four shards, with 711 passed, two fail
 
 At `03ae4a8de` the complete solution build passed again with zero warnings or errors. Five targeted tests passed, including the previously failing reusable-row rule, wizard creation and native command isolation across desktop and MCP. Two toolchain cases skipped in that run. A second run with the reference tools passed all three wizard cases, including standards detection and executable overrides.
 
-At `02edbfe31`, locked restore and `just build` in a fresh checkout passed with zero warnings and zero errors. The build step took 4 minutes 36 seconds with six workers under concurrent validation load. Another solution build from the development checkout took 4 minutes 5 seconds before the combined suite.
+At `02edbfe31`, locked restore and `just build` in a fresh checkout passed with zero warnings and zero errors. The build step took 4 minutes 36 seconds with six workers under concurrent validation load. Another solution build from the development checkout took 4 minutes 5 seconds before the combined suite. The earlier baseline ran with different build priority and parallelism.
+
+The complete unit suite at `02edbfe31` reported 617 passed, five skipped and zero failed. The skips covered filesystem permissions or platform cases and the optional benchmark capture. The first post-rename run exposed a stale reflective assembly filter. The analyzer and reflection-based tests now match Pitstop assembly names. The theme compatibility check and generator continue to use the existing `Passenger.Editor.*` and ANSI token prefixes.
 
 The Git signing fix associates a generic SSH passphrase prompt with the signing key from Git's configuration when the signing format is SSH. The targeted runs passed five cases, including an actual MCP commit, Git for Windows GPG and SSH signing, signed-log output and cleanup of a held signing file. Standalone GPG and X.509 cases skipped because `gpg` and `gpgsm` were unavailable on PATH.
+
+The targeted rerun from `02edbfe31` reported 56 passed, three skipped, zero failed and zero test timeouts across 59 headless cases. It used Xmake and Xrepo 3.1.2, LLVM-MinGW and clangd 23.1.6, and libc++ on Windows x64. It covered C++23 and C++26 compilation, build and run, clangd and module refresh, Xmake templates, the Explorer, actual MCP requests and cancellation, Discord IPC and affected shared features. The skips were standalone GPG, X.509 and a macOS-only exFAT case. The managed debugger pause and Windows folder-watcher cases passed a separate two-test rerun after failing during parallel execution.
+
+The keyboard action regression passed after checking that Module Dependencies refuses a plain folder. The theme regression passed after restoring the expected theme token prefix. All three final MCP action, attach and standalone WPF XAML editing cases passed at `59d7551db`. The retained Aspire telemetry and graph test also passed against the regenerated protocol descriptor. The application and all tests compiled with zero errors or warnings at `59d7551db`.
 
 Light and dark captures were taken from both the headless tests and the Windows package. The captures cover the welcome screen, project creation, toolchain settings, project and module views, graph, editor completion and diagnostics, Build and Run, HTTP Client, Containers, and Discord settings. This machine has no Docker command and no production Discord application registration. Containers' missing-tool presentation and the configuration path for Discord were visible. The Discord IPC tests use a local peer.
 
 ## Windows x64 package
 
-`tools/package-win.sh win-x64` created the unsigned `0.3.0-alpha.1` candidate from a clean checkout of `02edbfe31`. The archive contains 306 DLLs and five EXEs, with no `Passenger.*.dll` or managed child-tool folders. The Phase 7 baseline already excluded the removed preview hosts. The portable ZIP is 342,404 bytes smaller and the installer is 353,232 bytes smaller than the Phase 7 packages.
+`tools/package-win.sh win-x64` created the unsigned `0.3.0-alpha.1` candidate from a clean checkout of `59d7551db`. The archive contains 306 DLLs and five EXEs, with no `Passenger.*.dll` or managed child-tool folders. The Phase 7 baseline already excluded the removed preview hosts. The portable ZIP is 343,211 bytes smaller and the installer is 353,969 bytes smaller than the Phase 7 packages.
 
 The portable and installed application both opened the isolated Hello Modules fixture, reported the module index through MCP, navigated to a provider, saved an edit, built the project and printed `Hello, modules!` with exit code zero. The portable also produced the missing-Xmake guidance. Installation and uninstall checks covered Open With associations, the user `PATH`, and the existing Pitstop and Passenger settings roots. The native child payload and installed trust checks passed.
 
 | Package | Bytes | SHA-256 |
 | --- | ---: | --- |
-| `Pitstop-windows-x64-portable.zip` | 143,254,855 | `47a68be9ca95e430834611a4c4509db5c635a9e2461e62c6c2b8daa1871d4f4a` |
-| `Pitstop-windows-x64.exe` | 157,163,675 | `4021a7faa6e33be6fe9ddbbde7fdb2e4d932b04411906a44485a661994924560` |
+| `Pitstop-windows-x64-portable.zip` | 143,254,048 | `87832ce2ba529fa58ff63fd23823771bfe9a21169820087a9a3651ad2944e25d` |
+| `Pitstop-windows-x64.exe` | 157,162,938 | `708193e5b56db04de4e866a543dcb9ac7bb099acaa62b7e3e842d0fcf882044b` |
 
-For an off-screen startup comparison, run `Pitstop.exe --screenshot shell.png --theme dark --size 1260x820 --scale 1` in each portable distribution with a fresh `PITSTOP_SETTINGS` directory. Six alternating runs per build, with the first sample discarded, gave medians of 1.879 s for Phase 7 (1.695–2.872 s) and 2.245 s for the consolidated build (1.617–2.447 s). The measurement includes PNG encoding and process exit. Both ran on the same Windows host while build and test jobs were active, so these ranges leave normal interactive startup unmeasured.
+For an off-screen startup comparison, run `Pitstop.exe --screenshot shell.png --theme dark --size 1260x820 --scale 1` in each portable distribution with a fresh `PITSTOP_SETTINGS` directory. Six alternating runs per build, with the first sample discarded, gave medians of 1.879 s for Phase 7 (1.695–2.872 s) and 2.245 s for the consolidated build at `02edbfe31` (1.617–2.447 s). The measurement includes PNG encoding and process exit. Both ran on the same Windows host while build and test jobs were active, so these ranges leave normal interactive startup unmeasured.
 
 ## Retained verification and product boundaries
 
